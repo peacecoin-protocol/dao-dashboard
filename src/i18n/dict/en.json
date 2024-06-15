@@ -1,0 +1,12 @@
+{
+  "common": {
+    "navigation": {
+      "vote": "Go to the voting page",
+      "token": "Go to the token page"
+    }
+  },
+  "home": {
+    "title": "Peace Coin DAO Dashboard",
+    "description": "This is Peace Coin DAO Dashboard"
+  }
+}

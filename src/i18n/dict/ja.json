@@ -1,0 +1,12 @@
+{
+  "common": {
+    "navigation": {
+      "vote": "投票",
+      "token": "Token"
+    }
+  },
+  "home": {
+    "title": "Peace Coin DAO ダッシュボード",
+    "description": "ピースコインDAOのダッシュボードです"
+  }
+}

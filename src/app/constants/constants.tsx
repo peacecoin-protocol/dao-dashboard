@@ -1,0 +1,5 @@
+export const pceAddress = '0x09114706E2b7338a09279D4AC984E859B964633c'
+export const timelockAddress = '0xd388c0eaa0e70edf9b4fa3925d8f3015290eb504'
+export const governorAddress = '0x58d07b7854cd2ec0cbaf863a33e2816afd4a9719'
+export const pceCommunity = '0x845ff30ab06a9361e6859761ad33a7f85ed741e5'
+export const POLY_SCAN_TX = 'https://www.oklink.com/amoy/tx/'
