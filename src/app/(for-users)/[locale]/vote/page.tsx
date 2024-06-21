@@ -148,10 +148,22 @@ export default function ForVotingPage() {
           _status.push('Active')
           break
         case 2:
-          _status.push('CAnceled')
+          _status.push('Canceled')
           break
         case 3:
           _status.push('Defeated')
+          break
+        case 4:
+          _status.push('Succeeded')
+          break
+        case 5:
+          _status.push('Queued')
+          break
+        case 6:
+          _status.push('Expired')
+          break
+        case 7:
+          _status.push('Executed')
           break
         default:
           _status.push('Defeated')
@@ -255,7 +267,6 @@ export default function ForVotingPage() {
               <TableHead>Proposer</TableHead>
               <TableHead>For Vote</TableHead>
               <TableHead>Against Vote</TableHead>
-              <TableHead>isCanceled</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Cast Vote</TableHead>
               <TableHead>Execute</TableHead>
@@ -274,11 +285,6 @@ export default function ForVotingPage() {
                   </TableCell>
                   <TableCell className="font-medium">
                     {formatEther(proposal[6])}
-                  </TableCell>
-                  <TableCell>
-                    {formatNumberString(proposal[7]) == 'true'
-                      ? 'true'
-                      : 'false'}
                   </TableCell>
                   <TableCell>
                     {proposal[0] && proposalStatus[parseInt(proposal[0]) - 1]}
@@ -326,11 +332,29 @@ export default function ForVotingPage() {
                           abi: GOVERNOR_ABI,
                           address: governorAddress,
                           functionName: 'execute',
-                          args: [proposal[0], true],
+                          args: [proposal[0]],
                         })
                       }}
                     >
                       Execute
+                    </Button>
+                  </TableCell>
+
+                  <TableCell>
+                    <Button
+                      disabled={
+                        proposalStatus[parseInt(proposal[0]) - 1] != 'Succeeded'
+                      }
+                      onClick={() => {
+                        writeContract({
+                          abi: GOVERNOR_ABI,
+                          address: governorAddress,
+                          functionName: 'queue',
+                          args: [proposal[0]],
+                        })
+                      }}
+                    >
+                      Queue
                     </Button>
                   </TableCell>
                 </TableRow>
