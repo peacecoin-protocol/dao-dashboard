@@ -2,7 +2,8 @@
   "common": {
     "navigation": {
       "vote": "投票",
-      "token": "Token"
+      "token": "Token",
+      "bounty": "Bounty"
     }
   },
   "home": {

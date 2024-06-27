@@ -23,6 +23,11 @@ export default async function ForUsersIndexPage({
               {dict.common.navigation.token}
             </Link>
           </Button>
+          <Button variant="outline" asChild>
+            <Link locale={locale} href="/bounty">
+              {dict.common.navigation.bounty}
+            </Link>
+          </Button>
         </div>
       </div>
     </>
