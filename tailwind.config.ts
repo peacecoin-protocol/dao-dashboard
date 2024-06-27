@@ -25,6 +25,8 @@ const config = {
         'app-bar': '1fr auto 1fr',
       },
       colors: {
+        oil: '#1B2E3C',
+        whiteLight: '#FFFEFE',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
