@@ -1,4 +1,4 @@
-import { SVGProps } from '@/Types'
+import { SVGProps } from '~/i18n/types'
 import clsx from 'clsx'
 import { FC } from 'react'
 
