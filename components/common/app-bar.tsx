@@ -11,11 +11,11 @@ import { useConnectModal } from '@rainbow-me/rainbowkit'
 import { Button } from '~/components/ui/button'
 
 import CloseIcon from '../ui/close'
-import logo from '../../../public/images/Peace_coin_brand.png'
+import logo from '~/public/images/Peace_coin_brand.png'
 import { LINKS, shortenAddress } from '~/components/utils'
 
-import TwitterIcon from '../../../public/svg/twitter'
-import DiscordIcon from '../../../public/svg/discord'
+import TwitterIcon from '~/public/svg/twitter'
+import DiscordIcon from '~/public/svg/discord'
 
 const AppBar: FC = () => {
   const [menuOpen, setMenuOpen] = useState(false)
