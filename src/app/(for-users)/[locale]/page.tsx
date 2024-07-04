@@ -11,19 +11,19 @@ export default async function ForUsersIndexPage({
 
   return (
     <>
-      <div className="py-4">
-        <div className="links flex flex-col gap-4">
-          <Button variant="outline" asChild>
-            <Link locale={locale} href="/vote">
+      <div className="py-4 flex flex-col items-center">
+        <div className="links flex flex-row gap-10 items-center justify-center">
+          <Button className="w-40" variant="outline" asChild>
+            <Link locale={locale} href="/proposals">
               {dict.common.navigation.vote}
             </Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button className="w-40" variant="outline" asChild>
             <Link locale={locale} href="/token">
               {dict.common.navigation.token}
             </Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button className="w-40" variant="outline" asChild>
             <Link locale={locale} href="/bounty">
               {dict.common.navigation.bounty}
             </Link>

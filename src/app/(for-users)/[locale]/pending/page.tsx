@@ -1,5 +1,4 @@
 'use client'
-import { Input } from '~/components/ui/input'
 import {
   Table,
   TableBody,
@@ -44,7 +43,7 @@ const config = createConfig({
   },
 })
 
-export default function ForVotingPage() {
+export default function ForPendingPage() {
   const { address, chainId } = useAccount()
   const { data: hash, error, writeContract } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -77,24 +76,6 @@ export default function ForVotingPage() {
       args: [],
       chainId: chainId,
     })
-
-  function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const name = event.target.name
-    const value = event.target.value
-    if (name === 'targets') {
-      setTargets(value)
-    } else if (name === 'values') {
-      setValues(value)
-    } else if (name === 'signatures') {
-      setSignatures(value)
-    } else if (name === 'calldatas') {
-      setCalldata(value)
-    } else if (name === 'description') {
-      setDescription(value)
-    } else if (name === 'delegateAddr') {
-      setDelegateAddr(value)
-    }
-  }
 
   const formatNumberString = (num: any) => {
     return BigInt(num as string).toString()
@@ -143,32 +124,23 @@ export default function ForVotingPage() {
       switch (status as number) {
         case 0:
           _status.push('Pending')
+          temp.push(proposal)
           break
         case 1:
           _status.push('Active')
-          break
-        case 2:
-          _status.push('Canceled')
-          break
-        case 3:
-          _status.push('Defeated')
+          temp.push(proposal)
           break
         case 4:
           _status.push('Succeeded')
+          temp.push(proposal)
           break
         case 5:
           _status.push('Queued')
-          break
-        case 6:
-          _status.push('Expired')
-          break
-        case 7:
-          _status.push('Executed')
+          temp.push(proposal)
           break
         default:
-          _status.push('Defeated')
+          break
       }
-      temp.push(proposal)
     }
     setProposals(temp)
     setStatus(_status)
@@ -179,87 +151,14 @@ export default function ForVotingPage() {
   }, [proposalCount])
 
   return (
-    <div>
-      <div>Voting Page</div>
-      <div>
+    <div className="w-full">
+      <div className="text-center text-2xl my-4">Pending Proposals</div>
+      <div className="gap-4 flex flex-col">
         <div>
-          Your current Voting Power :{' '}
-          {votes ? formatEther(BigInt(votes as string)) : '0'}
+          Voting Power : {votes ? formatEther(BigInt(votes as string)) : '0'}
         </div>
-        <div>Delegate Voting</div>
-        <div>
-          This option allows you to delegate your votes to another Ethereum
-          address. You never send PCE, only your voting rights, and can
-          undelegate at any time.
-        </div>
-        <Input
-          type="address"
-          name="delegateAddr"
-          placeholder="Address"
-          className="mt-5"
-          onChange={handleChange}
-        />
-        <Button
-          className="mt-5"
-          variant="outline"
-          onClick={() => {
-            if (!delegateAddr) return
-            handleDelegate()
-          }}
-        >
-          Delegate
-        </Button>
-        <Input
-          className="mt-5"
-          type="address"
-          placeholder="Target Address"
-          name="targets"
-          onChange={handleChange}
-        />
-        <Input
-          className="mt-5"
-          type="number"
-          placeholder="Values"
-          name="values"
-          onChange={handleChange}
-        />
-        <Input
-          className="mt-5"
-          type="text"
-          placeholder="Signatures"
-          name="signatures"
-          onChange={handleChange}
-        />
-        <Input
-          className="mt-5"
-          type="text"
-          placeholder="Calldatas"
-          name="calldatas"
-          onChange={handleChange}
-        />
-        <Input
-          className="mt-5"
-          type="text"
-          placeholder="Description"
-          name="description"
-          onChange={handleChange}
-        />
-        <Button
-          className="mt-5"
-          variant="outline"
-          onClick={() => {
-            writeContract({
-              abi: GOVERNOR_ABI,
-              address: governorAddress,
-              functionName: 'propose',
-              args: [[targets], [values], [singature], [calldata], description],
-            })
-          }}
-        >
-          Propose
-        </Button>
 
-        <Table>
+        <Table className="rounded border">
           <TableCaption>A list of the proposals.</TableCaption>
           <TableHeader>
             <TableRow>
@@ -274,7 +173,7 @@ export default function ForVotingPage() {
           </TableHeader>
           <TableBody>
             {proposals &&
-              proposals.map((proposal) => (
+              proposals.map((proposal, index) => (
                 <TableRow key={proposal[0]}>
                   <TableCell className="font-medium">
                     {formatNumberString(proposal[0])}
@@ -286,14 +185,10 @@ export default function ForVotingPage() {
                   <TableCell className="font-medium">
                     {formatEther(proposal[6])}
                   </TableCell>
-                  <TableCell>
-                    {proposal[0] && proposalStatus[parseInt(proposal[0]) - 1]}
-                  </TableCell>
+                  <TableCell>{proposalStatus[index]}</TableCell>
                   <TableCell>
                     <Button
-                      disabled={
-                        proposalStatus[parseInt(proposal[0]) - 1] != 'Active'
-                      }
+                      disabled={proposalStatus[index] != 'Active'}
                       onClick={() => {
                         writeContract({
                           abi: GOVERNOR_ABI,
@@ -306,9 +201,7 @@ export default function ForVotingPage() {
                       For Vote
                     </Button>
                     <Button
-                      disabled={
-                        proposalStatus[parseInt(proposal[0]) - 1] != 'Active'
-                      }
+                      disabled={proposalStatus[index] != 'Active'}
                       className="ml-2"
                       onClick={() => {
                         writeContract({
@@ -324,9 +217,7 @@ export default function ForVotingPage() {
                   </TableCell>
                   <TableCell>
                     <Button
-                      disabled={
-                        proposalStatus[parseInt(proposal[0]) - 1] != 'Queued'
-                      }
+                      disabled={proposalStatus[index] != 'Queued'}
                       onClick={() => {
                         writeContract({
                           abi: GOVERNOR_ABI,
@@ -342,9 +233,7 @@ export default function ForVotingPage() {
 
                   <TableCell>
                     <Button
-                      disabled={
-                        proposalStatus[parseInt(proposal[0]) - 1] != 'Succeeded'
-                      }
+                      disabled={proposalStatus[index] != 'Succeeded'}
                       onClick={() => {
                         writeContract({
                           abi: GOVERNOR_ABI,
@@ -363,11 +252,7 @@ export default function ForVotingPage() {
           <TableFooter>
             <TableRow>
               <TableCell colSpan={7}>Total Proposals</TableCell>
-              <TableCell>
-                {proposalCount
-                  ? BigInt(proposalCount as string).toString()
-                  : '0'}
-              </TableCell>
+              <TableCell>{proposals.length}</TableCell>
             </TableRow>
           </TableFooter>
         </Table>

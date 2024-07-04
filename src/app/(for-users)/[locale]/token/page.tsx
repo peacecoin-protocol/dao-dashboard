@@ -261,8 +261,9 @@ export default function ForTokenPage() {
   }
 
   return (
-    <div>
-      <div>Token Page</div>
+    <div className="w-full gap-4 flex flex-col">
+      <div className="text-center text-2xl">Token Wallet</div>
+
       <div>
         Your current Token Balance :{' '}
         {balance ? formatEther(BigInt(balance as string)) : '0'}
@@ -272,7 +273,7 @@ export default function ForTokenPage() {
         Current Factor : {factor ? formatEther(BigInt(factor as string)) : '0'}
       </div>
       <Button
-        className="mt-5"
+        className="w-40"
         variant="outline"
         onClick={() => {
           setDialogStatus(true)
@@ -367,7 +368,7 @@ export default function ForTokenPage() {
         </DialogContent>
       </Dialog>
 
-      <Table>
+      <Table className="border">
         <TableCaption>A list of the community tokens.</TableCaption>
         <TableHeader>
           <TableRow>
