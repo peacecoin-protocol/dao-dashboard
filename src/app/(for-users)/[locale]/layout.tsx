@@ -16,11 +16,18 @@ export default function ForUsersAnyLocaleIndexLayout({
   children: React.ReactNode
 }>) {
   return (
-    <div className={cn('grid h-full grid-rows-layout-shell', inter.className)}>
+    <div
+      className={cn(
+        'grid h-[100vh] grid-rows-layout-shell custom-gradient',
+        inter.className
+      )}
+    >
       <AppBar />
       {/* TODO: Use Shadcn/ui Scroll */}
       <main className="overflow-y-auto">
-        <div className="container py-4">{children}</div>
+        <div className="container py-4 items-center flex flex-col">
+          {children}
+        </div>
       </main>
     </div>
   )

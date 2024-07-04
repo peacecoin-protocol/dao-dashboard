@@ -6,13 +6,13 @@ import { FC, useState } from 'react'
 import Link from 'next/link'
 import MenuIcon from '../ui/menu'
 import { Transition } from '@headlessui/react'
-import { useDisconnect, useAccount } from 'wagmi'
+import { useDisconnect, useAccount, useBalance } from 'wagmi'
 import { useConnectModal } from '@rainbow-me/rainbowkit'
 import { Button } from '~/components/ui/button'
 
 import CloseIcon from '../ui/close'
-import logo from '../../../public/images/logo.png'
-import { LINKS } from '~/components/utils'
+import logo from '../../../public/images/Peace_coin_brand.png'
+import { LINKS, shortenAddress } from '~/components/utils'
 
 import TwitterIcon from '../../../public/svg/twitter'
 import DiscordIcon from '../../../public/svg/discord'
@@ -22,13 +22,21 @@ const AppBar: FC = () => {
   const handleToggleMenu = () => setMenuOpen(!menuOpen)
   const { disconnect } = useDisconnect()
   const { openConnectModal } = useConnectModal()
-  const { address, isConnected } = useAccount()
+  const { address, isConnected, chain } = useAccount()
+  const {
+    data: balance,
+    isError,
+    isLoading,
+  } = useBalance({
+    address,
+  })
+
   return (
-    <header className="bg-whiteLight/90 py-4 sticky top-0 z-40  border-b-2">
+    <header className="border-grey py-4 sticky top-0 z-40  border-b-2 bg-[#8dc1c3]">
       <div className="standardContainer flex justify-between items-center container">
         <div className="flex items-center w-full">
           <Link href="/" className="mr-10">
-            <Image src={logo} alt="" width="50" height="50" />
+            <Image src={logo} alt="" width="100" height="100" />
           </Link>
           <div className="max-md:hidden gap-10 uppercase flex w-full">
             <Link
@@ -54,6 +62,21 @@ const AppBar: FC = () => {
 
         <div className="flex gap-4 ml-auto flex-row items-center mr-4">
           <Button
+            hidden={balance ? false : true}
+            className="hidden xl:visible xl:flex mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base"
+          >
+            {balance ? Number(balance.formatted).toFixed(4) : '0'}{' '}
+            {balance?.symbol}
+          </Button>
+
+          <Button
+            hidden={chain === undefined}
+            className="hidden xl:visible xl:flex mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base"
+          >
+            {chain ? chain.name : ''}
+          </Button>
+
+          <Button
             onClick={() => {
               if (isConnected) {
                 disconnect()
@@ -65,7 +88,7 @@ const AppBar: FC = () => {
             }}
             className="hidden xl:visible xl:flex mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base"
           >
-            {isConnected ? 'DISCONNECT WALLET' : 'CONNECT WALLET'}
+            {isConnected ? shortenAddress(address) : 'CONNECT WALLET'}
           </Button>
 
           <Link href={LINKS.TWITTER.link} target="_blank">

@@ -295,9 +295,10 @@ export default function ForBountyPage() {
   }
 
   return (
-    <div>
-      <div>
-        <div>Bounty</div>
+    <div className="w-full">
+      <div className="flex flex-col gap-4">
+        <div className="text-center text-2xl">Add / Claim Bounties</div>
+
         <div className="my-4">
           This Bounty Program is for providing bounty to the contributors
         </div>
@@ -339,26 +340,26 @@ export default function ForBountyPage() {
           onChange={handleChange}
         />
 
-        <Button
-          className="mt-5"
-          variant="outline"
-          onClick={() => {
-            if (!contributorAddr) return
-            handleAddContributorBounty()
-          }}
-        >
-          Add Contributor Bounty
-        </Button>
-        <Button
-          className="mt-5 ml-4"
-          variant="outline"
-          onClick={() => {
-            if (!address) return
-            handleClaimContributorBounty()
-          }}
-        >
-          Claim Contributor Bounty
-        </Button>
+        <div className="flex flex-row gap-4">
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (!contributorAddr) return
+              handleAddContributorBounty()
+            }}
+          >
+            Add Contributor Bounty
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (!address) return
+              handleClaimContributorBounty()
+            }}
+          >
+            Claim Contributor Bounty
+          </Button>
+        </div>
 
         <Input
           type="number"
@@ -370,7 +371,6 @@ export default function ForBountyPage() {
 
         <div>
           <Button
-            className="mt-5"
             variant="outline"
             onClick={() => {
               if (!proposalId) return

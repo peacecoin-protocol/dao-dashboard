@@ -1,9 +1,9 @@
 {
   "common": {
     "navigation": {
-      "vote": "Go to the voting page",
-      "token": "Go to the token page",
-      "bounty": "Go to the bounty page"
+      "vote": "Proposals",
+      "token": "Wallet",
+      "bounty": "Bounty"
     }
   },
   "home": {
