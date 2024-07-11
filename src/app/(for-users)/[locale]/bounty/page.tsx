@@ -9,6 +9,16 @@ import {
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { BOUNTY_ABI } from '~/app/ABIs/Bounty'
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table'
 import { useEffect, useState } from 'react'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -25,7 +35,21 @@ import { polygonAmoy } from '@wagmi/core/chains'
 import { http, createConfig } from '@wagmi/core'
 
 import Link from 'next/link'
-import { ethers, formatEther } from 'ethers'
+import { BigNumberish, ethers, formatEther } from 'ethers'
+
+import { gql } from '@apollo/client'
+import createApolloClient from '~/app/apollo-client'
+
+interface Contributor {
+  contributor: string | null
+  totalAmount: BigNumberish
+  id?: string
+}
+
+interface Proposal {
+  proposalId: string | null
+  totalAmount: BigNumberish
+}
 
 const config = createConfig({
   chains: [polygonAmoy],
@@ -42,7 +66,50 @@ export default function ForBountyPage() {
   const { address, chainId } = useAccount()
   const { data: hash, error, writeContractAsync } = useWriteContract()
 
-  // const { data: hash, error, writeContract } = useWriteContract()
+  const client = createApolloClient()
+
+  const [proposalData, setProposalData] = useState([])
+  const [contributorData, setContributorData] = useState([])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data } = await client.query({
+          query: gql`
+            query totalBounties {
+              contributorTotalBounties(
+                first: 10
+                orderBy: totalAmount
+                orderDirection: desc
+              ) {
+                totalAmount
+                id
+                contributor
+              }
+              proposalTotalBounties(
+                first: 10
+                orderBy: totalAmount
+                orderDirection: desc
+              ) {
+                proposalId
+                totalAmount
+                id
+              }
+            }
+          `,
+        })
+
+        console.log('data', data.proposalTotalBounties)
+        setContributorData(data.contributorTotalBounties)
+        setProposalData(data.proposalTotalBounties)
+      } catch (error) {
+        console.error('Error fetching data', error)
+      }
+    }
+
+    fetchData()
+  }, [])
+
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
@@ -248,7 +315,7 @@ export default function ForBountyPage() {
     if (isConfirmed) {
       toast.success(
         <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
-          Claim Success, View TX
+          Tx Success, View TX
         </Link>
       )
     } else if (isConfirming) {
@@ -324,88 +391,151 @@ export default function ForBountyPage() {
           {contributorBounties ? getClaimableAmount(contributorBounties) : '0'}
         </div>
 
-        <Input
-          type="number"
-          name="bountyAmount"
-          placeholder="Bounty Amount"
-          className="mt-5"
-          onChange={handleChange}
-        />
+        <Tabs defaultValue="contributor" className="">
+          <TabsList>
+            <TabsTrigger value="contributor">Contributor Bounty</TabsTrigger>
+            <TabsTrigger value="proposal">Proposal Bounty</TabsTrigger>
+          </TabsList>
+          <TabsContent value="contributor">
+            <div className="gap-4 flex flex-col">
+              <Input
+                type="number"
+                name="bountyAmount"
+                placeholder="Bounty Amount"
+                className="mt-4"
+                onChange={handleChange}
+              />
 
-        <Input
-          type="address"
-          name="contributorAddr"
-          placeholder="Contributor Address"
-          className="mt-5"
-          onChange={handleChange}
-        />
+              <Input
+                type="address"
+                name="contributorAddr"
+                placeholder="Contributor Address"
+                onChange={handleChange}
+              />
 
-        <div className="flex flex-row gap-4">
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (!contributorAddr) return
-              handleAddContributorBounty()
-            }}
-          >
-            Add Contributor Bounty
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (!address) return
-              handleClaimContributorBounty()
-            }}
-          >
-            Claim Contributor Bounty
-          </Button>
-        </div>
+              <div className="flex flex-row gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!contributorAddr) return
+                    handleAddContributorBounty()
+                  }}
+                >
+                  Add Contributor Bounty
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!address) return
+                    handleClaimContributorBounty()
+                  }}
+                >
+                  Claim Contributor Bounty
+                </Button>
+              </div>
 
-        <Input
-          type="number"
-          name="proposalId"
-          placeholder="Proposal Id"
-          className="mt-5"
-          onChange={handleChange}
-        />
+              <Table className="rounded border">
+                <TableCaption>A list of the contributions.</TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Contributor</TableHead>
+                    <TableHead>Total Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contributorData &&
+                    contributorData.map((contributor: Contributor, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{contributor.contributor}</TableCell>
+                        <TableCell>
+                          {formatEther(contributor.totalAmount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+          <TabsContent value="proposal">
+            <div>
+              <Input
+                type="number"
+                name="bountyAmount"
+                placeholder="Bounty Amount"
+                className="mt-5"
+                onChange={handleChange}
+              />
+              <Input
+                type="number"
+                name="proposalId"
+                placeholder="Proposal Id"
+                className="mt-5"
+                onChange={handleChange}
+              />
 
-        <div>
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (!proposalId) return
-              handleAddProposalBounty()
-            }}
-          >
-            Add Proposal Bounty
-          </Button>
+              <div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!proposalId) return
+                    handleAddProposalBounty()
+                  }}
+                >
+                  Add Proposal Bounty
+                </Button>
 
-          <Button
-            className="mt-5 ml-4"
-            variant="outline"
-            onClick={() => {
-              if (!proposalId) return
-              handleClaimProposalBounty()
-            }}
-          >
-            Claim Proposal Bounty
-          </Button>
+                <Button
+                  className="mt-5 ml-4"
+                  variant="outline"
+                  onClick={() => {
+                    if (!proposalId) return
+                    handleClaimProposalBounty()
+                  }}
+                >
+                  Claim Proposal Bounty
+                </Button>
 
-          <Button
-            className="mt-5 ml-4"
-            variant="outline"
-            onClick={() => {
-              if (!proposalId) return
-              getProposalBounty()
-            }}
-          >
-            Get Proposal Bounty
-          </Button>
-        </div>
-        <div className="mt-4">
-          The Claimable amount for proposal #{proposalId ? proposalId : '0'} is{' '}
-          {claimableBounty ? claimableBounty : '0'}
-        </div>
+                <Button
+                  className="mt-5 ml-4"
+                  variant="outline"
+                  onClick={() => {
+                    if (!proposalId) return
+                    getProposalBounty()
+                  }}
+                >
+                  Get Proposal Bounty
+                </Button>
+              </div>
+              <div className="mt-4">
+                The Claimable amount for proposal #
+                {proposalId ? proposalId : '0'} is{' '}
+                {claimableBounty ? claimableBounty : '0'}
+              </div>
+
+              <Table className="rounded border">
+                <TableCaption>A list of the contributions.</TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Proposal id</TableHead>
+                    <TableHead>Total Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {proposalData &&
+                    proposalData.map((proposal: Proposal, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{proposal.proposalId}</TableCell>
+                        <TableCell>
+                          {formatEther(proposal.totalAmount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
+
         <ToastContainer
           position="bottom-right"
           closeOnClick
