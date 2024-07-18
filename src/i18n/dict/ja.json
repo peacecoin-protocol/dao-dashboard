@@ -3,7 +3,8 @@
     "navigation": {
       "vote": "投票",
       "token": "Token",
-      "bounty": "Bounty"
+      "bounty": "Bounty",
+      "eips": "EIP"
     }
   },
   "home": {
