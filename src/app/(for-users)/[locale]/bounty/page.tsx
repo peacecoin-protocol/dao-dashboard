@@ -99,7 +99,6 @@ export default function ForBountyPage() {
           `,
         })
 
-        console.log('data', data.proposalTotalBounties)
         setContributorData(data.contributorTotalBounties)
         setProposalData(data.proposalTotalBounties)
       } catch (error) {
