@@ -56,8 +56,6 @@ export default function ForVotingPage() {
   const [category, setCategory] = useState('')
 
   function handleSelect(value: any) {
-    console.log('XXX', value)
-
     setCategory(value)
   }
 
