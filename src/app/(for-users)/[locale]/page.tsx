@@ -29,8 +29,8 @@ export default async function ForUsersIndexPage({
             </Link>
           </Button>
           <Button className="w-40" variant="outline" asChild>
-            <Link locale={locale} href="/eip">
-              {dict.common.navigation.eips}
+            <Link locale={locale} href="/pip">
+              {dict.common.navigation.pips}
             </Link>
           </Button>
         </div>

@@ -19,6 +19,10 @@ export const LINKS = {
     label: 'Bounty',
     link: '/bounty',
   },
+  PIP: {
+    label: 'PIP',
+    link: '/pip',
+  },
   TWITTER: {
     label: 'Twitter',
     link: 'https://twitter.com/',

@@ -41,7 +41,7 @@ const AppBar: FC = () => {
   })
 
   return (
-    <header className="border-grey py-4 sticky top-0 z-40  border-b-2">
+    <header className="border-light_green py-4 sticky top-0 z-40  border-b-2">
       <div className="standardContainer flex justify-between items-center container">
         <div className="flex items-center w-full">
           <Link href="/" className="mr-10">
@@ -65,6 +65,13 @@ const AppBar: FC = () => {
               href={LINKS.BOUNTY.link}
             >
               {LINKS.BOUNTY.label}
+            </Link>
+
+            <Link
+              className="cursor-pointer hover:underline"
+              href={LINKS.PIP.link}
+            >
+              {LINKS.PIP.label}
             </Link>
           </div>
         </div>
@@ -135,20 +142,6 @@ const AppBar: FC = () => {
               ''
             )}
           </Popover>
-          {/* <Button
-            onClick={() => {
-              if (isConnected) {
-                disconnect()
-              } else {
-                if (openConnectModal) {
-                  openConnectModal()
-                }
-              }
-            }}
-            className="hidden xl:visible xl:flex mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base"
-          >
-            {isConnected ? shortenAddress(address) : 'CONNECT WALLET'}
-          </Button> */}
 
           <Link href={LINKS.TWITTER.link} target="_blank">
             <TwitterIcon colorClass="fill-oil" />
@@ -217,6 +210,13 @@ const MobileMenu: FC<MobileMenuProps> = ({ open, setOpen }) => {
               href={LINKS.BOUNTY.link}
             >
               {LINKS.BOUNTY.label}
+            </Link>
+
+            <Link
+              className="cursor-pointer hover:underline"
+              href={LINKS.PIP.link}
+            >
+              {LINKS.PIP.label}
             </Link>
             <span
               className="cursor-pointer hover:underline"
