@@ -27,7 +27,9 @@ const config = {
       colors: {
         oil: '#1B2E3C',
         whiteLight: '#FFFEFE',
-        grey: '#15777a',
+        light_green: '#15777a',
+        gray94: '#f0f0f0',
+        gray87: '#dedede',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

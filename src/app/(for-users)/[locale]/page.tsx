@@ -28,6 +28,11 @@ export default async function ForUsersIndexPage({
               {dict.common.navigation.bounty}
             </Link>
           </Button>
+          <Button className="w-40" variant="outline" asChild>
+            <Link locale={locale} href="/pip">
+              {dict.common.navigation.pips}
+            </Link>
+          </Button>
         </div>
       </div>
     </>

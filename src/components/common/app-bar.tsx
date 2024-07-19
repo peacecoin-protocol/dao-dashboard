@@ -3,12 +3,19 @@
 import Image from 'next/image'
 import { FC, useState } from 'react'
 
+import copy from 'clipboard-copy'
 import Link from 'next/link'
 import MenuIcon from '../ui/menu'
 import { Transition } from '@headlessui/react'
 import { useDisconnect, useAccount, useBalance } from 'wagmi'
 import { useConnectModal } from '@rainbow-me/rainbowkit'
 import { Button } from '~/components/ui/button'
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '~/components/ui/popover'
 
 import CloseIcon from '../ui/close'
 import logo from '../../../public/images/Peace_coin_brand.png'
@@ -19,6 +26,8 @@ import DiscordIcon from '../../../public/svg/discord'
 
 const AppBar: FC = () => {
   const [menuOpen, setMenuOpen] = useState(false)
+
+  const [isOpenPop, setIsOpenPop] = useState(false)
   const handleToggleMenu = () => setMenuOpen(!menuOpen)
   const { disconnect } = useDisconnect()
   const { openConnectModal } = useConnectModal()
@@ -32,7 +41,7 @@ const AppBar: FC = () => {
   })
 
   return (
-    <header className="border-grey py-4 sticky top-0 z-40  border-b-2 bg-[#8dc1c3]">
+    <header className="border-light_green py-4 sticky top-0 z-40  border-b-2">
       <div className="standardContainer flex justify-between items-center container">
         <div className="flex items-center w-full">
           <Link href="/" className="mr-10">
@@ -57,6 +66,13 @@ const AppBar: FC = () => {
             >
               {LINKS.BOUNTY.label}
             </Link>
+
+            <Link
+              className="cursor-pointer hover:underline"
+              href={LINKS.PIP.link}
+            >
+              {LINKS.PIP.label}
+            </Link>
           </div>
         </div>
 
@@ -76,20 +92,56 @@ const AppBar: FC = () => {
             {chain ? chain.name : ''}
           </Button>
 
-          <Button
-            onClick={() => {
-              if (isConnected) {
-                disconnect()
-              } else {
-                if (openConnectModal) {
-                  openConnectModal()
+          <Popover open={isOpenPop}>
+            <PopoverTrigger
+              className="hidden xl:visible xl:flex mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base h-10 px-4 py-2 inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+              onClick={() => {
+                if (isConnected) {
+                  // disconnect()
+                  setIsOpenPop(!isOpenPop)
+                } else {
+                  if (openConnectModal) {
+                    openConnectModal()
+                  }
                 }
-              }
-            }}
-            className="hidden xl:visible xl:flex mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base"
-          >
-            {isConnected ? shortenAddress(address) : 'CONNECT WALLET'}
-          </Button>
+              }}
+            >
+              <div>
+                {isConnected ? shortenAddress(address) : 'CONNECT WALLET'}
+              </div>
+            </PopoverTrigger>
+            {isConnected ? (
+              <PopoverContent
+                className="custom-gradient"
+                onClick={() => {
+                  setIsOpenPop(false)
+                }}
+              >
+                <div className="gap-2 flex flex-col">
+                  <Button
+                    onClick={() => {
+                      copy(address ? address : '')
+                      setIsOpenPop(false)
+                    }}
+                    className="hidden xl:visible xl:flex mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base min-w-[150px]"
+                  >
+                    Copy Address
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      disconnect()
+                      setIsOpenPop(false)
+                    }}
+                    className="hidden xl:visible xl:flex mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base min-w-[150px]"
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              </PopoverContent>
+            ) : (
+              ''
+            )}
+          </Popover>
 
           <Link href={LINKS.TWITTER.link} target="_blank">
             <TwitterIcon colorClass="fill-oil" />
@@ -158,6 +210,13 @@ const MobileMenu: FC<MobileMenuProps> = ({ open, setOpen }) => {
               href={LINKS.BOUNTY.link}
             >
               {LINKS.BOUNTY.label}
+            </Link>
+
+            <Link
+              className="cursor-pointer hover:underline"
+              href={LINKS.PIP.link}
+            >
+              {LINKS.PIP.label}
             </Link>
             <span
               className="cursor-pointer hover:underline"
