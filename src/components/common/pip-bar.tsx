@@ -5,23 +5,33 @@ import { FC } from 'react'
 
 interface PIPBarProps {
   url: string
+  dict: any
 }
-const PIPBar: FC<PIPBarProps> = ({ url }) => {
+const PIPBar: FC<PIPBarProps> = ({ url, dict }) => {
   return (
     <div>
-      <Link href="./" className="text-center">
+      <Link href={`${url}/`} className="text-center">
         <h2 className="text-3xl text-light_green">
-          PEACE COIN Improvement Proposals
+          {dict ? dict.pipBar.title : ''}
         </h2>
       </Link>
       <div className="flex flex-row gap-4 text-xl justify-center my-4 text-light_green">
-        <Link href={`${url}/all`}>All</Link>
-        <Link href={`${url}/core`}>Core</Link>
-        <Link href={`${url}/networking`}>Networking</Link>
-        <Link href={`${url}/interface`}>Interface</Link>
-        <Link href={`${url}/prc`}>PRC</Link>
-        <Link href={`${url}/meta`}>Meta</Link>
-        <Link href={`${url}/informational`}>Informational</Link>
+        <Link href={`${url}/all`}> {dict ? dict.pipBar.all : ''}</Link>
+        <Link href={`${url}/core`}> {dict ? dict.pipBar.core : ''}</Link>
+        <Link href={`${url}/networking`}>
+          {' '}
+          {dict ? dict.pipBar.networking : ''}
+        </Link>
+        <Link href={`${url}/interface`}>
+          {' '}
+          {dict ? dict.pipBar.interface : ''}
+        </Link>
+        <Link href={`${url}/prc`}> {dict ? dict.pipBar.prc : ''}</Link>
+        <Link href={`${url}/meta`}> {dict ? dict.pipBar.meta : ''}</Link>
+        <Link href={`${url}/informational`}>
+          {' '}
+          {dict ? dict.pipBar.info : ''}
+        </Link>
       </div>
     </div>
   )

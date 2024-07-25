@@ -30,6 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
+import { PagePropsWithLocale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
 
 import { polygonAmoy } from '@wagmi/core/chains'
 import Link from 'next/link'
@@ -42,7 +44,22 @@ const config = createConfig({
   },
 })
 
-export default function ForVotingPage() {
+export default function ForSubmitPage({
+  params: { locale, ...params },
+}: PagePropsWithLocale<{}>) {
+  const [dict, setDict] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
   const { address, chainId } = useAccount()
   const { data: hash, error, writeContract } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -91,15 +108,18 @@ export default function ForVotingPage() {
 
   return (
     <div className="flex flex-col w-1/2 items-center justify-center">
-      <div className="text-center text-2xl my-6">Submit a Proposals</div>
+      <div className="text-center text-2xl my-6">
+        {' '}
+        {dict ? dict.submit.title : ''}
+      </div>
       <Select onValueChange={handleSelect}>
         <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select the Category" />
+          <SelectValue placeholder={dict ? dict.submit.select : ''} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="1">Suggest something</SelectItem>
-          <SelectItem value="2">Asks funds for investment</SelectItem>
-          <SelectItem value="3">Other</SelectItem>
+          <SelectItem value="1">{dict ? dict.submit.category1 : ''}</SelectItem>
+          <SelectItem value="2">{dict ? dict.submit.category2 : ''}</SelectItem>
+          <SelectItem value="3">{dict ? dict.submit.category3 : ''}</SelectItem>
         </SelectContent>
       </Select>
 
@@ -108,14 +128,14 @@ export default function ForVotingPage() {
           hidden={category !== '2'}
           className="mt-5"
           type="number"
-          placeholder="Amounts"
+          placeholder={dict ? dict.submit.amount : ''}
           name="values"
           onChange={handleChange}
         />
 
         <Textarea
           className="mt-5 h-20 w-full align-center p-2 rounded"
-          placeholder="Description"
+          placeholder={dict ? dict.submit.description : ''}
           name="description"
           onChange={handleChange}
         />
@@ -153,7 +173,7 @@ export default function ForVotingPage() {
             })
           }}
         >
-          Propose
+          {dict ? dict.submit.propose : ''}
         </Button>
 
         <ToastContainer

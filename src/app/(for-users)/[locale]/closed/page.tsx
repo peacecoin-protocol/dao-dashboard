@@ -30,6 +30,9 @@ import {
 import { polygonAmoy } from '@wagmi/core/chains'
 import Link from 'next/link'
 
+import { PagePropsWithLocale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
+
 const config = createConfig({
   chains: [polygonAmoy],
   client({ chain }) {
@@ -37,7 +40,23 @@ const config = createConfig({
   },
 })
 
-export default function ForClosedPage() {
+export default function ForClosedPage({
+  params: { locale, ...params },
+}: PagePropsWithLocale<{}>) {
+  const [dict, setDict] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
+
   const { chainId } = useAccount()
   const { data: hash, error, writeContract } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -47,7 +66,6 @@ export default function ForClosedPage() {
 
   const [proposals, setProposals] = useState<any[]>([])
   const [proposalStatus, setStatus] = useState<any[]>([])
-  const [delegateAddr, setDelegateAddr] = useState('')
 
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
@@ -124,17 +142,24 @@ export default function ForClosedPage() {
 
   return (
     <div className="w-full">
-      <div className="text-center text-2xl my-4">Closed Proposals</div>
+      <div className="text-center text-2xl my-4">
+        {dict ? dict.closed.title : ''}
+      </div>
       <div>
         <Table className="border rounded">
-          <TableCaption>A list of the proposals.</TableCaption>
+          <TableCaption>{dict ? dict.common.proposal.list : ''}</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[110px]">Proposal id</TableHead>
-              <TableHead>Proposer</TableHead>
-              <TableHead>For Vote</TableHead>
-              <TableHead>Against Vote</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead className="w-[110px]">
+                {' '}
+                {dict ? dict.common.proposal.proposalId : ''}
+              </TableHead>
+              <TableHead>{dict ? dict.common.proposal.proposer : ''}</TableHead>
+              <TableHead>{dict ? dict.common.proposal.forVote : ''}</TableHead>
+              <TableHead>
+                {dict ? dict.common.proposal.againstVote : ''}
+              </TableHead>
+              <TableHead>{dict ? dict.common.proposal.status : ''}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -157,7 +182,10 @@ export default function ForClosedPage() {
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={4}>Total Proposals</TableCell>
+              <TableCell colSpan={4}>
+                {' '}
+                {dict ? dict.common.proposal.total : ''}
+              </TableCell>
               <TableCell>{proposals.length}</TableCell>
             </TableRow>
           </TableFooter>

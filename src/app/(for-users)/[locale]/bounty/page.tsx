@@ -19,6 +19,9 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
+import { PagePropsWithLocale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
+
 import { useEffect, useState } from 'react'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -62,7 +65,22 @@ const provider = new ethers.JsonRpcProvider(
   'https://polygon-amoy.blockpi.network/v1/rpc/public'
 )
 
-export default function ForBountyPage() {
+export default function ForBountyPage({
+  params: { locale, ...params },
+}: PagePropsWithLocale<{}>) {
+  const [dict, setDict] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
   const { address, chainId } = useAccount()
   const { data: hash, error, writeContractAsync } = useWriteContract()
 
@@ -363,44 +381,49 @@ export default function ForBountyPage() {
   return (
     <div className="w-full">
       <div className="flex flex-col gap-4">
-        <div className="text-center text-2xl">Add / Claim Bounties</div>
-
-        <div className="my-4">
-          This Bounty Program is for providing bounty to the contributors
-        </div>
-        <div>
-          Fixed Bounty Amount : {_amount ? formatEther(_amount as bigint) : '0'}
+        <div className="text-center text-2xl">
+          {dict ? dict.bounty.title : ''}
         </div>
 
+        <div className="my-4">{dict ? dict.bounty.description : ''}</div>
         <div>
-          Your current PCE Amount :{' '}
+          {dict ? dict.bounty.subtitle1 : ''} {': '}
+          {_amount ? formatEther(_amount as bigint) : '0'}
+        </div>
+
+        <div>
+          {dict ? dict.bounty.subtitle2 : ''} {': '}
           {pceBalance ? formatEther(pceBalance as bigint) : '0'}
         </div>
         <div>
-          Your Total Bounty Amount :{' '}
+          {dict ? dict.bounty.subtitle3 : ''} {': '}
           {contributorBounties ? getBountyAmount(contributorBounties) : '0'}
         </div>
         <div>
-          Your Withdrawn Amount :{' '}
+          {dict ? dict.bounty.subtitle4 : ''} {': '}
           {contributorBounties ? getWithdrawnAmount(contributorBounties) : '0'}
         </div>
 
         <div>
-          Your Claimable Amount :{' '}
+          {dict ? dict.bounty.subtitle5 : ''} {': '}
           {contributorBounties ? getClaimableAmount(contributorBounties) : '0'}
         </div>
 
         <Tabs defaultValue="contributor" className="">
           <TabsList>
-            <TabsTrigger value="contributor">Contributor Bounty</TabsTrigger>
-            <TabsTrigger value="proposal">Proposal Bounty</TabsTrigger>
+            <TabsTrigger value="contributor">
+              {dict ? dict.bounty.contributorBounty : ''}
+            </TabsTrigger>
+            <TabsTrigger value="proposal">
+              {dict ? dict.bounty.proposal : ''}
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="contributor">
             <div className="gap-4 flex flex-col">
               <Input
                 type="number"
                 name="bountyAmount"
-                placeholder="Bounty Amount"
+                placeholder={dict ? dict.bounty.bountyAmount : ''}
                 className="mt-4"
                 onChange={handleChange}
               />
@@ -408,7 +431,7 @@ export default function ForBountyPage() {
               <Input
                 type="address"
                 name="contributorAddr"
-                placeholder="Contributor Address"
+                placeholder={dict ? dict.bounty.contributorAddr : ''}
                 onChange={handleChange}
               />
 
@@ -420,7 +443,7 @@ export default function ForBountyPage() {
                     handleAddContributorBounty()
                   }}
                 >
-                  Add Contributor Bounty
+                  {dict ? dict.bounty.addContributor : ''}
                 </Button>
                 <Button
                   variant="outline"
@@ -429,16 +452,22 @@ export default function ForBountyPage() {
                     handleClaimContributorBounty()
                   }}
                 >
-                  Claim Contributor Bounty
+                  {dict ? dict.bounty.claimContributor : ''}
                 </Button>
               </div>
 
               <Table className="rounded border">
-                <TableCaption>A list of the contributions.</TableCaption>
+                <TableCaption> {dict ? dict.bounty.list : ''}</TableCaption>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Contributor</TableHead>
-                    <TableHead>Total Amount</TableHead>
+                    <TableHead>
+                      {' '}
+                      {dict ? dict.bounty.contributor : ''}
+                    </TableHead>
+                    <TableHead>
+                      {' '}
+                      {dict ? dict.bounty.totalAmount : ''}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -460,14 +489,14 @@ export default function ForBountyPage() {
               <Input
                 type="number"
                 name="bountyAmount"
-                placeholder="Bounty Amount"
+                placeholder={dict ? dict.bounty.bountyAmount : ''}
                 className="mt-5"
                 onChange={handleChange}
               />
               <Input
                 type="number"
                 name="proposalId"
-                placeholder="Proposal Id"
+                placeholder={dict ? dict.bounty.proposalID : ''}
                 className="mt-5"
                 onChange={handleChange}
               />
@@ -480,7 +509,7 @@ export default function ForBountyPage() {
                     handleAddProposalBounty()
                   }}
                 >
-                  Add Proposal Bounty
+                  {dict ? dict.bounty.addProposal : ''}
                 </Button>
 
                 <Button
@@ -491,7 +520,7 @@ export default function ForBountyPage() {
                     handleClaimProposalBounty()
                   }}
                 >
-                  Claim Proposal Bounty
+                  {dict ? dict.bounty.claimProposal : ''}
                 </Button>
 
                 <Button
@@ -515,8 +544,8 @@ export default function ForBountyPage() {
                 <TableCaption>A list of the contributions.</TableCaption>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Proposal id</TableHead>
-                    <TableHead>Total Amount</TableHead>
+                    <TableHead> {dict ? dict.bounty.proposalID : ''}</TableHead>
+                    <TableHead>{dict ? dict.bounty.totalAmount : ''}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

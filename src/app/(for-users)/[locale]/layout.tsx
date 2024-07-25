@@ -1,6 +1,5 @@
 import { Inter } from 'next/font/google'
 
-// import { AppBar } from '~/components/common/app-bar'
 import AppBar from '~/components/common/app-bar'
 import { cn } from '~/components/utils'
 import { PagePropsWithLocale } from '~/i18n/types'
@@ -22,7 +21,7 @@ export default function ForUsersAnyLocaleIndexLayout({
         inter.className
       )}
     >
-      <AppBar />
+      <AppBar locale={locale} />
       {/* TODO: Use Shadcn/ui Scroll */}
       <main className="overflow-y-auto">
         <div className="container py-4 items-center flex flex-col">

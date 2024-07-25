@@ -21,6 +21,9 @@ import {
 import { polygonAmoy } from '@wagmi/core/chains'
 import Link from 'next/link'
 
+import { PagePropsWithLocale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
+
 const config = createConfig({
   chains: [polygonAmoy],
   client({ chain }) {
@@ -28,7 +31,23 @@ const config = createConfig({
   },
 })
 
-export default function ForDelegatePage() {
+export default function ForDelegatePage({
+  params: { locale, ...params },
+}: PagePropsWithLocale<{}>) {
+  const [dict, setDict] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
+
   const { address, chainId } = useAccount()
   const { data: hash, error, writeContract } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -84,22 +103,20 @@ export default function ForDelegatePage() {
   return (
     <div className="items-center justify-center flex w-full">
       <div className="flex flex-col w-1/2 gap-4">
-        <div className="text-center text-2xl my-6">Delegate Voting Power</div>
-
-        <div>
-          Voting Power : {votes ? formatEther(BigInt(votes as string)) : '0'}
+        <div className="text-center text-2xl my-6">
+          {dict ? dict.delegate.title : ''}
         </div>
 
         <div>
-          Before you can vote, you must assign your voting rights to either
-          yourself, or you can assign it to a third party. {<br></br>}
-          {<br></br>} Enter the Ethereum address of wallet to receive the voting
-          rights.
+          {dict ? dict.delegate.votingPower : ''} :{' '}
+          {votes ? formatEther(BigInt(votes as string)) : '0'}
         </div>
+
+        <div>{dict ? dict.delegate.description : ''}</div>
         <Input
           type="address"
           name="delegateAddr"
-          placeholder="Address"
+          placeholder={dict ? dict.delegate.address : ''}
           className="mt-5"
           onChange={handleChange}
         />
@@ -111,7 +128,7 @@ export default function ForDelegatePage() {
             handleDelegate()
           }}
         >
-          Delegate
+          {dict ? dict.delegate.delegate : ''}
         </Button>
         <ToastContainer
           position="bottom-right"

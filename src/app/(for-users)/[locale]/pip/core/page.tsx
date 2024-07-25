@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
 import {
   Table,
   TableBody,
@@ -10,12 +12,30 @@ import {
 } from '~/components/ui/table'
 
 import PIPBar from '~/components/common/pip-bar'
+import { PagePropsWithLocale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
 
-export default function ForPage() {
+export default function ForPage({
+  params: { locale, ...params },
+}: PagePropsWithLocale<{}>) {
+  const [dict, setDict] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
+
   return (
     <div className="w-full gap-4 flex flex-col">
       <div className="gap-4 flex flex-col">
-        <PIPBar url="."></PIPBar>
+        <PIPBar dict={dict} url="."></PIPBar>
 
         <h1 className="text-4xl">Core</h1>
         <h2 className="text-3xl">Living</h2>
