@@ -18,6 +18,8 @@ import {
 } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
+import { PagePropsWithLocale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
 
 import { useEffect, useState } from 'react'
 import { formatEther } from 'ethers'
@@ -43,7 +45,23 @@ const config = createConfig({
   },
 })
 
-export default function ForPendingPage() {
+export default function ForPendingPage({
+  params: { locale, ...params },
+}: PagePropsWithLocale<{}>) {
+  const [dict, setDict] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
+
   const { address, chainId } = useAccount()
   const { data: hash, error, writeContract } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -51,14 +69,8 @@ export default function ForPendingPage() {
       hash,
     })
 
-  const [targets, setTargets] = useState('')
-  const [values, setValues] = useState('')
-  const [singature, setSignatures] = useState('')
-  const [calldata, setCalldata] = useState('')
-  const [description, setDescription] = useState('')
   const [proposals, setProposals] = useState<any[]>([])
   const [proposalStatus, setStatus] = useState<any[]>([])
-  const [delegateAddr, setDelegateAddr] = useState('')
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
     address: pceAddress,
@@ -79,15 +91,6 @@ export default function ForPendingPage() {
 
   const formatNumberString = (num: any) => {
     return BigInt(num as string).toString()
-  }
-
-  const handleDelegate = async () => {
-    writeContract({
-      abi: PCE_ABI,
-      address: pceAddress,
-      functionName: 'delegate',
-      args: [delegateAddr],
-    })
   }
 
   useEffect(() => {
@@ -152,23 +155,31 @@ export default function ForPendingPage() {
 
   return (
     <div className="w-full">
-      <div className="text-center text-2xl my-4">Pending Proposals</div>
+      <div className="text-center text-2xl my-4">
+        {dict ? dict.pending.title : ''}
+      </div>
       <div className="gap-4 flex flex-col">
         <div>
-          Voting Power : {votes ? formatEther(BigInt(votes as string)) : '0'}
+          {dict ? dict.pending.votingPower : ''} :{' '}
+          {votes ? formatEther(BigInt(votes as string)) : '0'}
         </div>
 
         <Table className="rounded border">
-          <TableCaption>A list of the proposals.</TableCaption>
+          <TableCaption> {dict ? dict.common.proposal.list : ''}</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[110px]">Proposal id</TableHead>
-              <TableHead>Proposer</TableHead>
-              <TableHead>For Vote</TableHead>
-              <TableHead>Against Vote</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Cast Vote</TableHead>
-              <TableHead>Execute</TableHead>
+              <TableHead>
+                {dict ? dict.common.proposal.proposalId : ''}
+              </TableHead>
+              <TableHead>{dict ? dict.common.proposal.proposer : ''}</TableHead>
+              <TableHead>{dict ? dict.common.proposal.forVote : ''}</TableHead>
+              <TableHead>
+                {dict ? dict.common.proposal.againstVote : ''}
+              </TableHead>
+              <TableHead>{dict ? dict.common.proposal.status : ''}</TableHead>
+              <TableHead>{dict ? dict.common.proposal.castVote : ''}</TableHead>
+              <TableHead>{dict ? dict.common.proposal.execute : ''}</TableHead>
+              <TableHead>{dict ? dict.common.proposal.queue : ''}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -198,7 +209,7 @@ export default function ForPendingPage() {
                         })
                       }}
                     >
-                      For Vote
+                      {dict ? dict.common.proposal.forVote : ''}
                     </Button>
                     <Button
                       disabled={proposalStatus[index] != 'Active'}
@@ -212,7 +223,7 @@ export default function ForPendingPage() {
                         })
                       }}
                     >
-                      Aga Vote
+                      {dict ? dict.common.proposal.againstVote : ''}
                     </Button>
                   </TableCell>
                   <TableCell>
@@ -227,7 +238,7 @@ export default function ForPendingPage() {
                         })
                       }}
                     >
-                      Execute
+                      {dict ? dict.common.proposal.execute : ''}
                     </Button>
                   </TableCell>
 
@@ -243,7 +254,7 @@ export default function ForPendingPage() {
                         })
                       }}
                     >
-                      Queue
+                      {dict ? dict.common.proposal.queue : ''}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -251,7 +262,9 @@ export default function ForPendingPage() {
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={7}>Total Proposals</TableCell>
+              <TableCell colSpan={7}>
+                {dict ? dict.common.proposal.total : ''}
+              </TableCell>
               <TableCell>{proposals.length}</TableCell>
             </TableRow>
           </TableFooter>

@@ -1,14 +1,107 @@
 {
   "common": {
     "navigation": {
-      "vote": "Proposals",
-      "token": "Wallet",
-      "bounty": "Bounty",
-      "pips": "PIP"
+      "vote": "VOTE",
+      "token": "TOKEN",
+      "bounty": "BOUNTY",
+      "pips": "PIP",
+      "copyAddress": "COPY ADDRESS",
+      "connect": "CONNECT",
+      "disconnect": "DISCONNECT",
+      "menu": "MENU"
+    },
+    "proposal": {
+      "proposalId": "Proposal ID",
+      "proposer": "Proposer",
+      "forVote": "For Vote",
+      "againstVote": "Against Vote",
+      "status": "Status",
+      "castVote": "Cast Vote",
+      "execute": "Execute",
+      "queue": "Queue",
+      "total": "Total Proposals",
+      "list": "A List of the proposals."
     }
   },
   "home": {
-    "title": "Peace Coin DAO Dashboard",
-    "description": "This is Peace Coin DAO Dashboard"
+    "title": "Peace Coin DAO ダッシュボード",
+    "description": "ピースコインDAOのダッシュボードです"
+  },
+  "submit": {
+    "title": "Submit a Proposal",
+    "category1": "Suggest something",
+    "category2": "Asks funds for investment",
+    "category3": "Other",
+    "propose": "Propose",
+    "select": "Select a category",
+    "amount": "Amount",
+    "description": "Description"
+  },
+  "vote": {
+    "close": "Closed Proposal",
+    "pending": "Pending Proposals",
+    "submit": "Submit Proposals",
+    "delegate": "Delegate Votes",
+    "propose": "Propose",
+    "select": "Select a category",
+    "amount": "Amount",
+    "description": "Description"
+  },
+  "token": {
+    "title": "Token Wallet",
+    "subtitle1": "Your current Token Balance",
+    "subtitle2": "Current Factor",
+    "createToken": "Create Token",
+    "tokenAddress": "Token Address",
+    "exchnageRate": "Exchange Rate",
+    "swapToLocal": "SwapToLocalToken",
+    "swapFromLocal": "SwapFromLocalToken",
+    "totalToken": "Total Tokens",
+    "list": "A list of the community tokens."
+  },
+  "bounty": {
+    "title": "Bounty Program",
+    "description": "This Bounty Program is for providing bounty to the contributors",
+    "subtitle1": "Fixed Bounty Amount",
+    "subtitle2": "Your current PCE Amount",
+    "subtitle3": "Your Total Bounty Amount",
+    "subtitle4": "Your Withdrawn Amount",
+    "subtitle5": "Your Claimable Amount",
+    "contributorBounty": "Contributor Bounty",
+    "proposal": "Proposal Bounty",
+    "addContributor": "Add Contributor Bounty",
+    "addProposal": "Add Proposal Bounty",
+    "claimProposal": "Claim Proposal Bounty",
+    "claimContributor": "Claim Contributor Bounty",
+    "contributor": "Contributor",
+    "contributorAddr": "Contributor Address",
+    "totalAmount": "Total Amount",
+    "bountyAmount": "Bounty Amount",
+    "proposalID": "Proposal Id",
+    "list": "A list of the contributions."
+  },
+  "pipBar": {
+    "title": "PEACE COIN Improvement Proposals",
+    "all": "All",
+    "core": "Core",
+    "networking": "Networking",
+    "interface": "Interface",
+    "prc": "PRC",
+    "meta": "Meta",
+    "info": "Informational"
+  },
+  "pending": {
+    "title": "Pending Proposals",
+    "votingPower": "Voting Power"
+  },
+  "closed": {
+    "title": "Closed Proposals"
+  },
+  "delegate": {
+    "title": "Delegate Voting Power",
+    "description": "Before you can vote, you must assign your voting rights to either yourself, or you can assign it to a third party. Enter the Ethereum address of wallet to receive the voting rights.",
+    "address": "Address",
+    "delegate": "Delegate",
+    "votingPower": "Voting Power"
   }
 }

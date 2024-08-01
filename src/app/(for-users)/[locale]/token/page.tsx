@@ -22,6 +22,8 @@ import {
 import { Button } from '~/components/ui/button'
 import { pceAddress, POLY_SCAN_TX } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
+import { PagePropsWithLocale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
 
 import { useEffect, useState } from 'react'
 import { formatEther } from 'ethers'
@@ -47,7 +49,22 @@ const config = createConfig({
   },
 })
 
-export default function ForTokenPage() {
+export default function ForTokenPage({
+  params: { locale, ...params },
+}: PagePropsWithLocale<{}>) {
+  const [dict, setDict] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
   const { address, chainId } = useAccount()
   const { data: hash, error, writeContract } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -262,15 +279,17 @@ export default function ForTokenPage() {
 
   return (
     <div className="w-full gap-4 flex flex-col">
-      <div className="text-center text-2xl">Token Wallet</div>
+      <div className="text-center text-2xl">{dict ? dict.token.title : ''}</div>
 
       <div>
-        Your current Token Balance :{' '}
+        {dict ? dict.token.subtitle1 : ''}
+        {': '}
         {balance ? formatEther(BigInt(balance as string)) : '0'}
       </div>
 
       <div>
-        Current Factor : {factor ? formatEther(BigInt(factor as string)) : '0'}
+        {dict ? dict.token.subtitle2 : ''}
+        {': '} {factor ? formatEther(BigInt(factor as string)) : '0'}
       </div>
       <Button
         className="w-40"
@@ -279,7 +298,7 @@ export default function ForTokenPage() {
           setDialogStatus(true)
         }}
       >
-        Create Token
+        {dict ? dict.token.createToken : ''}
       </Button>
       <Dialog
         open={isOpened}
@@ -369,13 +388,13 @@ export default function ForTokenPage() {
       </Dialog>
 
       <Table className="border">
-        <TableCaption>A list of the community tokens.</TableCaption>
+        <TableCaption>{dict ? dict.token.list : ''}</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead>Token Address</TableHead>
-            <TableHead>Exchange Rate</TableHead>
-            <TableHead>SwapToLocalToken</TableHead>
-            <TableHead>SwapFromLocalToken</TableHead>
+            <TableHead>{dict ? dict.token.tokenAddress : ''}</TableHead>
+            <TableHead>{dict ? dict.token.exchnageRate : ''}</TableHead>
+            <TableHead>{dict ? dict.token.swapToLocal : ''}</TableHead>
+            <TableHead>{dict ? dict.token.swapFromLocal : ''}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -399,7 +418,7 @@ export default function ForTokenPage() {
                       })
                     }}
                   >
-                    SwpToLocalToken
+                    {dict ? dict.token.swapToLocal : ''}
                   </Button>
                 </TableCell>
                 <TableCell>
@@ -408,7 +427,7 @@ export default function ForTokenPage() {
                       handleSwapFromLocalToken(token)
                     }}
                   >
-                    SwapFromLocalToken
+                    {dict ? dict.token.swapFromLocal : ''}
                   </Button>
                 </TableCell>
               </TableRow>
@@ -416,7 +435,9 @@ export default function ForTokenPage() {
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={3}>Total Tokens</TableCell>
+            <TableCell colSpan={3}>
+              {dict ? dict.token.totalToken : ''}
+            </TableCell>
             <TableCell>{tokens && tokens.length}</TableCell>
           </TableRow>
         </TableFooter>

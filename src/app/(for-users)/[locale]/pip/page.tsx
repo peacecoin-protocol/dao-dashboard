@@ -2,11 +2,32 @@
 
 import Link from 'next/link'
 import PIPBar from '~/components/common/pip-bar'
-export default function ForPIPPage() {
+import { PagePropsWithLocale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
+
+import { useEffect, useState } from 'react'
+
+export default function ForPendingPage({
+  params: { locale, ...params },
+}: PagePropsWithLocale<{}>) {
+  const [dict, setDict] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
+
   return (
     <div className="w-full gap-4 flex flex-col">
       <div className="gap-4 flex flex-col">
-        <PIPBar url="pip"></PIPBar>
+        <PIPBar url="pip/" dict={dict}></PIPBar>
 
         <h2 className="text-3xl">PIPs</h2>
         <p>

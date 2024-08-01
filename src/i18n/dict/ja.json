@@ -2,13 +2,106 @@
   "common": {
     "navigation": {
       "vote": "投票",
-      "token": "Token",
-      "bounty": "Bounty",
-      "pips": "PIPs"
+      "token": "トークン",
+      "bounty": "報酬",
+      "pips": "PIP",
+      "copyAddress": "アドレスをコピー",
+      "connect": "ウォレットを接続",
+      "disconnect": "ウォレットを切断",
+      "menu": "メニュー"
+    },
+    "proposal": {
+      "proposalId": "提案ID",
+      "proposer": "提案者",
+      "forVote": "賛成票",
+      "againstVote": "反対票",
+      "status": "ステータス",
+      "castVote": "投票する",
+      "execute": "実行",
+      "queue": "キュー",
+      "total": "提案の合計",
+      "list": "提案のリスト"
     }
   },
   "home": {
     "title": "Peace Coin DAO ダッシュボード",
-    "description": "ピースコインDAOのダッシュボードです"
+    "description": "Peace Coin DAO ダッシュボードへようこそ"
+  },
+  "submit": {
+    "title": "提案を提出",
+    "category1": "何かを提案する",
+    "category2": "投資のための資金を求める",
+    "category3": "その他",
+    "propose": "提案する",
+    "select": "カテゴリを選択",
+    "amount": "金額",
+    "description": "説明"
+  },
+  "vote": {
+    "close": "終了した提案",
+    "pending": "保留中の提案",
+    "submit": "提案を提出",
+    "delegate": "投票を委任",
+    "propose": "提案する",
+    "select": "カテゴリを選択",
+    "amount": "金額",
+    "description": "説明"
+  },
+  "token": {
+    "title": "トークンウォレット",
+    "subtitle1": "現在のトークン残高",
+    "subtitle2": "現在のファクター",
+    "createToken": "トークンを作成",
+    "tokenAddress": "トークンのアドレス",
+    "exchangeRate": "為替レート",
+    "swapToLocal": "ローカルトークンに交換",
+    "swapFromLocal": "ローカルトークンから交換",
+    "totalToken": "トークンの合計",
+    "list": "コミュニティトークンのリスト"
+  },
+  "bounty": {
+    "title": "報酬プログラム",
+    "description": "この報酬プログラムは、貢献者に報酬を提供するためのものです",
+    "subtitle1": "固定報酬額",
+    "subtitle2": "現在のPCE金額",
+    "subtitle3": "総報酬額",
+    "subtitle4": "引き出された金額",
+    "subtitle5": "請求可能な金額",
+    "contributorBounty": "貢献者報酬",
+    "proposal": "提案報酬",
+    "addContributor": "貢献者報酬を追加",
+    "addProposal": "提案報酬を追加",
+    "claimProposal": "提案報酬を請求",
+    "claimContributor": "貢献者報酬を請求",
+    "contributor": "貢献者",
+    "contributorAddr": "貢献者のアドレス",
+    "totalAmount": "総額",
+    "bountyAmount": "報酬額",
+    "proposalID": "提案ID",
+    "list": "貢献のリスト"
+  },
+  "pipBar": {
+    "title": "PEACE COIN 改善提案",
+    "all": "すべて",
+    "core": "コア",
+    "networking": "ネットワーキング",
+    "interface": "インターフェース",
+    "prc": "PRC",
+    "meta": "メタ",
+    "info": "情報"
+  },
+  "pending": {
+    "title": "保留中の提案",
+    "votingPower": "投票権"
+  },
+  "closed": {
+    "title": "終了した提案"
+  },
+  "delegate": {
+    "title": "投票権を委任",
+    "description": "投票する前に、投票権を自分自身に、または第三者に割り当てる必要があります。投票権を受け取るウォレットのEthereumアドレスを入力してください。",
+    "address": "アドレス",
+    "delegate": "委任",
+    "votingPower": "投票権"
   }
 }

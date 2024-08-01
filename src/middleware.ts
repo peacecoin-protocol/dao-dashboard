@@ -7,7 +7,7 @@ import { i18nIgnorePrefixList } from './i18n/ignore-prefix-list'
 import { Locale } from './i18n/types'
 
 const defaultLocale: Locale = 'en'
-const locales: Locale[] = ['en', 'ja']
+const locales: Locale[] = ['en', 'ja', 'cn', 'es', 'fr', 'pt']
 
 export const getLocale = (request: NextRequest) => {
   const languages = new Negotiator({

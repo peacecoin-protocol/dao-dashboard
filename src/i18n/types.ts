@@ -1,4 +1,4 @@
-export type Locale = 'en' | 'ja'
+export type Locale = 'en' | 'ja' | 'cn' | 'es' | 'fr' | 'pt'
 
 export type PagePropsWithLocale<T> = T & {
   params: { locale: Locale }
