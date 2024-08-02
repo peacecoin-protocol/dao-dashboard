@@ -107,80 +107,91 @@ export default function ForSubmitPage({
   }, [isConfirmed, isConfirming, error, hash])
 
   return (
-    <div className="flex flex-col w-1/2 items-center justify-center">
-      <div className="text-center text-2xl my-6">
-        {' '}
-        {dict ? dict.submit.title : ''}
-      </div>
-      <Select onValueChange={handleSelect}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder={dict ? dict.submit.select : ''} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="1">{dict ? dict.submit.category1 : ''}</SelectItem>
-          <SelectItem value="2">{dict ? dict.submit.category2 : ''}</SelectItem>
-          <SelectItem value="3">{dict ? dict.submit.category3 : ''}</SelectItem>
-        </SelectContent>
-      </Select>
+    <div className="flex flex-row w-full items-center justify-center content-center">
+      <div className="flex flex-col w-1/2 items-center justify-center ">
+        <div className="text-center text-2xl my-6">
+          {' '}
+          {dict ? dict.submit.title : ''}
+        </div>
+        <Select onValueChange={handleSelect}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder={dict ? dict.submit.select : ''} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1">
+              {dict ? dict.submit.category1 : ''}
+            </SelectItem>
+            <SelectItem value="2">
+              {dict ? dict.submit.category2 : ''}
+            </SelectItem>
+            <SelectItem value="3">
+              {dict ? dict.submit.category3 : ''}
+            </SelectItem>
+          </SelectContent>
+        </Select>
 
-      <div className="w-full">
-        <Input
-          hidden={category !== '2'}
-          className="mt-5"
-          type="number"
-          placeholder={dict ? dict.submit.amount : ''}
-          name="values"
-          onChange={handleChange}
-        />
+        <div className="w-full">
+          <Input
+            hidden={category !== '2'}
+            className="mt-5"
+            type="number"
+            placeholder={dict ? dict.submit.amount : ''}
+            name="values"
+            onChange={handleChange}
+          />
 
-        <Textarea
-          className="mt-5 h-20 w-full align-center p-2 rounded"
-          placeholder={dict ? dict.submit.description : ''}
-          name="description"
-          onChange={handleChange}
-        />
-        <Button
-          className="mt-5 w-full"
-          variant="outline"
-          onClick={() => {
-            if (category.length == 0) {
-              toast.error('Please Select Category')
-              return
-            }
+          <Textarea
+            className="mt-5 h-20 w-full align-center p-2 rounded border-[1px] border-gray94"
+            placeholder={dict ? dict.submit.description : ''}
+            name="description"
+            onChange={handleChange}
+          />
+          <Button
+            className="mt-5 w-full"
+            variant="outline"
+            onClick={() => {
+              if (category.length == 0) {
+                toast.error('Please Select Category')
+                return
+              }
 
-            let _signature = 'approve(address,uint256)'
-            let _value = '0'
-            let _calldata = ''
-            if (category === '2') {
-              _calldata = encodeCalldata(PCE_ABI, 'transfer', [address, values])
-              _signature = 'transfer(address,uint256)'
-              _value = values
-            } else {
-              _calldata = encodeCalldata(PCE_ABI, 'approve', [address, '0'])
-            }
+              let _signature = 'approve(address,uint256)'
+              let _value = '0'
+              let _calldata = ''
+              if (category === '2') {
+                _calldata = encodeCalldata(PCE_ABI, 'transfer', [
+                  address,
+                  values,
+                ])
+                _signature = 'transfer(address,uint256)'
+                _value = values
+              } else {
+                _calldata = encodeCalldata(PCE_ABI, 'approve', [address, '0'])
+              }
 
-            writeContract({
-              abi: GOVERNOR_ABI,
-              address: governorAddress,
-              functionName: 'propose',
-              args: [
-                [pceAddress],
-                [_value],
-                [_signature],
-                [_calldata],
-                description,
-              ],
-            })
-          }}
-        >
-          {dict ? dict.submit.propose : ''}
-        </Button>
+              writeContract({
+                abi: GOVERNOR_ABI,
+                address: governorAddress,
+                functionName: 'propose',
+                args: [
+                  [pceAddress],
+                  [_value],
+                  [_signature],
+                  [_calldata],
+                  description,
+                ],
+              })
+            }}
+          >
+            {dict ? dict.submit.propose : ''}
+          </Button>
 
-        <ToastContainer
-          position="bottom-right"
-          closeOnClick
-          draggable
-        ></ToastContainer>
+          <ToastContainer
+            position="bottom-right"
+            closeOnClick
+            draggable
+          ></ToastContainer>
+        </div>
       </div>
     </div>
   )
