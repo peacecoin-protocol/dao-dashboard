@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import PIPBar from '~/components/common/pip-bar'
+
 import { PagePropsWithLocale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
@@ -26,10 +26,10 @@ export default function ForPendingPage({
 
   return (
     <div className="w-full gap-4 flex flex-col">
-      <div className="gap-4 flex flex-col">
-        <PIPBar url="pip/" dict={dict}></PIPBar>
-
-        <h2 className="text-3xl">PIPs</h2>
+      <div className="gap-4 flex flex-col m-8">
+        <h2 className="text-4xl font-bold tracking-tight mt-6 text-center">
+          {'PEACE COIN IMPROVEMENT PROPOSAL'}
+        </h2>
         <p>
           PEACE COIN Improvement Proposals (PIPs) describe standards for the
           PEACE COIN platform, including core protocol specifications, client

@@ -8,7 +8,8 @@
       "copyAddress": "复制地址",
       "connect": "连接钱包",
       "disconnect": "断开钱包",
-      "menu": "菜单"
+      "menu": "菜单",
+      "dashboard": "仪表盘"
     },
     "proposal": {
       "proposalId": "提案ID",
@@ -21,6 +22,17 @@
       "queue": "队列",
       "total": "提案总数",
       "list": "提案列表"
+    },
+    "sidebar": {
+      "dashboard": "仪表盘",
+      "proposals": "提案",
+      "token": "代币",
+      "bounty": "赏金",
+      "pip": "PIP",
+      "pending": "待处理",
+      "closed": "已关闭",
+      "submit": "提交",
+      "delegate": "委托"
     }
   },
   "home": {

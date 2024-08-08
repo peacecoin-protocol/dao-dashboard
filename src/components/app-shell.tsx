@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from './sidebar'
 import useIsCollapsed from '~/hooks/use-is-collapsed'
 import { PagePropsWithLocale } from '~/i18n/types'
+import AppBar from './common/app-bar'
 
 export default function AppShell({
   params: { locale, ...params },
@@ -20,6 +21,7 @@ export default function AppShell({
         id="content"
         className={`overflow-x-hidden pt-16 transition-[margin] md:overflow-y-hidden md:pt-0 ${isCollapsed ? 'md:ml-14' : 'md:ml-64'} h-full`}
       >
+        <AppBar locale={locale}></AppBar>
         <Outlet />
       </main>
     </div>

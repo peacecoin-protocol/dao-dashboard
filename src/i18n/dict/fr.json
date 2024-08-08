@@ -8,7 +8,8 @@
       "copyAddress": "COPIER L'ADRESSE",
       "connect": "CONNECTER LE PORTFEUILLE",
       "disconnect": "DÉCONNECTER LE PORTFEUILLE",
-      "menu": "MENU"
+      "menu": "MENU",
+      "dashboard": "Tableau de bord"
     },
     "proposal": {
       "proposalId": "ID de la Proposition",
@@ -21,6 +22,17 @@
       "queue": "File d'Attente",
       "total": "Total des Propositions",
       "list": "Liste des propositions."
+    },
+    "sidebar": {
+      "dashboard": "Tableau de bord",
+      "proposals": "Propositions",
+      "token": "Jeton",
+      "bounty": "Prime",
+      "pip": "PIP",
+      "pending": "En attente",
+      "closed": "Fermé",
+      "submit": "Soumettre",
+      "delegate": "Déléguer"
     }
   },
   "home": {

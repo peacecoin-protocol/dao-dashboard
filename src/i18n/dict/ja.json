@@ -8,7 +8,8 @@
       "copyAddress": "アドレスをコピー",
       "connect": "ウォレットを接続",
       "disconnect": "ウォレットを切断",
-      "menu": "メニュー"
+      "menu": "メニュー",
+      "dashboard": "ダッシュボード"
     },
     "proposal": {
       "proposalId": "提案ID",
@@ -21,6 +22,17 @@
       "queue": "キュー",
       "total": "提案の合計",
       "list": "提案のリスト"
+    },
+    "sidebar": {
+      "dashboard": "ダッシュボード",
+      "proposals": "提案",
+      "token": "トークン",
+      "bounty": "報酬",
+      "pip": "PIP",
+      "pending": "保留中",
+      "closed": "終了",
+      "submit": "送信",
+      "delegate": "委任"
     }
   },
   "home": {

@@ -8,7 +8,8 @@
       "copyAddress": "COPIAR DIRECCIÓN",
       "connect": "CONECTAR CARTERA",
       "disconnect": "DESCONECTAR CARTERA",
-      "menu": "MENÚ"
+      "menu": "MENÚ",
+      "dashboard": "Tablero"
     },
     "proposal": {
       "proposalId": "ID de Propuesta",
@@ -21,6 +22,17 @@
       "queue": "Cola",
       "total": "Total de Propuestas",
       "list": "Lista de propuestas."
+    },
+    "sidebar": {
+      "dashboard": "Tablero",
+      "proposals": "Propuestas",
+      "token": "Token",
+      "bounty": "Recompensa",
+      "pip": "PIP",
+      "pending": "Pendiente",
+      "closed": "Cerrado",
+      "submit": "Enviar",
+      "delegate": "Delegar"
     }
   },
   "home": {

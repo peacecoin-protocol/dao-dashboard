@@ -103,10 +103,9 @@ export default function ForDelegatePage({
   return (
     <div className="items-center justify-center flex w-full">
       <div className="flex flex-col w-1/2 gap-4">
-        <div className="text-center text-2xl my-6">
+        <h2 className="text-2xl font-bold tracking-tight my-6 text-center">
           {dict ? dict.delegate.title : ''}
-        </div>
-
+        </h2>
         <div>
           {dict ? dict.delegate.votingPower : ''} :{' '}
           {votes ? formatEther(BigInt(votes as string)) : '0'}

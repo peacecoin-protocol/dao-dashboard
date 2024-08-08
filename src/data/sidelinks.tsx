@@ -1,10 +1,6 @@
 import {
   IconApps,
-  IconBoxSeam,
-  IconChartHistogram,
   IconChecklist,
-  IconError404,
-  IconExclamationCircle,
   IconHexagonNumber1,
   IconHexagonNumber2,
   IconHexagonNumber3,
@@ -12,12 +8,15 @@ import {
   IconHexagonNumber5,
   IconLayoutDashboard,
   IconMessages,
-  IconRouteAltLeft,
-  IconServerOff,
-  IconTruck,
   IconUserShield,
-  IconLock,
+  IconHexagonNumber7,
+  IconHexagonNumber6,
 } from '@tabler/icons-react'
+
+import { Locale } from '~/i18n/types'
+
+import { useEffect, useState } from 'react'
+import { getDict } from '~/i18n/get-dict'
 
 export interface NavLink {
   title: string
@@ -30,152 +29,123 @@ export interface SideLink extends NavLink {
   sub?: NavLink[]
 }
 
-export const sidelinks: SideLink[] = [
-  {
-    title: 'Dashboard',
-    label: '',
-    href: '/',
-    icon: <IconLayoutDashboard size={18} />,
-  },
-  {
-    title: 'Proposals',
-    label: '4',
-    href: '/proposals',
-    icon: <IconChecklist size={18} />,
-    sub: [
-      {
-        title: 'Pending',
-        label: '',
-        href: '/pending',
-        icon: <IconHexagonNumber1 size={18} />,
-      },
-      {
-        title: 'Closed',
-        label: '',
-        href: '/closed',
-        icon: <IconHexagonNumber2 size={18} />,
-      },
-      {
-        title: 'Submit',
-        label: '',
-        href: '/submit',
-        icon: <IconHexagonNumber3 size={18} />,
-      },
-      {
-        title: 'Delegate',
-        label: '',
-        href: '/delegate',
-        icon: <IconHexagonNumber4 size={18} />,
-      },
-    ],
-  },
-  {
-    title: 'Token',
-    label: '',
-    href: '/token',
-    icon: <IconMessages size={18} />,
-  },
-  {
-    title: 'Bounty',
-    label: '',
-    href: '/bounty',
-    icon: <IconApps size={18} />,
-  },
-  {
-    title: 'PIP',
-    label: '5',
-    href: '',
-    icon: <IconUserShield size={18} />,
-    sub: [
-      {
-        title: 'All',
-        label: '',
-        href: '',
-        icon: <IconHexagonNumber1 size={18} />,
-      },
-      {
-        title: 'Networking',
-        label: '',
-        href: '',
-        icon: <IconHexagonNumber2 size={18} />,
-      },
-      {
-        title: 'Interface',
-        label: '',
-        href: '',
-        icon: <IconHexagonNumber3 size={18} />,
-      },
-      {
-        title: 'PRC',
-        label: '',
-        href: '',
-        icon: <IconHexagonNumber4 size={18} />,
-      },
-      {
-        title: 'Meta',
-        label: '',
-        href: '',
-        icon: <IconHexagonNumber5 size={18} />,
-      },
-      {
-        title: 'Informational',
-        label: '',
-        href: '',
-        icon: <IconHexagonNumber5 size={18} />,
-      },
-    ],
-  },
-  {
-    title: 'Connect Wallet',
-    label: '',
-    href: '',
-    icon: <IconRouteAltLeft size={18} />,
-    sub: [
-      {
-        title: 'Copy Address',
-        label: '',
-        href: '',
-        icon: <IconTruck size={18} />,
-      },
-      {
-        title: 'Disconnect',
-        label: '',
-        href: '',
-        icon: <IconBoxSeam size={18} />,
-      },
-    ],
-  },
-  {
-    title: 'Contact Us',
-    label: '',
-    href: '/',
-    icon: <IconChartHistogram size={18} />,
-  },
+export const useSideLinks = (locale: Locale): SideLink[] => {
+  const [dict, setDict] = useState<any>(null)
 
-  {
-    title: 'Socials',
-    label: '3',
-    href: '',
-    icon: <IconExclamationCircle size={18} />,
-    sub: [
-      {
-        title: 'Discord',
-        label: '',
-        href: '/404',
-        icon: <IconError404 size={18} />,
-      },
-      {
-        title: 'X',
-        label: '',
-        href: '/500',
-        icon: <IconServerOff size={18} />,
-      },
-      {
-        title: 'TG',
-        label: '',
-        href: '/401',
-        icon: <IconLock size={18} />,
-      },
-    ],
-  },
-]
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
+
+  return [
+    {
+      title: dict ? dict.common.sidebar.dashboard : 'Dashboard',
+      label: '',
+      href: '/',
+      icon: <IconLayoutDashboard size={18} />,
+    },
+    {
+      title: dict ? dict.common.sidebar.proposals : 'Proposals',
+      label: '4',
+      href: '/proposals',
+      icon: <IconChecklist size={18} />,
+      sub: [
+        {
+          title: dict ? dict.common.sidebar.pending : 'Pending',
+          label: '',
+          href: '/pending',
+          icon: <IconHexagonNumber1 size={18} />,
+        },
+        {
+          title: dict ? dict.common.sidebar.closed : 'Closed',
+          label: '',
+          href: '/closed',
+          icon: <IconHexagonNumber2 size={18} />,
+        },
+        {
+          title: dict ? dict.common.sidebar.submit : 'Submit',
+          label: '',
+          href: '/submit',
+          icon: <IconHexagonNumber3 size={18} />,
+        },
+        {
+          title: dict ? dict.common.sidebar.delegate : 'Delegate',
+          label: '',
+          href: '/delegate',
+          icon: <IconHexagonNumber4 size={18} />,
+        },
+      ],
+    },
+    {
+      title: dict ? dict.common.sidebar.token : 'Token',
+
+      label: '',
+      href: '/token',
+      icon: <IconMessages size={18} />,
+    },
+    {
+      title: dict ? dict.common.sidebar.bounty : 'Bounty',
+
+      label: '',
+      href: '/bounty',
+      icon: <IconApps size={18} />,
+    },
+    {
+      title: dict ? dict.common.sidebar.pip : 'PIP',
+      label: '5',
+      href: '/pip',
+      icon: <IconUserShield size={18} />,
+      sub: [
+        {
+          title: 'About',
+          label: '',
+          href: '/pip/',
+          icon: <IconHexagonNumber1 size={18} />,
+        },
+        {
+          title: 'All',
+          label: '',
+          href: '/pip/all',
+          icon: <IconHexagonNumber2 size={18} />,
+        },
+        {
+          title: 'Networking',
+          label: '',
+          href: '/pip/networking',
+          icon: <IconHexagonNumber3 size={18} />,
+        },
+        {
+          title: 'Interface',
+          label: '',
+          href: '/pip/interface',
+          icon: <IconHexagonNumber4 size={18} />,
+        },
+        {
+          title: 'PRC',
+          label: '',
+          href: '/pip/prc',
+          icon: <IconHexagonNumber5 size={18} />,
+        },
+        {
+          title: 'Meta',
+          label: '',
+          href: '/pip/meta',
+          icon: <IconHexagonNumber6 size={18} />,
+        },
+        {
+          title: 'Informational',
+          label: '',
+          href: '/pip/informational',
+          icon: <IconHexagonNumber7 size={18} />,
+        },
+      ],
+    },
+  ]
+}
