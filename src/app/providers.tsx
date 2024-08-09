@@ -4,7 +4,7 @@ import { Env } from '~/env'
 
 import * as React from 'react'
 import {
-  // RainbowKitProvider,
+  RainbowKitProvider,
   getDefaultWallets,
   getDefaultConfig,
 } from '@rainbow-me/rainbowkit'
@@ -49,7 +49,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <>
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <RainbowKitProvider>
+            <RouterProvider router={router} />
+          </RainbowKitProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </>

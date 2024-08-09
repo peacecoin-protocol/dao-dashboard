@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import PIPBar from '~/components/common/pip-bar'
+
 import { PagePropsWithLocale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
@@ -32,11 +32,9 @@ export default function ForPage({
   }, [locale])
   return (
     <div className="w-full gap-4 flex flex-col">
-      <div className="gap-4 flex flex-col">
-        <PIPBar dict={dict} url="."></PIPBar>
-
-        <h1 className="text-4xl">Networking</h1>
-        <h2 className="text-3xl">Living</h2>
+      <div className="gap-4 flex flex-col m-8">
+        <h2 className="text-4xl font-bold tracking-tight mt-6">Networking</h2>
+        <p className="text-muted-foreground">Living</p>
         <Table className="border-2 border-gray87 border-solid	">
           <TableHeader>
             <TableRow className="bg-gray94 border-2 border-gray87 border-solid">

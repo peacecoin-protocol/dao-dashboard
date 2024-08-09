@@ -109,10 +109,9 @@ export default function ForSubmitPage({
   return (
     <div className="flex flex-row w-full items-center justify-center content-center">
       <div className="flex flex-col w-1/2 items-center justify-center ">
-        <div className="text-center text-2xl my-6">
-          {' '}
+        <h2 className="text-2xl font-bold tracking-tight my-6">
           {dict ? dict.submit.title : ''}
-        </div>
+        </h2>
         <Select onValueChange={handleSelect}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder={dict ? dict.submit.select : ''} />

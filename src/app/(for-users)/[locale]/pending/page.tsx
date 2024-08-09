@@ -2,7 +2,6 @@
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableFooter,
   TableHead,
@@ -155,125 +154,142 @@ export default function ForPendingPage({
 
   return (
     <div className="w-full">
-      <div className="text-center text-2xl my-4">
-        {dict ? dict.pending.title : ''}
-      </div>
-      <div className="gap-4 flex flex-col">
-        <div>
-          {dict ? dict.pending.votingPower : ''} :{' '}
-          {votes ? formatEther(BigInt(votes as string)) : '0'}
-        </div>
+      <div className="mx-8 gap-4 flex-col flex">
+        <h2 className="text-2xl font-bold tracking-tight mt-6">
+          {dict ? dict.pending.title : ''}
+        </h2>
 
-        <Table className="rounded border">
-          <TableCaption> {dict ? dict.common.proposal.list : ''}</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>
-                {dict ? dict.common.proposal.proposalId : ''}
-              </TableHead>
-              <TableHead>{dict ? dict.common.proposal.proposer : ''}</TableHead>
-              <TableHead>{dict ? dict.common.proposal.forVote : ''}</TableHead>
-              <TableHead>
-                {dict ? dict.common.proposal.againstVote : ''}
-              </TableHead>
-              <TableHead>{dict ? dict.common.proposal.status : ''}</TableHead>
-              <TableHead>{dict ? dict.common.proposal.castVote : ''}</TableHead>
-              <TableHead>{dict ? dict.common.proposal.execute : ''}</TableHead>
-              <TableHead>{dict ? dict.common.proposal.queue : ''}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {proposals &&
-              proposals.map((proposal, index) => (
-                <TableRow key={proposal[0]}>
-                  <TableCell className="font-medium">
-                    {formatNumberString(proposal[0])}
-                  </TableCell>
-                  <TableCell>{proposal[1]}</TableCell>
-                  <TableCell className="font-medium">
-                    {formatEther(proposal[5])}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatEther(proposal[6])}
-                  </TableCell>
-                  <TableCell>{proposalStatus[index]}</TableCell>
-                  <TableCell>
-                    <Button
-                      disabled={proposalStatus[index] != 'Active'}
-                      onClick={() => {
-                        writeContract({
-                          abi: GOVERNOR_ABI,
-                          address: governorAddress,
-                          functionName: 'castVote',
-                          args: [proposal[0], true],
-                        })
-                      }}
-                    >
-                      {dict ? dict.common.proposal.forVote : ''}
-                    </Button>
-                    <Button
-                      disabled={proposalStatus[index] != 'Active'}
-                      className="ml-2"
-                      onClick={() => {
-                        writeContract({
-                          abi: GOVERNOR_ABI,
-                          address: governorAddress,
-                          functionName: 'castVote',
-                          args: [proposal[0], false],
-                        })
-                      }}
-                    >
-                      {dict ? dict.common.proposal.againstVote : ''}
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      disabled={proposalStatus[index] != 'Queued'}
-                      onClick={() => {
-                        writeContract({
-                          abi: GOVERNOR_ABI,
-                          address: governorAddress,
-                          functionName: 'execute',
-                          args: [proposal[0]],
-                        })
-                      }}
-                    >
-                      {dict ? dict.common.proposal.execute : ''}
-                    </Button>
-                  </TableCell>
+        <div className="gap-4 flex flex-col">
+          <p className="text-muted-foreground">
+            {dict ? dict.pending.votingPower : ''}
+            {' : '}
+            {votes ? formatEther(BigInt(votes as string)) : '0'}
+          </p>
 
-                  <TableCell>
-                    <Button
-                      disabled={proposalStatus[index] != 'Succeeded'}
-                      onClick={() => {
-                        writeContract({
-                          abi: GOVERNOR_ABI,
-                          address: governorAddress,
-                          functionName: 'queue',
-                          args: [proposal[0]],
-                        })
-                      }}
-                    >
-                      {dict ? dict.common.proposal.queue : ''}
-                    </Button>
-                  </TableCell>
+          <div className="border rounded-xl">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>
+                    {dict ? dict.common.proposal.proposalId : ''}
+                  </TableHead>
+                  <TableHead>
+                    {dict ? dict.common.proposal.proposer : ''}
+                  </TableHead>
+                  <TableHead>
+                    {dict ? dict.common.proposal.forVote : ''}
+                  </TableHead>
+                  <TableHead>
+                    {dict ? dict.common.proposal.againstVote : ''}
+                  </TableHead>
+                  <TableHead>
+                    {dict ? dict.common.proposal.status : ''}
+                  </TableHead>
+                  <TableHead>
+                    {dict ? dict.common.proposal.castVote : ''}
+                  </TableHead>
+                  <TableHead>
+                    {dict ? dict.common.proposal.execute : ''}
+                  </TableHead>
+                  <TableHead>
+                    {dict ? dict.common.proposal.queue : ''}
+                  </TableHead>
                 </TableRow>
-              ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell colSpan={7}>
-                {dict ? dict.common.proposal.total : ''}
-              </TableCell>
-              <TableCell>{proposals.length}</TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
-        <ToastContainer
-          position="bottom-right"
-          closeOnClick
-          draggable
-        ></ToastContainer>
+              </TableHeader>
+              <TableBody>
+                {proposals &&
+                  proposals.map((proposal, index) => (
+                    <TableRow key={proposal[0]}>
+                      <TableCell className="font-medium">
+                        {formatNumberString(proposal[0])}
+                      </TableCell>
+                      <TableCell>{proposal[1]}</TableCell>
+                      <TableCell className="font-medium">
+                        {formatEther(proposal[5])}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {formatEther(proposal[6])}
+                      </TableCell>
+                      <TableCell>{proposalStatus[index]}</TableCell>
+                      <TableCell>
+                        <Button
+                          disabled={proposalStatus[index] != 'Active'}
+                          onClick={() => {
+                            writeContract({
+                              abi: GOVERNOR_ABI,
+                              address: governorAddress,
+                              functionName: 'castVote',
+                              args: [proposal[0], true],
+                            })
+                          }}
+                        >
+                          {dict ? dict.common.proposal.forVote : ''}
+                        </Button>
+                        <Button
+                          disabled={proposalStatus[index] != 'Active'}
+                          className="ml-2"
+                          onClick={() => {
+                            writeContract({
+                              abi: GOVERNOR_ABI,
+                              address: governorAddress,
+                              functionName: 'castVote',
+                              args: [proposal[0], false],
+                            })
+                          }}
+                        >
+                          {dict ? dict.common.proposal.againstVote : ''}
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          disabled={proposalStatus[index] != 'Queued'}
+                          onClick={() => {
+                            writeContract({
+                              abi: GOVERNOR_ABI,
+                              address: governorAddress,
+                              functionName: 'execute',
+                              args: [proposal[0]],
+                            })
+                          }}
+                        >
+                          {dict ? dict.common.proposal.execute : ''}
+                        </Button>
+                      </TableCell>
+
+                      <TableCell>
+                        <Button
+                          disabled={proposalStatus[index] != 'Succeeded'}
+                          onClick={() => {
+                            writeContract({
+                              abi: GOVERNOR_ABI,
+                              address: governorAddress,
+                              functionName: 'queue',
+                              args: [proposal[0]],
+                            })
+                          }}
+                        >
+                          {dict ? dict.common.proposal.queue : ''}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={7}>
+                    {dict ? dict.common.proposal.total : ''}
+                  </TableCell>
+                  <TableCell>{proposals.length}</TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </div>
+          <ToastContainer
+            position="bottom-right"
+            closeOnClick
+            draggable
+          ></ToastContainer>
+        </div>
       </div>
     </div>
   )

@@ -8,7 +8,8 @@
       "copyAddress": "COPY ADDRESS",
       "connect": "CONNECT",
       "disconnect": "DISCONNECT",
-      "menu": "MENU"
+      "menu": "MENU",
+      "dashboard": "Dashboard"
     },
     "proposal": {
       "proposalId": "Proposal ID",
@@ -21,6 +22,17 @@
       "queue": "Queue",
       "total": "Total Proposals",
       "list": "A List of the proposals."
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "proposals": "Proposals",
+      "token": "Token",
+      "bounty": "Bounty",
+      "pip": "PIP",
+      "pending": "Pending",
+      "closed": "Closed",
+      "submit": "Submit",
+      "delegate": "Delegate"
     }
   },
   "home": {
@@ -62,11 +74,6 @@
   "bounty": {
     "title": "Bounty Program",
     "description": "This Bounty Program is for providing bounty to the contributors",
-    "subtitle1": "Fixed Bounty Amount",
-    "subtitle2": "Your current PCE Amount",
-    "subtitle3": "Your Total Bounty Amount",
-    "subtitle4": "Your Withdrawn Amount",
-    "subtitle5": "Your Claimable Amount",
     "contributorBounty": "Contributor Bounty",
     "proposal": "Proposal Bounty",
     "addContributor": "Add Contributor Bounty",
@@ -78,7 +85,7 @@
     "totalAmount": "Total Amount",
     "bountyAmount": "Bounty Amount",
     "proposalID": "Proposal Id",
-    "list": "A list of the contributions."
+    "total": "Total Contributor"
   },
   "pipBar": {
     "title": "PEACE COIN Improvement Proposals",

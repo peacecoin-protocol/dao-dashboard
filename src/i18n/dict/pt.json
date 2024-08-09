@@ -8,7 +8,8 @@
       "copyAddress": "COPIAR ENDEREÇO",
       "connect": "CONECTAR CARTEIRA",
       "disconnect": "DESCONECTAR CARTEIRA",
-      "menu": "MENU"
+      "menu": "MENU",
+      "dashboard": "Painel"
     },
     "proposal": {
       "proposalId": "ID da Proposta",
@@ -21,6 +22,17 @@
       "queue": "Fila",
       "total": "Total de Propostas",
       "list": "Lista das propostas."
+    },
+    "sidebar": {
+      "dashboard": "Painel",
+      "proposals": "Propostas",
+      "token": "Token",
+      "bounty": "Recompensa",
+      "pip": "PIP",
+      "pending": "Pendente",
+      "closed": "Fechado",
+      "submit": "Enviar",
+      "delegate": "Delegar"
     }
   },
   "home": {

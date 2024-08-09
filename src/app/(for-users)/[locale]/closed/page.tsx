@@ -2,7 +2,6 @@
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableFooter,
   TableHead,
@@ -142,54 +141,58 @@ export default function ForClosedPage({
 
   return (
     <div className="w-full">
-      <div className="text-center text-2xl my-4">
-        {dict ? dict.closed.title : ''}
-      </div>
-      <div>
-        <Table className="border rounded">
-          <TableCaption>{dict ? dict.common.proposal.list : ''}</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[110px]">
-                {' '}
-                {dict ? dict.common.proposal.proposalId : ''}
-              </TableHead>
-              <TableHead>{dict ? dict.common.proposal.proposer : ''}</TableHead>
-              <TableHead>{dict ? dict.common.proposal.forVote : ''}</TableHead>
-              <TableHead>
-                {dict ? dict.common.proposal.againstVote : ''}
-              </TableHead>
-              <TableHead>{dict ? dict.common.proposal.status : ''}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {proposals &&
-              proposals.map((proposal, index) => (
-                <TableRow key={proposal[0]}>
-                  <TableCell className="font-medium">
-                    {formatNumberString(proposal[0])}
-                  </TableCell>
-                  <TableCell>{proposal[1]}</TableCell>
-                  <TableCell className="font-medium">
-                    {formatEther(proposal[5])}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatEther(proposal[6])}
-                  </TableCell>
-                  <TableCell>{proposalStatus[index]}</TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell colSpan={4}>
-                {' '}
-                {dict ? dict.common.proposal.total : ''}
-              </TableCell>
-              <TableCell>{proposals.length}</TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
+      <div className="mx-8 gap-4 flex-col flex">
+        <h2 className="text-2xl font-bold tracking-tight mt-6">
+          {dict ? dict.closed.title : ''}
+        </h2>
+        <div className="rounded-xl flex border">
+          <Table className="">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[110px]">
+                  {' '}
+                  {dict ? dict.common.proposal.proposalId : ''}
+                </TableHead>
+                <TableHead>
+                  {dict ? dict.common.proposal.proposer : ''}
+                </TableHead>
+                <TableHead>
+                  {dict ? dict.common.proposal.forVote : ''}
+                </TableHead>
+                <TableHead>
+                  {dict ? dict.common.proposal.againstVote : ''}
+                </TableHead>
+                <TableHead>{dict ? dict.common.proposal.status : ''}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {proposals &&
+                proposals.map((proposal, index) => (
+                  <TableRow key={proposal[0]}>
+                    <TableCell className="font-medium">
+                      {formatNumberString(proposal[0])}
+                    </TableCell>
+                    <TableCell>{proposal[1]}</TableCell>
+                    <TableCell className="font-medium">
+                      {formatEther(proposal[5])}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatEther(proposal[6])}
+                    </TableCell>
+                    <TableCell>{proposalStatus[index]}</TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={4}>
+                  {dict ? dict.common.proposal.total : ''}
+                </TableCell>
+                <TableCell>{proposals.length}</TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </div>
         <ToastContainer
           position="bottom-right"
           closeOnClick

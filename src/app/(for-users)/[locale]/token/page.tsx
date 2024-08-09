@@ -3,7 +3,6 @@ import { Input } from '~/components/ui/input'
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableFooter,
   TableHead,
@@ -279,174 +278,177 @@ export default function ForTokenPage({
 
   return (
     <div className="w-full gap-4 flex flex-col">
-      <div className="text-center text-2xl">{dict ? dict.token.title : ''}</div>
+      <div className="flex flex-col mx-8 gap-2">
+        <h2 className="text-2xl font-bold tracking-tight mt-6">
+          {dict ? dict.token.title : ''}
+        </h2>
+        <p className="text-muted-foreground">
+          {dict ? dict.token.subtitle1 : ''}
+          {': '}
+          {balance ? formatEther(BigInt(balance as string)) : '0'}
+        </p>
 
-      <div>
-        {dict ? dict.token.subtitle1 : ''}
-        {': '}
-        {balance ? formatEther(BigInt(balance as string)) : '0'}
-      </div>
-
-      <div>
-        {dict ? dict.token.subtitle2 : ''}
-        {': '} {factor ? formatEther(BigInt(factor as string)) : '0'}
-      </div>
-      <Button
-        className="w-40"
-        variant="outline"
-        onClick={() => {
-          setDialogStatus(true)
-        }}
-      >
-        {dict ? dict.token.createToken : ''}
-      </Button>
-      <Dialog
-        open={isOpened}
-        onOpenChange={() => {
-          setDialogStatus(!isOpened)
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Input the token Info</DialogTitle>
-            <DialogDescription>
-              This is the information to create the community token.
-            </DialogDescription>
-            <div className="gap-4">
-              <Input
-                name="name"
-                placeholder="Name"
-                className="my-2"
-                onChange={handleChange}
-              ></Input>
-              <Input
-                name="symbol"
-                placeholder="symbol"
-                className="my-2"
-                onChange={handleChange}
-              ></Input>
-              <Input
-                name="amountToExchange"
-                placeholder="amountToExchange"
-                className="my-2"
-                onChange={handleChange}
-              ></Input>
-              <Input
-                name="dilutionFactor"
-                placeholder="dilutionFactor"
-                className="my-2"
-                onChange={handleChange}
-              ></Input>
-              <Input
-                name="decreaseIntervalDays"
-                placeholder="decreaseIntervalDays"
-                className="my-2"
-                onChange={handleChange}
-              ></Input>
-              <Input
-                name="afterDecreaseBp"
-                placeholder="afterDecreaseBp"
-                className="my-2"
-                onChange={handleChange}
-              ></Input>
-              <Input
-                name="maxIncreaseOfTotalSupplyBp"
-                placeholder="maxIncreaseOfTotalSupplyBp"
-                className="my-2"
-                onChange={handleChange}
-              ></Input>
-              <Input
-                name="maxIncreaseBp"
-                placeholder="maxIncreaseBp"
-                className="my-2"
-                onChange={handleChange}
-              ></Input>
-              <Input
-                name="maxUsageBp"
-                placeholder="maxUsageBp"
-                className="my-2"
-                onChange={handleChange}
-              ></Input>
-              <Input
-                name="changeBp"
-                placeholder="changeBp"
-                className="my-2"
-                onChange={handleChange}
-              ></Input>
-            </div>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              className="mt-5"
-              variant="outline"
-              onClick={handleCreateToken}
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Table className="border">
-        <TableCaption>{dict ? dict.token.list : ''}</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{dict ? dict.token.tokenAddress : ''}</TableHead>
-            <TableHead>{dict ? dict.token.exchnageRate : ''}</TableHead>
-            <TableHead>{dict ? dict.token.swapToLocal : ''}</TableHead>
-            <TableHead>{dict ? dict.token.swapFromLocal : ''}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tokens &&
-            tokens.map((token, index) => (
-              <TableRow key={index}>
-                <TableCell className="font-medium">{token}</TableCell>
-                <TableCell>
-                  {exchangeRates &&
-                    exchangeRates[index] &&
-                    formatEther(exchangeRates[index])}
-                </TableCell>
-                <TableCell className="font-medium">
-                  <Button
-                    onClick={async () => {
-                      writeContract({
-                        abi: PCE_ABI,
-                        address: pceAddress,
-                        functionName: 'swapToLocalToken',
-                        args: [tokens[2], 100],
-                      })
-                    }}
-                  >
-                    {dict ? dict.token.swapToLocal : ''}
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    onClick={() => {
-                      handleSwapFromLocalToken(token)
-                    }}
-                  >
-                    {dict ? dict.token.swapFromLocal : ''}
-                  </Button>
-                </TableCell>
+        <p className="text-muted-foreground">
+          {dict ? dict.token.subtitle2 : ''}
+          {': '} {factor ? formatEther(BigInt(factor as string)) : '0'}
+        </p>
+        <Button
+          className="w-40 my-2"
+          variant="outline"
+          onClick={() => {
+            setDialogStatus(true)
+          }}
+        >
+          {dict ? dict.token.createToken : ''}
+        </Button>
+        <Dialog
+          open={isOpened}
+          onOpenChange={() => {
+            setDialogStatus(!isOpened)
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Input the token Info</DialogTitle>
+              <DialogDescription>
+                This is the information to create the community token.
+              </DialogDescription>
+              <div className="gap-4">
+                <Input
+                  name="name"
+                  placeholder="Name"
+                  className="my-2"
+                  onChange={handleChange}
+                ></Input>
+                <Input
+                  name="symbol"
+                  placeholder="symbol"
+                  className="my-2"
+                  onChange={handleChange}
+                ></Input>
+                <Input
+                  name="amountToExchange"
+                  placeholder="amountToExchange"
+                  className="my-2"
+                  onChange={handleChange}
+                ></Input>
+                <Input
+                  name="dilutionFactor"
+                  placeholder="dilutionFactor"
+                  className="my-2"
+                  onChange={handleChange}
+                ></Input>
+                <Input
+                  name="decreaseIntervalDays"
+                  placeholder="decreaseIntervalDays"
+                  className="my-2"
+                  onChange={handleChange}
+                ></Input>
+                <Input
+                  name="afterDecreaseBp"
+                  placeholder="afterDecreaseBp"
+                  className="my-2"
+                  onChange={handleChange}
+                ></Input>
+                <Input
+                  name="maxIncreaseOfTotalSupplyBp"
+                  placeholder="maxIncreaseOfTotalSupplyBp"
+                  className="my-2"
+                  onChange={handleChange}
+                ></Input>
+                <Input
+                  name="maxIncreaseBp"
+                  placeholder="maxIncreaseBp"
+                  className="my-2"
+                  onChange={handleChange}
+                ></Input>
+                <Input
+                  name="maxUsageBp"
+                  placeholder="maxUsageBp"
+                  className="my-2"
+                  onChange={handleChange}
+                ></Input>
+                <Input
+                  name="changeBp"
+                  placeholder="changeBp"
+                  className="my-2"
+                  onChange={handleChange}
+                ></Input>
+              </div>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                className="mt-5"
+                variant="outline"
+                onClick={handleCreateToken}
+              >
+                Confirm
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <div className="border rounded-xl">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{dict ? dict.token.tokenAddress : ''}</TableHead>
+                <TableHead>{dict ? dict.token.exchnageRate : ''}</TableHead>
+                <TableHead>{dict ? dict.token.swapToLocal : ''}</TableHead>
+                <TableHead>{dict ? dict.token.swapFromLocal : ''}</TableHead>
               </TableRow>
-            ))}
-        </TableBody>
-        <TableFooter>
-          <TableRow>
-            <TableCell colSpan={3}>
-              {dict ? dict.token.totalToken : ''}
-            </TableCell>
-            <TableCell>{tokens && tokens.length}</TableCell>
-          </TableRow>
-        </TableFooter>
-      </Table>
-      <ToastContainer
-        position="bottom-right"
-        closeOnClick
-        draggable
-      ></ToastContainer>
+            </TableHeader>
+            <TableBody>
+              {tokens &&
+                tokens.map((token, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{token}</TableCell>
+                    <TableCell>
+                      {exchangeRates &&
+                        exchangeRates[index] &&
+                        formatEther(exchangeRates[index])}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      <Button
+                        onClick={async () => {
+                          writeContract({
+                            abi: PCE_ABI,
+                            address: pceAddress,
+                            functionName: 'swapToLocalToken',
+                            args: [tokens[2], 100],
+                          })
+                        }}
+                      >
+                        {dict ? dict.token.swapToLocal : ''}
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        onClick={() => {
+                          handleSwapFromLocalToken(token)
+                        }}
+                      >
+                        {dict ? dict.token.swapFromLocal : ''}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={3}>
+                  {dict ? dict.token.totalToken : ''}
+                </TableCell>
+                <TableCell>{tokens && tokens.length}</TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </div>
+        <ToastContainer
+          position="bottom-right"
+          closeOnClick
+          draggable
+        ></ToastContainer>
+      </div>
     </div>
   )
 }
