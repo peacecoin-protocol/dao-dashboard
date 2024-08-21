@@ -5,15 +5,16 @@ import {
   pceAddress,
   bountyAddress,
   POLY_SCAN_TX,
+  governorAddress,
 } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { BOUNTY_ABI } from '~/app/ABIs/Bounty'
 
+import { shortenAddress, formatString } from '~/components/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -45,6 +46,7 @@ import { BigNumberish, ethers, formatEther } from 'ethers'
 
 import { gql } from '@apollo/client'
 import createApolloClient from '~/app/apollo-client'
+import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 interface Contributor {
   contributor: string | null
@@ -53,8 +55,8 @@ interface Contributor {
 }
 
 interface Proposal {
-  proposalId: string | null
-  totalAmount: BigNumberish
+  id: string | null
+  amount: BigNumberish
 }
 
 const config = createConfig({
@@ -89,8 +91,13 @@ export default function ForBountyPage({
 
   const client = createApolloClient()
 
-  const [proposalData, setProposalData] = useState([])
+  const [proposalData, setProposalData] = useState<any>([])
   const [contributorData, setContributorData] = useState([])
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    })
 
   useEffect(() => {
     const fetchData = async () => {
@@ -107,38 +114,22 @@ export default function ForBountyPage({
                 id
                 contributor
               }
-              proposalTotalBounties(
-                first: 10
-                orderBy: totalAmount
-                orderDirection: desc
-              ) {
-                proposalId
-                totalAmount
-                id
-              }
             }
           `,
         })
 
         setContributorData(data.contributorTotalBounties)
-        setProposalData(data.proposalTotalBounties)
       } catch (error) {
         console.error('Error fetching data', error)
       }
     }
 
     fetchData()
-  }, [])
-
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({
-      hash,
-    })
+  }, [isConfirmed])
 
   const [bountyAmount, setBountyAmount] = useState('')
   const [contributorAddr, setContributorAddr] = useState('')
   const [proposalId, setProposalId] = useState('')
-  const [claimableBounty, setClaimableBounty] = useState('')
 
   const { data: pceBalance, refetch: refetchBalance } = useReadContract({
     address: pceAddress,
@@ -147,6 +138,34 @@ export default function ForBountyPage({
     args: [address],
     chainId: chainId,
   })
+
+  const { data: proposalCount, refetch: refetchProposalCount } =
+    useReadContract({
+      address: governorAddress,
+      abi: GOVERNOR_ABI,
+      functionName: 'proposalCount',
+      args: [],
+      chainId: chainId,
+    })
+
+  useEffect(() => {
+    const readProposalData = async () => {
+      if (proposalCount == undefined) return
+      let _proposalData = []
+      for (let i = 0; i < parseInt(proposalCount as string); i++) {
+        const amount = await readContract(config, {
+          abi: BOUNTY_ABI,
+          address: bountyAddress,
+          functionName: 'proposalBounties',
+          args: [i],
+        })
+
+        if ((amount as number) > 0) _proposalData.push({ id: i, amount })
+      }
+      setProposalData(_proposalData)
+    }
+    readProposalData()
+  }, [proposalCount])
 
   const { data: contributorBounties, refetch: refetchContributorBounties } =
     useReadContract({
@@ -188,10 +207,6 @@ export default function ForBountyPage({
       })
 
       const txReceipt = await provider.waitForTransaction(claimProposalBountyTX)
-
-      await refetchBalance()
-      await refetchBountyAmount()
-      await refetchContributorBounties()
     } catch (error) {
       toast.error((error as BaseError).shortMessage)
     }
@@ -215,31 +230,6 @@ export default function ForBountyPage({
       await refetchContributorBounties()
     } catch (error) {
       toast.error((error as BaseError).shortMessage)
-    }
-  }
-
-  const getProposalBounty = async () => {
-    try {
-      const bountyInfo = await readContract(config, {
-        abi: BOUNTY_ABI,
-        address: bountyAddress,
-        functionName: 'proposalBounties',
-        args: [proposalId],
-      })
-
-      if (
-        Array.isArray(bountyInfo) &&
-        bountyInfo.length > 0 &&
-        typeof bountyInfo[0] === 'bigint'
-      ) {
-        const claimable = formatEther(
-          (bountyInfo[0] - bountyInfo[1] + (_amount as bigint)) as bigint
-        )
-        setClaimableBounty(claimable)
-      }
-    } catch (error) {
-      toast.error((error as BaseError).shortMessage)
-      setClaimableBounty('0')
     }
   }
 
@@ -295,7 +285,7 @@ export default function ForBountyPage({
         args: [address, bountyAddress],
       })
 
-      if ((BigInt(allowance as string) as bigint) <= parseEther(bountyAmount)) {
+      if ((BigInt(allowance as string) as bigint) < parseEther(bountyAmount)) {
         const tx = await writeContractAsync(
           {
             abi: PCE_ABI,
@@ -332,29 +322,31 @@ export default function ForBountyPage({
   }
 
   useEffect(() => {
-    if (isConfirmed) {
-      toast.success(
-        <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
-          Tx Success, View TX
-        </Link>
-      )
-    } else if (isConfirming) {
-      toast.info(<div className="disabled">TX is Pending, Please Wait...</div>)
-    } else if (error) {
-      toast.error((error as BaseError).shortMessage)
-    }
-  }, [isConfirmed, isConfirming, error, hash])
+    const notify = async () => {
+      if (isConfirmed) {
+        toast.success(
+          <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
+            Transaction Succeed!
+          </Link>
+        )
 
-  const getBountyAmount = (bountyInfo: unknown): string => {
-    if (
-      Array.isArray(bountyInfo) &&
-      bountyInfo.length > 0 &&
-      typeof bountyInfo[0] === 'bigint'
-    ) {
-      return formatEther(bountyInfo[0] as bigint)
+        setBountyAmount('')
+        setContributorAddr('')
+
+        await refetchBalance()
+        await refetchBountyAmount()
+        await refetchContributorBounties()
+      } else if (isConfirming) {
+        toast.info(
+          <div className="disabled">TX is Pending, Please Wait...</div>
+        )
+      } else if (error) {
+        toast.error((error as BaseError).shortMessage)
+      }
     }
-    return '0'
-  }
+
+    notify()
+  }, [isConfirmed, isConfirming, error, hash])
 
   const getWithdrawnAmount = (bountyInfo: unknown): string => {
     if (
@@ -374,9 +366,7 @@ export default function ForBountyPage({
       typeof bountyInfo[0] === 'bigint' &&
       typeof bountyInfo[1] === 'bigint'
     ) {
-      return formatEther(
-        (bountyInfo[0] - bountyInfo[1] + (_amount as bigint)) as bigint
-      )
+      return formatEther((bountyInfo[0] - bountyInfo[1]) as bigint)
     }
     return '0'
   }
@@ -395,7 +385,7 @@ export default function ForBountyPage({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Total Revenue
+                {dict ? dict.common.dashboard.totalrevenue : ''}
               </CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -412,57 +402,8 @@ export default function ForBountyPage({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {' '}
                 {contributorBounties
-                  ? getWithdrawnAmount(contributorBounties)
-                  : '0'}{' '}
-                PCE
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">PCE Balance</CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {' '}
-                {pceBalance ? formatEther(pceBalance as bigint) : '0'} PCE
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Claimable</CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {contributorBounties
-                  ? getClaimableAmount(contributorBounties)
+                  ? formatString(getWithdrawnAmount(contributorBounties))
                   : '0'}{' '}
                 PCE
               </div>
@@ -471,7 +412,7 @@ export default function ForBountyPage({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                PCE Per Contributor
+                {dict ? dict.common.dashboard.pcebalance : ''}
               </CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -488,7 +429,62 @@ export default function ForBountyPage({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {_amount ? formatEther(_amount as bigint) : '0'} PCE
+                {pceBalance
+                  ? formatString(formatEther(pceBalance as bigint))
+                  : '0'}{' '}
+                PCE
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {dict ? dict.common.dashboard.claimable : ''}
+              </CardTitle>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                className="h-4 w-4 text-muted-foreground"
+              >
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {contributorBounties
+                  ? formatString(getClaimableAmount(contributorBounties))
+                  : '0'}{' '}
+                PCE
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {dict ? dict.common.dashboard.percontributor : ''}
+              </CardTitle>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                className="h-4 w-4 text-muted-foreground"
+              >
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {_amount ? formatString(formatEther(_amount as bigint)) : '0'}{' '}
+                PCE
               </div>
             </CardContent>
           </Card>
@@ -508,6 +504,7 @@ export default function ForBountyPage({
               <Input
                 type="number"
                 name="bountyAmount"
+                value={bountyAmount}
                 placeholder={dict ? dict.bounty.bountyAmount : ''}
                 className="mt-4"
                 onChange={handleChange}
@@ -516,11 +513,12 @@ export default function ForBountyPage({
               <Input
                 type="address"
                 name="contributorAddr"
+                value={contributorAddr}
                 placeholder={dict ? dict.bounty.contributorAddr : ''}
                 onChange={handleChange}
               />
 
-              <div className="flex flex-row gap-4">
+              <div className="flex max-xl:flex-col flex-row gap-4">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -558,7 +556,9 @@ export default function ForBountyPage({
                     {contributorData &&
                       contributorData.map((contributor: Contributor, index) => (
                         <TableRow key={index}>
-                          <TableCell>{contributor.contributor}</TableCell>
+                          <TableCell>
+                            {shortenAddress(contributor.contributor)}
+                          </TableCell>
                           <TableCell>
                             {formatEther(contributor.totalAmount)}
                           </TableCell>
@@ -584,11 +584,13 @@ export default function ForBountyPage({
               <Input
                 type="number"
                 name="bountyAmount"
+                value={bountyAmount}
                 placeholder={dict ? dict.bounty.bountyAmount : ''}
                 className="mt-5"
                 onChange={handleChange}
               />
               <Input
+                value={proposalId}
                 type="number"
                 name="proposalId"
                 placeholder={dict ? dict.bounty.proposalID : ''}
@@ -596,7 +598,7 @@ export default function ForBountyPage({
                 onChange={handleChange}
               />
 
-              <div>
+              <div className="flex flex-row max-md:flex-col gap-4 my-4">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -608,7 +610,6 @@ export default function ForBountyPage({
                 </Button>
 
                 <Button
-                  className="mt-5 ml-4"
                   variant="outline"
                   onClick={() => {
                     if (!proposalId) return
@@ -617,44 +618,43 @@ export default function ForBountyPage({
                 >
                   {dict ? dict.bounty.claimProposal : ''}
                 </Button>
-
-                <Button
-                  className="mt-5 ml-4"
-                  variant="outline"
-                  onClick={() => {
-                    if (!proposalId) return
-                    getProposalBounty()
-                  }}
-                >
-                  Get Proposal Bounty
-                </Button>
-              </div>
-              <div className="mt-4">
-                The Claimable amount for proposal #
-                {proposalId ? proposalId : '0'} is{' '}
-                {claimableBounty ? claimableBounty : '0'}
               </div>
 
-              <Table className="rounded border">
-                <TableCaption>A list of the contributions.</TableCaption>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead> {dict ? dict.bounty.proposalID : ''}</TableHead>
-                    <TableHead>{dict ? dict.bounty.totalAmount : ''}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {proposalData &&
-                    proposalData.map((proposal: Proposal, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{proposal.proposalId}</TableCell>
-                        <TableCell>
-                          {formatEther(proposal.totalAmount)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
+              <div className="rounded-xl border">
+                <Table className="">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        {dict ? dict.bounty.proposalID : ''}
+                      </TableHead>
+                      <TableHead>
+                        {dict ? dict.bounty.totalAmount : ''}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {proposalData &&
+                      proposalData.map((proposal: Proposal, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell>{proposal.id}</TableCell>
+                          <TableCell>
+                            {formatString(formatEther(proposal.amount))}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>{' '}
+                  <TableFooter>
+                    <TableRow>
+                      <TableCell colSpan={1}>
+                        {dict ? dict.common.proposal.total : ''}
+                      </TableCell>
+                      <TableCell>
+                        {proposalData ? proposalData.length : '0'}
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

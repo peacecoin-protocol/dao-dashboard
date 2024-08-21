@@ -60,7 +60,7 @@ function AppBar({ locale }: { locale: Locale }) {
           <Button
             className={`${
               !isConnected ? 'hidden' : 'xl:flex'
-            } mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base`}
+            } mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base max-md:hidden`}
           >
             {chain ? chain.name : ''}
           </Button>
@@ -109,14 +109,23 @@ function AppBar({ locale }: { locale: Locale }) {
               ''
             )}
           </DropdownMenu>
-          <Link to={LINKS.TWITTER.link} target="_blank">
+          <Link
+            className="max-md:hidden"
+            to={LINKS.TWITTER.link}
+            target="_blank"
+          >
             <TwitterIcon colorClass="fill-oil" />
           </Link>
-          <Link to={LINKS.DISCORD.link} target="_blank">
+          <Link
+            className="max-md:hidden"
+            to={LINKS.DISCORD.link}
+            target="_blank"
+          >
             <DiscordIcon colorClass="fill-oil" />
           </Link>
-
-          <UserNav locale={locale}></UserNav>
+          <div className="max-md:hidden">
+            <UserNav locale={locale}></UserNav>
+          </div>
         </div>
       </div>
     </header>

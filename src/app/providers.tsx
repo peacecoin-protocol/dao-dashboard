@@ -13,7 +13,7 @@ import {
   trustWallet,
   ledgerWallet,
 } from '@rainbow-me/rainbowkit/wallets'
-import { mainnet, polygon, bscTestnet, polygonAmoy } from 'wagmi/chains'
+import { polygonAmoy } from 'wagmi/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 
@@ -32,13 +32,7 @@ const config = getDefaultConfig({
       wallets: [argentWallet, trustWallet, ledgerWallet],
     },
   ],
-  chains: [
-    mainnet,
-    polygon,
-    ...(Env.NEXT_PUBLIC_ENABLE_TESTNETS === 'true'
-      ? [bscTestnet, polygonAmoy]
-      : []),
-  ],
+  chains: [polygonAmoy],
   ssr: true,
 })
 

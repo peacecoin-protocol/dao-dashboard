@@ -4,40 +4,52 @@
       "vote": "VOTAR",
       "token": "TOKEN",
       "bounty": "RECOMPENSA",
-      "pips": "PIP",
+      "pips": "PROPUESTAS",
       "copyAddress": "COPIAR DIRECCIÓN",
-      "connect": "CONECTAR CARTERA",
-      "disconnect": "DESCONECTAR CARTERA",
+      "connect": "CONECTAR",
+      "disconnect": "DESCONECTAR",
       "menu": "MENÚ",
-      "dashboard": "Tablero"
+      "dashboard": "Panel"
+    },
+    "dashboard": {
+      "totalproposals": "Total de Propuestas",
+      "totalrevenue": "Ingresos Totales",
+      "pcebalance": "Saldo de PCE",
+      "claimable": "Reclamable",
+      "percontributor": "PCE por Contribuyente",
+      "fromlastmonth": "desde el mes pasado",
+      "sincelasthour": "desde la última hora",
+      "recent": "Propuestas Exitosas Recientes",
+      "made": "Has realizado",
+      "proposal_success": "propuestas exitosamente"
     },
     "proposal": {
-      "proposalId": "ID de Propuesta",
+      "proposalId": "ID",
       "proposer": "Proponente",
-      "forVote": "Voto a Favor",
-      "againstVote": "Voto en Contra",
+      "forVote": "Votos a Favor",
+      "againstVote": "Votos en Contra",
       "status": "Estado",
       "castVote": "Emitir Voto",
       "execute": "Ejecutar",
-      "queue": "Cola",
+      "queue": "En Cola",
       "total": "Total de Propuestas",
       "list": "Lista de propuestas."
     },
     "sidebar": {
-      "dashboard": "Tablero",
+      "dashboard": "Panel",
       "proposals": "Propuestas",
       "token": "Token",
       "bounty": "Recompensa",
-      "pip": "PIP",
-      "pending": "Pendiente",
-      "closed": "Cerrado",
+      "pip": "Propuesta",
+      "pending": "Pendientes",
+      "closed": "Cerradas",
       "submit": "Enviar",
       "delegate": "Delegar"
     }
   },
   "home": {
     "title": "Panel de Peace Coin DAO",
-    "description": "Bienvenido al Panel de Peace Coin DAO"
+    "description": "Este es el panel de control de Peace Coin DAO"
   },
   "submit": {
     "title": "Enviar una Propuesta",
@@ -46,7 +58,7 @@
     "category3": "Otro",
     "propose": "Proponer",
     "select": "Seleccionar una categoría",
-    "amount": "Monto",
+    "amount": "Cantidad",
     "description": "Descripción"
   },
   "vote": {
@@ -56,7 +68,7 @@
     "delegate": "Delegar Votos",
     "propose": "Proponer",
     "select": "Seleccionar una categoría",
-    "amount": "Monto",
+    "amount": "Cantidad",
     "description": "Descripción"
   },
   "token": {
@@ -65,20 +77,15 @@
     "subtitle2": "Factor Actual",
     "createToken": "Crear Token",
     "tokenAddress": "Dirección del Token",
-    "exchangeRate": "Tasa de Cambio",
-    "swapToLocal": "Cambiar a Token Local",
-    "swapFromLocal": "Cambiar desde Token Local",
+    "exchnageRate": "Tasa de Cambio",
+    "swapToLocal": "Intercambiar a Token Local",
+    "swapFromLocal": "Intercambiar desde Token Local",
     "totalToken": "Total de Tokens",
     "list": "Lista de tokens comunitarios."
   },
   "bounty": {
     "title": "Programa de Recompensas",
     "description": "Este Programa de Recompensas es para proporcionar recompensas a los contribuyentes",
-    "subtitle1": "Monto Fijo de Recompensa",
-    "subtitle2": "Tu monto actual de PCE",
-    "subtitle3": "Tu monto total de recompensa",
-    "subtitle4": "Tu monto retirado",
-    "subtitle5": "Tu monto reclamable",
     "contributorBounty": "Recompensa para Contribuyentes",
     "proposal": "Recompensa por Propuesta",
     "addContributor": "Agregar Recompensa para Contribuyentes",
@@ -87,16 +94,16 @@
     "claimContributor": "Reclamar Recompensa para Contribuyentes",
     "contributor": "Contribuyente",
     "contributorAddr": "Dirección del Contribuyente",
-    "totalAmount": "Monto Total",
-    "bountyAmount": "Monto de la Recompensa",
-    "proposalID": "ID de Propuesta",
-    "list": "Lista de contribuciones."
+    "totalAmount": "Cantidad Total",
+    "bountyAmount": "Cantidad de la Recompensa",
+    "proposalID": "ID de la Propuesta",
+    "total": "Total de Contribuyentes"
   },
   "pipBar": {
     "title": "Propuestas de Mejora de PEACE COIN",
-    "all": "Todos",
+    "all": "Todas",
     "core": "Núcleo",
-    "networking": "Redes",
+    "networking": "Red",
     "interface": "Interfaz",
     "prc": "PRC",
     "meta": "Meta",
@@ -104,16 +111,26 @@
   },
   "pending": {
     "title": "Propuestas Pendientes",
-    "votingPower": "Poder de Voto"
+    "votingPower": "Poder de Votación"
   },
   "closed": {
     "title": "Propuestas Cerradas"
   },
   "delegate": {
-    "title": "Delegar Poder de Voto",
-    "description": "Antes de poder votar, debe asignar sus derechos de voto a usted mismo o a un tercero. Ingrese la dirección de Ethereum de la cartera que recibirá los derechos de voto.",
+    "title": "Delegar Poder de Votación",
+    "description": "Antes de votar, debes asignar tus derechos de votación a ti mismo o puedes asignarlos a un tercero. Introduce la dirección Ethereum de la cartera que recibirá los derechos de votación.",
     "address": "Dirección",
     "delegate": "Delegar",
-    "votingPower": "Poder de Voto"
+    "votingPower": "Poder de Votación"
+  },
+  "faq": {
+    "title": "Preguntas Frecuentes",
+    "q1": "¿Cómo delegar poder de voto?",
+    "q2": "¿Cómo proponer un PIP?",
+    "q3": "¿Cómo votar?",
+    "q4": "¿Cómo poner en cola una propuesta?",
+    "q5": "¿Cómo ejecutar una propuesta?",
+    "q6": "¿Cómo añadir una recompensa a otra persona?",
+    "q7": "¿Cómo reclamar recompensas?"
   }
 }

@@ -60,7 +60,7 @@ export default function ForPendingPage({
         </p>
 
         <h2 className="text-3xl">PIP status terms</h2>
-        <ul className="ml-10">
+        <ul className="ml-2">
           <li>
             <strong>Idea</strong> - An idea that is pre-draft. This is not
             tracked within the PIP Repository.

@@ -8,9 +8,11 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-
+import { shortenAddress, formatString } from '~/components/utils'
 import { governorAddress, POLY_SCAN_TX } from '~/app/constants/constants'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
+
+import useWindowWidth from '~/components/useWindWidth'
 
 import { useEffect, useState } from 'react'
 import { formatEther } from 'ethers'
@@ -32,6 +34,13 @@ import Link from 'next/link'
 import { PagePropsWithLocale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
+import RingLoader from 'react-spinners/RingLoader'
+const override = {
+  display: 'block',
+  margin: '0 auto',
+  borderColor: 'black',
+}
+
 const config = createConfig({
   chains: [polygonAmoy],
   client({ chain }) {
@@ -43,6 +52,9 @@ export default function ForClosedPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
   const [dict, setDict] = useState<any>(null)
+  const width = useWindowWidth()
+  const colSpan = width < 1280
+  let [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -75,15 +87,11 @@ export default function ForClosedPage({
       chainId: chainId,
     })
 
-  const formatNumberString = (num: any) => {
-    return BigInt(num as string).toString()
-  }
-
   useEffect(() => {
     if (isConfirmed) {
       toast.success(
         <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
-          Claim Success, View TX
+          Transaction Succeed!
         </Link>
       )
     } else if (isConfirming) {
@@ -131,6 +139,7 @@ export default function ForClosedPage({
           break
       }
     }
+    setLoading(false)
     setProposals(temp)
     setStatus(_status)
   }
@@ -149,17 +158,16 @@ export default function ForClosedPage({
           <Table className="">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[110px]">
-                  {' '}
+                <TableHead className="">
                   {dict ? dict.common.proposal.proposalId : ''}
                 </TableHead>
                 <TableHead>
                   {dict ? dict.common.proposal.proposer : ''}
                 </TableHead>
-                <TableHead>
+                <TableHead className="max-xl:hidden">
                   {dict ? dict.common.proposal.forVote : ''}
                 </TableHead>
-                <TableHead>
+                <TableHead className="max-xl:hidden">
                   {dict ? dict.common.proposal.againstVote : ''}
                 </TableHead>
                 <TableHead>{dict ? dict.common.proposal.status : ''}</TableHead>
@@ -170,14 +178,14 @@ export default function ForClosedPage({
                 proposals.map((proposal, index) => (
                   <TableRow key={proposal[0]}>
                     <TableCell className="font-medium">
-                      {formatNumberString(proposal[0])}
+                      {formatString(proposal[0])}
                     </TableCell>
-                    <TableCell>{proposal[1]}</TableCell>
-                    <TableCell className="font-medium">
-                      {formatEther(proposal[5])}
+                    <TableCell>{shortenAddress(proposal[1])}</TableCell>
+                    <TableCell className="font-medium max-xl:hidden">
+                      {formatString(formatEther(proposal[5]))}
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {formatEther(proposal[6])}
+                    <TableCell className="font-medium max-xl:hidden">
+                      {formatString(formatEther(proposal[6]))}
                     </TableCell>
                     <TableCell>{proposalStatus[index]}</TableCell>
                   </TableRow>
@@ -185,7 +193,7 @@ export default function ForClosedPage({
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell colSpan={4}>
+                <TableCell colSpan={colSpan ? 2 : 4}>
                   {dict ? dict.common.proposal.total : ''}
                 </TableCell>
                 <TableCell>{proposals.length}</TableCell>
@@ -198,6 +206,13 @@ export default function ForClosedPage({
           closeOnClick
           draggable
         ></ToastContainer>
+
+        <RingLoader
+          color={'#000000'}
+          loading={loading}
+          cssOverride={override}
+          size={50}
+        />
       </div>
     </div>
   )

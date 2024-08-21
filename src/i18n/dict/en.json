@@ -11,8 +11,20 @@
       "menu": "MENU",
       "dashboard": "Dashboard"
     },
+    "dashboard": {
+      "totalproposals": "Total Proposals",
+      "totalrevenue": "Total Revenue",
+      "pcebalance": "PCE Balance",
+      "claimable": "Claimable",
+      "percontributor": "PCE Per Contributor",
+      "fromlastmonth": "from last month",
+      "sincelasthour": "since last hour",
+      "recent": "Recent Succeeded PIPs",
+      "made": "You made",
+      "proposal_success": "proposals successfully"
+    },
     "proposal": {
-      "proposalId": "Proposal ID",
+      "proposalId": "ID",
       "proposer": "Proposer",
       "forVote": "For Vote",
       "againstVote": "Against Vote",
@@ -110,5 +122,15 @@
     "address": "Address",
     "delegate": "Delegate",
     "votingPower": "Voting Power"
+  },
+  "faq": {
+    "title": "FAQ",
+    "q1": "How to Delegate Voting Power?",
+    "q2": "How to Propose a PIP?",
+    "q3": "How to Vote?",
+    "q4": "How to Queue Proposal?",
+    "q5": "How to Execute Proposal?",
+    "q6": "How to Add Bounty to someone else?",
+    "q7": "How to Claim Bounties?"
   }
 }

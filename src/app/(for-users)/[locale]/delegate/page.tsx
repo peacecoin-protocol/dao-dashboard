@@ -21,6 +21,7 @@ import {
 import { polygonAmoy } from '@wagmi/core/chains'
 import Link from 'next/link'
 
+import { formatString } from '~/components/utils'
 import { PagePropsWithLocale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
@@ -73,10 +74,6 @@ export default function ForDelegatePage({
     }
   }
 
-  const formatNumberString = (num: any) => {
-    return BigInt(num as string).toString()
-  }
-
   const handleDelegate = async () => {
     writeContract({
       abi: PCE_ABI,
@@ -87,34 +84,46 @@ export default function ForDelegatePage({
   }
 
   useEffect(() => {
-    if (isConfirmed) {
-      toast.success(
-        <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
-          Claim Success, View TX
-        </Link>
-      )
-    } else if (isConfirming) {
-      toast.info(<div className="disabled">TX is Pending, Please Wait...</div>)
-    } else if (error) {
-      toast.error((error as BaseError).shortMessage)
+    const notify = async () => {
+      if (isConfirmed) {
+        toast.success(
+          <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
+            Transaction Succeed!
+          </Link>
+        )
+
+        setDelegateAddr('')
+        await refetchVotes()
+      } else if (isConfirming) {
+        toast.info(
+          <div className="disabled">TX is Pending, Please Wait...</div>
+        )
+      } else if (error) {
+        toast.error((error as BaseError).shortMessage)
+      }
     }
+
+    notify()
   }, [isConfirmed, isConfirming, error, hash])
 
   return (
     <div className="items-center justify-center flex w-full">
-      <div className="flex flex-col w-1/2 gap-4">
-        <h2 className="text-2xl font-bold tracking-tight my-6 text-center">
+      <div className="flex flex-col max-xl:mx-10 mx-80 max-xl:my-0 my-20 gap-4">
+        <h2 className="text-2xl font-bold tracking-tight my-4 text-center">
           {dict ? dict.delegate.title : ''}
         </h2>
-        <div>
+        <div className="text-muted-foreground">
           {dict ? dict.delegate.votingPower : ''} :{' '}
-          {votes ? formatEther(BigInt(votes as string)) : '0'}
+          {votes ? formatString(formatEther(BigInt(votes as string))) : '0'}
         </div>
 
-        <div>{dict ? dict.delegate.description : ''}</div>
+        <div className="text-muted-foreground">
+          {dict ? dict.delegate.description : ''}
+        </div>
         <Input
           type="address"
           name="delegateAddr"
+          value={delegateAddr}
           placeholder={dict ? dict.delegate.address : ''}
           className="mt-5"
           onChange={handleChange}

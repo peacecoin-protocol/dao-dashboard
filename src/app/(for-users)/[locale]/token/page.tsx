@@ -17,6 +17,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '~/components/ui/dialog'
+import { shortenAddress, formatString } from '~/components/utils'
+import useWindowWidth from '~/components/useWindWidth'
 
 import { Button } from '~/components/ui/button'
 import { pceAddress, POLY_SCAN_TX } from '~/app/constants/constants'
@@ -52,6 +54,8 @@ export default function ForTokenPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
   const [dict, setDict] = useState<any>(null)
+  const width = useWindowWidth()
+  const colSpan = width < 1280
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -206,7 +210,7 @@ export default function ForTokenPage({
     if (isConfirmed) {
       toast.success(
         <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
-          Claim Success, View TX
+          Transaction Succeed!
         </Link>
       )
       refetchBalance()
@@ -285,7 +289,7 @@ export default function ForTokenPage({
         <p className="text-muted-foreground">
           {dict ? dict.token.subtitle1 : ''}
           {': '}
-          {balance ? formatEther(BigInt(balance as string)) : '0'}
+          {balance ? formatString(formatEther(BigInt(balance as string))) : '0'}
         </p>
 
         <p className="text-muted-foreground">
@@ -393,21 +397,27 @@ export default function ForTokenPage({
               <TableRow>
                 <TableHead>{dict ? dict.token.tokenAddress : ''}</TableHead>
                 <TableHead>{dict ? dict.token.exchnageRate : ''}</TableHead>
-                <TableHead>{dict ? dict.token.swapToLocal : ''}</TableHead>
-                <TableHead>{dict ? dict.token.swapFromLocal : ''}</TableHead>
+                <TableHead className="max-xl:hidden">
+                  {dict ? dict.token.swapToLocal : ''}
+                </TableHead>
+                <TableHead className="">
+                  {dict ? dict.token.swapFromLocal : ''}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {tokens &&
                 tokens.map((token, index) => (
                   <TableRow key={index}>
-                    <TableCell className="font-medium">{token}</TableCell>
+                    <TableCell className="font-medium">
+                      {shortenAddress(token)}
+                    </TableCell>
                     <TableCell>
                       {exchangeRates &&
                         exchangeRates[index] &&
                         formatEther(exchangeRates[index])}
                     </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="flex flex-col xl:flex-row font-medium gap-2">
                       <Button
                         onClick={async () => {
                           writeContract({
@@ -420,8 +430,17 @@ export default function ForTokenPage({
                       >
                         {dict ? dict.token.swapToLocal : ''}
                       </Button>
+
+                      <Button
+                        className="xl:hidden"
+                        onClick={() => {
+                          handleSwapFromLocalToken(token)
+                        }}
+                      >
+                        {dict ? dict.token.swapFromLocal : ''}
+                      </Button>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-xl:hidden">
                       <Button
                         onClick={() => {
                           handleSwapFromLocalToken(token)
@@ -435,7 +454,7 @@ export default function ForTokenPage({
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell colSpan={3}>
+                <TableCell colSpan={colSpan ? 2 : 3}>
                   {dict ? dict.token.totalToken : ''}
                 </TableCell>
                 <TableCell>{tokens && tokens.length}</TableCell>

@@ -1,6 +1,6 @@
 'use client'
 
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 import { Button } from '~/components/custom/button'
 import {
@@ -12,7 +12,9 @@ import {
 import { Locale } from '~/i18n/types'
 
 export function UserNav({ locale }: { locale: Locale }) {
-  const fullPath = `${window.location.origin}${window.location.pathname}`
+  const location = useLocation()
+  const fullPath = `${window.location.origin}${location.pathname}`
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -27,6 +29,7 @@ export function UserNav({ locale }: { locale: Locale }) {
       <DropdownMenuContent className="w-24" align="end" forceMount>
         <DropdownMenuItem>
           <Link
+            className="w-full"
             to={fullPath.replace(`/${locale}`, '/cn')}
             reloadDocument={true}
           >
@@ -35,6 +38,7 @@ export function UserNav({ locale }: { locale: Locale }) {
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Link
+            className="w-full"
             to={fullPath.replace(`/${locale}`, '/en')}
             reloadDocument={true}
           >
@@ -43,6 +47,7 @@ export function UserNav({ locale }: { locale: Locale }) {
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Link
+            className="w-full"
             to={fullPath.replace(`/${locale}`, '/es')}
             reloadDocument={true}
           >
@@ -51,6 +56,7 @@ export function UserNav({ locale }: { locale: Locale }) {
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Link
+            className="w-full"
             to={fullPath.replace(`/${locale}`, '/fr')}
             reloadDocument={true}
           >
@@ -58,8 +64,8 @@ export function UserNav({ locale }: { locale: Locale }) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          {' '}
           <Link
+            className="w-full"
             to={fullPath.replace(`/${locale}`, '/ja')}
             reloadDocument={true}
           >
@@ -67,8 +73,8 @@ export function UserNav({ locale }: { locale: Locale }) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          {' '}
           <Link
+            className="w-full"
             to={fullPath.replace(`/${locale}`, '/pt')}
             reloadDocument={true}
           >

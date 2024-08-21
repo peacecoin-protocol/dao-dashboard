@@ -1,9 +1,5 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { PagePropsWithLocale } from '~/i18n/types'
-import { getDict } from '../../../i18n/get-dict'
-
 import {
   Card,
   CardContent,
@@ -12,13 +8,61 @@ import {
   CardTitle,
 } from '~/components/ui/card'
 
-import { Overview } from './dashboard/overview'
-import { RecentSales } from './dashboard/recent-sales'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table'
+
+import {
+  pceAddress,
+  governorAddress,
+  bountyAddress,
+} from '~/app/constants/constants'
+
+import { formatString } from '~/components/utils'
+import { BOUNTY_ABI } from '~/app/ABIs/Bounty'
+import { PCE_ABI } from '~/app/ABIs/PCEToken'
+import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
+import { PagePropsWithLocale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
+
+import { useEffect, useState } from 'react'
+import { formatEther } from 'ethers'
+import { createClient } from 'viem'
+import { readContract } from '@wagmi/core'
+import { http, createConfig } from '@wagmi/core'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import { useAccount, useReadContract } from 'wagmi'
+import { polygonAmoy } from '@wagmi/core/chains'
+
+import RingLoader from 'react-spinners/RingLoader'
+const override = {
+  display: 'block',
+  margin: '0 auto',
+  borderColor: 'black',
+}
+
+const config = createConfig({
+  chains: [polygonAmoy],
+  client({ chain }) {
+    return createClient({ chain, transport: http() })
+  },
+})
 
 export default function ForUsersIndexPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
   const [dict, setDict] = useState<any>(null)
+  const { address, chainId } = useAccount()
+  const [proposals, setProposals] = useState<any[]>([])
+  const [proposalStatus, setStatus] = useState<any[]>([])
+  let [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -32,6 +76,104 @@ export default function ForUsersIndexPage({
     fetchDict()
   }, [locale])
 
+  const getWithdrawnAmount = (bountyInfo: unknown): string => {
+    if (
+      Array.isArray(bountyInfo) &&
+      bountyInfo.length > 0 &&
+      typeof bountyInfo[0] === 'bigint'
+    ) {
+      return formatEther(bountyInfo[1] as bigint)
+    }
+    return '0'
+  }
+
+  const { data: pceBalance, refetch: refetchBalance } = useReadContract({
+    address: pceAddress,
+    abi: PCE_ABI,
+    functionName: 'balanceOf',
+    args: [address],
+    chainId: chainId,
+  })
+
+  const { data: contributorBounties, refetch: refetchContributorBounties } =
+    useReadContract({
+      address: bountyAddress,
+      abi: BOUNTY_ABI,
+      functionName: 'contributorBounties',
+      args: [address],
+      chainId: chainId,
+    })
+
+  const { data: proposalCount, refetch: refetchProposalCount } =
+    useReadContract({
+      address: governorAddress,
+      abi: GOVERNOR_ABI,
+      functionName: 'proposalCount',
+      args: [],
+      chainId: chainId,
+    })
+
+  const fetchData = async (count: any) => {
+    if (count == undefined || count == 0) {
+      setLoading(false)
+      return
+    }
+
+    let temp = []
+    let _status = []
+    for (let i = 1; i <= count; i++) {
+      const proposer = await readContract(config, {
+        address: governorAddress,
+        abi: GOVERNOR_ABI,
+        functionName: 'proposer',
+        args: [i],
+      })
+
+      if (
+        (proposer as string).toLocaleLowerCase() != address?.toLocaleLowerCase()
+      ) {
+        continue
+      }
+
+      const proposal = await readContract(config, {
+        address: governorAddress,
+        abi: GOVERNOR_ABI,
+        functionName: 'proposals',
+        args: [i],
+      })
+
+      const status = await readContract(config, {
+        address: governorAddress,
+        abi: GOVERNOR_ABI,
+        functionName: 'state',
+        args: [i],
+      })
+
+      switch (status as number) {
+        case 7:
+          _status.push('Executed')
+          temp.push(proposal)
+          break
+        case 4:
+          _status.push('Succeeded')
+          temp.push(proposal)
+          break
+        case 5:
+          _status.push('Queued')
+          temp.push(proposal)
+          break
+        default:
+      }
+    }
+    setProposals(temp)
+    setStatus(_status)
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    fetchData(proposalCount)
+  }, [proposalCount])
+
   return (
     <>
       <div className="w-full">
@@ -43,7 +185,7 @@ export default function ForUsersIndexPage({
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Total Revenue
+                  {dict ? dict.common.dashboard.totalproposals : ''}
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -59,16 +201,47 @@ export default function ForUsersIndexPage({
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$45,231.89</div>
+                <div className="text-2xl font-bold">{proposals.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  +20.1% from last month
+                  +20.1% {dict ? dict.common.dashboard.fromlastmonth : ''}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Subscriptions
+                  {dict ? dict.common.dashboard.totalrevenue : ''}
+                </CardTitle>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  className="h-4 w-4 text-muted-foreground"
+                >
+                  <rect width="20" height="14" x="2" y="5" rx="2" />
+                  <path d="M2 10h20" />
+                </svg>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {contributorBounties
+                    ? formatString(getWithdrawnAmount(contributorBounties))
+                    : '0'}{' '}
+                  PCE
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  +180.1% {dict ? dict.common.dashboard.fromlastmonth : ''}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {dict ? dict.common.dashboard.pcebalance : ''}
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -86,33 +259,14 @@ export default function ForUsersIndexPage({
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+2350</div>
+                <div className="text-2xl font-bold">
+                  {pceBalance
+                    ? formatString(formatEther(pceBalance as bigint))
+                    : '0'}{' '}
+                  PCE
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  +180.1% from last month
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sales</CardTitle>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4 text-muted-foreground"
-                >
-                  <rect width="20" height="14" x="2" y="5" rx="2" />
-                  <path d="M2 10h20" />
-                </svg>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">+12,234</div>
-                <p className="text-xs text-muted-foreground">
-                  +19% from last month
+                  +19% {dict ? dict.common.dashboard.fromlastmonth : ''}
                 </p>
               </CardContent>
             </Card>
@@ -135,35 +289,88 @@ export default function ForUsersIndexPage({
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+573</div>
+                <div className="text-2xl font-bold">+3</div>
                 <p className="text-xs text-muted-foreground">
-                  +201 since last hour
+                  +201 {dict ? dict.common.dashboard.sincelasthour : ''}
                 </p>
               </CardContent>
             </Card>
           </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
-            <Card className="col-span-1 lg:col-span-4">
+          <div className="grid grid-cols-1">
+            <Card className="col-span-3">
               <CardHeader>
-                <CardTitle>Overview</CardTitle>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <Overview />
-              </CardContent>
-            </Card>
-            <Card className="col-span-1 lg:col-span-3">
-              <CardHeader>
-                <CardTitle>Recent Sales</CardTitle>
+                <CardTitle>
+                  {dict ? dict.common.dashboard.recent : ''}
+                </CardTitle>
                 <CardDescription>
-                  You made 265 sales this month.
+                  {dict ? dict.common.dashboard.made : ''} {proposals.length}{' '}
+                  {dict ? dict.common.dashboard.proposal_success : ''}.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RecentSales />
+                <div className="border rounded-xl">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>
+                          {dict ? dict.common.proposal.proposalId : ''}
+                        </TableHead>
+                        <TableHead>
+                          {dict ? dict.common.proposal.forVote : ''}
+                        </TableHead>
+                        <TableHead>
+                          {dict ? dict.common.proposal.againstVote : ''}
+                        </TableHead>
+                        <TableHead>
+                          {dict ? dict.common.proposal.status : ''}
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {proposals &&
+                        proposals.map((proposal, index) => (
+                          <TableRow key={proposal[0]}>
+                            <TableCell className="font-medium">
+                              {formatString(proposal[0])}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {formatString(formatEther(proposal[5]))}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {formatString(formatEther(proposal[6]))}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {proposalStatus[index]}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={3}>
+                          {dict ? dict.common.proposal.total : ''}
+                        </TableCell>
+                        <TableCell>{proposals.length}</TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
+        <ToastContainer
+          position="bottom-right"
+          closeOnClick
+          draggable
+        ></ToastContainer>
+
+        <RingLoader
+          color={'#000000'}
+          loading={loading}
+          cssOverride={override}
+          size={50}
+        />
       </div>
     </>
   )

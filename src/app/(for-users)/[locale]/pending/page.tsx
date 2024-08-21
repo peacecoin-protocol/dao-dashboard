@@ -9,6 +9,8 @@ import {
   TableRow,
 } from '~/components/ui/table'
 
+import { shortenAddress, formatString } from '~/components/utils'
+import useWindowWidth from '~/components/useWindWidth'
 import { Button } from '~/components/ui/button'
 import {
   pceAddress,
@@ -37,6 +39,13 @@ import {
 import { polygonAmoy } from '@wagmi/core/chains'
 import Link from 'next/link'
 
+import RingLoader from 'react-spinners/RingLoader'
+const override = {
+  display: 'block',
+  margin: '0 auto',
+  borderColor: 'black',
+}
+
 const config = createConfig({
   chains: [polygonAmoy],
   client({ chain }) {
@@ -48,6 +57,12 @@ export default function ForPendingPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
   const [dict, setDict] = useState<any>(null)
+  const width = useWindowWidth()
+  const colSpan = width < 1280
+
+  let [loading, setLoading] = useState(true)
+
+  let blockTimestamp = Date.now() / 1000
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -88,23 +103,26 @@ export default function ForPendingPage({
       chainId: chainId,
     })
 
-  const formatNumberString = (num: any) => {
-    return BigInt(num as string).toString()
-  }
-
   useEffect(() => {
-    if (isConfirmed) {
-      toast.success(
-        <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
-          Claim Success, View TX
-        </Link>
-      )
-    } else if (isConfirming) {
-      toast.info(<div className="disabled">TX is Pending, Please Wait...</div>)
-    } else if (error) {
-      toast.error((error as BaseError).shortMessage)
+    const notify = async () => {
+      if (isConfirmed) {
+        toast.success(
+          <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
+            Transaction Succeed!
+          </Link>
+        )
+      } else if (isConfirming) {
+        toast.info(
+          <div className="disabled">TX is Pending, Please Wait...</div>
+        )
+      } else if (error) {
+        toast.error((error as BaseError).shortMessage)
+      }
     }
+
+    notify()
   }, [isConfirmed, isConfirming, error, hash])
+
   const fetchData = async (count: any) => {
     if (!count) return
     let temp = []
@@ -146,11 +164,12 @@ export default function ForPendingPage({
     }
     setProposals(temp)
     setStatus(_status)
+    setLoading(false)
   }
 
   useEffect(() => {
     fetchData(proposalCount)
-  }, [proposalCount])
+  }, [proposalCount, isConfirmed])
 
   return (
     <div className="w-full">
@@ -163,7 +182,7 @@ export default function ForPendingPage({
           <p className="text-muted-foreground">
             {dict ? dict.pending.votingPower : ''}
             {' : '}
-            {votes ? formatEther(BigInt(votes as string)) : '0'}
+            {votes ? formatString(formatEther(BigInt(votes as string))) : '0'}
           </p>
 
           <div className="border rounded-xl">
@@ -173,16 +192,16 @@ export default function ForPendingPage({
                   <TableHead>
                     {dict ? dict.common.proposal.proposalId : ''}
                   </TableHead>
-                  <TableHead>
+                  <TableHead className="max-xl:hidden">
                     {dict ? dict.common.proposal.proposer : ''}
                   </TableHead>
-                  <TableHead>
+                  <TableHead className="max-xl:hidden">
                     {dict ? dict.common.proposal.forVote : ''}
                   </TableHead>
-                  <TableHead>
+                  <TableHead className="max-xl:hidden">
                     {dict ? dict.common.proposal.againstVote : ''}
                   </TableHead>
-                  <TableHead>
+                  <TableHead className="max-xl:hidden">
                     {dict ? dict.common.proposal.status : ''}
                   </TableHead>
                   <TableHead>
@@ -201,17 +220,21 @@ export default function ForPendingPage({
                   proposals.map((proposal, index) => (
                     <TableRow key={proposal[0]}>
                       <TableCell className="font-medium">
-                        {formatNumberString(proposal[0])}
+                        {formatString(proposal[0])}
                       </TableCell>
-                      <TableCell>{proposal[1]}</TableCell>
-                      <TableCell className="font-medium">
-                        {formatEther(proposal[5])}
+                      <TableCell className="max-xl:hidden">
+                        {shortenAddress(proposal[1])}
                       </TableCell>
-                      <TableCell className="font-medium">
-                        {formatEther(proposal[6])}
+                      <TableCell className="font-medium max-xl:hidden">
+                        {formatString(formatEther(proposal[5]))}
                       </TableCell>
-                      <TableCell>{proposalStatus[index]}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium max-xl:hidden">
+                        {formatString(formatEther(proposal[6]))}
+                      </TableCell>
+                      <TableCell className="font-medium max-xl:hidden">
+                        {proposalStatus[index]}
+                      </TableCell>
+                      <TableCell className="flex max-xl:flex-col flex-row gap-2">
                         <Button
                           disabled={proposalStatus[index] != 'Active'}
                           onClick={() => {
@@ -227,7 +250,7 @@ export default function ForPendingPage({
                         </Button>
                         <Button
                           disabled={proposalStatus[index] != 'Active'}
-                          className="ml-2"
+                          className="xl:ml-2"
                           onClick={() => {
                             writeContract({
                               abi: GOVERNOR_ABI,
@@ -242,7 +265,10 @@ export default function ForPendingPage({
                       </TableCell>
                       <TableCell>
                         <Button
-                          disabled={proposalStatus[index] != 'Queued'}
+                          disabled={
+                            blockTimestamp < proposals[index][2] ||
+                            proposalStatus[index] != 'Queued'
+                          }
                           onClick={() => {
                             writeContract({
                               abi: GOVERNOR_ABI,
@@ -276,7 +302,7 @@ export default function ForPendingPage({
               </TableBody>
               <TableFooter>
                 <TableRow>
-                  <TableCell colSpan={7}>
+                  <TableCell colSpan={colSpan ? 3 : 7}>
                     {dict ? dict.common.proposal.total : ''}
                   </TableCell>
                   <TableCell>{proposals.length}</TableCell>
@@ -289,6 +315,13 @@ export default function ForPendingPage({
             closeOnClick
             draggable
           ></ToastContainer>
+
+          <RingLoader
+            color={'#000000'}
+            loading={loading}
+            cssOverride={override}
+            size={50}
+          />
         </div>
       </div>
     </div>

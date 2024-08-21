@@ -58,27 +58,28 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       icon: <IconChecklist size={18} />,
       sub: [
         {
-          title: dict ? dict.common.sidebar.pending : 'Pending',
+          title: dict ? dict.common.sidebar.delegate : 'Delegate',
           label: '',
-          href: '/pending',
+          href: '/delegate',
           icon: <IconHexagonNumber1 size={18} />,
-        },
-        {
-          title: dict ? dict.common.sidebar.closed : 'Closed',
-          label: '',
-          href: '/closed',
-          icon: <IconHexagonNumber2 size={18} />,
         },
         {
           title: dict ? dict.common.sidebar.submit : 'Submit',
           label: '',
           href: '/submit',
+          icon: <IconHexagonNumber2 size={18} />,
+        },
+
+        {
+          title: dict ? dict.common.sidebar.pending : 'Pending',
+          label: '',
+          href: '/pending',
           icon: <IconHexagonNumber3 size={18} />,
         },
         {
-          title: dict ? dict.common.sidebar.delegate : 'Delegate',
+          title: dict ? dict.common.sidebar.closed : 'Closed',
           label: '',
-          href: '/delegate',
+          href: '/closed',
           icon: <IconHexagonNumber4 size={18} />,
         },
       ],
@@ -146,6 +147,13 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
           icon: <IconHexagonNumber7 size={18} />,
         },
       ],
+    },
+    {
+      title: dict ? dict.faq.title : 'FAQ',
+
+      label: '',
+      href: '/faq',
+      icon: <IconApps size={18} />,
     },
   ]
 }

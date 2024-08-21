@@ -69,6 +69,9 @@ const loadComponent = async (key: string) => {
     case 'pip-prc':
       Component = (await import('./(for-users)/[locale]/pip/prc/page')).default
       break
+    case 'faq':
+      Component = (await import('./(for-users)/[locale]/faq/page')).default
+      break
     default:
       Component = (await import('~/components/app-shell')).default
       break
@@ -195,6 +198,11 @@ const router = createBrowserRouter([
         path: '/:locale/pip/interface',
         loader: createLoader('pip-interface'),
         lazy: createLazy('pip-interface'),
+      },
+      {
+        path: '/:locale/faq',
+        loader: createLoader('fqa'),
+        lazy: createLazy('faq'),
       },
     ],
   },

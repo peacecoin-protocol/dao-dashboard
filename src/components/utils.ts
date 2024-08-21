@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import { ethers } from 'ethers'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -38,7 +37,7 @@ export const shortenAddress = (address: any) => {
   return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`
 }
 
-export const encodeCalldata = (abi: any, functionName: any, params: any) => {
-  const iface = new ethers.Interface(abi)
-  return iface.encodeFunctionData(functionName, params)
+export const formatString = (str: string) => {
+  if (str.length == 0) return 0
+  return parseFloat(parseFloat(str).toFixed(2))
 }

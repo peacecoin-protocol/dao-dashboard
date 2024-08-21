@@ -1,15 +1,12 @@
 'use client'
-import { Input } from '~/components/ui/input'
 
+import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 import {
   pceAddress,
   governorAddress,
   POLY_SCAN_TX,
 } from '~/app/constants/constants'
-import { encodeCalldata } from '~/components/utils'
-import { PCE_ABI } from '~/app/ABIs/PCEToken'
-import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 import { useEffect, useState } from 'react'
 import { createClient } from 'viem'
@@ -23,6 +20,7 @@ import {
   type BaseError,
 } from 'wagmi'
 
+import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 import {
   Select,
   SelectContent,
@@ -36,6 +34,7 @@ import { getDict } from '~/i18n/get-dict'
 import { polygonAmoy } from '@wagmi/core/chains'
 import Link from 'next/link'
 import { Textarea } from '@headlessui/react'
+import { ethers } from 'ethers'
 
 const config = createConfig({
   chains: [polygonAmoy],
@@ -67,7 +66,6 @@ export default function ForSubmitPage({
       hash,
     })
 
-  const [targets, setTargets] = useState('')
   const [values, setValues] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
@@ -80,7 +78,6 @@ export default function ForSubmitPage({
     const name = event.target.name
     const value = event.target.value
     if (name === 'targets') {
-      setTargets(value)
     } else if (name === 'values') {
       setValues(value)
     } else if (name === 'description') {
@@ -88,17 +85,15 @@ export default function ForSubmitPage({
     }
   }
 
-  const formatNumberString = (num: any) => {
-    return BigInt(num as string).toString()
-  }
-
   useEffect(() => {
     if (isConfirmed) {
       toast.success(
         <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
-          Claim Success, View TX
+          Transaction Succeed!
         </Link>
       )
+      setDescription('')
+      setValues('')
     } else if (isConfirming) {
       toast.info(<div className="disabled">TX is Pending, Please Wait...</div>)
     } else if (error) {
@@ -108,8 +103,8 @@ export default function ForSubmitPage({
 
   return (
     <div className="flex flex-row w-full items-center justify-center content-center">
-      <div className="flex flex-col w-1/2 items-center justify-center ">
-        <h2 className="text-2xl font-bold tracking-tight my-6">
+      <div className="flex flex-col w-full items-center justify-center max-xl:mx-10 mx-80 my-20 max-xl:my-0">
+        <h2 className="text-2xl font-bold tracking-tight my-4">
           {dict ? dict.submit.title : ''}
         </h2>
         <Select onValueChange={handleSelect}>
@@ -136,12 +131,14 @@ export default function ForSubmitPage({
             type="number"
             placeholder={dict ? dict.submit.amount : ''}
             name="values"
+            value={values}
             onChange={handleChange}
           />
 
           <Textarea
-            className="mt-5 h-20 w-full align-center p-2 rounded border-[1px] border-gray94"
+            className="mt-5 max-md:h-60 h-96 w-full align-center p-2 rounded-md border-[1px] border-gray94"
             placeholder={dict ? dict.submit.description : ''}
+            value={description}
             name="description"
             onChange={handleChange}
           />
@@ -158,14 +155,16 @@ export default function ForSubmitPage({
               let _value = '0'
               let _calldata = ''
               if (category === '2') {
-                _calldata = encodeCalldata(PCE_ABI, 'transfer', [
-                  address,
-                  values,
-                ])
+                _calldata = new ethers.AbiCoder().encode(
+                  ['address', 'uint256'],
+                  [address, values]
+                )
                 _signature = 'transfer(address,uint256)'
-                _value = values
               } else {
-                _calldata = encodeCalldata(PCE_ABI, 'approve', [address, '0'])
+                _calldata = new ethers.AbiCoder().encode(
+                  ['address', 'uint256'],
+                  [address, values]
+                )
               }
 
               writeContract({

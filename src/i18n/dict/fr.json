@@ -2,47 +2,59 @@
   "common": {
     "navigation": {
       "vote": "VOTER",
-      "token": "TOKEN",
-      "bounty": "RECOMPENSE",
-      "pips": "PIP",
+      "token": "JETON",
+      "bounty": "RÉCOMPENSE",
+      "pips": "PROPOSITIONS",
       "copyAddress": "COPIER L'ADRESSE",
-      "connect": "CONNECTER LE PORTFEUILLE",
-      "disconnect": "DÉCONNECTER LE PORTFEUILLE",
+      "connect": "CONNECTER",
+      "disconnect": "DÉCONNECTER",
       "menu": "MENU",
       "dashboard": "Tableau de bord"
     },
+    "dashboard": {
+      "totalproposals": "Total des Propositions",
+      "totalrevenue": "Revenu Total",
+      "pcebalance": "Solde PCE",
+      "claimable": "Réclamable",
+      "percontributor": "PCE par Contributeur",
+      "fromlastmonth": "par rapport au mois dernier",
+      "sincelasthour": "depuis la dernière heure",
+      "recent": "Propositions Réussies Récentes",
+      "made": "Vous avez fait",
+      "proposal_success": "propositions avec succès"
+    },
     "proposal": {
-      "proposalId": "ID de la Proposition",
-      "proposer": "Proposeur",
+      "proposalId": "ID",
+      "proposer": "Proposant",
       "forVote": "Pour",
       "againstVote": "Contre",
       "status": "Statut",
-      "castVote": "Émettre un Vote",
+      "castVote": "Voter",
       "execute": "Exécuter",
-      "queue": "File d'Attente",
+      "queue": "Mettre en file d'attente",
       "total": "Total des Propositions",
-      "list": "Liste des propositions."
+      "list": "Liste des propositions"
     },
     "sidebar": {
       "dashboard": "Tableau de bord",
       "proposals": "Propositions",
       "token": "Jeton",
-      "bounty": "Prime",
-      "pip": "PIP",
+      "bounty": "Récompense",
+      "pip": "Proposition",
       "pending": "En attente",
-      "closed": "Fermé",
+      "closed": "Fermées",
       "submit": "Soumettre",
       "delegate": "Déléguer"
     }
   },
   "home": {
-    "title": "Tableau de Bord Peace Coin DAO",
-    "description": "Bienvenue sur le Tableau de Bord de Peace Coin DAO"
+    "title": "Tableau de bord de Peace Coin DAO",
+    "description": "Ceci est le tableau de bord de Peace Coin DAO"
   },
   "submit": {
     "title": "Soumettre une Proposition",
     "category1": "Suggérer quelque chose",
-    "category2": "Demander des fonds pour investissement",
+    "category2": "Demander des fonds pour un investissement",
     "category3": "Autre",
     "propose": "Proposer",
     "select": "Sélectionner une catégorie",
@@ -50,8 +62,8 @@
     "description": "Description"
   },
   "vote": {
-    "close": "Proposition Clôturée",
-    "pending": "Propositions En Attente",
+    "close": "Proposition Fermée",
+    "pending": "Propositions en Attente",
     "submit": "Soumettre des Propositions",
     "delegate": "Déléguer des Votes",
     "propose": "Proposer",
@@ -60,60 +72,65 @@
     "description": "Description"
   },
   "token": {
-    "title": "Portefeuille de Tokens",
-    "subtitle1": "Votre Solde Actuel de Tokens",
+    "title": "Portefeuille de Jetons",
+    "subtitle1": "Votre Solde Actuel de Jetons",
     "subtitle2": "Facteur Actuel",
-    "createToken": "Créer un Token",
-    "tokenAddress": "Adresse du Token",
-    "exchangeRate": "Taux de Change",
-    "swapToLocal": "Échanger en Token Local",
-    "swapFromLocal": "Échanger depuis Token Local",
-    "totalToken": "Total des Tokens",
-    "list": "Liste des tokens communautaires."
+    "createToken": "Créer un Jeton",
+    "tokenAddress": "Adresse du Jeton",
+    "exchnageRate": "Taux de Change",
+    "swapToLocal": "Échanger pour un Jeton Local",
+    "swapFromLocal": "Échanger depuis un Jeton Local",
+    "totalToken": "Total des Jetons",
+    "list": "Liste des jetons de la communauté"
   },
   "bounty": {
     "title": "Programme de Récompenses",
-    "description": "Ce Programme de Récompenses vise à fournir des récompenses aux contributeurs",
-    "subtitle1": "Montant Fixe de Récompense",
-    "subtitle2": "Votre Montant Actuel de PCE",
-    "subtitle3": "Montant Total des Récompenses",
-    "subtitle4": "Montant Retiré",
-    "subtitle5": "Montant Réclamable",
+    "description": "Ce programme de récompenses est destiné à récompenser les contributeurs",
     "contributorBounty": "Récompense pour Contributeurs",
     "proposal": "Récompense pour Proposition",
     "addContributor": "Ajouter une Récompense pour Contributeurs",
     "addProposal": "Ajouter une Récompense pour Proposition",
-    "claimProposal": "Réclamer la Récompense de Proposition",
-    "claimContributor": "Réclamer la Récompense pour Contributeurs",
+    "claimProposal": "Réclamer une Récompense pour Proposition",
+    "claimContributor": "Réclamer une Récompense pour Contributeurs",
     "contributor": "Contributeur",
     "contributorAddr": "Adresse du Contributeur",
     "totalAmount": "Montant Total",
     "bountyAmount": "Montant de la Récompense",
     "proposalID": "ID de la Proposition",
-    "list": "Liste des contributions."
+    "total": "Total des Contributeurs"
   },
   "pipBar": {
-    "title": "Propositions d'Amélioration PEACE COIN",
-    "all": "Tous",
+    "title": "Propositions d'Amélioration de PEACE COIN",
+    "all": "Tout",
     "core": "Noyau",
     "networking": "Réseau",
     "interface": "Interface",
     "prc": "PRC",
     "meta": "Méta",
-    "info": "Information"
+    "info": "Informationnel"
   },
   "pending": {
     "title": "Propositions en Attente",
     "votingPower": "Pouvoir de Vote"
   },
   "closed": {
-    "title": "Propositions Clôturées"
+    "title": "Propositions Fermées"
   },
   "delegate": {
     "title": "Déléguer le Pouvoir de Vote",
-    "description": "Avant de pouvoir voter, vous devez attribuer vos droits de vote à vous-même ou à un tiers. Entrez l'adresse Ethereum du portefeuille qui recevra les droits de vote.",
+    "description": "Avant de voter, vous devez assigner vos droits de vote à vous-même ou à un tiers. Entrez l'adresse Ethereum du portefeuille qui recevra les droits de vote.",
     "address": "Adresse",
     "delegate": "Déléguer",
     "votingPower": "Pouvoir de Vote"
+  },
+  "faq": {
+    "title": "FAQ",
+    "q1": "Comment déléguer le pouvoir de vote ?",
+    "q2": "Comment proposer un PIP ?",
+    "q3": "Comment voter ?",
+    "q4": "Comment mettre une proposition en file d'attente ?",
+    "q5": "Comment exécuter une proposition ?",
+    "q6": "Comment ajouter une récompense à quelqu'un d'autre ?",
+    "q7": "Comment réclamer des récompenses ?"
   }
 }
