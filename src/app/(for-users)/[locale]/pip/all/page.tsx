@@ -30,6 +30,7 @@ export default function ForPage({
     }
     fetchDict()
   }, [locale])
+
   return (
     <div className="w-full gap-4 flex flex-col">
       <div className="gap-4 flex flex-col m-8">

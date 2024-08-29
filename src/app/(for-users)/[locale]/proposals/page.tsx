@@ -2,21 +2,24 @@
 
 import React, { useState, useEffect } from 'react'
 
-import 'react-toastify/dist/ReactToastify.css'
-import { useAccount, useReadContract } from 'wagmi'
-import { Link } from '~/i18n/link'
-import { Button } from '~/components/ui/button'
-import { PagePropsWithLocale } from '~/i18n/types'
-import { pceAddress } from '~/app/constants/constants'
 import { formatEther } from 'ethers'
+import { useAccount, useReadContract } from 'wagmi'
+import 'react-toastify/dist/ReactToastify.css'
 
+import { Button } from '~/components/ui/button'
+import { Link } from '~/i18n/link'
 import { getDict } from '~/i18n/get-dict'
+
+import { pceAddress } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
+
+import { PagePropsWithLocale } from '~/i18n/types'
 
 export default function ForProposalPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
   const [dict, setDict] = useState<any>(null)
+  const { address, chainId } = useAccount()
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -30,7 +33,6 @@ export default function ForProposalPage({
     fetchDict()
   }, [locale])
 
-  const { address, chainId } = useAccount()
   const { data: votes, refetch: refetchVotes } = useReadContract({
     address: pceAddress,
     abi: PCE_ABI,

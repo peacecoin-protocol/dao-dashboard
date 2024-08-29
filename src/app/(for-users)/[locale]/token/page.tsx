@@ -1,4 +1,19 @@
 'use client'
+
+import { useEffect, useState } from 'react'
+import { formatEther } from 'ethers'
+import { readContract } from '@wagmi/core'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import {
+  useAccount,
+  useReadContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  type BaseError,
+} from 'wagmi'
+import Link from 'next/link'
+
 import { Input } from '~/components/ui/input'
 import {
   Table,
@@ -17,38 +32,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '~/components/ui/dialog'
+import { Button } from '~/components/ui/button'
 import { shortenAddress, formatString } from '~/components/utils'
 import useWindowWidth from '~/components/useWindWidth'
 
-import { Button } from '~/components/ui/button'
 import { pceAddress, POLY_SCAN_TX } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { PagePropsWithLocale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
-import { useEffect, useState } from 'react'
-import { formatEther } from 'ethers'
-import { createClient } from 'viem'
-import { readContract } from '@wagmi/core'
-import { http, createConfig } from '@wagmi/core'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
-import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  type BaseError,
-} from 'wagmi'
-import { polygonAmoy } from '@wagmi/core/chains'
-import Link from 'next/link'
-
-const config = createConfig({
-  chains: [polygonAmoy],
-  client({ chain }) {
-    return createClient({ chain, transport: http() })
-  },
-})
+import { config } from '~/lib/config'
 
 export default function ForTokenPage({
   params: { locale, ...params },
@@ -56,6 +49,17 @@ export default function ForTokenPage({
   const [dict, setDict] = useState<any>(null)
   const width = useWindowWidth()
   const colSpan = width < 1280
+
+  const { address, chainId } = useAccount()
+  const { data: hash, error, writeContract } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    })
+  const [isOpened, setDialogStatus] = useState(false)
+  const [tokenInfo, setTokenInfo] = useState<any>()
+  const [exchangeRates, setExchangeRate] = useState<any[]>([])
+  const [tokens, setTokens] = useState<any[]>([])
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -68,17 +72,6 @@ export default function ForTokenPage({
     }
     fetchDict()
   }, [locale])
-  const { address, chainId } = useAccount()
-  const { data: hash, error, writeContract } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({
-      hash,
-    })
-
-  const [isOpened, setDialogStatus] = useState(false)
-  const [tokenInfo, setTokenInfo] = useState<any>()
-  const [exchangeRates, setExchangeRate] = useState<any[]>([])
-  const [tokens, setTokens] = useState<any[]>([])
 
   const { data: balance, refetch: refetchBalance } = useReadContract({
     address: pceAddress,
@@ -400,9 +393,7 @@ export default function ForTokenPage({
                 <TableHead className="max-xl:hidden">
                   {dict ? dict.token.swapToLocal : ''}
                 </TableHead>
-                <TableHead className="">
-                  {dict ? dict.token.swapFromLocal : ''}
-                </TableHead>
+                <TableHead>{dict ? dict.token.swapFromLocal : ''}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

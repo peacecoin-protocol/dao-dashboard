@@ -1,14 +1,9 @@
 'use client'
-import { Input } from '~/components/ui/input'
-
-import { Button } from '~/components/ui/button'
-import { pceAddress, POLY_SCAN_TX } from '~/app/constants/constants'
-import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
+
 import { formatEther } from 'ethers'
-import { createClient } from 'viem'
-import { http, createConfig } from '@wagmi/core'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import {
@@ -18,19 +13,16 @@ import {
   useWaitForTransactionReceipt,
   type BaseError,
 } from 'wagmi'
-import { polygonAmoy } from '@wagmi/core/chains'
-import Link from 'next/link'
 
+import { Input } from '~/components/ui/input'
+import { Button } from '~/components/ui/button'
 import { formatString } from '~/components/utils'
+
+import { pceAddress, POLY_SCAN_TX } from '~/app/constants/constants'
+import { PCE_ABI } from '~/app/ABIs/PCEToken'
+
 import { PagePropsWithLocale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
-
-const config = createConfig({
-  chains: [polygonAmoy],
-  client({ chain }) {
-    return createClient({ chain, transport: http() })
-  },
-})
 
 export default function ForDelegatePage({
   params: { locale, ...params },

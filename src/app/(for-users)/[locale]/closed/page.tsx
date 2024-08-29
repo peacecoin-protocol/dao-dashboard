@@ -1,4 +1,21 @@
 'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+
+import { formatEther } from 'ethers'
+import { readContract } from '@wagmi/core'
+import {
+  useAccount,
+  useReadContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  type BaseError,
+} from 'wagmi'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import RingLoader from 'react-spinners/RingLoader'
+
 import {
   Table,
   TableBody,
@@ -9,44 +26,18 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { shortenAddress, formatString } from '~/components/utils'
-import { governorAddress, POLY_SCAN_TX } from '~/app/constants/constants'
-import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
-
 import useWindowWidth from '~/components/useWindWidth'
 
-import { useEffect, useState } from 'react'
-import { formatEther } from 'ethers'
-import { createClient } from 'viem'
-import { readContract } from '@wagmi/core'
-import { http, createConfig } from '@wagmi/core'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
 import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  type BaseError,
-} from 'wagmi'
-import { polygonAmoy } from '@wagmi/core/chains'
-import Link from 'next/link'
+  governorAddress,
+  POLY_SCAN_TX,
+  override,
+} from '~/app/constants/constants'
+import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
+import { config } from '~/lib/config'
 import { PagePropsWithLocale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
-
-import RingLoader from 'react-spinners/RingLoader'
-const override = {
-  display: 'block',
-  margin: '0 auto',
-  borderColor: 'black',
-}
-
-const config = createConfig({
-  chains: [polygonAmoy],
-  client({ chain }) {
-    return createClient({ chain, transport: http() })
-  },
-})
 
 export default function ForClosedPage({
   params: { locale, ...params },
@@ -101,51 +92,58 @@ export default function ForClosedPage({
     }
   }, [isConfirmed, isConfirming, error, hash])
 
-  const fetchData = async (count: any) => {
+  const fetchData = async (count: number) => {
     if (!count) return
-    let temp = []
-    let _status = []
-    for (let i = 1; i <= count; i++) {
-      const proposal = await readContract(config, {
-        address: governorAddress,
-        abi: GOVERNOR_ABI,
-        functionName: 'proposals',
-        args: [i],
-      })
-      const status = await readContract(config, {
-        address: governorAddress,
-        abi: GOVERNOR_ABI,
-        functionName: 'state',
-        args: [i],
-      })
 
+    const proposalPromises = []
+    const statusPromises = []
+
+    for (let i = 1; i <= count; i++) {
+      proposalPromises.push(
+        readContract(config, {
+          address: governorAddress,
+          abi: GOVERNOR_ABI,
+          functionName: 'proposals',
+          args: [i],
+        })
+      )
+      statusPromises.push(
+        readContract(config, {
+          address: governorAddress,
+          abi: GOVERNOR_ABI,
+          functionName: 'state',
+          args: [i],
+        })
+      )
+    }
+
+    const [proposals, statuses] = await Promise.all([
+      Promise.all(proposalPromises),
+      Promise.all(statusPromises),
+    ])
+
+    const statusLabels = statuses.map((status) => {
       switch (status as number) {
         case 2:
-          _status.push('Canceled')
-          temp.push(proposal)
-          break
+          return 'Canceled'
         case 3:
-          _status.push('Defeated')
-          temp.push(proposal)
-          break
-          break
+          return 'Defeated'
         case 6:
-          _status.push('Expired')
-          temp.push(proposal)
-          break
+          return 'Expired'
         case 7:
-          _status.push('Executed')
-          temp.push(proposal)
-          break
+          return 'Executed'
+        default:
+          return 'Unknown'
       }
-    }
+    })
+
+    setProposals(proposals)
+    setStatus(statusLabels)
     setLoading(false)
-    setProposals(temp)
-    setStatus(_status)
   }
 
   useEffect(() => {
-    fetchData(proposalCount)
+    fetchData(proposalCount as number)
   }, [proposalCount])
 
   return (
@@ -155,10 +153,10 @@ export default function ForClosedPage({
           {dict ? dict.closed.title : ''}
         </h2>
         <div className="rounded-xl flex border">
-          <Table className="">
+          <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="">
+                <TableHead>
                   {dict ? dict.common.proposal.proposalId : ''}
                 </TableHead>
                 <TableHead>

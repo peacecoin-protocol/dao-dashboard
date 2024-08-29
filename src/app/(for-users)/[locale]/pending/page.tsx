@@ -1,4 +1,21 @@
 'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+
+import { formatEther } from 'ethers'
+import {
+  useAccount,
+  useReadContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  type BaseError,
+} from 'wagmi'
+import { readContract } from '@wagmi/core'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import RingLoader from 'react-spinners/RingLoader'
+
 import {
   Table,
   TableBody,
@@ -8,50 +25,23 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
+import { Button } from '~/components/ui/button'
+import useWindowWidth from '~/components/useWindWidth'
 
 import { shortenAddress, formatString } from '~/components/utils'
-import useWindowWidth from '~/components/useWindWidth'
-import { Button } from '~/components/ui/button'
+
 import {
   pceAddress,
   governorAddress,
   POLY_SCAN_TX,
+  override,
 } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
+
+import { config } from '~/lib/config'
 import { PagePropsWithLocale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
-
-import { useEffect, useState } from 'react'
-import { formatEther } from 'ethers'
-import { createClient } from 'viem'
-import { readContract } from '@wagmi/core'
-import { http, createConfig } from '@wagmi/core'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
-import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  type BaseError,
-} from 'wagmi'
-import { polygonAmoy } from '@wagmi/core/chains'
-import Link from 'next/link'
-
-import RingLoader from 'react-spinners/RingLoader'
-const override = {
-  display: 'block',
-  margin: '0 auto',
-  borderColor: 'black',
-}
-
-const config = createConfig({
-  chains: [polygonAmoy],
-  client({ chain }) {
-    return createClient({ chain, transport: http() })
-  },
-})
 
 export default function ForPendingPage({
   params: { locale, ...params },
@@ -64,6 +54,16 @@ export default function ForPendingPage({
 
   let blockTimestamp = Date.now() / 1000
 
+  const { address, chainId } = useAccount()
+  const { data: hash, error, writeContract } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    })
+
+  const [proposals, setProposals] = useState<any[]>([])
+  const [proposalStatus, setStatus] = useState<any[]>([])
+
   useEffect(() => {
     const fetchDict = async () => {
       try {
@@ -75,16 +75,6 @@ export default function ForPendingPage({
     }
     fetchDict()
   }, [locale])
-
-  const { address, chainId } = useAccount()
-  const { data: hash, error, writeContract } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({
-      hash,
-    })
-
-  const [proposals, setProposals] = useState<any[]>([])
-  const [proposalStatus, setStatus] = useState<any[]>([])
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
     address: pceAddress,

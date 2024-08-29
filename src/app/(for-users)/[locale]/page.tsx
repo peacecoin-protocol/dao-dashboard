@@ -22,6 +22,7 @@ import {
   pceAddress,
   governorAddress,
   bountyAddress,
+  override,
 } from '~/app/constants/constants'
 
 import { formatString } from '~/components/utils'
@@ -42,11 +43,6 @@ import { useAccount, useReadContract } from 'wagmi'
 import { polygonAmoy } from '@wagmi/core/chains'
 
 import RingLoader from 'react-spinners/RingLoader'
-const override = {
-  display: 'block',
-  margin: '0 auto',
-  borderColor: 'black',
-}
 
 const config = createConfig({
   chains: [polygonAmoy],

@@ -1,16 +1,24 @@
 'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import { gql } from '@apollo/client'
+import { formatEther } from 'ethers'
+import { parseEther } from 'viem'
+import {
+  useAccount,
+  useReadContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  type BaseError,
+} from 'wagmi'
+import { readContract } from '@wagmi/core'
+
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
-import {
-  pceAddress,
-  bountyAddress,
-  POLY_SCAN_TX,
-  governorAddress,
-} from '~/app/constants/constants'
-import { PCE_ABI } from '~/app/ABIs/PCEToken'
-import { BOUNTY_ABI } from '~/app/ABIs/Bounty'
-
-import { shortenAddress, formatString } from '~/components/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import {
   Table,
@@ -22,53 +30,24 @@ import {
   TableFooter,
 } from '~/components/ui/table'
 import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/card'
+import { shortenAddress, formatString } from '~/components/utils'
 
-import { PagePropsWithLocale } from '~/i18n/types'
-import { getDict } from '~/i18n/get-dict'
-
-import { useEffect, useState } from 'react'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
 import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  type BaseError,
-} from 'wagmi'
-import { readContract } from '@wagmi/core'
-import { parseEther, createClient } from 'viem'
-import { polygonAmoy } from '@wagmi/core/chains'
-import { http, createConfig } from '@wagmi/core'
-
-import Link from 'next/link'
-import { BigNumberish, ethers, formatEther } from 'ethers'
-
-import { gql } from '@apollo/client'
-import createApolloClient from '~/app/apollo-client'
+  pceAddress,
+  bountyAddress,
+  POLY_SCAN_TX,
+  governorAddress,
+  provider,
+} from '~/app/constants/constants'
+import { PCE_ABI } from '~/app/ABIs/PCEToken'
+import { BOUNTY_ABI } from '~/app/ABIs/Bounty'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
-interface Contributor {
-  contributor: string | null
-  totalAmount: BigNumberish
-  id?: string
-}
+import { config } from '~/lib/config'
+import { PagePropsWithLocale, Contributor, Proposal } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
 
-interface Proposal {
-  id: string | null
-  amount: BigNumberish
-}
-
-const config = createConfig({
-  chains: [polygonAmoy],
-  client({ chain }) {
-    return createClient({ chain, transport: http() })
-  },
-})
-
-const provider = new ethers.JsonRpcProvider(
-  'https://polygon-amoy.blockpi.network/v1/rpc/public'
-)
+import createApolloClient from '~/app/apollo-client'
 
 export default function ForBountyPage({
   params: { locale, ...params },
@@ -184,6 +163,11 @@ export default function ForBountyPage({
     chainId: chainId,
   })
 
+  const refetchData = async () => {
+    await refetchBalance()
+    await refetchBountyAmount()
+    await refetchContributorBounties()
+  }
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const name = event.target.name
     const value = event.target.value
@@ -206,7 +190,7 @@ export default function ForBountyPage({
         args: [proposalId],
       })
 
-      const txReceipt = await provider.waitForTransaction(claimProposalBountyTX)
+      await provider.waitForTransaction(claimProposalBountyTX)
     } catch (error) {
       toast.error((error as BaseError).shortMessage)
     }
@@ -221,13 +205,9 @@ export default function ForBountyPage({
         args: [],
       })
 
-      const txReceipt = await provider.waitForTransaction(
-        claimContributorBountyTX
-      )
+      await provider.waitForTransaction(claimContributorBountyTX)
 
-      await refetchBalance()
-      await refetchBountyAmount()
-      await refetchContributorBounties()
+      await refetchData()
     } catch (error) {
       toast.error((error as BaseError).shortMessage)
     }
@@ -257,7 +237,8 @@ export default function ForBountyPage({
             },
           }
         )
-        const transactionReceipt = await provider.waitForTransaction(tx)
+
+        await provider.waitForTransaction(tx)
       }
       const addProposalBountyTX = await writeContractAsync({
         abi: BOUNTY_ABI,
@@ -266,11 +247,9 @@ export default function ForBountyPage({
         args: [proposalId, parseEther(bountyAmount)],
       })
 
-      const txReceipt = await provider.waitForTransaction(addProposalBountyTX)
+      provider.waitForTransaction(addProposalBountyTX)
 
-      await refetchBalance()
-      await refetchBountyAmount()
-      await refetchContributorBounties()
+      await refetchData()
     } catch (error) {
       toast.error((error as BaseError).shortMessage)
     }
@@ -300,7 +279,8 @@ export default function ForBountyPage({
             },
           }
         )
-        const transactionReceipt = await provider.waitForTransaction(tx)
+
+        await provider.waitForTransaction(tx)
       }
       const addContributorBountyTX = await writeContractAsync({
         abi: BOUNTY_ABI,
@@ -309,13 +289,9 @@ export default function ForBountyPage({
         args: [contributorAddr, parseEther(bountyAmount)],
       })
 
-      const txReceipt = await provider.waitForTransaction(
-        addContributorBountyTX
-      )
+      await provider.waitForTransaction(addContributorBountyTX)
 
-      await refetchBalance()
-      await refetchBountyAmount()
-      await refetchContributorBounties()
+      await refetchData()
     } catch (error) {
       toast.error((error as BaseError).shortMessage)
     }
@@ -333,9 +309,7 @@ export default function ForBountyPage({
         setBountyAmount('')
         setContributorAddr('')
 
-        await refetchBalance()
-        await refetchBountyAmount()
-        await refetchContributorBounties()
+        await refetchData()
       } else if (isConfirming) {
         toast.info(
           <div className="disabled">TX is Pending, Please Wait...</div>
@@ -490,7 +464,7 @@ export default function ForBountyPage({
           </Card>
         </div>
 
-        <Tabs defaultValue="contributor" className="">
+        <Tabs defaultValue="contributor">
           <TabsList>
             <TabsTrigger value="contributor">
               {dict ? dict.bounty.contributorBounty : ''}
@@ -621,7 +595,7 @@ export default function ForBountyPage({
               </div>
 
               <div className="rounded-xl border">
-                <Table className="">
+                <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>
