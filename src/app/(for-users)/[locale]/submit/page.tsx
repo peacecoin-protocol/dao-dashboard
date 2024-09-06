@@ -30,15 +30,16 @@ import {
   pceAddress,
   governorAddress,
   POLY_SCAN_TX,
+  factoryAddress,
 } from '~/app/constants/constants'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
-import { PagePropsWithLocale } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 
 export default function ForSubmitPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
   const { address, chainId } = useAccount()
   const { data: hash, error, writeContract } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -48,6 +49,7 @@ export default function ForSubmitPage({
 
   const [values, setValues] = useState('')
   const [description, setDescription] = useState('')
+  const [bytescode, setBytesCodes] = useState('')
   const [category, setCategory] = useState('')
 
   useEffect(() => {
@@ -74,6 +76,8 @@ export default function ForSubmitPage({
       setValues(value)
     } else if (name === 'description') {
       setDescription(value)
+    } else if (name === 'bytescode') {
+      setBytesCodes(value)
     }
   }
 
@@ -93,47 +97,52 @@ export default function ForSubmitPage({
     }
   }, [isConfirmed, isConfirming, error, hash])
 
+  const submit = dict?.submit ?? {}
+
   return (
     <div className="flex flex-row w-full items-center justify-center content-center">
       <div className="flex flex-col w-full items-center justify-center max-xl:mx-10 mx-80 my-20 max-xl:my-0">
         <h2 className="text-2xl font-bold tracking-tight my-4">
-          {dict ? dict.submit.title : ''}
+          {submit.title ?? ''}
         </h2>
         <Select onValueChange={handleSelect}>
           <SelectTrigger className="w-full">
-            <SelectValue placeholder={dict ? dict.submit.select : ''} />
+            <SelectValue placeholder={submit.select ?? ''} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="1">
-              {dict ? dict.submit.category1 : ''}
-            </SelectItem>
-            <SelectItem value="2">
-              {dict ? dict.submit.category2 : ''}
-            </SelectItem>
-            <SelectItem value="3">
-              {dict ? dict.submit.category3 : ''}
-            </SelectItem>
+            <SelectItem value="1">{submit.category1 ?? ''}</SelectItem>
+            <SelectItem value="2">{submit.category2 ?? ''}</SelectItem>
+            <SelectItem value="4">{submit.category4 ?? ''}</SelectItem>
+            <SelectItem value="3">{submit.category3 ?? ''}</SelectItem>
           </SelectContent>
         </Select>
 
         <div className="w-full">
           <Input
-            hidden={category !== '2'}
-            className="mt-5"
+            className={`mt-5 ${category == '4' ? 'hidden' : ''}`}
             type="number"
-            placeholder={dict ? dict.submit.amount : ''}
+            placeholder={submit.amount ?? ''}
             name="values"
             value={values}
             onChange={handleChange}
           />
 
           <Textarea
-            className="mt-5 max-md:h-60 h-96 w-full align-center p-2 rounded-md border-[1px] border-gray94"
-            placeholder={dict ? dict.submit.description : ''}
+            className="mt-5 max-md:h-60 h-60 w-full align-center p-2 rounded-md border-[1px] border-gray94 focus:outline-none"
+            placeholder={submit.description ?? ''}
             value={description}
             name="description"
             onChange={handleChange}
           />
+
+          <Textarea
+            className={`mt-5 max-md:h-60 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94 focus:outline-none ${category != '4' ? 'hidden' : ''}`}
+            placeholder={submit.bytescode ?? ''}
+            value={bytescode}
+            name="byescode"
+            onChange={handleChange}
+          />
+
           <Button
             className="mt-5 w-full"
             variant="outline"
@@ -146,12 +155,17 @@ export default function ForSubmitPage({
               let _signature = 'approve(address,uint256)'
               let _value = '0'
               let _calldata = ''
+              let _address = pceAddress
               if (category === '2') {
                 _calldata = new ethers.AbiCoder().encode(
                   ['address', 'uint256'],
                   [address, values]
                 )
                 _signature = 'transfer(address,uint256)'
+              } else if (category === '4') {
+                _signature = 'deploy(bytes)'
+                _calldata = new ethers.AbiCoder().encode(['bytes'], [bytescode])
+                _address = factoryAddress
               } else {
                 _calldata = new ethers.AbiCoder().encode(
                   ['address', 'uint256'],
@@ -164,7 +178,7 @@ export default function ForSubmitPage({
                 address: governorAddress,
                 functionName: 'propose',
                 args: [
-                  [pceAddress],
+                  [_address],
                   [_value],
                   [_signature],
                   [_calldata],
@@ -173,7 +187,7 @@ export default function ForSubmitPage({
               })
             }}
           >
-            {dict ? dict.submit.propose : ''}
+            {submit.propose ?? ''}
           </Button>
 
           <ToastContainer

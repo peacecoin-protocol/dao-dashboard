@@ -21,13 +21,13 @@ import { formatString } from '~/components/utils'
 import { pceAddress, POLY_SCAN_TX } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
-import { PagePropsWithLocale } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
 export default function ForDelegatePage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -98,25 +98,27 @@ export default function ForDelegatePage({
     notify()
   }, [isConfirmed, isConfirming, error, hash])
 
+  const delegate = dict?.delegate ?? {}
+
   return (
     <div className="items-center justify-center flex w-full">
       <div className="flex flex-col max-xl:mx-10 mx-80 max-xl:my-0 my-20 gap-4">
         <h2 className="text-2xl font-bold tracking-tight my-4 text-center">
-          {dict ? dict.delegate.title : ''}
+          {delegate.title ?? ''}
         </h2>
         <div className="text-muted-foreground">
-          {dict ? dict.delegate.votingPower : ''} :{' '}
+          {delegate.votingPower ?? ''} :{' '}
           {votes ? formatString(formatEther(BigInt(votes as string))) : '0'}
         </div>
 
         <div className="text-muted-foreground">
-          {dict ? dict.delegate.description : ''}
+          {delegate.description ?? ''}
         </div>
         <Input
           type="address"
           name="delegateAddr"
           value={delegateAddr}
-          placeholder={dict ? dict.delegate.address : ''}
+          placeholder={delegate.address ?? ''}
           className="mt-5"
           onChange={handleChange}
         />
@@ -128,7 +130,7 @@ export default function ForDelegatePage({
             handleDelegate()
           }}
         >
-          {dict ? dict.delegate.delegate : ''}
+          {delegate.delegate ?? ''}
         </Button>
         <ToastContainer
           position="bottom-right"

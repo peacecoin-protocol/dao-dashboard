@@ -13,7 +13,7 @@ import {
   IconHexagonNumber6,
 } from '@tabler/icons-react'
 
-import { Locale } from '~/i18n/types'
+import { Locale, Dictionary } from '~/i18n/types'
 
 import { useEffect, useState } from 'react'
 import { getDict } from '~/i18n/get-dict'
@@ -30,7 +30,9 @@ export interface SideLink extends NavLink {
 }
 
 export const useSideLinks = (locale: Locale): SideLink[] => {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
+  const sidebar = dict?.sidebar ?? {}
+  const faqTitle = dict?.faq.title ?? 'FAQ'
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -46,38 +48,37 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
 
   return [
     {
-      title: dict ? dict.common.sidebar.dashboard : 'Dashboard',
+      title: sidebar.dashboard ?? 'Dashboard',
       label: '',
       href: '/',
       icon: <IconLayoutDashboard size={18} />,
     },
     {
-      title: dict ? dict.common.sidebar.proposals : 'Proposals',
+      title: sidebar.proposals ?? 'Proposals',
       label: '4',
       href: '/proposals',
       icon: <IconChecklist size={18} />,
       sub: [
         {
-          title: dict ? dict.common.sidebar.delegate : 'Delegate',
+          title: sidebar.delegate ?? 'Delegate',
           label: '',
           href: '/delegate',
           icon: <IconHexagonNumber1 size={18} />,
         },
         {
-          title: dict ? dict.common.sidebar.submit : 'Submit',
+          title: sidebar.submit ?? 'Submit',
           label: '',
           href: '/submit',
           icon: <IconHexagonNumber2 size={18} />,
         },
-
         {
-          title: dict ? dict.common.sidebar.pending : 'Pending',
+          title: sidebar.pending ?? 'Pending',
           label: '',
           href: '/pending',
           icon: <IconHexagonNumber3 size={18} />,
         },
         {
-          title: dict ? dict.common.sidebar.closed : 'Closed',
+          title: sidebar.closed ?? 'Closed',
           label: '',
           href: '/closed',
           icon: <IconHexagonNumber4 size={18} />,
@@ -85,21 +86,19 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       ],
     },
     {
-      title: dict ? dict.common.sidebar.token : 'Token',
-
+      title: sidebar.token ?? 'Token',
       label: '',
       href: '/token',
       icon: <IconMessages size={18} />,
     },
     {
-      title: dict ? dict.common.sidebar.bounty : 'Bounty',
-
+      title: sidebar.bounty ?? 'Bounty',
       label: '',
       href: '/bounty',
       icon: <IconApps size={18} />,
     },
     {
-      title: dict ? dict.common.sidebar.pip : 'PIP',
+      title: sidebar.pip ?? 'PIP',
       label: '5',
       href: '/pip',
       icon: <IconUserShield size={18} />,
@@ -149,8 +148,7 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       ],
     },
     {
-      title: dict ? dict.faq.title : 'FAQ',
-
+      title: faqTitle,
       label: '',
       href: '/faq',
       icon: <IconApps size={18} />,

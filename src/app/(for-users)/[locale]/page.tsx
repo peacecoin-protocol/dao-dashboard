@@ -22,14 +22,14 @@ import {
   pceAddress,
   governorAddress,
   bountyAddress,
-  override,
 } from '~/app/constants/constants'
+import { ringStyle } from '~/app/constants/styles'
 
 import { formatString } from '~/components/utils'
 import { BOUNTY_ABI } from '~/app/ABIs/Bounty'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
-import { PagePropsWithLocale } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
 import { useEffect, useState } from 'react'
@@ -54,7 +54,7 @@ const config = createConfig({
 export default function ForUsersIndexPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
   const { address, chainId } = useAccount()
   const [proposals, setProposals] = useState<any[]>([])
   const [proposalStatus, setStatus] = useState<any[]>([])
@@ -170,18 +170,21 @@ export default function ForUsersIndexPage({
     fetchData(proposalCount)
   }, [proposalCount])
 
+  const navigation = dict?.navigation ?? {}
+  const dashboard = dict?.dashboard ?? {}
+  const proposal = dict?.proposal ?? {}
   return (
     <>
       <div className="w-full">
         <div className="m-8 gap-4 flex flex-col">
           <h2 className="text-2xl font-bold tracking-tight mt-6">
-            {dict ? dict.common.navigation.dashboard : ''}
+            {navigation.dashboard ?? ''}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  {dict ? dict.common.dashboard.totalproposals : ''}
+                  {dashboard.totalproposals ?? ''}
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -199,14 +202,14 @@ export default function ForUsersIndexPage({
               <CardContent>
                 <div className="text-2xl font-bold">{proposals.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  +20.1% {dict ? dict.common.dashboard.fromlastmonth : ''}
+                  +20.1% {dashboard.fromlastmonth ?? ''}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  {dict ? dict.common.dashboard.totalrevenue : ''}
+                  {dashboard.totalrevenue ?? ''}
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -230,14 +233,14 @@ export default function ForUsersIndexPage({
                   PCE
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  +180.1% {dict ? dict.common.dashboard.fromlastmonth : ''}
+                  +180.1% {dashboard.fromlastmonth ?? ''}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  {dict ? dict.common.dashboard.pcebalance : ''}
+                  {dashboard.pcebalance ?? ''}
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -262,7 +265,7 @@ export default function ForUsersIndexPage({
                   PCE
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  +19% {dict ? dict.common.dashboard.fromlastmonth : ''}
+                  +19% {dashboard.fromlastmonth ?? ''}
                 </p>
               </CardContent>
             </Card>
@@ -287,7 +290,7 @@ export default function ForUsersIndexPage({
               <CardContent>
                 <div className="text-2xl font-bold">+3</div>
                 <p className="text-xs text-muted-foreground">
-                  +201 {dict ? dict.common.dashboard.sincelasthour : ''}
+                  +201 {dashboard.sincelasthour ?? ''}
                 </p>
               </CardContent>
             </Card>
@@ -295,12 +298,10 @@ export default function ForUsersIndexPage({
           <div className="grid grid-cols-1">
             <Card className="col-span-3">
               <CardHeader>
-                <CardTitle>
-                  {dict ? dict.common.dashboard.recent : ''}
-                </CardTitle>
+                <CardTitle>{dashboard.recent ?? ''}</CardTitle>
                 <CardDescription>
-                  {dict ? dict.common.dashboard.made : ''} {proposals.length}{' '}
-                  {dict ? dict.common.dashboard.proposal_success : ''}.
+                  {dashboard.made ?? ''} {proposals.length}{' '}
+                  {dashboard.proposal_success ?? ''}.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -308,18 +309,10 @@ export default function ForUsersIndexPage({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>
-                          {dict ? dict.common.proposal.proposalId : ''}
-                        </TableHead>
-                        <TableHead>
-                          {dict ? dict.common.proposal.forVote : ''}
-                        </TableHead>
-                        <TableHead>
-                          {dict ? dict.common.proposal.againstVote : ''}
-                        </TableHead>
-                        <TableHead>
-                          {dict ? dict.common.proposal.status : ''}
-                        </TableHead>
+                        <TableHead>{proposal.proposalId ?? ''}</TableHead>
+                        <TableHead>{proposal.forVote ?? ''}</TableHead>
+                        <TableHead>{proposal.againstVote ?? ''}</TableHead>
+                        <TableHead>{proposal.status ?? ''}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -344,7 +337,7 @@ export default function ForUsersIndexPage({
                     <TableFooter>
                       <TableRow>
                         <TableCell colSpan={3}>
-                          {dict ? dict.common.proposal.total : ''}
+                          {proposal.total ?? ''}
                         </TableCell>
                         <TableCell>{proposals.length}</TableCell>
                       </TableRow>
@@ -364,7 +357,7 @@ export default function ForUsersIndexPage({
         <RingLoader
           color={'#000000'}
           loading={loading}
-          cssOverride={override}
+          cssOverride={ringStyle}
           size={50}
         />
       </div>

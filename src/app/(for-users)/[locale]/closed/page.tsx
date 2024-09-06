@@ -28,21 +28,18 @@ import {
 import { shortenAddress, formatString } from '~/components/utils'
 import useWindowWidth from '~/components/useWindWidth'
 
-import {
-  governorAddress,
-  POLY_SCAN_TX,
-  override,
-} from '~/app/constants/constants'
+import { governorAddress, POLY_SCAN_TX } from '~/app/constants/constants'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 import { config } from '~/lib/config'
-import { PagePropsWithLocale } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
+import { ringStyle } from '~/app/constants/styles'
 
 export default function ForClosedPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
   const width = useWindowWidth()
   const colSpan = width < 1280
   let [loading, setLoading] = useState(true)
@@ -146,29 +143,29 @@ export default function ForClosedPage({
     fetchData(proposalCount as number)
   }, [proposalCount])
 
+  const dashboard = dict?.dashboard ?? {}
+  const proposal = dict?.proposal ?? {}
+  const closed = dict?.closed ?? {}
+
   return (
     <div className="w-full">
       <div className="mx-8 gap-4 flex-col flex">
         <h2 className="text-2xl font-bold tracking-tight mt-6">
-          {dict ? dict.closed.title : ''}
+          {closed.title ?? ''}
         </h2>
         <div className="rounded-xl flex border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>
-                  {dict ? dict.common.proposal.proposalId : ''}
-                </TableHead>
-                <TableHead>
-                  {dict ? dict.common.proposal.proposer : ''}
+                <TableHead>{proposal.proposalId ?? ''}</TableHead>
+                <TableHead>{proposal.proposer ?? ''}</TableHead>
+                <TableHead className="max-xl:hidden">
+                  {proposal.forVote ?? ''}
                 </TableHead>
                 <TableHead className="max-xl:hidden">
-                  {dict ? dict.common.proposal.forVote : ''}
+                  {proposal.againstVote ?? ''}
                 </TableHead>
-                <TableHead className="max-xl:hidden">
-                  {dict ? dict.common.proposal.againstVote : ''}
-                </TableHead>
-                <TableHead>{dict ? dict.common.proposal.status : ''}</TableHead>
+                <TableHead>{proposal.status ?? ''}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -192,7 +189,7 @@ export default function ForClosedPage({
             <TableFooter>
               <TableRow>
                 <TableCell colSpan={colSpan ? 2 : 4}>
-                  {dict ? dict.common.proposal.total : ''}
+                  {proposal.total ?? ''}
                 </TableCell>
                 <TableCell>{proposals.length}</TableCell>
               </TableRow>
@@ -208,7 +205,7 @@ export default function ForClosedPage({
         <RingLoader
           color={'#000000'}
           loading={loading}
-          cssOverride={override}
+          cssOverride={ringStyle}
           size={50}
         />
       </div>

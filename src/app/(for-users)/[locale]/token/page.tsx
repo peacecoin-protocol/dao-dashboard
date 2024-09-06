@@ -38,7 +38,7 @@ import useWindowWidth from '~/components/useWindWidth'
 
 import { pceAddress, POLY_SCAN_TX } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
-import { PagePropsWithLocale } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
 import { config } from '~/lib/config'
@@ -46,7 +46,7 @@ import { config } from '~/lib/config'
 export default function ForTokenPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
   const width = useWindowWidth()
   const colSpan = width < 1280
 
@@ -273,20 +273,22 @@ export default function ForTokenPage({
     })
   }
 
+  const token = dict?.token ?? {}
+
   return (
     <div className="w-full gap-4 flex flex-col">
       <div className="flex flex-col mx-8 gap-2">
         <h2 className="text-2xl font-bold tracking-tight mt-6">
-          {dict ? dict.token.title : ''}
+          {token.title ?? ''}
         </h2>
         <p className="text-muted-foreground">
-          {dict ? dict.token.subtitle1 : ''}
+          {token.subtitle1 ?? ''}
           {': '}
           {balance ? formatString(formatEther(BigInt(balance as string))) : '0'}
         </p>
 
         <p className="text-muted-foreground">
-          {dict ? dict.token.subtitle2 : ''}
+          {token.subtitle2 ?? ''}
           {': '} {factor ? formatEther(BigInt(factor as string)) : '0'}
         </p>
         <Button
@@ -296,7 +298,7 @@ export default function ForTokenPage({
             setDialogStatus(true)
           }}
         >
-          {dict ? dict.token.createToken : ''}
+          {token.createToken ?? ''}
         </Button>
         <Dialog
           open={isOpened}
@@ -388,12 +390,12 @@ export default function ForTokenPage({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{dict ? dict.token.tokenAddress : ''}</TableHead>
-                <TableHead>{dict ? dict.token.exchnageRate : ''}</TableHead>
+                <TableHead>{token.tokenAddress ?? ''}</TableHead>
+                <TableHead>{token.exchnageRate ?? ''}</TableHead>
                 <TableHead className="max-xl:hidden">
-                  {dict ? dict.token.swapToLocal : ''}
+                  {token.swapToLocal ?? ''}
                 </TableHead>
-                <TableHead>{dict ? dict.token.swapFromLocal : ''}</TableHead>
+                <TableHead>{token.swapFromLocal ?? ''}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -419,7 +421,7 @@ export default function ForTokenPage({
                           })
                         }}
                       >
-                        {dict ? dict.token.swapToLocal : ''}
+                        {token.swapToLocal ?? ''}
                       </Button>
 
                       <Button
@@ -428,7 +430,7 @@ export default function ForTokenPage({
                           handleSwapFromLocalToken(token)
                         }}
                       >
-                        {dict ? dict.token.swapFromLocal : ''}
+                        {token.swapFromLocal ?? ''}
                       </Button>
                     </TableCell>
                     <TableCell className="max-xl:hidden">
@@ -437,7 +439,7 @@ export default function ForTokenPage({
                           handleSwapFromLocalToken(token)
                         }}
                       >
-                        {dict ? dict.token.swapFromLocal : ''}
+                        {token.swapFromLocal ?? ''}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -446,7 +448,7 @@ export default function ForTokenPage({
             <TableFooter>
               <TableRow>
                 <TableCell colSpan={colSpan ? 2 : 3}>
-                  {dict ? dict.token.totalToken : ''}
+                  {token.totalToken ?? ''}
                 </TableCell>
                 <TableCell>{tokens && tokens.length}</TableCell>
               </TableRow>

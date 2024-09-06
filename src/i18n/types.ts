@@ -22,3 +22,24 @@ export interface Proposal {
   id: string | null
   amount: BigNumberish
 }
+
+export interface Section {
+  [key: string]: string
+}
+
+export interface Dictionary {
+  navigation: Section
+  dashboard: Section
+  proposal: Section
+  sidebar: Section
+  home: Section
+  submit: Section
+  vote: Section
+  token: Section
+  bounty: Section
+  pipBar: Section
+  pending: Section
+  closed: Section
+  delegate: Section
+  faq: Section
+}

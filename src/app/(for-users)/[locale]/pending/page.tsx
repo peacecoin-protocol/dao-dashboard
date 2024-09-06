@@ -34,19 +34,19 @@ import {
   pceAddress,
   governorAddress,
   POLY_SCAN_TX,
-  override,
 } from '~/app/constants/constants'
+import { ringStyle } from '~/app/constants/styles'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 import { config } from '~/lib/config'
-import { PagePropsWithLocale } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
 export default function ForPendingPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
   const width = useWindowWidth()
   const colSpan = width < 1280
 
@@ -161,16 +161,19 @@ export default function ForPendingPage({
     fetchData(proposalCount)
   }, [proposalCount, isConfirmed])
 
+  const propose = dict?.proposal ?? {}
+  const pending = dict?.pending ?? {}
+
   return (
     <div className="w-full">
       <div className="mx-8 gap-4 flex-col flex">
         <h2 className="text-2xl font-bold tracking-tight mt-6">
-          {dict ? dict.pending.title : ''}
+          {pending.title ?? ''}
         </h2>
 
         <div className="gap-4 flex flex-col">
           <p className="text-muted-foreground">
-            {dict ? dict.pending.votingPower : ''}
+            {pending.votingPower ?? ''}
             {' : '}
             {votes ? formatString(formatEther(BigInt(votes as string))) : '0'}
           </p>
@@ -179,30 +182,22 @@ export default function ForPendingPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>
-                    {dict ? dict.common.proposal.proposalId : ''}
+                  <TableHead>{propose.proposalId ?? ''}</TableHead>
+                  <TableHead className="max-xl:hidden">
+                    {propose.proposer ?? ''}
                   </TableHead>
                   <TableHead className="max-xl:hidden">
-                    {dict ? dict.common.proposal.proposer : ''}
+                    {propose.forVote ?? ''}
                   </TableHead>
                   <TableHead className="max-xl:hidden">
-                    {dict ? dict.common.proposal.forVote : ''}
+                    {propose.againstVote ?? ''}
                   </TableHead>
                   <TableHead className="max-xl:hidden">
-                    {dict ? dict.common.proposal.againstVote : ''}
+                    {propose.status ?? ''}
                   </TableHead>
-                  <TableHead className="max-xl:hidden">
-                    {dict ? dict.common.proposal.status : ''}
-                  </TableHead>
-                  <TableHead>
-                    {dict ? dict.common.proposal.castVote : ''}
-                  </TableHead>
-                  <TableHead>
-                    {dict ? dict.common.proposal.execute : ''}
-                  </TableHead>
-                  <TableHead>
-                    {dict ? dict.common.proposal.queue : ''}
-                  </TableHead>
+                  <TableHead>{propose.castVote ?? ''}</TableHead>
+                  <TableHead>{propose.execute ?? ''}</TableHead>
+                  <TableHead>{propose.queue ?? ''}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -236,7 +231,7 @@ export default function ForPendingPage({
                             })
                           }}
                         >
-                          {dict ? dict.common.proposal.forVote : ''}
+                          {propose.forVote ?? ''}
                         </Button>
                         <Button
                           disabled={proposalStatus[index] != 'Active'}
@@ -250,7 +245,7 @@ export default function ForPendingPage({
                             })
                           }}
                         >
-                          {dict ? dict.common.proposal.againstVote : ''}
+                          {propose.againstVote ?? ''}
                         </Button>
                       </TableCell>
                       <TableCell>
@@ -268,7 +263,7 @@ export default function ForPendingPage({
                             })
                           }}
                         >
-                          {dict ? dict.common.proposal.execute : ''}
+                          {propose.execute ?? ''}
                         </Button>
                       </TableCell>
 
@@ -284,7 +279,7 @@ export default function ForPendingPage({
                             })
                           }}
                         >
-                          {dict ? dict.common.proposal.queue : ''}
+                          {propose.queue ?? ''}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -293,7 +288,7 @@ export default function ForPendingPage({
               <TableFooter>
                 <TableRow>
                   <TableCell colSpan={colSpan ? 3 : 7}>
-                    {dict ? dict.common.proposal.total : ''}
+                    {propose.total ?? ''}
                   </TableCell>
                   <TableCell>{proposals.length}</TableCell>
                 </TableRow>
@@ -309,7 +304,7 @@ export default function ForPendingPage({
           <RingLoader
             color={'#000000'}
             loading={loading}
-            cssOverride={override}
+            cssOverride={ringStyle}
             size={50}
           />
         </div>

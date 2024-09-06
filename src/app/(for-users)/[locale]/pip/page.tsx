@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-import { PagePropsWithLocale } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
 import { useEffect, useState } from 'react'
@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
 export default function ForPendingPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
 
   useEffect(() => {
     const fetchDict = async () => {

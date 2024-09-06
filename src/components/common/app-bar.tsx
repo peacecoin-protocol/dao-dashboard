@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { getDict } from '~/i18n/get-dict'
+import { Dictionary } from '~/i18n/types'
 
 import { LINKS, shortenAddress } from '~/components/utils'
 
@@ -23,7 +24,7 @@ import { Locale } from '~/i18n/types'
 import { UserNav } from '../user-nav'
 
 function AppBar({ locale }: { locale: Locale }) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
 
   const { disconnect } = useDisconnect()
   const { openConnectModal } = useConnectModal()
@@ -43,6 +44,8 @@ function AppBar({ locale }: { locale: Locale }) {
     }
     fetchDict()
   }, [locale])
+
+  const navigation = dict?.navigation ?? {}
 
   return (
     <header className="border-gray94 py-[12px] sticky top-0 z-40  border-b-2 border-opacity-50">
@@ -79,7 +82,7 @@ function AppBar({ locale }: { locale: Locale }) {
                   {isConnected
                     ? shortenAddress(address)
                     : dict
-                      ? dict.common.navigation.connect
+                      ? dict.navigation.connect
                       : ''}
                 </div>
               </Button>
@@ -95,14 +98,14 @@ function AppBar({ locale }: { locale: Locale }) {
                     copy(address ? address : '')
                   }}
                 >
-                  {dict ? dict.common.navigation.copyAddress : 'Copy Address'}
+                  {navigation.copyAddress ?? ''}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
                     disconnect()
                   }}
                 >
-                  {dict ? dict.common.navigation.disconnect : 'Disconnect'}
+                  {navigation.disconnect ?? ''}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             ) : (

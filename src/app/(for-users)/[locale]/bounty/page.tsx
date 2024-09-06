@@ -44,7 +44,12 @@ import { BOUNTY_ABI } from '~/app/ABIs/Bounty'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 import { config } from '~/lib/config'
-import { PagePropsWithLocale, Contributor, Proposal } from '~/i18n/types'
+import {
+  PagePropsWithLocale,
+  Contributor,
+  Proposal,
+  Dictionary,
+} from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
 import createApolloClient from '~/app/apollo-client'
@@ -52,7 +57,7 @@ import createApolloClient from '~/app/apollo-client'
 export default function ForBountyPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -345,21 +350,23 @@ export default function ForBountyPage({
     return '0'
   }
 
+  const dashboard = dict?.dashboard ?? {}
+  const bounty = dict?.bounty ?? {}
+  const proposal = dict?.proposal ?? {}
+
   return (
     <div className="w-full">
       <div className="flex flex-col gap-4 mx-8">
         <h2 className="text-2xl font-bold tracking-tight mt-6">
-          {dict ? dict.bounty.title : ''}
+          {bounty.title ?? ''}
         </h2>
-        <p className="text-muted-foreground">
-          {dict ? dict.bounty.description : ''}
-        </p>
+        <p className="text-muted-foreground">{bounty.description ?? ''}</p>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {dict ? dict.common.dashboard.totalrevenue : ''}
+                {dashboard.totalrevenue ?? ''}
               </CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -386,7 +393,7 @@ export default function ForBountyPage({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {dict ? dict.common.dashboard.pcebalance : ''}
+                {dashboard.pcebalance ?? ''}
               </CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -413,7 +420,7 @@ export default function ForBountyPage({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {dict ? dict.common.dashboard.claimable : ''}
+                {dashboard.claimable ?? ''}
               </CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -440,7 +447,7 @@ export default function ForBountyPage({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {dict ? dict.common.dashboard.percontributor : ''}
+                {dashboard.percontributor ?? ''}
               </CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -467,11 +474,9 @@ export default function ForBountyPage({
         <Tabs defaultValue="contributor">
           <TabsList>
             <TabsTrigger value="contributor">
-              {dict ? dict.bounty.contributorBounty : ''}
+              {bounty.contributorBounty ?? ''}
             </TabsTrigger>
-            <TabsTrigger value="proposal">
-              {dict ? dict.bounty.proposal : ''}
-            </TabsTrigger>
+            <TabsTrigger value="proposal">{bounty.proposal ?? ''}</TabsTrigger>
           </TabsList>
           <TabsContent value="contributor">
             <div className="gap-4 flex flex-col">
@@ -479,7 +484,7 @@ export default function ForBountyPage({
                 type="number"
                 name="bountyAmount"
                 value={bountyAmount}
-                placeholder={dict ? dict.bounty.bountyAmount : ''}
+                placeholder={bounty.bountyAmount ?? ''}
                 className="mt-4"
                 onChange={handleChange}
               />
@@ -488,7 +493,7 @@ export default function ForBountyPage({
                 type="address"
                 name="contributorAddr"
                 value={contributorAddr}
-                placeholder={dict ? dict.bounty.contributorAddr : ''}
+                placeholder={bounty.contributorAddr ?? ''}
                 onChange={handleChange}
               />
 
@@ -500,7 +505,7 @@ export default function ForBountyPage({
                     handleAddContributorBounty()
                   }}
                 >
-                  {dict ? dict.bounty.addContributor : ''}
+                  {bounty.addContributor ?? ''}
                 </Button>
                 <Button
                   variant="outline"
@@ -509,21 +514,15 @@ export default function ForBountyPage({
                     handleClaimContributorBounty()
                   }}
                 >
-                  {dict ? dict.bounty.claimContributor : ''}
+                  {bounty.claimContributor ?? ''}
                 </Button>
               </div>
               <div className="rounded-xl border">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>
-                        {' '}
-                        {dict ? dict.bounty.contributor : ''}
-                      </TableHead>
-                      <TableHead>
-                        {' '}
-                        {dict ? dict.bounty.totalAmount : ''}
-                      </TableHead>
+                      <TableHead> {bounty.contributor ?? ''}</TableHead>
+                      <TableHead> {bounty.totalAmount ?? ''}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -541,9 +540,7 @@ export default function ForBountyPage({
                   </TableBody>{' '}
                   <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={1}>
-                        {dict ? dict.bounty.total : ''}
-                      </TableCell>
+                      <TableCell colSpan={1}>{bounty.total ?? ''}</TableCell>
                       <TableCell>
                         {contributorData ? contributorData.length : '0'}
                       </TableCell>
@@ -559,7 +556,7 @@ export default function ForBountyPage({
                 type="number"
                 name="bountyAmount"
                 value={bountyAmount}
-                placeholder={dict ? dict.bounty.bountyAmount : ''}
+                placeholder={bounty.bountyAmount ?? ''}
                 className="mt-5"
                 onChange={handleChange}
               />
@@ -567,7 +564,7 @@ export default function ForBountyPage({
                 value={proposalId}
                 type="number"
                 name="proposalId"
-                placeholder={dict ? dict.bounty.proposalID : ''}
+                placeholder={bounty.proposalID ?? ''}
                 className="mt-5"
                 onChange={handleChange}
               />
@@ -580,7 +577,7 @@ export default function ForBountyPage({
                     handleAddProposalBounty()
                   }}
                 >
-                  {dict ? dict.bounty.addProposal : ''}
+                  {bounty.addProposal ?? ''}
                 </Button>
 
                 <Button
@@ -590,7 +587,7 @@ export default function ForBountyPage({
                     handleClaimProposalBounty()
                   }}
                 >
-                  {dict ? dict.bounty.claimProposal : ''}
+                  {bounty.claimProposal ?? ''}
                 </Button>
               </div>
 
@@ -598,12 +595,8 @@ export default function ForBountyPage({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>
-                        {dict ? dict.bounty.proposalID : ''}
-                      </TableHead>
-                      <TableHead>
-                        {dict ? dict.bounty.totalAmount : ''}
-                      </TableHead>
+                      <TableHead>{bounty.proposalID ?? ''}</TableHead>
+                      <TableHead>{bounty.totalAmount ?? ''}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -619,9 +612,7 @@ export default function ForBountyPage({
                   </TableBody>{' '}
                   <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={1}>
-                        {dict ? dict.common.proposal.total : ''}
-                      </TableCell>
+                      <TableCell colSpan={1}>{proposal.total ?? ''}</TableCell>
                       <TableCell>
                         {proposalData ? proposalData.length : '0'}
                       </TableCell>
