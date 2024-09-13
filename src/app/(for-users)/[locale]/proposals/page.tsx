@@ -2,21 +2,24 @@
 
 import React, { useState, useEffect } from 'react'
 
-import 'react-toastify/dist/ReactToastify.css'
-import { useAccount, useReadContract } from 'wagmi'
-import { Link } from '~/i18n/link'
-import { Button } from '~/components/ui/button'
-import { PagePropsWithLocale } from '~/i18n/types'
-import { pceAddress } from '~/app/constants/constants'
 import { formatEther } from 'ethers'
+import { useAccount, useReadContract } from 'wagmi'
+import 'react-toastify/dist/ReactToastify.css'
 
+import { Button } from '~/components/ui/button'
+import { Link } from '~/i18n/link'
 import { getDict } from '~/i18n/get-dict'
+
+import { pceAddress } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
+
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 
 export default function ForProposalPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
+  const { address, chainId } = useAccount()
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -30,7 +33,6 @@ export default function ForProposalPage({
     fetchDict()
   }, [locale])
 
-  const { address, chainId } = useAccount()
   const { data: votes, refetch: refetchVotes } = useReadContract({
     address: pceAddress,
     abi: PCE_ABI,
@@ -38,28 +40,31 @@ export default function ForProposalPage({
     args: [address],
     chainId: chainId,
   })
+
+  const vote = dict?.vote ?? {}
+
   return (
     <div>
       <div className="links flex flex-row gap-10 items-center justify-center h-[50vh]">
         <Button className="w-40 py-6" variant="outline" asChild>
           <Link className="py-4" locale={locale} href="/pending">
-            {dict ? dict.vote.pending : ''}
+            {vote.pending ?? ''}
           </Link>
         </Button>
         <Button className="w-40 py-6" variant="outline" asChild>
           <Link locale={locale} href="/closed">
-            {dict ? dict.vote.close : ''}
+            {vote.close ?? ''}
           </Link>
         </Button>
         <Button className="w-40 py-6" variant="outline" asChild>
           <Link locale={locale} href="/submit">
-            {dict ? dict.vote.submit : ''}
+            {vote.submit ?? ''}
           </Link>
         </Button>
 
         <Button className="w-40 py-6" variant="outline" asChild>
           <Link className="text-center" locale={locale} href="/delegate">
-            {dict ? dict.vote.delegate : ''}
+            {vote.delegate ?? ''}
             {<br></br>} {votes ? formatEther(BigInt(votes as string)) : '0'}
           </Link>
         </Button>

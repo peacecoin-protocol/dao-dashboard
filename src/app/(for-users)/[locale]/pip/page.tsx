@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-import { PagePropsWithLocale } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
 import { useEffect, useState } from 'react'
@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
 export default function ForPendingPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -60,7 +60,7 @@ export default function ForPendingPage({
         </p>
 
         <h2 className="text-3xl">PIP status terms</h2>
-        <ul className="ml-10">
+        <ul className="ml-2">
           <li>
             <strong>Idea</strong> - An idea that is pre-draft. This is not
             tracked within the PIP Repository.

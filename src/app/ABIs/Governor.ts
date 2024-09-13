@@ -66,6 +66,32 @@ export const GOVERNOR_ABI = [
   },
   {
     type: 'function',
+    name: 'batchExecute',
+    inputs: [
+      {
+        name: 'proposalIds',
+        type: 'uint256[]',
+        internalType: 'uint256[]',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    name: 'batchQueue',
+    inputs: [
+      {
+        name: 'proposalIds',
+        type: 'uint256[]',
+        internalType: 'uint256[]',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'cancel',
     inputs: [{ name: 'proposalId', type: 'uint256', internalType: 'uint256' }],
     outputs: [],
@@ -211,6 +237,7 @@ export const GOVERNOR_ABI = [
       },
       { name: 'canceled', type: 'bool', internalType: 'bool' },
       { name: 'executed', type: 'bool', internalType: 'bool' },
+      { name: 'description', type: 'string', internalType: 'string' },
     ],
     stateMutability: 'view',
   },
@@ -230,6 +257,13 @@ export const GOVERNOR_ABI = [
     ],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'proposer',
+    inputs: [{ name: 'proposalId', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',

@@ -11,13 +11,13 @@ import {
   TableRow,
 } from '~/components/ui/table'
 
-import { PagePropsWithLocale } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
 export default function ForPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -30,6 +30,7 @@ export default function ForPage({
     }
     fetchDict()
   }, [locale])
+
   return (
     <div className="w-full gap-4 flex flex-col">
       <div className="gap-4 flex flex-col m-8">

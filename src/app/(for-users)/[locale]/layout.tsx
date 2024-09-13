@@ -21,7 +21,6 @@ export default function ForUsersAnyLocaleIndexLayout({
       )}
     >
       <AppBar locale={locale} />
-      {/* TODO: Use Shadcn/ui Scroll */}
       <main className="overflow-y-auto">
         <div className="container py-4 items-center flex flex-col">
           {children}

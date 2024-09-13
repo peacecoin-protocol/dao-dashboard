@@ -53,9 +53,23 @@ export const BOUNTY_ABI = [
   {
     type: 'function',
     name: 'claimProposalBounty',
-    inputs: [{ name: '_proposalId', type: 'uint256', internalType: 'uint256' }],
+    inputs: [],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'claimableContributorAmount',
+    inputs: [{ name: 'user', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'claimableProposalAmount',
+    inputs: [{ name: '_user', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -115,14 +129,14 @@ export const BOUNTY_ABI = [
     type: 'function',
     name: 'proposalBounties',
     inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    outputs: [
-      {
-        name: 'bountyAmount',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      { name: 'withdrawn', type: 'uint256', internalType: 'uint256' },
-    ],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'proposalBountyWithdrawn',
+    inputs: [{ name: '', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
   {

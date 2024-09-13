@@ -1,62 +1,74 @@
 {
-  "common": {
-    "navigation": {
-      "vote": "VOTAR",
-      "token": "TOKEN",
-      "bounty": "RECOMPENSA",
-      "pips": "PIP",
-      "copyAddress": "COPIAR ENDEREÇO",
-      "connect": "CONECTAR CARTEIRA",
-      "disconnect": "DESCONECTAR CARTEIRA",
-      "menu": "MENU",
-      "dashboard": "Painel"
-    },
-    "proposal": {
-      "proposalId": "ID da Proposta",
-      "proposer": "Propositor",
-      "forVote": "Voto a Favor",
-      "againstVote": "Voto Contra",
-      "status": "Status",
-      "castVote": "Emitir Voto",
-      "execute": "Executar",
-      "queue": "Fila",
-      "total": "Total de Propostas",
-      "list": "Lista das propostas."
-    },
-    "sidebar": {
-      "dashboard": "Painel",
-      "proposals": "Propostas",
-      "token": "Token",
-      "bounty": "Recompensa",
-      "pip": "PIP",
-      "pending": "Pendente",
-      "closed": "Fechado",
-      "submit": "Enviar",
-      "delegate": "Delegar"
-    }
+  "navigation": {
+    "vote": "VOTAR",
+    "token": "TOKEN",
+    "bounty": "RECOMPENSA",
+    "pips": "PIP",
+    "copyAddress": "COPIAR ENDEREÇO",
+    "connect": "CONTRIBUIR",
+    "disconnect": "DESCONECTAR",
+    "menu": "MENU",
+    "dashboard": "Painel"
+  },
+  "dashboard": {
+    "totalproposals": "Propostas Totais",
+    "totalrevenue": "Receita Total",
+    "pcebalance": "Saldo PCE",
+    "claimable": "Reclamável",
+    "percontributor": "PCE Por Contribuidor",
+    "fromlastmonth": "desde o mês passado",
+    "sincelasthour": "desde a última hora",
+    "recent": "PIPs Recentes Bem-Sucedidos",
+    "made": "Você fez",
+    "proposal_success": "propostas com sucesso"
+  },
+  "proposal": {
+    "proposalId": "ID",
+    "proposer": "Proponente",
+    "forVote": "A Favor",
+    "againstVote": "Contra",
+    "status": "Status",
+    "castVote": "Votar",
+    "execute": "Executar",
+    "queue": "Colocar na Fila",
+    "total": "Propostas Totais",
+    "list": "Lista das propostas"
+  },
+  "sidebar": {
+    "dashboard": "Painel",
+    "proposals": "Propostas",
+    "token": "Token",
+    "bounty": "Recompensa",
+    "pip": "PIP",
+    "pending": "Pendente",
+    "closed": "Fechado",
+    "submit": "Submeter",
+    "delegate": "Delegar"
   },
   "home": {
-    "title": "Painel do Peace Coin DAO",
-    "description": "Bem-vindo ao Painel do Peace Coin DAO"
+    "title": "Painel de Controle da Peace Coin DAO",
+    "description": "Este é o painel de controle da Peace Coin DAO"
   },
   "submit": {
     "title": "Submeter uma Proposta",
     "category1": "Sugerir algo",
-    "category2": "Solicitar fundos para investimento",
+    "category2": "Pedir fundos para investimento",
     "category3": "Outros",
+    "category4": "Implantar um Contrato",
     "propose": "Propor",
     "select": "Selecionar uma categoria",
-    "amount": "Montante",
-    "description": "Descrição"
+    "amount": "Valor",
+    "description": "Descrição",
+    "bytescode": "Códigos em Bytes"
   },
   "vote": {
-    "close": "Propostas Fechadas",
+    "close": "Proposta Fechada",
     "pending": "Propostas Pendentes",
     "submit": "Submeter Propostas",
     "delegate": "Delegar Votos",
     "propose": "Propor",
     "select": "Selecionar uma categoria",
-    "amount": "Montante",
+    "amount": "Valor",
     "description": "Descrição"
   },
   "token": {
@@ -65,35 +77,30 @@
     "subtitle2": "Fator Atual",
     "createToken": "Criar Token",
     "tokenAddress": "Endereço do Token",
-    "exchangeRate": "Taxa de Câmbio",
-    "swapToLocal": "Trocar por Token Local",
+    "exchnageRate": "Taxa de Câmbio",
+    "swapToLocal": "Trocar para Token Local",
     "swapFromLocal": "Trocar de Token Local",
     "totalToken": "Total de Tokens",
-    "list": "Lista de tokens da comunidade."
+    "list": "Lista dos tokens comunitários"
   },
   "bounty": {
     "title": "Programa de Recompensas",
-    "description": "Este Programa de Recompensas visa fornecer recompensas aos contribuintes",
-    "subtitle1": "Montante Fixo de Recompensa",
-    "subtitle2": "Seu Montante Atual de PCE",
-    "subtitle3": "Seu Montante Total de Recompensa",
-    "subtitle4": "Seu Montante Retirado",
-    "subtitle5": "Seu Montante Reclamável",
-    "contributorBounty": "Recompensa para Contribuidores",
+    "description": "Este programa de recompensas é para fornecer recompensas aos contribuintes",
+    "contributorBounty": "Recompensa ao Contribuinte",
     "proposal": "Recompensa por Proposta",
-    "addContributor": "Adicionar Recompensa para Contribuidores",
+    "addContributor": "Adicionar Recompensa ao Contribuinte",
     "addProposal": "Adicionar Recompensa por Proposta",
     "claimProposal": "Reclamar Recompensa por Proposta",
-    "claimContributor": "Reclamar Recompensa para Contribuidores",
-    "contributor": "Contribuidor",
-    "contributorAddr": "Endereço do Contribuidor",
+    "claimContributor": "Reclamar Recompensa ao Contribuinte",
+    "contributor": "Contribuinte",
+    "contributorAddr": "Endereço do Contribuinte",
     "totalAmount": "Montante Total",
     "bountyAmount": "Montante da Recompensa",
     "proposalID": "ID da Proposta",
-    "list": "Lista de contribuições."
+    "total": "Total de Contribuintes"
   },
   "pipBar": {
-    "title": "Propostas de Melhoria do PEACE COIN",
+    "title": "Propostas de Melhoria da PEACE COIN",
     "all": "Todos",
     "core": "Núcleo",
     "networking": "Rede",
@@ -111,9 +118,19 @@
   },
   "delegate": {
     "title": "Delegar Poder de Voto",
-    "description": "Antes de poder votar, você deve atribuir seus direitos de voto a você mesmo ou a um terceiro. Insira o endereço Ethereum da carteira que receberá os direitos de voto.",
+    "description": "Antes de votar, você deve atribuir seus direitos de voto a si mesmo ou a um terceiro. Insira o endereço Ethereum da carteira que receberá os direitos de voto.",
     "address": "Endereço",
     "delegate": "Delegar",
     "votingPower": "Poder de Voto"
+  },
+  "faq": {
+    "title": "Perguntas Frequentes",
+    "q1": "Como Delegar Poder de Voto?",
+    "q2": "Como Propor um PIP?",
+    "q3": "Como Votar?",
+    "q4": "Como Colocar uma Proposta na Fila?",
+    "q5": "Como Executar uma Proposta?",
+    "q6": "Como Adicionar Recompensa para Outra Pessoa?",
+    "q7": "Como Reivindicar Recompensas?"
   }
 }

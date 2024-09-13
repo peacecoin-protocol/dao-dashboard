@@ -1,14 +1,9 @@
 'use client'
-import { Input } from '~/components/ui/input'
-
-import { Button } from '~/components/ui/button'
-import { pceAddress, POLY_SCAN_TX } from '~/app/constants/constants'
-import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
+
 import { formatEther } from 'ethers'
-import { createClient } from 'viem'
-import { http, createConfig } from '@wagmi/core'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import {
@@ -18,23 +13,21 @@ import {
   useWaitForTransactionReceipt,
   type BaseError,
 } from 'wagmi'
-import { polygonAmoy } from '@wagmi/core/chains'
-import Link from 'next/link'
 
-import { PagePropsWithLocale } from '~/i18n/types'
+import { Input } from '~/components/ui/input'
+import { Button } from '~/components/ui/button'
+import { formatString } from '~/components/utils'
+
+import { pceAddress, POLY_SCAN_TX } from '~/app/constants/constants'
+import { PCE_ABI } from '~/app/ABIs/PCEToken'
+
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
-
-const config = createConfig({
-  chains: [polygonAmoy],
-  client({ chain }) {
-    return createClient({ chain, transport: http() })
-  },
-})
 
 export default function ForDelegatePage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -73,10 +66,6 @@ export default function ForDelegatePage({
     }
   }
 
-  const formatNumberString = (num: any) => {
-    return BigInt(num as string).toString()
-  }
-
   const handleDelegate = async () => {
     writeContract({
       abi: PCE_ABI,
@@ -87,35 +76,49 @@ export default function ForDelegatePage({
   }
 
   useEffect(() => {
-    if (isConfirmed) {
-      toast.success(
-        <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
-          Claim Success, View TX
-        </Link>
-      )
-    } else if (isConfirming) {
-      toast.info(<div className="disabled">TX is Pending, Please Wait...</div>)
-    } else if (error) {
-      toast.error((error as BaseError).shortMessage)
+    const notify = async () => {
+      if (isConfirmed) {
+        toast.success(
+          <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
+            Transaction Succeed!
+          </Link>
+        )
+
+        setDelegateAddr('')
+        await refetchVotes()
+      } else if (isConfirming) {
+        toast.info(
+          <div className="disabled">TX is Pending, Please Wait...</div>
+        )
+      } else if (error) {
+        toast.error((error as BaseError).shortMessage)
+      }
     }
+
+    notify()
   }, [isConfirmed, isConfirming, error, hash])
+
+  const delegate = dict?.delegate ?? {}
 
   return (
     <div className="items-center justify-center flex w-full">
-      <div className="flex flex-col w-1/2 gap-4">
-        <h2 className="text-2xl font-bold tracking-tight my-6 text-center">
-          {dict ? dict.delegate.title : ''}
+      <div className="flex flex-col max-xl:mx-10 mx-80 max-xl:my-0 my-20 gap-4">
+        <h2 className="text-2xl font-bold tracking-tight my-4 text-center">
+          {delegate.title ?? ''}
         </h2>
-        <div>
-          {dict ? dict.delegate.votingPower : ''} :{' '}
-          {votes ? formatEther(BigInt(votes as string)) : '0'}
+        <div className="text-muted-foreground">
+          {delegate.votingPower ?? ''} :{' '}
+          {votes ? formatString(formatEther(BigInt(votes as string))) : '0'}
         </div>
 
-        <div>{dict ? dict.delegate.description : ''}</div>
+        <div className="text-muted-foreground">
+          {delegate.description ?? ''}
+        </div>
         <Input
           type="address"
           name="delegateAddr"
-          placeholder={dict ? dict.delegate.address : ''}
+          value={delegateAddr}
+          placeholder={delegate.address ?? ''}
           className="mt-5"
           onChange={handleChange}
         />
@@ -127,7 +130,7 @@ export default function ForDelegatePage({
             handleDelegate()
           }}
         >
-          {dict ? dict.delegate.delegate : ''}
+          {delegate.delegate ?? ''}
         </Button>
         <ToastContainer
           position="bottom-right"

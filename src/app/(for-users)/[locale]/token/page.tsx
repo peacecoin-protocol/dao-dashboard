@@ -1,4 +1,19 @@
 'use client'
+
+import { useEffect, useState } from 'react'
+import { formatEther } from 'ethers'
+import { readContract } from '@wagmi/core'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import {
+  useAccount,
+  useReadContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  type BaseError,
+} from 'wagmi'
+import Link from 'next/link'
+
 import { Input } from '~/components/ui/input'
 import {
   Table,
@@ -17,41 +32,34 @@ import {
   DialogTitle,
   DialogFooter,
 } from '~/components/ui/dialog'
-
 import { Button } from '~/components/ui/button'
+import { shortenAddress, formatString } from '~/components/utils'
+import useWindowWidth from '~/components/useWindWidth'
+
 import { pceAddress, POLY_SCAN_TX } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
-import { PagePropsWithLocale } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
-import { useEffect, useState } from 'react'
-import { formatEther } from 'ethers'
-import { createClient } from 'viem'
-import { readContract } from '@wagmi/core'
-import { http, createConfig } from '@wagmi/core'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
-import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  type BaseError,
-} from 'wagmi'
-import { polygonAmoy } from '@wagmi/core/chains'
-import Link from 'next/link'
-
-const config = createConfig({
-  chains: [polygonAmoy],
-  client({ chain }) {
-    return createClient({ chain, transport: http() })
-  },
-})
+import { config } from '~/lib/config'
 
 export default function ForTokenPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<any>(null)
+  const [dict, setDict] = useState<Dictionary | null>(null)
+  const width = useWindowWidth()
+  const colSpan = width < 1280
+
+  const { address, chainId } = useAccount()
+  const { data: hash, error, writeContract } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    })
+  const [isOpened, setDialogStatus] = useState(false)
+  const [tokenInfo, setTokenInfo] = useState<any>()
+  const [exchangeRates, setExchangeRate] = useState<any[]>([])
+  const [tokens, setTokens] = useState<any[]>([])
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -64,17 +72,6 @@ export default function ForTokenPage({
     }
     fetchDict()
   }, [locale])
-  const { address, chainId } = useAccount()
-  const { data: hash, error, writeContract } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({
-      hash,
-    })
-
-  const [isOpened, setDialogStatus] = useState(false)
-  const [tokenInfo, setTokenInfo] = useState<any>()
-  const [exchangeRates, setExchangeRate] = useState<any[]>([])
-  const [tokens, setTokens] = useState<any[]>([])
 
   const { data: balance, refetch: refetchBalance } = useReadContract({
     address: pceAddress,
@@ -206,7 +203,7 @@ export default function ForTokenPage({
     if (isConfirmed) {
       toast.success(
         <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
-          Claim Success, View TX
+          Transaction Succeed!
         </Link>
       )
       refetchBalance()
@@ -276,20 +273,22 @@ export default function ForTokenPage({
     })
   }
 
+  const token = dict?.token ?? {}
+
   return (
     <div className="w-full gap-4 flex flex-col">
       <div className="flex flex-col mx-8 gap-2">
         <h2 className="text-2xl font-bold tracking-tight mt-6">
-          {dict ? dict.token.title : ''}
+          {token.title ?? ''}
         </h2>
         <p className="text-muted-foreground">
-          {dict ? dict.token.subtitle1 : ''}
+          {token.subtitle1 ?? ''}
           {': '}
-          {balance ? formatEther(BigInt(balance as string)) : '0'}
+          {balance ? formatString(formatEther(BigInt(balance as string))) : '0'}
         </p>
 
         <p className="text-muted-foreground">
-          {dict ? dict.token.subtitle2 : ''}
+          {token.subtitle2 ?? ''}
           {': '} {factor ? formatEther(BigInt(factor as string)) : '0'}
         </p>
         <Button
@@ -299,7 +298,7 @@ export default function ForTokenPage({
             setDialogStatus(true)
           }}
         >
-          {dict ? dict.token.createToken : ''}
+          {token.createToken ?? ''}
         </Button>
         <Dialog
           open={isOpened}
@@ -391,23 +390,27 @@ export default function ForTokenPage({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{dict ? dict.token.tokenAddress : ''}</TableHead>
-                <TableHead>{dict ? dict.token.exchnageRate : ''}</TableHead>
-                <TableHead>{dict ? dict.token.swapToLocal : ''}</TableHead>
-                <TableHead>{dict ? dict.token.swapFromLocal : ''}</TableHead>
+                <TableHead>{token.tokenAddress ?? ''}</TableHead>
+                <TableHead>{token.exchnageRate ?? ''}</TableHead>
+                <TableHead className="max-xl:hidden">
+                  {token.swapToLocal ?? ''}
+                </TableHead>
+                <TableHead>{token.swapFromLocal ?? ''}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {tokens &&
                 tokens.map((token, index) => (
                   <TableRow key={index}>
-                    <TableCell className="font-medium">{token}</TableCell>
+                    <TableCell className="font-medium">
+                      {shortenAddress(token)}
+                    </TableCell>
                     <TableCell>
                       {exchangeRates &&
                         exchangeRates[index] &&
                         formatEther(exchangeRates[index])}
                     </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="flex flex-col xl:flex-row font-medium gap-2">
                       <Button
                         onClick={async () => {
                           writeContract({
@@ -418,16 +421,25 @@ export default function ForTokenPage({
                           })
                         }}
                       >
-                        {dict ? dict.token.swapToLocal : ''}
+                        {token.swapToLocal ?? ''}
+                      </Button>
+
+                      <Button
+                        className="xl:hidden"
+                        onClick={() => {
+                          handleSwapFromLocalToken(token)
+                        }}
+                      >
+                        {token.swapFromLocal ?? ''}
                       </Button>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-xl:hidden">
                       <Button
                         onClick={() => {
                           handleSwapFromLocalToken(token)
                         }}
                       >
-                        {dict ? dict.token.swapFromLocal : ''}
+                        {token.swapFromLocal ?? ''}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -435,8 +447,8 @@ export default function ForTokenPage({
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell colSpan={3}>
-                  {dict ? dict.token.totalToken : ''}
+                <TableCell colSpan={colSpan ? 2 : 3}>
+                  {token.totalToken ?? ''}
                 </TableCell>
                 <TableCell>{tokens && tokens.length}</TableCell>
               </TableRow>

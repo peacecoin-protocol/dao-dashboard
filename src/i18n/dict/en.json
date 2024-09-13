@@ -1,39 +1,49 @@
 {
-  "common": {
-    "navigation": {
-      "vote": "VOTE",
-      "token": "TOKEN",
-      "bounty": "BOUNTY",
-      "pips": "PIP",
-      "copyAddress": "COPY ADDRESS",
-      "connect": "CONNECT",
-      "disconnect": "DISCONNECT",
-      "menu": "MENU",
-      "dashboard": "Dashboard"
-    },
-    "proposal": {
-      "proposalId": "Proposal ID",
-      "proposer": "Proposer",
-      "forVote": "For Vote",
-      "againstVote": "Against Vote",
-      "status": "Status",
-      "castVote": "Cast Vote",
-      "execute": "Execute",
-      "queue": "Queue",
-      "total": "Total Proposals",
-      "list": "A List of the proposals."
-    },
-    "sidebar": {
-      "dashboard": "Dashboard",
-      "proposals": "Proposals",
-      "token": "Token",
-      "bounty": "Bounty",
-      "pip": "PIP",
-      "pending": "Pending",
-      "closed": "Closed",
-      "submit": "Submit",
-      "delegate": "Delegate"
-    }
+  "navigation": {
+    "vote": "VOTE",
+    "token": "TOKEN",
+    "bounty": "BOUNTY",
+    "pips": "PIP",
+    "copyAddress": "COPY ADDRESS",
+    "connect": "CONNECT",
+    "disconnect": "DISCONNECT",
+    "menu": "MENU",
+    "dashboard": "Dashboard"
+  },
+  "dashboard": {
+    "totalproposals": "Total Proposals",
+    "totalrevenue": "Total Revenue",
+    "pcebalance": "PCE Balance",
+    "claimable": "Claimable",
+    "percontributor": "PCE Per Contributor",
+    "fromlastmonth": "from last month",
+    "sincelasthour": "since last hour",
+    "recent": "Recent Succeeded PIPs",
+    "made": "You made",
+    "proposal_success": "proposals successfully"
+  },
+  "proposal": {
+    "proposalId": "ID",
+    "proposer": "Proposer",
+    "forVote": "For Vote",
+    "againstVote": "Against Vote",
+    "status": "Status",
+    "castVote": "Cast Vote",
+    "execute": "Execute",
+    "queue": "Queue",
+    "total": "Total Proposals",
+    "list": "A List of the proposals."
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "proposals": "Proposals",
+    "token": "Token",
+    "bounty": "Bounty",
+    "pip": "PIP",
+    "pending": "Pending",
+    "closed": "Closed",
+    "submit": "Submit",
+    "delegate": "Delegate"
   },
   "home": {
     "title": "Peace Coin DAO ダッシュボード",
@@ -44,10 +54,12 @@
     "category1": "Suggest something",
     "category2": "Asks funds for investment",
     "category3": "Other",
+    "category4": "Deploying a Contract",
     "propose": "Propose",
     "select": "Select a category",
     "amount": "Amount",
-    "description": "Description"
+    "description": "Description",
+    "bytescode": "Bytes Codes"
   },
   "vote": {
     "close": "Closed Proposal",
@@ -110,5 +122,15 @@
     "address": "Address",
     "delegate": "Delegate",
     "votingPower": "Voting Power"
+  },
+  "faq": {
+    "title": "FAQ",
+    "q1": "How to Delegate Voting Power?",
+    "q2": "How to Propose a PIP?",
+    "q3": "How to Vote?",
+    "q4": "How to Queue Proposal?",
+    "q5": "How to Execute Proposal?",
+    "q6": "How to Add Bounty to someone else?",
+    "q7": "How to Claim Bounties?"
   }
 }
