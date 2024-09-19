@@ -81,7 +81,10 @@
     "swapToLocal": "Intercambiar a Token Local",
     "swapFromLocal": "Intercambiar desde Token Local",
     "totalToken": "Tokens Totales",
-    "list": "Lista de tokens comunitarios"
+    "list": "Lista de tokens comunitarios",
+    "inputTokenInfo": "Ingrese la información del token",
+    "createTokenInfo": "Esta es la información para crear el token de la comunidad.",
+    "confirm": "Confirmar"
   },
   "bounty": {
     "title": "Programa de Recompensas",

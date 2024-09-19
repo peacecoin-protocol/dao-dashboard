@@ -81,7 +81,10 @@
     "swapToLocal": "SwapToLocalToken",
     "swapFromLocal": "SwapFromLocalToken",
     "totalToken": "Total Tokens",
-    "list": "A list of the community tokens."
+    "list": "A list of the community tokens.",
+    "inputTokenInfo": "Input the token information",
+    "createTokenInfo": "This is the information to create the community token.",
+    "confirm": "Confirm"
   },
   "bounty": {
     "title": "Bounty Program",

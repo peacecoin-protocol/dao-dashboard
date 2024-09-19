@@ -81,7 +81,10 @@
     "swapToLocal": "兑换为本地代币",
     "swapFromLocal": "从本地代币兑换",
     "totalToken": "代币总量",
-    "list": "社区代币列表"
+    "list": "社区代币列表",
+    "inputTokenInfo": "请输入令牌信息",
+    "createTokenInfo": "这是创建社区令牌的信息。",
+    "confirm": "确认"
   },
   "bounty": {
     "title": "赏金计划",

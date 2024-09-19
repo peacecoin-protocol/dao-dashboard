@@ -81,7 +81,10 @@
     "swapToLocal": "Échanger Vers le Token Local",
     "swapFromLocal": "Échanger Depuis le Token Local",
     "totalToken": "Total des Tokens",
-    "list": "Liste des tokens communautaires"
+    "list": "Liste des tokens communautaires",
+    "inputTokenInfo": "Saisissez les informations du jeton",
+    "createTokenInfo": "Voici les informations pour créer le jeton de la communauté.",
+    "confirm": "Confirmer"
   },
   "bounty": {
     "title": "Programme de Primes",

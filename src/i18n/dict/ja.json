@@ -81,7 +81,10 @@
     "swapToLocal": "ローカルトークンにスワップ",
     "swapFromLocal": "ローカルトークンからスワップ",
     "totalToken": "トークンの合計",
-    "list": "コミュニティトークンのリスト"
+    "list": "コミュニティトークンのリスト",
+    "inputTokenInfo": "トークン情報を入力してください",
+    "createTokenInfo": "コミュニティトークンを作成するための情報です。",
+    "confirm": "確認"
   },
   "bounty": {
     "title": "報酬プログラム",

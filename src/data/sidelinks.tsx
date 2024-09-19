@@ -55,7 +55,7 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
     },
     {
       title: sidebar.proposals ?? 'Proposals',
-      label: '4',
+      label: '',
       href: '/proposals',
       icon: <IconChecklist size={18} />,
       sub: [
@@ -99,7 +99,7 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
     },
     {
       title: sidebar.pip ?? 'PIP',
-      label: '5',
+      label: '',
       href: '/pip',
       icon: <IconUserShield size={18} />,
       sub: [
