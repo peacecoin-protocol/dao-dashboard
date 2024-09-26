@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-import { ethers } from 'ethers'
+import { ethers, parseEther } from 'ethers'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import {
@@ -31,6 +31,7 @@ import {
   governorAddress,
   POLY_SCAN_TX,
   factoryAddress,
+  timelockAddress,
 } from '~/app/constants/constants'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
@@ -51,6 +52,9 @@ export default function ForSubmitPage({
   const [description, setDescription] = useState('')
   const [bytescode, setBytesCodes] = useState('')
   const [category, setCategory] = useState('')
+  const [variable1, setVariable1] = useState('')
+  const [variable2, setVariable2] = useState('')
+  const [variable3, setVariable3] = useState('')
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -78,6 +82,12 @@ export default function ForSubmitPage({
       setDescription(value)
     } else if (name === 'bytescode') {
       setBytesCodes(value)
+    } else if (name === 'variable1') {
+      setVariable1(value)
+    } else if (name === 'variable2') {
+      setVariable2(value)
+    } else if (name === 'variable3') {
+      setVariable3(value)
     }
   }
 
@@ -90,6 +100,9 @@ export default function ForSubmitPage({
       )
       setDescription('')
       setValues('')
+      setVariable1('')
+      setVariable2('')
+      setVariable3('')
     } else if (isConfirming) {
       toast.info(<div className="disabled">TX is Pending, Please Wait...</div>)
     } else if (error) {
@@ -112,18 +125,55 @@ export default function ForSubmitPage({
           <SelectContent>
             <SelectItem value="1">{submit.category1 ?? ''}</SelectItem>
             <SelectItem value="2">{submit.category2 ?? ''}</SelectItem>
-            <SelectItem value="4">{submit.category4 ?? ''}</SelectItem>
             <SelectItem value="3">{submit.category3 ?? ''}</SelectItem>
+            <SelectItem value="4">{submit.category4 ?? ''}</SelectItem>
+            <SelectItem value="5">{submit.category5 ?? ''}</SelectItem>
+            <SelectItem value="6">{submit.category6 ?? ''}</SelectItem>
           </SelectContent>
         </Select>
 
         <div className="w-full">
           <Input
-            className={`mt-5 ${category == '4' ? 'hidden' : ''}`}
+            className={`mt-5 ${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
             type="number"
             placeholder={submit.amount ?? ''}
             name="values"
             value={values}
+            onChange={handleChange}
+          />
+
+          <Input
+            className={`mt-5 ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+            type="number"
+            placeholder={
+              category === '5' ? submit.gracePeriod : submit.quorum_votes
+            }
+            name="variable1"
+            value={variable1}
+            onChange={handleChange}
+          />
+
+          <Input
+            className={`mt-5 ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+            type="number"
+            placeholder={
+              category === '5' ? submit.min_delay : submit.proposal_threshold
+            }
+            name="variable2"
+            value={variable2}
+            onChange={handleChange}
+          />
+
+          <Input
+            className={`mt-5 ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+            type="number"
+            placeholder={
+              category === '5'
+                ? submit.max_delay
+                : submit.proposal_maxOperations
+            }
+            name="variable3"
+            value={variable3}
             onChange={handleChange}
           />
 
@@ -166,6 +216,28 @@ export default function ForSubmitPage({
                 _signature = 'deploy(bytes)'
                 _calldata = new ethers.AbiCoder().encode(['bytes'], [bytescode])
                 _address = factoryAddress
+              } else if (category === '5') {
+                _address = timelockAddress
+                _signature = 'updateVariables(uint256,uint256,uint256)'
+                _calldata = new ethers.AbiCoder().encode(
+                  ['uint256', 'uint256', 'uint256'],
+                  [
+                    parseEther(variable1),
+                    parseEther(variable2),
+                    parseEther(variable3),
+                  ]
+                )
+              } else if (category === '6') {
+                _address = governorAddress
+                _signature = 'updateVariables(uint256,uint256,uint256)'
+                _calldata = new ethers.AbiCoder().encode(
+                  ['uint256', 'uint256', 'uint256'],
+                  [
+                    parseEther(variable1),
+                    parseEther(variable2),
+                    parseEther(variable3),
+                  ]
+                )
               } else {
                 _calldata = new ethers.AbiCoder().encode(
                   ['address', 'uint256'],

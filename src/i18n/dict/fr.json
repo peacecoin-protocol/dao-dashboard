@@ -52,14 +52,22 @@
   "submit": {
     "title": "Soumettre une Proposition",
     "category1": "Suggérer quelque chose",
-    "category2": "Demander des fonds pour investissement",
+    "category2": "Demander des fonds pour un investissement",
     "category3": "Autre",
-    "category4": "Déploiement d'un Contrat",
+    "category4": "Déployer un Contrat",
+    "category5": "Mettre à jour les Variables de TimeLock",
+    "category6": "Mettre à jour les Variables de Gouverneur",
     "propose": "Proposer",
     "select": "Sélectionner une catégorie",
     "amount": "Montant",
     "description": "Description",
-    "bytescode": "Codes en Bytes"
+    "bytescode": "Codes en Octets",
+    "gracePeriod": "Période de Grâce - Secondes",
+    "min_delay": "Délai Minimum - Secondes",
+    "max_delay": "Délai Maximum - Secondes",
+    "quorum_votes": "Votes du Quorum - 1000 Tokens",
+    "proposal_threshold": "Seuil de Proposition - 10000 Tokens",
+    "proposal_maxOperations": "Nombre Maximum d'Opérations de Proposition - 10 Opérations"
   },
   "vote": {
     "close": "Proposition Fermée",

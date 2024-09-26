@@ -50,16 +50,24 @@
     "description": "これは Peace Coin DAO のダッシュボードです"
   },
   "submit": {
-    "title": "提案を提出",
-    "category1": "何か提案する",
-    "category2": "投資資金を求める",
+    "title": "提案を提出する",
+    "category1": "何かを提案する",
+    "category2": "投資資金を要求する",
     "category3": "その他",
-    "category4": "コントラクトの展開",
+    "category4": "コントラクトをデプロイする",
+    "category5": "タイムロック変数を更新する",
+    "category6": "ガバナー変数を更新する",
     "propose": "提案する",
-    "select": "カテゴリを選択",
+    "select": "カテゴリを選択する",
     "amount": "金額",
     "description": "説明",
-    "bytescode": "バイトコード"
+    "bytescode": "バイトコード",
+    "gracePeriod": "猶予期間 - 秒",
+    "min_delay": "最小遅延 - 秒",
+    "max_delay": "最大遅延 - 秒",
+    "quorum_votes": "定足数投票 - 1000トークン",
+    "proposal_threshold": "提案しきい値 - 10000トークン",
+    "proposal_maxOperations": "提案最大操作数 - 10操作"
   },
   "vote": {
     "close": "終了した提案",

@@ -51,15 +51,23 @@
   },
   "submit": {
     "title": "提交提案",
-    "category1": "建议事项",
-    "category2": "请求投资资金",
+    "category1": "提出建议",
+    "category2": "申请投资资金",
     "category3": "其他",
     "category4": "部署合约",
-    "propose": "提案",
-    "select": "选择类别",
+    "category5": "更新时间锁变量",
+    "category6": "更新治理变量",
+    "propose": "提议",
+    "select": "选择一个类别",
     "amount": "金额",
     "description": "描述",
-    "bytescode": "字节码"
+    "bytescode": "字节码",
+    "gracePeriod": "宽限期 - 秒",
+    "min_delay": "最小延迟 - 秒",
+    "max_delay": "最大延迟 - 秒",
+    "quorum_votes": "法定人数投票 - 1000代币",
+    "proposal_threshold": "提案门槛 - 10000代币",
+    "proposal_maxOperations": "提案最大操作数 - 10次操作"
   },
   "vote": {
     "close": "已关闭的提案",
