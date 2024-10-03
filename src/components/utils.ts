@@ -24,11 +24,11 @@ export const LINKS = {
   },
   TWITTER: {
     label: 'Twitter',
-    link: 'https://twitter.com/',
+    link: 'https://x.com/peace_coin_fund',
   },
   DISCORD: {
     label: 'Discord',
-    link: 'https://discord.com/invite/',
+    link: 'https://discord.gg/ateRuGUJgX',
   },
 }
 

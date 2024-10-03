@@ -55,11 +55,19 @@
     "category2": "Solicitar fondos para inversión",
     "category3": "Otro",
     "category4": "Desplegar un Contrato",
+    "category5": "Actualizar Variables de TimeLock",
+    "category6": "Actualizar Variables de Gobernador",
     "propose": "Proponer",
     "select": "Seleccionar una categoría",
     "amount": "Cantidad",
     "description": "Descripción",
-    "bytescode": "Códigos en Bytes"
+    "bytescode": "Códigos de Bytes",
+    "gracePeriod": "Período de Gracia - Segundos",
+    "min_delay": "Retraso Mínimo - Segundos",
+    "max_delay": "Retraso Máximo - Segundos",
+    "quorum_votes": "Votos de Quórum - 1000 Tokens",
+    "proposal_threshold": "Umbral de Propuesta - 10000 Tokens",
+    "proposal_maxOperations": "Máximo de Operaciones de Propuesta - 10 Operaciones"
   },
   "vote": {
     "close": "Propuesta Cerrada",
@@ -81,7 +89,10 @@
     "swapToLocal": "Intercambiar a Token Local",
     "swapFromLocal": "Intercambiar desde Token Local",
     "totalToken": "Tokens Totales",
-    "list": "Lista de tokens comunitarios"
+    "list": "Lista de tokens comunitarios",
+    "inputTokenInfo": "Ingrese la información del token",
+    "createTokenInfo": "Esta es la información para crear el token de la comunidad.",
+    "confirm": "Confirmar"
   },
   "bounty": {
     "title": "Programa de Recompensas",

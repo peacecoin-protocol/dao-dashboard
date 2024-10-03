@@ -55,11 +55,19 @@
     "category2": "Asks funds for investment",
     "category3": "Other",
     "category4": "Deploying a Contract",
+    "category5": "Updating Timelock Variables",
+    "category6": "Updating Governor Variables",
     "propose": "Propose",
     "select": "Select a category",
     "amount": "Amount",
     "description": "Description",
-    "bytescode": "Bytes Codes"
+    "bytescode": "Bytes Codes",
+    "gracePeriod": "Grace Period - Seconds",
+    "min_delay": "Minimum Delay - Seconds",
+    "max_delay": "Maximum Delay - Seconds",
+    "quorum_votes": "Quorum Votes - 1000 Tokens",
+    "proposal_threshold": "Proposal Threshold - 10000 Tokens",
+    "proposal_maxOperations": "Proposal Max Operations - 10 Operations"
   },
   "vote": {
     "close": "Closed Proposal",
@@ -81,7 +89,10 @@
     "swapToLocal": "SwapToLocalToken",
     "swapFromLocal": "SwapFromLocalToken",
     "totalToken": "Total Tokens",
-    "list": "A list of the community tokens."
+    "list": "A list of the community tokens.",
+    "inputTokenInfo": "Input the token information",
+    "createTokenInfo": "This is the information to create the community token.",
+    "confirm": "Confirm"
   },
   "bounty": {
     "title": "Bounty Program",

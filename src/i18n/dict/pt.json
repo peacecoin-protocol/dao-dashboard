@@ -50,16 +50,24 @@
     "description": "Este é o painel de controle da Peace Coin DAO"
   },
   "submit": {
-    "title": "Submeter uma Proposta",
+    "title": "Enviar uma Proposta",
     "category1": "Sugerir algo",
-    "category2": "Pedir fundos para investimento",
-    "category3": "Outros",
+    "category2": "Solicitar fundos para um investimento",
+    "category3": "Outro",
     "category4": "Implantar um Contrato",
+    "category5": "Atualizar Variáveis de TimeLock",
+    "category6": "Atualizar Variáveis do Governador",
     "propose": "Propor",
     "select": "Selecionar uma categoria",
-    "amount": "Valor",
+    "amount": "Montante",
     "description": "Descrição",
-    "bytescode": "Códigos em Bytes"
+    "bytescode": "Códigos de Bytes",
+    "gracePeriod": "Período de Carência - Segundos",
+    "min_delay": "Atraso Mínimo - Segundos",
+    "max_delay": "Atraso Máximo - Segundos",
+    "quorum_votes": "Votos de Quórum - 1000 Tokens",
+    "proposal_threshold": "Limite de Proposta - 10000 Tokens",
+    "proposal_maxOperations": "Número Máximo de Operações de Proposta - 10 Operações"
   },
   "vote": {
     "close": "Proposta Fechada",
@@ -81,7 +89,10 @@
     "swapToLocal": "Trocar para Token Local",
     "swapFromLocal": "Trocar de Token Local",
     "totalToken": "Total de Tokens",
-    "list": "Lista dos tokens comunitários"
+    "list": "Lista dos tokens comunitários",
+    "inputTokenInfo": "Insira as informações do token",
+    "createTokenInfo": "Estas são as informações para criar o token da comunidade.",
+    "confirm": "Confirmar"
   },
   "bounty": {
     "title": "Programa de Recompensas",

@@ -308,68 +308,68 @@ export default function ForTokenPage({
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Input the token Info</DialogTitle>
+              <DialogTitle>{dict?.token?.inputTokenInfo ?? ''}</DialogTitle>
               <DialogDescription>
-                This is the information to create the community token.
+                {dict?.token?.createTokenInfo ?? ''}
               </DialogDescription>
               <div className="gap-4">
                 <Input
                   name="name"
-                  placeholder="Name"
+                  placeholder="Name - PeaceCoin, Ethereum, Bitcoin, etc."
                   className="my-2"
                   onChange={handleChange}
                 ></Input>
                 <Input
                   name="symbol"
-                  placeholder="symbol"
+                  placeholder="Symbol - PCE, ETH, BTC, etc."
                   className="my-2"
                   onChange={handleChange}
                 ></Input>
                 <Input
                   name="amountToExchange"
-                  placeholder="amountToExchange"
+                  placeholder="amountToExchange - 100"
                   className="my-2"
                   onChange={handleChange}
                 ></Input>
                 <Input
                   name="dilutionFactor"
-                  placeholder="dilutionFactor"
+                  placeholder="dilutionFactor - 1E18"
                   className="my-2"
                   onChange={handleChange}
                 ></Input>
                 <Input
                   name="decreaseIntervalDays"
-                  placeholder="decreaseIntervalDays"
+                  placeholder="decreaseIntervalDays - 3"
                   className="my-2"
                   onChange={handleChange}
                 ></Input>
                 <Input
                   name="afterDecreaseBp"
-                  placeholder="afterDecreaseBp"
+                  placeholder="afterDecreaseBp - 1000"
                   className="my-2"
                   onChange={handleChange}
                 ></Input>
                 <Input
                   name="maxIncreaseOfTotalSupplyBp"
-                  placeholder="maxIncreaseOfTotalSupplyBp"
+                  placeholder="maxIncreaseOfTotalSupplyBp - 100"
                   className="my-2"
                   onChange={handleChange}
                 ></Input>
                 <Input
                   name="maxIncreaseBp"
-                  placeholder="maxIncreaseBp"
+                  placeholder="maxIncreaseBp - 2000"
                   className="my-2"
                   onChange={handleChange}
                 ></Input>
                 <Input
                   name="maxUsageBp"
-                  placeholder="maxUsageBp"
+                  placeholder="maxUsageBp - 3000"
                   className="my-2"
                   onChange={handleChange}
                 ></Input>
                 <Input
                   name="changeBp"
-                  placeholder="changeBp"
+                  placeholder="changeBp - 3000"
                   className="my-2"
                   onChange={handleChange}
                 ></Input>
@@ -381,7 +381,7 @@ export default function ForTokenPage({
                 variant="outline"
                 onClick={handleCreateToken}
               >
-                Confirm
+                {dict?.token?.confirm ?? ''}
               </Button>
             </DialogFooter>
           </DialogContent>

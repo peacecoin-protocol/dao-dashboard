@@ -180,7 +180,7 @@ export default function ForUsersIndexPage({
           <h2 className="text-2xl font-bold tracking-tight mt-6">
             {navigation.dashboard ?? ''}
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 w-full">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -201,9 +201,7 @@ export default function ForUsersIndexPage({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{proposals.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  +20.1% {dashboard.fromlastmonth ?? ''}
-                </p>
+                <p className="text-xs text-muted-foreground"></p>
               </CardContent>
             </Card>
             <Card>
@@ -232,9 +230,7 @@ export default function ForUsersIndexPage({
                     : '0'}{' '}
                   PCE
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  +180.1% {dashboard.fromlastmonth ?? ''}
-                </p>
+                <p className="text-xs text-muted-foreground"></p>
               </CardContent>
             </Card>
             <Card>
@@ -264,34 +260,7 @@ export default function ForUsersIndexPage({
                     : '0'}{' '}
                   PCE
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  +19% {dashboard.fromlastmonth ?? ''}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Active Now
-                </CardTitle>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4 text-muted-foreground"
-                >
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                </svg>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">+3</div>
-                <p className="text-xs text-muted-foreground">
-                  +201 {dashboard.sincelasthour ?? ''}
-                </p>
+                <p className="text-xs text-muted-foreground"></p>
               </CardContent>
             </Card>
           </div>
