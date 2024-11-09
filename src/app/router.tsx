@@ -44,6 +44,13 @@ const loadComponent = async (key: string) => {
     case 'dashboard':
       Component = (await import('./(for-users)/[locale]/page')).default
       break
+    case 'dao':
+      Component = (await import('./(for-users)/[locale]/dao/page')).default
+      break
+    case 'dao_detail':
+      Component = (await import('./(for-users)/[locale]/dao/detail/page'))
+        .default
+      break
     case 'pip-all':
       Component = (await import('./(for-users)/[locale]/pip/all/page')).default
       break
@@ -123,6 +130,16 @@ const router = createBrowserRouter([
         index: true,
         loader: createLoader('dashboard'),
         lazy: createLazy('dashboard'),
+      },
+      {
+        path: '/:locale/dao',
+        loader: createLoader('dao'),
+        lazy: createLazy('dao'),
+      },
+      {
+        path: '/:locale/dao/detail',
+        loader: createLoader('dao_detail'),
+        lazy: createLazy('dao_detail'),
       },
       {
         path: '/:locale/proposals',

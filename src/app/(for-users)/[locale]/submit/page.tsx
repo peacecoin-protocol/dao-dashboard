@@ -221,11 +221,7 @@ export default function ForSubmitPage({
                 _signature = 'updateVariables(uint256,uint256,uint256)'
                 _calldata = new ethers.AbiCoder().encode(
                   ['uint256', 'uint256', 'uint256'],
-                  [
-                    parseEther(variable1),
-                    parseEther(variable2),
-                    parseEther(variable3),
-                  ]
+                  [variable1, variable2, variable3]
                 )
               } else if (category === '6') {
                 _address = governorAddress

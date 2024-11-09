@@ -26,6 +26,10 @@ const config = {
       },
       colors: {
         oil: '#1B2E3C',
+        light_dark: '#0D1D2A',
+        dark_bg: '#0C0F18',
+        dark_blue: '#1588C8',
+        heavy_white: '#7288A0',
         whiteLight: '#FFFEFE',
         light_green: '#15777a',
         gray94: '#f0f0f0',
