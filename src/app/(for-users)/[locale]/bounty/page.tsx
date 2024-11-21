@@ -52,7 +52,7 @@ import {
 } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
-import createApolloClient from '~/app/apollo-client'
+import { createApolloClient } from '~/app/apollo-client'
 
 export default function ForBountyPage({
   params: { locale, ...params },

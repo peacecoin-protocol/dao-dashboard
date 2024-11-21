@@ -48,7 +48,7 @@ const loadComponent = async (key: string) => {
       Component = (await import('./(for-users)/[locale]/dao/page')).default
       break
     case 'dao_detail':
-      Component = (await import('./(for-users)/[locale]/dao/detail/page'))
+      Component = (await import('./(for-users)/[locale]/dao/detail/[id]/page'))
         .default
       break
     case 'pip-all':
@@ -137,7 +137,7 @@ const router = createBrowserRouter([
         lazy: createLazy('dao'),
       },
       {
-        path: '/:locale/dao/detail',
+        path: '/:locale/dao/detail/:id',
         loader: createLoader('dao_detail'),
         lazy: createLazy('dao_detail'),
       },
