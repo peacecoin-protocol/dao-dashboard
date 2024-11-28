@@ -118,32 +118,26 @@ export default function ForUsersIndexPage({
     let temp = []
     let _status = []
     for (let i = 1; i <= count; i++) {
-      const proposer = await readContract(config, {
-        address: governorAddress,
-        abi: GOVERNOR_ABI,
-        functionName: 'proposer',
-        args: [i],
-      })
+      let proposal = null
+      let status = null
+      try {
+        proposal = await readContract(config, {
+          address: governorAddress,
+          abi: GOVERNOR_ABI,
+          functionName: 'proposals',
+          args: [i],
+        })
 
-      if (
-        (proposer as string).toLocaleLowerCase() != address?.toLocaleLowerCase()
-      ) {
+        status = await readContract(config, {
+          address: governorAddress,
+          abi: GOVERNOR_ABI,
+          functionName: 'state',
+          args: [i],
+        })
+      } catch (error) {
+        i--
         continue
       }
-
-      const proposal = await readContract(config, {
-        address: governorAddress,
-        abi: GOVERNOR_ABI,
-        functionName: 'proposals',
-        args: [i],
-      })
-
-      const status = await readContract(config, {
-        address: governorAddress,
-        abi: GOVERNOR_ABI,
-        functionName: 'state',
-        args: [i],
-      })
 
       switch (status as number) {
         case 7:
