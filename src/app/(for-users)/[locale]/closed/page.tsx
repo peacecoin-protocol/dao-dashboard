@@ -196,11 +196,7 @@ export default function ForClosedPage({
             </TableFooter>
           </Table>
         </div>
-        <ToastContainer
-          position="bottom-right"
-          closeOnClick
-          draggable
-        ></ToastContainer>
+        <ToastContainer position="bottom-right" draggable></ToastContainer>
 
         <RingLoader
           color={'#000000'}

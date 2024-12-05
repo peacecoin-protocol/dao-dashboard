@@ -75,8 +75,8 @@ export default function ForBountyPage({
 
   const client = createApolloClient()
 
-  const [proposalData, setProposalData] = useState<any>([])
-  const [contributorData, setContributorData] = useState([])
+  const [proposalData, setProposalData] = useState<Proposal[]>([])
+  const [contributorData, setContributorData] = useState<Contributor[]>([])
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
@@ -135,7 +135,7 @@ export default function ForBountyPage({
   useEffect(() => {
     const readProposalData = async () => {
       if (proposalCount == undefined) return
-      let _proposalData = []
+      let _proposalData: Proposal[] = []
       for (let i = 0; i < parseInt(proposalCount as string); i++) {
         const amount = await readContract(config, {
           abi: BOUNTY_ABI,
@@ -144,7 +144,8 @@ export default function ForBountyPage({
           args: [i],
         })
 
-        if ((amount as number) > 0) _proposalData.push({ id: i, amount })
+        if ((amount as number) > 0)
+          _proposalData.push({ id: i.toString(), amount: amount as bigint })
       }
       setProposalData(_proposalData)
     }
@@ -624,11 +625,7 @@ export default function ForBountyPage({
           </TabsContent>
         </Tabs>
 
-        <ToastContainer
-          position="bottom-right"
-          closeOnClick
-          draggable
-        ></ToastContainer>
+        <ToastContainer position="bottom-right" draggable></ToastContainer>
       </div>
     </div>
   )

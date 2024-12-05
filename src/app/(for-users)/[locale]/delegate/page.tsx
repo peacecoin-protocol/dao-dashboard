@@ -132,11 +132,7 @@ export default function ForDelegatePage({
         >
           {delegate.delegate ?? ''}
         </Button>
-        <ToastContainer
-          position="bottom-right"
-          closeOnClick
-          draggable
-        ></ToastContainer>
+        <ToastContainer position="bottom-right" draggable></ToastContainer>
       </div>
     </div>
   )
