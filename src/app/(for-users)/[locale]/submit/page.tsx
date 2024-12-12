@@ -258,11 +258,7 @@ export default function ForSubmitPage({
             {submit.propose ?? ''}
           </Button>
 
-          <ToastContainer
-            position="bottom-right"
-            closeOnClick
-            draggable
-          ></ToastContainer>
+          <ToastContainer position="bottom-right" draggable></ToastContainer>
         </div>
       </div>
     </div>

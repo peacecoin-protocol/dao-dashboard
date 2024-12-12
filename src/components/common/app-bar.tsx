@@ -57,7 +57,7 @@ function AppBar({ locale }: { locale: Locale }) {
             } mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base`}
           >
             {balance ? Number(balance.formatted).toFixed(4) : '0'}{' '}
-            {balance?.symbol}
+            {balance?.symbol === 'MATIC' ? 'POL' : balance?.symbol}
           </Button>
 
           <Button

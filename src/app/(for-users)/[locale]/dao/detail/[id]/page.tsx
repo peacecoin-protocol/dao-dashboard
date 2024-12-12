@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useNavigate } from 'react-router-dom'
 
 import 'react-toastify/dist/ReactToastify.css'
 import RingLoader from 'react-spinners/RingLoader'
 import { ringStyle } from '~/app/constants/styles'
+import { Line } from 'rc-progress'
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
 import { Button } from '~/components/ui/button'
@@ -24,7 +24,6 @@ import { readContract } from '@wagmi/core'
 
 import { ethers, formatEther } from 'ethers'
 import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
 import {
   useAccount,
   useReadContract,
@@ -64,6 +63,7 @@ import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 import { POLY_SCAN_TX } from '~/app/constants/constants'
 import { Textarea } from '~/components/ui/textarea'
 import { config } from '~/lib/config'
+import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 
 type Dao = {
   id: string
@@ -84,29 +84,6 @@ type Proposal = {
   description: string
   status: string
 }
-
-const ProposalCard = ({
-  proposal,
-  status,
-}: {
-  proposal: any
-  status: string
-}) => (
-  <div className="flex flex-col w-full bg-gray-100 p-4 rounded-xl gap-2">
-    <div className="flex flex-row items-center justify-between w-full rounded-xl">
-      <h1 className="flex flex-row text-xl font-bold w-full">
-        {proposal[9] || 'Description'}
-      </h1>
-      <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold p-1 items-center justify-center text-sm px-4">
-        {status}
-      </div>
-    </div>
-    <div>{proposal[9] || 'Description'}</div>
-    <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold w-44 p-1 items-center justify-center text-sm px-4">
-      Transfer tokens
-    </div>
-  </div>
-)
 
 const DelegateDialog = ({
   isOpen,
@@ -162,6 +139,8 @@ export default function ForSubmitPage({
   const [isDelegateDialogOpened, setIsDelegateDialogOpened] = useState(false)
   const [isCreateProposalDialogOpened, setIsCreateProposalDialogOpened] =
     useState(false)
+  const [isProposalDetailDialogOpened, setIsProposalDetailDialogOpened] =
+    useState(false)
 
   const [tabContent, setTabContent] = useState('about')
 
@@ -174,6 +153,223 @@ export default function ForSubmitPage({
     useWaitForTransactionReceipt({
       hash,
     })
+
+  const transferInterface = new ethers.Interface([
+    'function transfer(address to, uint256 amount)',
+  ])
+  const { data: quorum, refetch: refetchQuorum } = useReadContract({
+    address: daoInfo[0]?.governor as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'quorumVotes',
+    chainId: chainId,
+  })
+
+  const { data: votingDelay, refetch: refetchVotingDelay } = useReadContract({
+    address: daoInfo[0]?.governor as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'votingDelay',
+    chainId: chainId,
+  })
+
+  const { data: treasuryBalance, refetch: refetchTreasuryBalance } =
+    useReadContract({
+      address: daoInfo[0]?.governanceToken as `0x${string}`,
+      abi: PCE_ABI,
+      functionName: 'balanceOf',
+      args: [daoInfo[0]?.timelock as `0x${string}`],
+    })
+
+  const { data: totalSupply, refetch: refetchTotalSupply } = useReadContract({
+    address: daoInfo[0]?.governanceToken as `0x${string}`,
+    abi: PCE_ABI,
+    functionName: 'totalSupply',
+  })
+
+  const { data: proposalThreshold, refetch: refetchProposalThreshold } =
+    useReadContract({
+      address: daoInfo[0]?.governor as `0x${string}`,
+      abi: GOVERNOR_ABI,
+      functionName: 'proposalThreshold',
+      chainId: chainId,
+    })
+
+  const { data: votingPeriod, refetch: refetchVotingPeriod } = useReadContract({
+    address: daoInfo[0]?.governor as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'votingPeriod',
+    chainId: chainId,
+  })
+
+  const { data: timelockDelay, refetch: refetchTimelockDelay } =
+    useReadContract({
+      address: daoInfo[0]?.timelock as `0x${string}`,
+      abi: TIMELOCK_ABI,
+      functionName: 'delay',
+      chainId: chainId,
+    })
+
+  const ProposalCard = ({
+    proposal,
+    status,
+  }: {
+    proposal: any
+    status: string
+  }) => (
+    <article
+      className="flex flex-col w-full bg-gray-100 p-4 rounded-xl gap-2 cursor-pointer"
+      onClick={() => {
+        setIsProposalDetailDialogOpened(true)
+      }}
+    >
+      <div className="flex flex-row items-center justify-between w-full rounded-xl">
+        <h1 className="flex flex-row text-xl font-bold w-full">
+          {proposal[9] || 'Description'}
+        </h1>
+        <span className="flex bg-light_dark rounded-xl text-dark_blue font-bold p-1 items-center justify-center text-sm px-4">
+          {status}
+        </span>
+      </div>
+      <p className="description">{proposal[9] || 'Description'}</p>
+      <span className="flex bg-light_dark rounded-xl text-dark_blue font-bold w-44 p-1 items-center justify-center text-sm px-4">
+        Transfer tokens
+      </span>
+      <Dialog
+        open={isProposalDetailDialogOpened}
+        onOpenChange={(open) => {
+          setIsProposalDetailDialogOpened(open)
+        }}
+      >
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-row justify-between">
+            <h1>Vote For</h1>
+            <h1>
+              {Number(formatEther(proposal[5] || 0)).toLocaleString()} (
+              {proposal[5] && proposal[6] !== undefined
+                ? proposal[6] === 0 && proposal[5] > 0
+                  ? 100
+                  : (
+                      (Number(formatEther(proposal[5])) /
+                        (Number(formatEther(proposal[5])) +
+                          Number(formatEther(proposal[6])))) *
+                      100
+                    ).toFixed(2)
+                : '0'}
+              %)
+            </h1>
+          </div>
+          <Line
+            percent={
+              Number(proposal[5] || 0) > 0 &&
+              Number(BigInt(quorum?.toString() || '0')) > 0
+                ? (Number(formatEther(proposal[5])) /
+                    Number(formatEther(quorum?.toString() || '0'))) *
+                  100
+                : 0
+            }
+            strokeColor="#1588C8"
+            trailColor="#D3D3D3"
+            strokeWidth={1}
+            trailWidth={1}
+          />
+          <div className="flex flex-row justify-between">
+            <h1>Vote Against</h1>
+            <h1>
+              {Number(formatEther(proposal[6] || 0)).toLocaleString()} (
+              {proposal[5] && proposal[6] !== undefined
+                ? proposal[5] === 0 && proposal[6] > 0
+                  ? 100
+                  : (
+                      (Number(formatEther(proposal[6])) /
+                        (Number(formatEther(proposal[5])) +
+                          Number(formatEther(proposal[6])))) *
+                      100
+                    ).toFixed(2)
+                : '0'}
+              %)
+            </h1>
+          </div>
+
+          <Line
+            percent={
+              Number(proposal[6] || 0) > 0 &&
+              Number(BigInt(quorum?.toString() || '0')) > 0
+                ? (Number(formatEther(proposal[6])) /
+                    Number(formatEther(quorum?.toString() || '0'))) *
+                  100
+                : 0
+            }
+            strokeColor="#1588C8"
+            trailColor="#D3D3D3"
+            strokeWidth={1}
+            trailWidth={1}
+          />
+
+          <div className="flex flex-row gap-4 w-full">
+            <Button
+              className="w-full"
+              disabled={status !== 'Active'}
+              onClick={async () => {
+                await writeContract({
+                  abi: GOVERNOR_ABI,
+                  address: daoInfo[0]?.governor as `0x${string}`,
+                  functionName: 'castVote',
+                  args: [proposal[0], true],
+                })
+                setIsProposalDetailDialogOpened(false)
+              }}
+            >
+              Vote For
+            </Button>
+            <Button
+              className="w-full"
+              disabled={status !== 'Active'}
+              onClick={async () => {
+                await writeContract({
+                  abi: GOVERNOR_ABI,
+                  address: daoInfo[0]?.governor as `0x${string}`,
+                  functionName: 'castVote',
+                  args: [proposal[0], false],
+                })
+                setIsProposalDetailDialogOpened(false)
+              }}
+            >
+              Vote Against
+            </Button>
+            <Button
+              className="w-full"
+              disabled={status !== 'Succeeded'}
+              onClick={async () => {
+                await writeContract({
+                  abi: GOVERNOR_ABI,
+                  address: daoInfo[0]?.governor as `0x${string}`,
+                  functionName: 'queue',
+                  args: [proposal[0]],
+                })
+                setIsProposalDetailDialogOpened(false)
+              }}
+            >
+              Queue
+            </Button>
+            <Button
+              className="w-full"
+              disabled={status !== 'Queued'}
+              onClick={async () => {
+                await writeContract({
+                  abi: GOVERNOR_ABI,
+                  address: daoInfo[0]?.governor as `0x${string}`,
+                  functionName: 'execute',
+                  args: [proposal[0]],
+                })
+                setIsProposalDetailDialogOpened(false)
+              }}
+            >
+              Execute
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    </article>
+  )
 
   function handleSelect(value: any) {
     setCategory(value)
@@ -211,7 +407,12 @@ export default function ForSubmitPage({
 
   const fetchData = async (count: any) => {
     setLoading(true)
-    if (!count || !daoInfo[0]?.governor) return
+    if (!count || !daoInfo[0]?.governor || count === 0) {
+      setProposals([])
+      setStatus([])
+      setLoading(false)
+      return
+    }
     const proposalCount = typeof count === 'bigint' ? Number(count) : count
 
     let temp = []
@@ -263,6 +464,14 @@ export default function ForSubmitPage({
           _status.push('Queued')
           temp.push(proposal)
           break
+        case 6:
+          _status.push('Expired')
+          temp.push(proposal)
+          break
+        case 7:
+          _status.push('Executed')
+          temp.push(proposal)
+          break
         default:
           break
       }
@@ -280,7 +489,7 @@ export default function ForSubmitPage({
 
     const _calldata = new ethers.AbiCoder().encode(
       ['address', 'uint256'],
-      [transferAddr, transferAmount]
+      [transferAddr, BigInt(transferAmount) * BigInt(1e18)]
     )
     const _signature = 'transfer(address,uint256)'
 
@@ -289,8 +498,8 @@ export default function ForSubmitPage({
       address: daoInfo[0]?.governor as `0x${string}`,
       functionName: 'propose',
       args: [
-        [transferAddr],
-        [transferAmount],
+        [daoInfo[0]?.governanceToken as `0x${string}`],
+        [0],
         [_signature],
         [_calldata],
         description,
@@ -314,9 +523,11 @@ export default function ForSubmitPage({
     const notify = async () => {
       if (isConfirmed) {
         toast.success(
-          <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
-            Transaction Succeed!
-          </Link>
+          <div onClick={(e) => e.stopPropagation()}>
+            <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
+              Transaction Succeed!
+            </Link>
+          </div>
         )
 
         setDelegateAddr('')
@@ -391,25 +602,22 @@ export default function ForSubmitPage({
       </div>
       <div className="flex flex-row w-full items-center justify-between py-4">
         <div className="flex flex-row w-full items-center gap-4">
-          <Image
-            className="rounded-full"
-            src="/images/dexe.jpeg"
-            alt="logo"
-            width={120}
-            height={120}
-          />
+          <div
+            className="rounded-full flex items-center justify-center"
+            style={{
+              backgroundColor: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
+            }}
+          >
+            <span className="text-4xl text-white font-bold w-20 h-20 xl:w-24 xl:h-24 flex items-center justify-center">
+              {daoInfo[0]?.name.charAt(0).toUpperCase()}
+            </span>
+          </div>
           <div className="flex flex-col gap-2">
-            <div className="flex flex-row gap-2 font-bold text-2xl">
+            <div className="flex flex-row gap-2 font-bold text-3xl">
               {daoInfo[0]?.name}{' '}
-              <div className="text-dark_blue text-sm items-center flex">
-                {shortenAddress(daoInfo[0]?.governanceToken)}
-              </div>
             </div>
-            <div className="flex flex-row gap-2 items-center text-gray-500">
-              Your status:{' '}
-              <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold px-4 h-8 items-center justify-center">
-                Active
-              </div>
+            <div className="text-dark_blue text-xl items-center flex">
+              {shortenAddress(daoInfo[0]?.governanceToken)}
             </div>
           </div>
         </div>
@@ -456,19 +664,16 @@ export default function ForSubmitPage({
                   </div>
                 </div>
 
-                {proposals.length > 1 && (
-                  <ProposalCard
-                    proposal={proposals[proposals.length - 1]}
-                    status={proposalStatus[proposals.length - 1]}
-                  />
-                )}
-
-                {proposals.length >= 2 && (
-                  <ProposalCard
-                    proposal={proposals[proposals.length - 2]}
-                    status={proposalStatus[proposals.length - 2]}
-                  />
-                )}
+                {[...proposals]
+                  .reverse()
+                  .slice(0, 2)
+                  .map((proposal, index) => (
+                    <ProposalCard
+                      key={index}
+                      proposal={proposal}
+                      status={[...proposalStatus].reverse()[index]}
+                    />
+                  ))}
               </div>
               <div className="flex flex-col md:w-[40%] gap-4">
                 <h1 className="text-2xl font-bold mt-4">About DAO</h1>
@@ -505,16 +710,55 @@ export default function ForSubmitPage({
                   </Link>
                 </div>
 
-                <div className="flex flex-row justify-between items-center border rounded-xl p-4 bg-gray-100">
-                  <h1 className="font-bold rounded-xl  flex">
-                    DAO Voting Rules
-                  </h1>
-                  <Link
-                    href={`https://amoy.polygonscan.com/address/${daoInfo[0]?.governor}`}
-                    className="text-dark_blue"
-                  >
-                    Open
-                  </Link>
+                <div className="flex flex-col border rounded-xl p-4 bg-gray-100 gap-4">
+                  <div className="flex flex-row justify-between items-center">
+                    <h1 className="font-bold rounded-xl flex">Vote Delay</h1>
+
+                    <div className="text-dark_blue">
+                      {votingDelay ? formatString(votingDelay as string) : '0'}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-row justify-between items-center">
+                    <h1 className="font-bold rounded-xl flex">Voting Period</h1>
+
+                    <div className="text-dark_blue">
+                      {votingPeriod
+                        ? formatString(votingPeriod as string)
+                        : '0'}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-row justify-between items-center">
+                    <h1 className="font-bold rounded-xl flex">
+                      Timelock Delay
+                    </h1>
+
+                    <div className="text-dark_blue">
+                      {timelockDelay
+                        ? formatString(timelockDelay as string)
+                        : '0'}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-row justify-between items-center">
+                    <h1 className="font-bold rounded-xl flex">
+                      Proposal Threshold
+                    </h1>
+
+                    <div className="text-dark_blue">
+                      {proposalThreshold
+                        ? formatString(proposalThreshold as string)
+                        : '0'}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-row gap-4 justify-between items-center">
+                    <h1 className="font-bold rounded-xl  flex">Quorum Votes</h1>
+                    <div className="text-dark_blue">
+                      {quorum ? formatString(quorum as string) : '0'}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex flex-row justify-between items-center border rounded-xl p-4 bg-gray-100">
@@ -526,45 +770,39 @@ export default function ForSubmitPage({
                   </div>
                 </div>
 
-                <Table>
-                  <TableBody>
-                    <TableRow className="flex bg-gray-100 rounded-xl items-center justify-between cursor-pointer">
-                      <div className="flex flex-row gap-4 w-full items-center p-4">
-                        <div className="flex flex-col gap-2 w-full">
-                          <div className="text-heavy_white text-sm">TVL</div>
-                          <div className="font-bold text-sm">-</div>
-                          <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold p-1 w-16 items-center justify-center text-sm">
-                            $0
-                          </div>
-                        </div>
+                <div className="flex bg-gray-100 rounded-xl items-center justify-between cursor-pointer">
+                  <div className="flex flex-row gap-4 w-full items-center p-4">
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="text-heavy_white text-sm">TVL</div>
 
-                        <div className="flex flex-col gap-2 w-full">
-                          <div className="text-heavy_white text-sm">TVG</div>
-                          <div className="font-bold text-sm">-</div>
-                          <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold p-1 w-16 items-center justify-center text-sm">
-                            0%
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2 w-full">
-                          <div className="text-heavy_white text-sm">
-                            Members
-                          </div>
-                          <div className="font-bold text-sm">-</div>
-                          <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold p-1 w-16 items-center justify-center text-sm">
-                            0%
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2 w-full">
-                          <div className="text-heavy_white text-sm">LAU</div>
-                          <div className="font-bold text-sm">-</div>
-                          <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold p-1 w-16 items-center justify-center text-sm">
-                            0%
-                          </div>
-                        </div>
+                      <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold p-1 w-16 items-center justify-center text-sm">
+                        $0
                       </div>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                    </div>
+
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="text-heavy_white text-sm">TVG</div>
+
+                      <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold p-1 w-16 items-center justify-center text-sm">
+                        0%
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="text-heavy_white text-sm">Members</div>
+
+                      <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold p-1 w-16 items-center justify-center text-sm">
+                        0%
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="text-heavy_white text-sm">LAU</div>
+
+                      <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold p-1 w-16 items-center justify-center text-sm">
+                        0%
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
                   <h1 className="font-bold rounded-xl flex">
@@ -582,7 +820,7 @@ export default function ForSubmitPage({
                     <h1 className="font-bold rounded-xl flex">DAO Site</h1>
                     <Link
                       href={
-                        daoInfo[0]?.website ? daoInfo[0]?.website : 'https://'
+                        daoInfo[0] ? daoInfo[0]?.website : 'https://website.com'
                       }
                       className="text-dark_blue"
                     >
@@ -618,7 +856,11 @@ export default function ForSubmitPage({
                   <div className="flex flex-row justify-between items-center">
                     <h1 className="font-bold rounded-xl  flex">Audits</h1>
                     <Link
-                      href={daoInfo[0]?.website ? daoInfo[0]?.website : ''}
+                      href={
+                        daoInfo[0]?.website
+                          ? daoInfo[0]?.website
+                          : 'https://website.com'
+                      }
                       className="text-dark_blue"
                     >
                       {shortenAddress(daoInfo[0]?.website)}
@@ -729,17 +971,32 @@ export default function ForSubmitPage({
                 <h1 className="text-2xl font-bold">Treasury</h1>
                 <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
                   <div className="flex flex-row gap-2 justify-between items-center">
-                    <h1>CARIB Token</h1>
-                    <h1>Token</h1>
+                    <h1>{daoInfo[0]?.name} Token</h1>
                   </div>
                   <div className="flex flex-row gap-2 justify-between items-center">
                     <h1>DAO Supply Token</h1>
-                    <h1>$0</h1>
+                    <h1>
+                      {treasuryBalance
+                        ? formatString(
+                            formatEther(BigInt(treasuryBalance as string))
+                          )
+                        : '0'}
+                    </h1>
                   </div>
 
                   <div className="flex flex-row gap-2 justify-between items-center">
                     <h1>% of total Supply</h1>
-                    <h1>0.05%</h1>
+                    <h1>
+                      {totalSupply && treasuryBalance
+                        ? Number(
+                            (BigInt(treasuryBalance as string) *
+                              BigInt(100) *
+                              BigInt(1e18)) /
+                              BigInt(totalSupply as string)
+                          ) / 1e18
+                        : 0}
+                      %
+                    </h1>
                   </div>
                 </div>
               </div>
@@ -870,7 +1127,6 @@ export default function ForSubmitPage({
                             Name/Address
                           </div>
                         </TableHead>
-                        <TableHead>VEI</TableHead>
                         <TableHead>Balance</TableHead>
                         <TableHead>Delegated Amount</TableHead>
                       </TableRow>
@@ -885,13 +1141,10 @@ export default function ForSubmitPage({
                           </div>
                         </TableCell>
                         <TableCell className="font-bold font-md">
-                          1.00
+                          0 {daoInfo[0]?.name}
                         </TableCell>
                         <TableCell className="font-bold font-md">
-                          0 DEXE
-                        </TableCell>
-                        <TableCell className="font-bold font-md">
-                          0 DEXE
+                          0 {daoInfo[0]?.name}
                         </TableCell>
                       </TableRow>
                     </TableBody>
@@ -915,51 +1168,43 @@ export default function ForSubmitPage({
         onOpenChange={setIsCreateProposalDialogOpened}
       >
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create a Proposal</DialogTitle>
-            <DialogDescription className="flex flex-col gap-4">
-              <Select onValueChange={handleSelect}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Transfer Tokens</SelectItem>
-                </SelectContent>
-              </Select>
+          <DialogTitle>Create a Proposal</DialogTitle>
+          <DialogDescription className="flex flex-col gap-4">
+            <Select onValueChange={handleSelect}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Transfer Tokens</SelectItem>
+              </SelectContent>
+            </Select>
 
-              <Input
-                placeholder="Enter address"
-                value={transferAddr}
-                name="transferAddr"
-                onChange={handleChange}
-              />
+            <Input
+              placeholder="Enter address"
+              value={transferAddr}
+              name="transferAddr"
+              onChange={handleChange}
+            />
 
-              <Input
-                placeholder="Enter amount"
-                value={transferAmount}
-                name="transferAmount"
-                onChange={handleChange}
-              />
+            <Input
+              placeholder="Enter amount"
+              value={transferAmount}
+              name="transferAmount"
+              onChange={handleChange}
+            />
 
-              <Textarea
-                placeholder="Enter description"
-                value={description}
-                name="description"
-                onChange={handleChange}
-              />
+            <Textarea
+              placeholder="Enter description"
+              value={description}
+              name="description"
+              onChange={handleChange}
+            />
 
-              <div>
-                <Button onClick={handleCreateProposal}>Create</Button>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
+            <Button onClick={handleCreateProposal}>Create</Button>
+          </DialogDescription>
         </DialogContent>
       </Dialog>
-      <ToastContainer
-        position="bottom-right"
-        closeOnClick
-        draggable
-      ></ToastContainer>
+      <ToastContainer position="bottom-right" draggable></ToastContainer>
       <RingLoader
         style={{
           position: 'fixed',
