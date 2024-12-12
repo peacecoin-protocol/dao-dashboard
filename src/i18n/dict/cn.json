@@ -143,5 +143,13 @@
     "q5": "如何执行提案？",
     "q6": "如何给他人添加赏金？",
     "q7": "如何领取赏金？"
+  },
+  "daofaq": {
+    "title": "DAO FAQ",
+    "q1": "1. Create DAO. Basic DAO Settings?",
+    "q2": "2. Create DAO. Main DAO Settings?",
+    "q3": "3. Propose. How to find DAOs?",
+    "q4": "4. Propose. How to find proposals?",
+    "q5": "5. Delegate. How to delegate voting power?"
   }
 }

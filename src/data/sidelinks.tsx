@@ -58,6 +58,20 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       label: '',
       href: '/dao',
       icon: <IconChecklist size={18} />,
+      sub: [
+        {
+          title: 'Studio',
+          label: '',
+          href: '/dao',
+          icon: <IconHexagonNumber1 size={18} />,
+        },
+        {
+          title: 'FAQ',
+          label: '',
+          href: '/daofaq',
+          icon: <IconHexagonNumber2 size={18} />,
+        },
+      ],
     },
     {
       title: sidebar.proposals ?? 'Proposals',

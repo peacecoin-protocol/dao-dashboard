@@ -42,4 +42,5 @@ export interface Dictionary {
   closed: Section
   delegate: Section
   faq: Section
+  daofaq: Section
 }

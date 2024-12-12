@@ -11,6 +11,8 @@ import {
   type BaseError,
 } from 'wagmi'
 import { readContract } from '@wagmi/core'
+import { generateIdenteapot } from '@teapotlabs/identeapots'
+import { ringStyle } from '~/app/constants/styles'
 
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
 import { daoStudioAddress } from '~/app/constants/constants'
@@ -22,7 +24,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogTitle } from '~/components/ui/dialog'
 
@@ -37,7 +38,36 @@ import { getDict } from '~/i18n/get-dict'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { createClient, formatEther, parseEther } from 'viem'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
+// import { ethers } from 'ethers'
+// import { provider } from '~/app/constants/constants'
 
+// // Define your token contract's ABI and address
+// const tokenAddress = '0xdac17f958d2ee523a2206206994597c13d831ec7'
+// const tokenABI = [
+//   'event Transfer(address indexed from, address indexed to, uint256 value)',
+//   'function balanceOf(address owner) view returns (uint256)',
+// ]
+
+// const listenForTransfers = () => {
+//   let holders: { [key: string]: number } = {}
+//   const contract = new ethers.Contract(tokenAddress, tokenABI, provider)
+
+//   contract.on('Transfer', (from: string, to: string, value: number) => {
+//     // Update balances for 'from' and 'to' addresses
+//     try {
+//       if (from && to && value) {
+//         holders[from] = (holders[from] || 0) - Number(value)
+//         holders[to] = (holders[to] || 0) + Number(value)
+//       }
+//     } catch (error) {
+//       console.error('Error updating holder balances:', error)
+//     }
+//   })
+
+//   return holders
+// }
+
+// console.log(listenForTransfers(), 'XXXXX')
 type Dao = {
   id: string
   daoId: string
@@ -49,6 +79,7 @@ type Dao = {
   twitter: string
   telegram: string
   votes: number
+  identicon: string
 }
 
 type DaoMetadata = {
@@ -73,6 +104,7 @@ import { polygonAmoy } from '@wagmi/core/chains'
 import { http, createConfig } from '@wagmi/core'
 import { formatString } from '~/components/utils'
 import { TabsContent } from '@radix-ui/react-tabs'
+import RingLoader from 'react-spinners/RingLoader'
 
 const config = createConfig({
   chains: [polygonAmoy],
@@ -80,6 +112,74 @@ const config = createConfig({
     return createClient({ chain, transport: http() })
   },
 })
+
+const DaoCard = ({
+  dao,
+  locale,
+  navigate,
+}: {
+  dao: Dao
+  locale: string
+  navigate: any
+}) => (
+  <div
+    key={dao.id}
+    className="flex flex-col xl:flex-row bg-gray-100 rounded-xl md:px-10 items-start xl:items-center cursor-pointer my-4 gap-4 w-full py-6"
+    onClick={() => navigate(`/${locale}/dao/detail/${dao.id}`)}
+  >
+    <div className="flex flex-row w-full items-center justify-between">
+      <div className="flex flex-row gap-4 md:gap-8 items-center border-none">
+        {dao.identicon ? (
+          <img src={dao.identicon} alt="" className="w-32 rounded-full" />
+        ) : (
+          <div
+            className="rounded-full flex items-center justify-center"
+            style={{
+              backgroundColor: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
+            }}
+          >
+            <span className="text-4xl text-white font-bold w-20 h-20 xl:w-24 xl:h-24 flex items-center justify-center">
+              {dao.name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-4 w-full">
+          <div className="font-bold text-xl md:text-2xl w-full flex">
+            {dao.name}
+          </div>
+          <div className="flex bg-dark_blue rounded-xl text-light_white font-bold p-1 w-16 items-center justify-center">
+            DAO
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="flex flex-row gap-4 w-full items-center">
+      <StatItem
+        label="My Power"
+        value={dao.votes ? formatString(formatEther(BigInt(dao.votes))) : 0}
+      />
+      <StatItem label="TVL" value="$0" />
+      <StatItem label="Members" value="0" />
+    </div>
+  </div>
+)
+
+const StatItem = ({
+  label,
+  value,
+}: {
+  label: string
+  value: string | number
+}) => (
+  <div className="flex flex-col gap-4 w-full justify-center items-center">
+    <div className="text-heavy_white text-sm">{label}</div>
+    <div className="flex bg-dark_blue rounded-xl text-light_white font-bold py-1 px-2 min-w-16 items-center justify-center text-sm">
+      {value}
+    </div>
+  </div>
+)
 
 export default function ForDAOPage({
   params: { locale, ...params },
@@ -97,6 +197,9 @@ export default function ForDAOPage({
     useWaitForTransactionReceipt({
       hash,
     })
+
+  let [loading, setLoading] = useState(true)
+
   const [daoForm, setDaoForm] = useState<DaoFormState>({
     name: '',
     metadata: {
@@ -115,7 +218,7 @@ export default function ForDAOPage({
   })
 
   const [isDialogOpened, setIsDialogOpened] = useState(false)
-
+  const [search, setSearch] = useState('')
   const handleCreateDao = async () => {
     setIsDialogOpened(false)
 
@@ -182,6 +285,7 @@ export default function ForDAOPage({
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true)
         const { data } = await client.query({
           query: gql`
             query totalDaos {
@@ -214,7 +318,8 @@ export default function ForDAOPage({
               args: [address],
             })
 
-            updatedDaos.push({ ...dao, votes })
+            const identicon = await generateIdenteapot(dao.governor, '')
+            updatedDaos.push({ ...dao, votes, identicon })
           } catch (error) {
             updatedDaos.push({ ...dao, votes: 0 })
 
@@ -223,9 +328,10 @@ export default function ForDAOPage({
         }
 
         setDaos(updatedDaos)
-        console.log(updatedDaos)
+        setLoading(false)
       } catch (error) {
         console.error('Error fetching data', error)
+        setLoading(false)
       }
     }
 
@@ -240,6 +346,7 @@ export default function ForDAOPage({
         </h1>
 
         <Button
+          className="bg-dark_blue text-light_white"
           onClick={() => {
             setIsDialogOpened(!isDialogOpened)
           }}
@@ -361,7 +468,7 @@ export default function ForDAOPage({
           </DialogContent>
         </Dialog>
       </div>
-      <div className="flex flex-col md:flex-row w-full md:gap-4 gap-2">
+      <div className="flex flex-col w-full md:gap-4 gap-2">
         <Tabs defaultValue="all" className="flex flex-col w-full items-center">
           <TabsList className="flex flex-row w-full">
             <TabsTrigger className="w-full flex" value="all">
@@ -371,71 +478,43 @@ export default function ForDAOPage({
               My activity
             </TabsTrigger>
           </TabsList>
-
+          <div className="flex flex-row gap-4 h-8 w-full mt-4">
+            <Input
+              placeholder="Search"
+              className="w-full"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <DropdownMenu>
+              {/* <DropdownMenuTrigger className="flex items-center">
+                Filter
+              </DropdownMenuTrigger> */}
+              <DropdownMenuContent>
+                <DropdownMenuItem>Sort Dao</DropdownMenuItem>
+                <DropdownMenuItem>Date of Creation</DropdownMenuItem>
+                <DropdownMenuItem>Members</DropdownMenuItem>
+                <DropdownMenuItem>Proposals</DropdownMenuItem>
+                <DropdownMenuItem>Total token delegated</DropdownMenuItem>
+                <DropdownMenuItem>Total token delegatees</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <TabsContent
             value="all"
             className="flex flex-col w-full items-center justify-center"
           >
-            {daos.map((dao: Dao) => (
-              <div
-                key={dao.id}
-                className="flex flex-col xl:flex-row bg-gray-100 rounded-xl p-4 md:px-10 items-start xl:items-center cursor-pointer my-4 gap-4 w-full"
-                onClick={() => {
-                  navigate(`/${locale}/dao/detail/${dao.id}`)
-                }}
-              >
-                <div className="flex flex-row w-full items-center justify-between">
-                  <div className="flex flex-row gap-4 md:gap-8 items-center border-none">
-                    <div
-                      className="rounded-full flex items-center justify-center"
-                      style={{
-                        backgroundColor: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
-                      }}
-                    >
-                      <span className="text-4xl text-white font-bold w-20 h-20 xl:w-24 xl:h-24 flex items-center justify-center">
-                        {dao.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-4 w-full">
-                      <div className="font-bold text-xl md:text-2xl w-full flex">
-                        {dao.name}
-                      </div>
-                      <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold p-1 w-16 items-center justify-center">
-                        DAO
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-row gap-4 w-full items-center">
-                  <div className="flex flex-col gap-4 w-full justify-center items-center">
-                    <div className="text-heavy_white text-sm">My Power</div>
-
-                    <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold py-1 px-2 min-w-16 items-center justify-center text-sm">
-                      {dao.votes
-                        ? formatString(formatEther(BigInt(dao.votes)))
-                        : 0}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-4 w-full justify-center items-center">
-                    <div className="text-heavy_white text-sm">TVL</div>
-
-                    <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold py-1 px-2 w-16 items-center justify-center text-sm">
-                      $0
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-4 w-full justify-center items-center">
-                    <div className="text-heavy_white text-sm">Members</div>
-
-                    <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold py-1 px-2 w-16 items-center justify-center text-sm">
-                      0
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+            {daos
+              .filter((dao) =>
+                dao.name.toLowerCase().includes(search.toLowerCase())
+              )
+              .map((dao) => (
+                <DaoCard
+                  key={dao.id}
+                  dao={dao}
+                  locale={locale}
+                  navigate={navigate}
+                />
+              ))}
           </TabsContent>
 
           <TabsContent
@@ -443,89 +522,38 @@ export default function ForDAOPage({
             className="flex flex-col w-full items-center justify-center"
           >
             {daos
-              .filter((dao) => dao.votes > 0)
-              .map((dao: Dao) => (
-                <div
+              .filter(
+                (dao) =>
+                  dao.votes > 0 &&
+                  dao.name.toLowerCase().includes(search.toLowerCase())
+              )
+              .map((dao) => (
+                <DaoCard
                   key={dao.id}
-                  className="flex flex-col xl:flex-row bg-gray-100 rounded-xl p-4 md:px-10 items-start xl:items-center cursor-pointer my-4 gap-4 w-full"
-                  onClick={() => {
-                    navigate(`/${locale}/dao/detail/${dao.id}`)
-                  }}
-                >
-                  <div className="flex flex-row w-full items-center justify-between">
-                    <div className="flex flex-row gap-4 md:gap-8 items-center border-none">
-                      <div
-                        className="rounded-full flex items-center justify-center"
-                        style={{
-                          backgroundColor: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
-                        }}
-                      >
-                        <span className="text-4xl text-white font-bold w-20 h-20 xl:w-24 xl:h-24 flex items-center justify-center">
-                          {dao.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex flex-col gap-4 w-full">
-                        <div className="font-bold text-xl md:text-2xl w-full flex">
-                          {dao.name}
-                        </div>
-                        <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold p-1 w-16 items-center justify-center">
-                          DAO
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-row gap-4 w-full items-center">
-                    <div className="flex flex-col gap-4 w-full justify-center items-center">
-                      <div className="text-heavy_white text-sm">My Power</div>
-
-                      <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold py-1 px-2 min-w-16 items-center justify-center text-sm">
-                        {dao.votes
-                          ? formatString(formatEther(BigInt(dao.votes)))
-                          : 0}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-4 w-full justify-center items-center">
-                      <div className="text-heavy_white text-sm">TVL</div>
-
-                      <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold py-1 px-2 w-16 items-center justify-center text-sm">
-                        $0
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-4 w-full justify-center items-center">
-                      <div className="text-heavy_white text-sm">Members</div>
-
-                      <div className="flex bg-light_dark rounded-xl text-dark_blue font-bold py-1 px-2 w-16 items-center justify-center text-sm">
-                        0
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  dao={dao}
+                  locale={locale}
+                  navigate={navigate}
+                />
               ))}
           </TabsContent>
         </Tabs>
-
-        <div className="flex flex-row gap-4 h-8">
-          <Input placeholder="Search" className="w-full md:w-80" />
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center">
-              Filter
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem>Sort Dao</DropdownMenuItem>
-              <DropdownMenuItem>Date of Creation</DropdownMenuItem>
-              <DropdownMenuItem>Members</DropdownMenuItem>
-              <DropdownMenuItem>Proposals</DropdownMenuItem>
-              <DropdownMenuItem>Total token delegated</DropdownMenuItem>
-              <DropdownMenuItem>Total token delegatees</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </div>
 
       <ToastContainer position="bottom-right" draggable></ToastContainer>
+
+      <RingLoader
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 9999,
+        }}
+        color={'#000000'}
+        loading={loading}
+        cssOverride={ringStyle}
+        size={50}
+      />
     </div>
   )
 }
