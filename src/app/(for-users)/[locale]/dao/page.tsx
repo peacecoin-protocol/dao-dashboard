@@ -306,17 +306,21 @@ export default function ForDAOPage({
             }
           `,
         })
-
         let updatedDaos = []
         for (let i = 0; i < data.daocreateds.length; i++) {
           const dao = data.daocreateds[i]
           try {
-            const votes = await readContract(config, {
-              address: dao.governanceToken as `0x${string}`,
-              abi: PCE_ABI,
-              functionName: 'getVotes',
-              args: [address],
-            })
+            let votes = 0
+            if (address) {
+              votes = Number(
+                await readContract(config, {
+                  address: dao.governanceToken as `0x${string}`,
+                  abi: PCE_ABI,
+                  functionName: 'getVotes',
+                  args: [address],
+                })
+              )
+            }
 
             const identicon = await generateIdenteapot(dao.governor, '')
             updatedDaos.push({ ...dao, votes, identicon })
