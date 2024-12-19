@@ -79,6 +79,9 @@ const loadComponent = async (key: string) => {
     case 'faq':
       Component = (await import('./(for-users)/[locale]/faq/page')).default
       break
+    case 'daofaq':
+      Component = (await import('./(for-users)/[locale]/daofaq/page')).default
+      break
     default:
       Component = (await import('~/components/app-shell')).default
       break
@@ -135,6 +138,11 @@ const router = createBrowserRouter([
         path: '/:locale/dao',
         loader: createLoader('dao'),
         lazy: createLazy('dao'),
+      },
+      {
+        path: '/:locale/daofaq',
+        loader: createLoader('daofaq'),
+        lazy: createLazy('daofaq'),
       },
       {
         path: '/:locale/dao/detail/:id',
@@ -220,6 +228,11 @@ const router = createBrowserRouter([
         path: '/:locale/faq',
         loader: createLoader('fqa'),
         lazy: createLazy('faq'),
+      },
+      {
+        path: '/:locale/daofaq',
+        loader: createLoader('daofaq'),
+        lazy: createLazy('daofaq'),
       },
     ],
   },

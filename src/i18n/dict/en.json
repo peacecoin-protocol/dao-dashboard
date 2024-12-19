@@ -143,5 +143,13 @@
     "q5": "How to Execute Proposal?",
     "q6": "How to Add Bounty to someone else?",
     "q7": "How to Claim Bounties?"
+  },
+  "daofaq": {
+    "title": "DAO FAQ",
+    "q1": "1. Create DAO. Basic DAO Settings?",
+    "q2": "2. Create DAO. Main DAO Settings?",
+    "q3": "3. Propose. How to find DAOs?",
+    "q4": "4. Propose. How to find proposals?",
+    "q5": "5. Delegate. How to delegate voting power?"
   }
 }
