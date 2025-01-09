@@ -138,13 +138,14 @@ export default function ForSubmitPage({
   let [loading, setLoading] = useState(true)
 
   const [category, setCategory] = useState('')
+
+  const [btnText, setBtnText] = useState('Approve')
   const [isDelegateDialogOpened, setIsDelegateDialogOpened] = useState(false)
   const [isCreateProposalDialogOpened, setIsCreateProposalDialogOpened] =
     useState(false)
   const [isProposalDetailDialogOpened, setIsProposalDetailDialogOpened] =
     useState(false)
   const [identicon, setIdenticon] = useState('')
-  const [btnText, setBtnText] = useState('Approve')
 
   const [tabContent, setTabContent] = useState('about')
 
@@ -539,37 +540,56 @@ export default function ForSubmitPage({
     await refetchProposalCount()
   }
 
-  const handleDelegate = async () => {
-    setIsDelegateDialogOpened(false)
-    setBtnText('Approve')
-    if (BigInt(commityTokenBalance as string) > 0) {
-      const allowance = await readContract(config, {
-        abi: PCE_ABI,
-        address: daoInfo[0]?.communityToken as `0x${string}`,
-        functionName: 'allowance',
-        args: [address, daoInfo[0]?.governanceToken as `0x${string}`],
-      })
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    abi: PCE_ABI,
+    address: daoInfo[0]?.communityToken as `0x${string}`,
+    functionName: 'allowance',
+    args: [address, daoInfo[0]?.governanceToken as `0x${string}`],
+  })
 
+  useEffect(() => {
+    const approve = async () => {
+      if (allowance === undefined) return
       if (
         (BigInt(allowance as string) as bigint) <
         BigInt(commityTokenBalance as string)
       ) {
-        const tx = await writeContractAsync({
-          abi: PCE_ABI,
-          address: daoInfo[0]?.communityToken as `0x${string}`,
-          functionName: 'approve',
-          args: [
-            daoInfo[0]?.governanceToken as `0x${string}`,
-            commityTokenBalance,
-          ],
-        })
-
-        await provider.waitForTransaction(tx)
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        setBtnText('Approve')
+      } else {
+        setBtnText('Deposit')
       }
+    }
 
+    approve()
+  }, [allowance, commityTokenBalance, daoInfo])
+
+  const handleStake = async () => {
+    const allowance = await readContract(config, {
+      abi: PCE_ABI,
+      address: daoInfo[0]?.communityToken as `0x${string}`,
+      functionName: 'allowance',
+      args: [address, daoInfo[0]?.governanceToken as `0x${string}`],
+    })
+
+    if (
+      (BigInt(allowance as string) as bigint) <
+      BigInt(commityTokenBalance as string)
+    ) {
+      const tx = await writeContractAsync({
+        abi: PCE_ABI,
+        address: daoInfo[0]?.communityToken as `0x${string}`,
+        functionName: 'approve',
+        args: [
+          daoInfo[0]?.governanceToken as `0x${string}`,
+          commityTokenBalance,
+        ],
+      })
+
+      await provider.waitForTransaction(tx)
       setBtnText('Deposit')
+    }
 
+    if (BigInt(commityTokenBalance as string) > 0) {
       const tx = await writeContractAsync({
         abi: CommunityGov_ABI,
         address: daoInfo[0]?.governanceToken as `0x${string}`,
@@ -581,6 +601,10 @@ export default function ForSubmitPage({
       await refetchGovTokenBalance()
       await new Promise((resolve) => setTimeout(resolve, 1000))
     }
+  }
+
+  const handleDelegate = async () => {
+    setIsDelegateDialogOpened(false)
 
     if (BigInt(governanceTokenBalance as string) > 0) {
       setBtnText('Delegate')
@@ -891,7 +915,7 @@ export default function ForSubmitPage({
 
                 <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
                   <h1 className="font-bold rounded-xl  flex">
-                    Created Nov{' '}
+                    Created at{' '}
                     {new Date(
                       Number(daoInfo[0]?.blockTimestamp) * 1000
                     ).toLocaleString()}
@@ -899,54 +923,46 @@ export default function ForSubmitPage({
                 </div>
                 <div className="flex flex-col  border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
                   <div className="flex flex-row justify-between items-center">
-                    <h1 className="font-bold rounded-xl flex">DAO Site</h1>
-                    <Link
-                      href={
-                        daoInfo[0] ? daoInfo[0]?.website : 'https://website.com'
-                      }
-                      className="text-dark_blue"
-                    >
-                      {shortenAddress(daoInfo[0]?.website)}
-                    </Link>
+                    <h1 className="font-bold rounded-xl flex">
+                      <Link
+                        href={
+                          daoInfo[0]?.website
+                            ? daoInfo[0]?.website
+                            : 'https://website.com'
+                        }
+                        className="text-dark_blue"
+                      >
+                        DAO Site
+                      </Link>
+                    </h1>
                   </div>
                   <div className="flex flex-row justify-between items-center">
-                    <h1 className="font-bold rounded-xl  flex">Linkedin</h1>
-                    <Link
-                      href={
-                        daoInfo[0]?.linkedin
-                          ? daoInfo[0]?.linkedin
-                          : 'https://www.linkedin.com/'
-                      }
-                      className="text-dark_blue"
-                    >
-                      {shortenAddress(daoInfo[0]?.linkedin)}
-                    </Link>
+                    <h1 className="font-bold rounded-xl flex">
+                      <Link
+                        href={
+                          daoInfo[0]?.linkedin
+                            ? daoInfo[0]?.linkedin
+                            : 'https://www.linkedin.com/'
+                        }
+                        className="text-dark_blue"
+                      >
+                        Linkedin
+                      </Link>
+                    </h1>
                   </div>
                   <div className="flex flex-row justify-between items-center">
-                    <h1 className="font-bold rounded-xl  flex">Twitter</h1>
-                    <Link
-                      href={
-                        daoInfo[0]?.twitter
-                          ? daoInfo[0]?.twitter
-                          : 'https://www.twitter.com/'
-                      }
-                      className="text-dark_blue"
-                    >
-                      {shortenAddress(daoInfo[0]?.twitter)}
-                    </Link>
-                  </div>
-                  <div className="flex flex-row justify-between items-center">
-                    <h1 className="font-bold rounded-xl  flex">Audits</h1>
-                    <Link
-                      href={
-                        daoInfo[0]?.website
-                          ? daoInfo[0]?.website
-                          : 'https://website.com'
-                      }
-                      className="text-dark_blue"
-                    >
-                      {shortenAddress(daoInfo[0]?.website)}
-                    </Link>
+                    <h1 className="font-bold rounded-xl flex">
+                      <Link
+                        href={
+                          daoInfo[0]?.twitter
+                            ? daoInfo[0]?.twitter
+                            : 'https://twitter.com'
+                        }
+                        className="text-dark_blue"
+                      >
+                        Twitter
+                      </Link>
+                    </h1>
                   </div>
                 </div>
               </div>
@@ -1204,9 +1220,9 @@ export default function ForSubmitPage({
                   <div className="flex flex-col gap-4">
                     <h1 className="flex flex-row text-2xl font-bold gap-4">
                       Voting Power Breakdown
-                      <div className="flex bg-dark_blue rounded-xl text-light_white font-bold items-center justify-center text-xs px-4">
+                      {/* <div className="flex bg-dark_blue rounded-xl text-light_white font-bold items-center justify-center text-xs px-4">
                         0
-                      </div>
+                      </div> */}
                     </h1>
 
                     {/* <div className="flex flex-row gap-6">
@@ -1226,25 +1242,24 @@ export default function ForSubmitPage({
                   </div>
                 </div>
                 <div className="flex flex-row gap-4">
-                  <Button
-                    className="w-60 bg-dark_blue"
-                    onClick={() => setIsDelegateDialogOpened(true)}
-                  >
+                  <Button className="w-60 bg-dark_blue" onClick={handleStake}>
                     {btnText}
                   </Button>
 
                   <Button
                     className="w-60 bg-dark_blue"
                     onClick={async () => {
-                      await writeContract({
-                        abi: CommunityGov_ABI,
-                        address: daoInfo[0]?.governanceToken as `0x${string}`,
-                        functionName: 'withdraw',
-                        args: [governanceTokenBalance],
-                      })
+                      // await writeContract({
+                      //   abi: CommunityGov_ABI,
+                      //   address: daoInfo[0]?.governanceToken as `0x${string}`,
+                      //   functionName: 'withdraw',
+                      //   args: [governanceTokenBalance],
+                      // })
+
+                      setIsDelegateDialogOpened(true)
                     }}
                   >
-                    UnDelegate
+                    Delegate
                   </Button>
                 </div>
                 <div className="rounded-xl flex border mt-4 flex-row w-full gap-4">
@@ -1256,7 +1271,8 @@ export default function ForSubmitPage({
                             Name/Address
                           </div>
                         </TableHead>
-                        <TableHead>Balance</TableHead>
+                        <TableHead>Community Token</TableHead>
+                        <TableHead>Governance Token</TableHead>
                         <TableHead>Delegated Amount</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1265,15 +1281,34 @@ export default function ForSubmitPage({
                         <TableCell>
                           <div className="flex flex-row gap-2 items-center">
                             <h1 className="text-md text-dark_blue font-bold">
-                              0x0000...67e9
+                              {shortenAddress(address)}
                             </h1>
                           </div>
                         </TableCell>
                         <TableCell className="font-bold font-md text-dark_blue">
-                          0 {daoInfo[0]?.name}
+                          {commityTokenBalance
+                            ? formatString(
+                                formatEther(
+                                  BigInt(commityTokenBalance as string)
+                                )
+                              )
+                            : '0'}{' '}
+                          {daoInfo[0]?.name}
                         </TableCell>
                         <TableCell className="font-bold font-md text-dark_blue">
-                          0 {daoInfo[0]?.name}
+                          {governanceTokenBalance
+                            ? formatString(
+                                formatEther(
+                                  BigInt(governanceTokenBalance as string)
+                                )
+                              )
+                            : '0'}{' '}
+                          {daoInfo[0]?.name}
+                        </TableCell>
+                        <TableCell className="font-bold font-md text-dark_blue">
+                          {votes
+                            ? formatString(formatEther(BigInt(votes as string)))
+                            : '0'}{' '}
                         </TableCell>
                       </TableRow>
                     </TableBody>

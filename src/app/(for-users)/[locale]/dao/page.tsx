@@ -38,8 +38,17 @@ import { getDict } from '~/i18n/get-dict'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { createClient, formatEther, parseEther } from 'viem'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
+
 // import { ethers } from 'ethers'
 // import { provider } from '~/app/constants/constants'
+
+// const contractAddress = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'
+// const abi = [
+//   // ERC20 ABI fragment
+//   'event Transfer(address indexed from, address indexed to, uint256 value)',
+//   'function totalSupply() view returns (uint256)',
+// ]
+// const contract = new ethers.Contract(contractAddress, abi, provider)
 
 // // Define your token contract's ABI and address
 // const tokenAddress = '0xdac17f958d2ee523a2206206994597c13d831ec7'
@@ -128,9 +137,9 @@ const DaoCard = ({
     onClick={() => navigate(`/${locale}/dao/detail/${dao.id}`)}
   >
     <div className="flex flex-row w-full items-center justify-between">
-      <div className="flex flex-row gap-4 md:gap-8 items-center border-none">
+      <div className="flex flex-row gap-4 md:gap-8 items-center border-none mx-8 md:mx-4">
         {dao.identicon ? (
-          <img src={dao.identicon} alt="" className="w-32 rounded-full" />
+          <img src={dao.identicon} alt="" className="w-24 rounded-full" />
         ) : (
           <div
             className="rounded-full flex items-center justify-center"
@@ -325,7 +334,8 @@ export default function ForDAOPage({
             const identicon = await generateIdenteapot(dao.governor, '')
             updatedDaos.push({ ...dao, votes, identicon })
           } catch (error) {
-            updatedDaos.push({ ...dao, votes: 0 })
+            const identicon = await generateIdenteapot(dao.governor, '')
+            updatedDaos.push({ ...dao, votes: 0, identicon })
 
             console.log('error', error)
           }
@@ -430,31 +440,31 @@ export default function ForDAOPage({
               <h1>Voting Parameters</h1>
               <div className="flex flex-col gap-2">
                 <Input
-                  placeholder="Voting Delay"
+                  placeholder="Voting Delay - 1 Block"
                   onChange={(e) => updateDaoForm('votingDelay', e.target.value)}
                   value={daoForm.votingDelay}
                 />
                 <Input
-                  placeholder="Voting Period"
+                  placeholder="Voting Period - 100 Blocks"
                   onChange={(e) =>
                     updateDaoForm('votingPeriod', e.target.value)
                   }
                   value={daoForm.votingPeriod}
                 />
                 <Input
-                  placeholder="Proposal Threshold"
+                  placeholder="Proposal Threshold - 1000 Power"
                   onChange={(e) =>
                     updateDaoForm('proposalThreshold', e.target.value)
                   }
                   value={daoForm.proposalThreshold}
                 />
                 <Input
-                  placeholder="Quorum Votes"
+                  placeholder="Quorum Votes - 2000 Power"
                   onChange={(e) => updateDaoForm('quorumVotes', e.target.value)}
                   value={daoForm.quorumVotes}
                 />
                 <Input
-                  placeholder="Timelock Delay"
+                  placeholder="Timelock Delay - 86400 (1day)"
                   onChange={(e) =>
                     updateDaoForm('timelockDelay', e.target.value)
                   }

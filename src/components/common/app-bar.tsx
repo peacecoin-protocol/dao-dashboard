@@ -65,7 +65,7 @@ function AppBar({ locale }: { locale: Locale }) {
               !isConnected ? 'hidden' : 'xl:flex'
             } mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base max-md:hidden`}
           >
-            {chain ? chain.name : ''}
+            {chain ? chain.name : 'Localhost'}
           </Button>
 
           <DropdownMenu>
