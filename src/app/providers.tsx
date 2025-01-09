@@ -13,7 +13,7 @@ import {
   trustWallet,
   ledgerWallet,
 } from '@rainbow-me/rainbowkit/wallets'
-import { polygonAmoy } from 'wagmi/chains'
+import { localhost } from 'wagmi/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 
@@ -32,7 +32,7 @@ const config = getDefaultConfig({
       wallets: [argentWallet, trustWallet, ledgerWallet],
     },
   ],
-  chains: [polygonAmoy],
+  chains: [localhost],
   ssr: true,
 })
 
