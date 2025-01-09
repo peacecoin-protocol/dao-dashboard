@@ -59,11 +59,12 @@ import { useParams } from 'react-router-dom'
 import { formatString, shortenAddress } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
-import { POLY_SCAN_TX } from '~/app/constants/constants'
+import { POLY_SCAN_TX, provider } from '~/app/constants/constants'
 import { Textarea } from '~/components/ui/textarea'
 import { config } from '~/lib/config'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 import { TooltipComponent } from '~/components/custom/TooltipComponent'
+import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 
 type Dao = {
   id: string
@@ -77,6 +78,7 @@ type Dao = {
   telegram: string
   governanceToken: string
   timelock: string
+  communityToken: string
 }
 
 type Proposal = {
@@ -142,6 +144,7 @@ export default function ForSubmitPage({
   const [isProposalDetailDialogOpened, setIsProposalDetailDialogOpened] =
     useState(false)
   const [identicon, setIdenticon] = useState('')
+  const [btnText, setBtnText] = useState('Approve')
 
   const [tabContent, setTabContent] = useState('about')
 
@@ -149,15 +152,17 @@ export default function ForSubmitPage({
   const id = pathname.id
 
   const { address, chainId } = useAccount()
-  const { data: hash, error, writeContract } = useWriteContract()
+  const {
+    data: hash,
+    error,
+    writeContract,
+    writeContractAsync,
+  } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
     })
 
-  const transferInterface = new ethers.Interface([
-    'function transfer(address to, uint256 amount)',
-  ])
   const { data: quorum, refetch: refetchQuorum } = useReadContract({
     address: daoInfo[0]?.governor as `0x${string}`,
     abi: GOVERNOR_ABI,
@@ -178,6 +183,22 @@ export default function ForSubmitPage({
       abi: PCE_ABI,
       functionName: 'balanceOf',
       args: [daoInfo[0]?.timelock as `0x${string}`],
+    })
+
+  const { data: commityTokenBalance, refetch: refetchCommityTokenBalance } =
+    useReadContract({
+      address: daoInfo[0]?.communityToken as `0x${string}`,
+      abi: PCE_ABI,
+      functionName: 'balanceOf',
+      args: [address],
+    })
+
+  const { data: governanceTokenBalance, refetch: refetchGovTokenBalance } =
+    useReadContract({
+      address: daoInfo[0]?.governanceToken as `0x${string}`,
+      abi: PCE_ABI,
+      functionName: 'balanceOf',
+      args: [address],
     })
 
   const { data: totalSupply, refetch: refetchTotalSupply } = useReadContract({
@@ -520,12 +541,58 @@ export default function ForSubmitPage({
 
   const handleDelegate = async () => {
     setIsDelegateDialogOpened(false)
-    writeContract({
-      abi: PCE_ABI,
-      address: daoInfo[0]?.governanceToken as `0x${string}`,
-      functionName: 'delegate',
-      args: [delegateAddr],
-    })
+    setBtnText('Approve')
+    if (BigInt(commityTokenBalance as string) > 0) {
+      const allowance = await readContract(config, {
+        abi: PCE_ABI,
+        address: daoInfo[0]?.communityToken as `0x${string}`,
+        functionName: 'allowance',
+        args: [address, daoInfo[0]?.governanceToken as `0x${string}`],
+      })
+
+      if (
+        (BigInt(allowance as string) as bigint) <
+        BigInt(commityTokenBalance as string)
+      ) {
+        const tx = await writeContractAsync({
+          abi: PCE_ABI,
+          address: daoInfo[0]?.communityToken as `0x${string}`,
+          functionName: 'approve',
+          args: [
+            daoInfo[0]?.governanceToken as `0x${string}`,
+            commityTokenBalance,
+          ],
+        })
+
+        await provider.waitForTransaction(tx)
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+      }
+
+      setBtnText('Deposit')
+
+      const tx = await writeContractAsync({
+        abi: CommunityGov_ABI,
+        address: daoInfo[0]?.governanceToken as `0x${string}`,
+        functionName: 'deposit',
+        args: [commityTokenBalance],
+      })
+
+      await provider.waitForTransaction(tx)
+      await refetchGovTokenBalance()
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+    }
+
+    if (BigInt(governanceTokenBalance as string) > 0) {
+      setBtnText('Delegate')
+      const tx = await writeContractAsync({
+        abi: CommunityGov_ABI,
+        address: daoInfo[0]?.governanceToken as `0x${string}`,
+        functionName: 'delegate',
+        args: [delegateAddr],
+      })
+
+      await provider.waitForTransaction(tx)
+    }
   }
 
   useEffect(() => {
@@ -585,6 +652,7 @@ export default function ForSubmitPage({
               governor
               timelock
               governanceToken
+              communityToken
               blockTimestamp
             }
           }
@@ -623,7 +691,7 @@ export default function ForSubmitPage({
               value="balance"
               onClick={() => setTabContent('balance')}
             >
-              DAO Balance
+              Balance
             </TabsTrigger>
             <TabsTrigger
               value="holders"
@@ -761,7 +829,7 @@ export default function ForSubmitPage({
 
                     <div className="text-dark_blue">
                       {proposalThreshold
-                        ? formatString(proposalThreshold as string)
+                        ? formatString(formatEther(proposalThreshold as string))
                         : '0'}
                     </div>
                   </div>
@@ -773,7 +841,9 @@ export default function ForSubmitPage({
                       className="font-bold rounded-xl flex"
                     />
                     <div className="text-dark_blue">
-                      {quorum ? formatString(quorum as string) : '0'}
+                      {quorum
+                        ? formatString(formatEther(BigInt(quorum as string)))
+                        : '0'}
                     </div>
                   </div>
                 </div>
@@ -1154,14 +1224,29 @@ export default function ForSubmitPage({
                       </div>
                     </div> */}
                   </div>
+                </div>
+                <div className="flex flex-row gap-4">
                   <Button
-                    className="w-80 bg-dark_blue"
+                    className="w-60 bg-dark_blue"
                     onClick={() => setIsDelegateDialogOpened(true)}
                   >
-                    Delegate to custom address
+                    {btnText}
+                  </Button>
+
+                  <Button
+                    className="w-60 bg-dark_blue"
+                    onClick={async () => {
+                      await writeContract({
+                        abi: CommunityGov_ABI,
+                        address: daoInfo[0]?.governanceToken as `0x${string}`,
+                        functionName: 'withdraw',
+                        args: [governanceTokenBalance],
+                      })
+                    }}
+                  >
+                    UnDelegate
                   </Button>
                 </div>
-
                 <div className="rounded-xl flex border mt-4 flex-row w-full gap-4">
                   <Table className="w-full">
                     <TableHeader>
