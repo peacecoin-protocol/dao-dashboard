@@ -78,7 +78,6 @@ export default function ForTokenPage({
     abi: PCE_ABI,
     functionName: 'balanceOf',
     args: [address],
-    chainId: chainId,
   })
 
   const { data: _tokens, refetch: refetchTokens } = useReadContract({
@@ -86,7 +85,6 @@ export default function ForTokenPage({
     abi: PCE_ABI,
     functionName: 'getTokens',
     args: [],
-    chainId: chainId,
   })
 
   const { data: lastModifiedFactor, refetch: refetchLastModifiedFactor } =
@@ -95,7 +93,6 @@ export default function ForTokenPage({
       abi: PCE_ABI,
       functionName: 'lastModifiedFactor',
       args: [],
-      chainId: chainId,
     })
 
   const { data: factor } = useReadContract({
@@ -103,7 +100,6 @@ export default function ForTokenPage({
     abi: PCE_ABI,
     functionName: 'getCurrentFactor',
     args: [],
-    chainId: chainId,
   })
 
   const { data: INITIAL_FACTOR, refetch: refetchINITIAL_FACTOR } =
@@ -112,7 +108,6 @@ export default function ForTokenPage({
       abi: PCE_ABI,
       functionName: 'INITIAL_FACTOR',
       args: [],
-      chainId: chainId,
     })
 
   const fetchExchangeRate = async (_tokens: []) => {

@@ -76,7 +76,6 @@ import { PCE_ABI } from '~/app/ABIs/PCEToken'
 //   return holders
 // }
 
-// console.log(listenForTransfers(), 'XXXXX')
 type Dao = {
   id: string
   daoId: string
@@ -109,18 +108,12 @@ type DaoFormState = {
   quorumVotes: string
   timelockDelay: string
 }
-import { polygonAmoy } from '@wagmi/core/chains'
 import { http, createConfig } from '@wagmi/core'
 import { formatString } from '~/components/utils'
 import { TabsContent } from '@radix-ui/react-tabs'
 import RingLoader from 'react-spinners/RingLoader'
 
-const config = createConfig({
-  chains: [polygonAmoy],
-  client({ chain }) {
-    return createClient({ chain, transport: http() })
-  },
-})
+import { config } from '~/lib/config'
 
 const DaoCard = ({
   dao,
@@ -205,6 +198,7 @@ export default function ForDAOPage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
+      confirmations: 1,
     })
 
   let [loading, setLoading] = useState(true)
@@ -295,10 +289,17 @@ export default function ForDAOPage({
     const fetchData = async () => {
       try {
         setLoading(true)
+
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+
         const { data } = await client.query({
           query: gql`
             query totalDaos {
-              daocreateds(first: 100) {
+              daocreateds(
+                first: 100
+                orderBy: blockTimestamp
+                orderDirection: desc
+              ) {
                 id
                 daoId
                 description

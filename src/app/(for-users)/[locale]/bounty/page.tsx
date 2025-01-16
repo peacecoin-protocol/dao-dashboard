@@ -120,7 +120,6 @@ export default function ForBountyPage({
     abi: PCE_ABI,
     functionName: 'balanceOf',
     args: [address],
-    chainId: chainId,
   })
 
   const { data: proposalCount, refetch: refetchProposalCount } =
@@ -129,7 +128,6 @@ export default function ForBountyPage({
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
       args: [],
-      chainId: chainId,
     })
 
   useEffect(() => {
@@ -158,7 +156,6 @@ export default function ForBountyPage({
       abi: BOUNTY_ABI,
       functionName: 'contributorBounties',
       args: [address],
-      chainId: chainId,
     })
 
   const { data: _amount, refetch: refetchBountyAmount } = useReadContract({
@@ -166,7 +163,6 @@ export default function ForBountyPage({
     abi: BOUNTY_ABI,
     functionName: 'bountyAmount',
     args: [],
-    chainId: chainId,
   })
 
   const refetchData = async () => {

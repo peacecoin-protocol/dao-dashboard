@@ -55,7 +55,6 @@ export default function ForDelegatePage({
     abi: PCE_ABI,
     functionName: 'getVotes',
     args: [address],
-    chainId: chainId,
   })
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {

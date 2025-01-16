@@ -81,7 +81,6 @@ export default function ForPendingPage({
     abi: PCE_ABI,
     functionName: 'getVotes',
     args: [address],
-    chainId: chainId,
   })
 
   const { data: proposalCount, refetch: refetchProposalCount } =
@@ -90,7 +89,6 @@ export default function ForPendingPage({
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
       args: [],
-      chainId: chainId,
     })
 
   useEffect(() => {

@@ -40,16 +40,10 @@ import { http, createConfig } from '@wagmi/core'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { useAccount, useReadContract } from 'wagmi'
-import { polygonAmoy } from '@wagmi/core/chains'
+
+import { config } from '~/lib/config'
 
 import RingLoader from 'react-spinners/RingLoader'
-
-const config = createConfig({
-  chains: [polygonAmoy],
-  client({ chain }) {
-    return createClient({ chain, transport: http() })
-  },
-})
 
 export default function ForUsersIndexPage({
   params: { locale, ...params },
@@ -88,7 +82,6 @@ export default function ForUsersIndexPage({
     abi: PCE_ABI,
     functionName: 'balanceOf',
     args: [address],
-    chainId: chainId,
   })
 
   const { data: contributorBounties, refetch: refetchContributorBounties } =
@@ -97,7 +90,6 @@ export default function ForUsersIndexPage({
       abi: BOUNTY_ABI,
       functionName: 'contributorBounties',
       args: [address],
-      chainId: chainId,
     })
 
   const { data: proposalCount, refetch: refetchProposalCount } =
@@ -106,7 +98,6 @@ export default function ForUsersIndexPage({
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
       args: [],
-      chainId: chainId,
     })
 
   const fetchData = async (count: any) => {
