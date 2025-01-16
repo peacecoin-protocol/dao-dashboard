@@ -72,7 +72,6 @@ export default function ForClosedPage({
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
       args: [],
-      chainId: chainId,
     })
 
   useEffect(() => {

@@ -139,7 +139,6 @@ export default function ForSubmitPage({
 
   const [category, setCategory] = useState('')
 
-  const [btnText, setBtnText] = useState('Approve')
   const [isDelegateDialogOpened, setIsDelegateDialogOpened] = useState(false)
   const [isCreateProposalDialogOpened, setIsCreateProposalDialogOpened] =
     useState(false)
@@ -162,20 +161,19 @@ export default function ForSubmitPage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
+      confirmations: 1,
     })
 
   const { data: quorum, refetch: refetchQuorum } = useReadContract({
     address: daoInfo[0]?.governor as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'quorumVotes',
-    chainId: chainId,
   })
 
   const { data: votingDelay, refetch: refetchVotingDelay } = useReadContract({
     address: daoInfo[0]?.governor as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'votingDelay',
-    chainId: chainId,
   })
 
   const { data: treasuryBalance, refetch: refetchTreasuryBalance } =
@@ -213,14 +211,12 @@ export default function ForSubmitPage({
       address: daoInfo[0]?.governor as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalThreshold',
-      chainId: chainId,
     })
 
   const { data: votingPeriod, refetch: refetchVotingPeriod } = useReadContract({
     address: daoInfo[0]?.governor as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'votingPeriod',
-    chainId: chainId,
   })
 
   const { data: timelockDelay, refetch: refetchTimelockDelay } =
@@ -228,7 +224,6 @@ export default function ForSubmitPage({
       address: daoInfo[0]?.timelock as `0x${string}`,
       abi: TIMELOCK_ABI,
       functionName: 'delay',
-      chainId: chainId,
     })
 
   const ProposalCard = ({
@@ -327,7 +322,7 @@ export default function ForSubmitPage({
             trailWidth={1}
           />
 
-          <div className="flex flex-row gap-4 w-full">
+          <div className="flex flex-row gap-1 md:gap-4 w-full">
             <Button
               className="w-full bg-dark_blue"
               disabled={status !== 'Active'}
@@ -417,7 +412,6 @@ export default function ForSubmitPage({
     abi: PCE_ABI,
     functionName: 'getVotes',
     args: [address],
-    chainId: chainId,
   })
 
   const { data: proposalCount, refetch: refetchProposalCount } =
@@ -425,7 +419,6 @@ export default function ForSubmitPage({
       address: daoInfo[0]?.governor as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
-      chainId: chainId,
     })
 
   const fetchData = async (count: any) => {
@@ -505,7 +498,7 @@ export default function ForSubmitPage({
   }
   useEffect(() => {
     fetchData(proposalCount)
-  }, [proposalCount, isConfirmed])
+  }, [proposalCount, isConfirmed, daoInfo])
 
   useEffect(() => {
     const fetchIdenticon = async () => {
@@ -547,22 +540,6 @@ export default function ForSubmitPage({
     args: [address, daoInfo[0]?.governanceToken as `0x${string}`],
   })
 
-  useEffect(() => {
-    const approve = async () => {
-      if (allowance === undefined) return
-      if (
-        (BigInt(allowance as string) as bigint) <
-        BigInt(commityTokenBalance as string)
-      ) {
-        setBtnText('Approve')
-      } else {
-        setBtnText('Deposit')
-      }
-    }
-
-    approve()
-  }, [allowance, commityTokenBalance, daoInfo])
-
   const handleStake = async () => {
     const allowance = await readContract(config, {
       abi: PCE_ABI,
@@ -570,7 +547,6 @@ export default function ForSubmitPage({
       functionName: 'allowance',
       args: [address, daoInfo[0]?.governanceToken as `0x${string}`],
     })
-
     if (
       (BigInt(allowance as string) as bigint) <
       BigInt(commityTokenBalance as string)
@@ -584,9 +560,6 @@ export default function ForSubmitPage({
           commityTokenBalance,
         ],
       })
-
-      await provider.waitForTransaction(tx)
-      setBtnText('Deposit')
     }
 
     if (BigInt(commityTokenBalance as string) > 0) {
@@ -596,9 +569,24 @@ export default function ForSubmitPage({
         functionName: 'deposit',
         args: [commityTokenBalance],
       })
-
       await provider.waitForTransaction(tx)
       await refetchGovTokenBalance()
+      await refetchCommityTokenBalance()
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+    }
+  }
+
+  const handleWithdraw = async () => {
+    if (BigInt(governanceTokenBalance as string) > 0) {
+      const tx = await writeContractAsync({
+        abi: CommunityGov_ABI,
+        address: daoInfo[0]?.governanceToken as `0x${string}`,
+        functionName: 'withdraw',
+        args: [governanceTokenBalance],
+      })
+      await provider.waitForTransaction(tx)
+      await refetchGovTokenBalance()
+      await refetchCommityTokenBalance()
       await new Promise((resolve) => setTimeout(resolve, 1000))
     }
   }
@@ -607,7 +595,6 @@ export default function ForSubmitPage({
     setIsDelegateDialogOpened(false)
 
     if (BigInt(governanceTokenBalance as string) > 0) {
-      setBtnText('Delegate')
       const tx = await writeContractAsync({
         abi: CommunityGov_ABI,
         address: daoInfo[0]?.governanceToken as `0x${string}`,
@@ -764,7 +751,7 @@ export default function ForSubmitPage({
                 <div className="flex flex-col border rounded-xl p-4 mt-2 bg-gray-100 gap-2">
                   <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
                     <TooltipComponent
-                      title="Governance Token"
+                      title="Governor Token"
                       tooltipText="A token that represents voting power in the DAO. Holders can vote on proposals and participate in governance decisions."
                       className="font-bold rounded-xl flex"
                     />
@@ -978,8 +965,8 @@ export default function ForSubmitPage({
                   <TabsTrigger className="w-20" value="active">
                     Active
                   </TabsTrigger>
-                  <TabsTrigger className="w-20" value="succeeded">
-                    Succeeded
+                  <TabsTrigger className="w-20" value="executed">
+                    Executed
                   </TabsTrigger>
                   <TabsTrigger className="w-20" value="defeated">
                     Defeated
@@ -1032,14 +1019,14 @@ export default function ForSubmitPage({
                 </TabsContent>
 
                 <TabsContent
-                  value="succeeded"
+                  value="executed"
                   className="flex w-full flex-col mt-0"
                 >
                   {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Succeeded'
+                    (_, index) => proposalStatus[index] === 'Executed'
                   ).length > 0 ? (
                     proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Succeeded') {
+                      if (proposalStatus[index] === 'Executed') {
                         return (
                           <ProposalCard
                             key={index}
@@ -1136,7 +1123,14 @@ export default function ForSubmitPage({
                     <h1 className="font-bold rounded-xl  flex">
                       Number of Tokens
                     </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
+                    <h1 className="font-bold rounded-xl  flex">
+                      {treasuryBalance
+                        ? formatString(
+                            formatEther(BigInt(treasuryBalance as string))
+                          )
+                        : '0'}{' '}
+                      {daoInfo[0]?.name}
+                    </h1>
                   </div>
 
                   <div className="flex flex-row justify-between">
@@ -1243,19 +1237,19 @@ export default function ForSubmitPage({
                 </div>
                 <div className="flex flex-row gap-4">
                   <Button className="w-60 bg-dark_blue" onClick={handleStake}>
-                    {btnText}
+                    Stake
+                  </Button>
+
+                  <Button
+                    className="w-60 bg-dark_blue"
+                    onClick={handleWithdraw}
+                  >
+                    Withdraw
                   </Button>
 
                   <Button
                     className="w-60 bg-dark_blue"
                     onClick={async () => {
-                      // await writeContract({
-                      //   abi: CommunityGov_ABI,
-                      //   address: daoInfo[0]?.governanceToken as `0x${string}`,
-                      //   functionName: 'withdraw',
-                      //   args: [governanceTokenBalance],
-                      // })
-
                       setIsDelegateDialogOpened(true)
                     }}
                   >

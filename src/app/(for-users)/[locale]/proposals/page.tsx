@@ -38,7 +38,6 @@ export default function ForProposalPage({
     abi: PCE_ABI,
     functionName: 'getVotes',
     args: [address],
-    chainId: chainId,
   })
 
   const vote = dict?.vote ?? {}

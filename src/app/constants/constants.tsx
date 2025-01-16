@@ -9,6 +9,4 @@ export const factoryAddress = '0x610178dA211FEF7D417bC0e6FeD39F05609AD788'
 export const POLY_SCAN_TX = 'https://amoy.polygonscan.com/tx/'
 export const daoStudioAddress = '0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e'
 export const communityGovAddress = '0x42d25d28e8ced9ea3ea7988825970b95cb843aa0'
-export const provider = new ethers.JsonRpcProvider(
-  'https://polygon-amoy.blockpi.network/v1/rpc/public'
-)
+export const provider = new ethers.JsonRpcProvider('http://localhost:8545')
