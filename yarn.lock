@@ -5974,10 +5974,10 @@ ajv@^8.0.0, ajv@^8.10.0, ajv@^8.12.0, ajv@^8.9.0:
     json-schema-traverse "^1.0.0"
     require-from-string "^2.0.2"
 
-alchemy-sdk@^3.5.0:
-  version "3.5.0"
-  resolved "https://registry.yarnpkg.com/alchemy-sdk/-/alchemy-sdk-3.5.0.tgz#a4cab2f439d68348727c3a7ca6806e929c1e31bf"
-  integrity sha512-ggY7y+cM6hZKynU7mg6jBUhhAS/68kWn7dPYSyvl9TlCQZnKl3norZKLxbP972NmRDMCqKEDPyYJpvEC6kMj1w==
+alchemy-sdk@^3.5.1:
+  version "3.5.1"
+  resolved "https://registry.yarnpkg.com/alchemy-sdk/-/alchemy-sdk-3.5.1.tgz#7bd91366a2b76bb1f48d0efe618f1c558e677c43"
+  integrity sha512-4jlkESPanXzASrREQqcO6DWF2665HutSAxHKxABYNDgf/WkMeHfqXfojDhbVmY+VoyvXczWaQ9tsGXH1YQD/6A==
   dependencies:
     "@ethersproject/abi" "^5.7.0"
     "@ethersproject/abstract-provider" "^5.7.0"

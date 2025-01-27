@@ -8,14 +8,16 @@ import {
   useAccount,
   useWriteContract,
   useWaitForTransactionReceipt,
+  useSwitchChain,
   type BaseError,
 } from 'wagmi'
+
 import { readContract } from '@wagmi/core'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 import { ringStyle } from '~/app/constants/styles'
 
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
-import { daoStudioAddress } from '~/app/constants/constants'
+import { daoStudioAddress, SUBGRAPH_URL } from '~/app/constants/constants'
 
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { Input } from '~/components/ui/input'
@@ -27,16 +29,14 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogTitle } from '~/components/ui/dialog'
 
-import { createDaoFactoryClient } from '~/app/apollo-client'
-import { gql } from '@apollo/client'
+import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
 
 import { useNavigate } from 'react-router-dom'
-import { POLY_SCAN_TX } from '~/app/constants/constants'
 
 import { getDict } from '~/i18n/get-dict'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { createClient, formatEther, parseEther } from 'viem'
+import { formatEther, parseEther } from 'viem'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
 // import { ethers } from 'ethers'
@@ -108,12 +108,13 @@ type DaoFormState = {
   quorumVotes: string
   timelockDelay: string
 }
-import { http, createConfig } from '@wagmi/core'
 import { formatString } from '~/components/utils'
 import { TabsContent } from '@radix-ui/react-tabs'
 import RingLoader from 'react-spinners/RingLoader'
 
 import { config } from '~/lib/config'
+import { sepolia } from 'wagmi/chains'
+import { localhost } from '~/app/providers'
 
 const DaoCard = ({
   dao,
@@ -189,17 +190,30 @@ export default function ForDAOPage({
   const navigate = useNavigate()
 
   const [dict, setDict] = useState<Dictionary | null>(null)
-  const client = createDaoFactoryClient()
 
   const [daos, setDaos] = useState<any[]>([])
 
   const { address, chainId } = useAccount()
+
+  const client = new ApolloClient({
+    uri: SUBGRAPH_URL[chainId || localhost.id] as string,
+    cache: new InMemoryCache(),
+  })
+
   const { data: hash, error, writeContract } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
       confirmations: 1,
     })
+
+  const { chains, switchChain } = useSwitchChain()
+
+  useEffect(() => {
+    if (chainId && !chains.some((chain) => chain.id === chainId)) {
+      switchChain({ chainId: sepolia.id })
+    }
+  }, [chainId])
 
   let [loading, setLoading] = useState(true)
 
@@ -227,7 +241,7 @@ export default function ForDAOPage({
 
     writeContract({
       abi: DAO_STUDIO_ABI,
-      address: daoStudioAddress,
+      address: daoStudioAddress[chainId || localhost.id] as `0x${string}`,
       functionName: 'createDAO',
       args: [
         daoForm.name,
@@ -257,7 +271,14 @@ export default function ForDAOPage({
     const notify = async () => {
       if (isConfirmed) {
         toast.success(
-          <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
+          <Link
+            href={`${
+              chainId === sepolia.id
+                ? sepolia.blockExplorers?.default?.url
+                : localhost.blockExplorers?.default?.url
+            }/tx/${hash}`}
+            target="_blank"
+          >
             Transaction Succeed!
           </Link>
         )

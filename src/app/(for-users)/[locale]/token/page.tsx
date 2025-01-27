@@ -36,12 +36,14 @@ import { Button } from '~/components/ui/button'
 import { shortenAddress, formatString } from '~/components/utils'
 import useWindowWidth from '~/components/useWindWidth'
 
-import { pceAddress, POLY_SCAN_TX } from '~/app/constants/constants'
+import { pceAddress } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
 import { config } from '~/lib/config'
+import { sepolia } from 'wagmi/chains'
+import { localhost } from '~/app/providers'
 
 export default function ForTokenPage({
   params: { locale, ...params },
@@ -74,14 +76,14 @@ export default function ForTokenPage({
   }, [locale])
 
   const { data: balance, refetch: refetchBalance } = useReadContract({
-    address: pceAddress,
+    address: pceAddress[chainId || localhost.id] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'balanceOf',
     args: [address],
   })
 
   const { data: _tokens, refetch: refetchTokens } = useReadContract({
-    address: pceAddress,
+    address: pceAddress[chainId || localhost.id] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'getTokens',
     args: [],
@@ -89,14 +91,14 @@ export default function ForTokenPage({
 
   const { data: lastModifiedFactor, refetch: refetchLastModifiedFactor } =
     useReadContract({
-      address: pceAddress,
+      address: pceAddress[chainId || localhost.id] as `0x${string}`,
       abi: PCE_ABI,
       functionName: 'lastModifiedFactor',
       args: [],
     })
 
   const { data: factor } = useReadContract({
-    address: pceAddress,
+    address: pceAddress[chainId || localhost.id] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'getCurrentFactor',
     args: [],
@@ -104,7 +106,7 @@ export default function ForTokenPage({
 
   const { data: INITIAL_FACTOR, refetch: refetchINITIAL_FACTOR } =
     useReadContract({
-      address: pceAddress,
+      address: pceAddress[chainId || localhost.id] as `0x${string}`,
       abi: PCE_ABI,
       functionName: 'INITIAL_FACTOR',
       args: [],
@@ -115,7 +117,7 @@ export default function ForTokenPage({
     let _exchangeRates = []
     for (let i = 0; i < _tokens.length; i++) {
       const exchangeRate = await readContract(config, {
-        address: pceAddress,
+        address: pceAddress[chainId || localhost.id] as `0x${string}`,
         abi: PCE_ABI,
         functionName: 'getExchangeRate',
         args: [_tokens[i]],
@@ -197,7 +199,14 @@ export default function ForTokenPage({
   useEffect(() => {
     if (isConfirmed) {
       toast.success(
-        <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
+        <Link
+          href={`${
+            chainId === sepolia.id
+              ? sepolia.blockExplorers?.default?.url
+              : localhost.blockExplorers?.default?.url
+          }/tx/${hash}`}
+          target="_blank"
+        >
           Transaction Succeed!
         </Link>
       )
@@ -220,7 +229,7 @@ export default function ForTokenPage({
     })
 
     const _exchangeRate = await readContract(config, {
-      address: pceAddress,
+      address: pceAddress[chainId || localhost.id] as `0x${string}`,
       abi: PCE_ABI,
       functionName: 'getExchangeRate',
       args: [token],
@@ -250,7 +259,7 @@ export default function ForTokenPage({
     } else {
       writeContract({
         abi: PCE_ABI,
-        address: pceAddress,
+        address: pceAddress[chainId || localhost.id] as `0x${string}`,
         functionName: 'swapFromLocalToken',
         args: [token, BigInt(100)],
       })
@@ -262,7 +271,7 @@ export default function ForTokenPage({
 
     writeContract({
       abi: PCE_ABI,
-      address: pceAddress,
+      address: pceAddress[chainId || localhost.id] as `0x${string}`,
       functionName: 'createToken',
       args: [tokenInfo],
     })
@@ -410,7 +419,9 @@ export default function ForTokenPage({
                         onClick={async () => {
                           writeContract({
                             abi: PCE_ABI,
-                            address: pceAddress,
+                            address: pceAddress[
+                              chainId || localhost.id
+                            ] as `0x${string}`,
                             functionName: 'swapToLocalToken',
                             args: [tokens[2], 100],
                           })

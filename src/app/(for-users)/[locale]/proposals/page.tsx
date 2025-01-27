@@ -14,6 +14,7 @@ import { pceAddress } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { localhost } from '~/app/providers'
 
 export default function ForProposalPage({
   params: { locale, ...params },
@@ -34,7 +35,7 @@ export default function ForProposalPage({
   }, [locale])
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
-    address: pceAddress,
+    address: pceAddress[chainId || localhost.id] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'getVotes',
     args: [address],

@@ -18,11 +18,12 @@ import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 import { formatString } from '~/components/utils'
 
-import { pceAddress, POLY_SCAN_TX } from '~/app/constants/constants'
+import { pceAddress } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
+import { localhost, sepolia } from 'wagmi/chains'
 
 export default function ForDelegatePage({
   params: { locale, ...params },
@@ -51,7 +52,7 @@ export default function ForDelegatePage({
   const [delegateAddr, setDelegateAddr] = useState('')
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
-    address: pceAddress,
+    address: pceAddress[chainId || localhost.id] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'getVotes',
     args: [address],
@@ -68,7 +69,7 @@ export default function ForDelegatePage({
   const handleDelegate = async () => {
     writeContract({
       abi: PCE_ABI,
-      address: pceAddress,
+      address: pceAddress[chainId || localhost.id] as `0x${string}`,
       functionName: 'delegate',
       args: [delegateAddr],
     })
@@ -78,7 +79,10 @@ export default function ForDelegatePage({
     const notify = async () => {
       if (isConfirmed) {
         toast.success(
-          <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
+          <Link
+            href={`${chainId === sepolia.id ? sepolia.blockExplorers?.default?.url : localhost.blockExplorers?.default?.url}/tx/${hash}`}
+            target="_blank"
+          >
             Transaction Succeed!
           </Link>
         )
