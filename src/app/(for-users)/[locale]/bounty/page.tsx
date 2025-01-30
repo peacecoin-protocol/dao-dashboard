@@ -5,9 +5,9 @@ import Link from 'next/link'
 
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import { gql } from '@apollo/client'
+import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
 import { formatEther } from 'ethers'
-import { parseEther } from 'viem'
+import { createClient, http, parseEther } from 'viem'
 import {
   useAccount,
   useReadContract,
@@ -35,9 +35,8 @@ import { shortenAddress, formatString } from '~/components/utils'
 import {
   pceAddress,
   bountyAddress,
-  POLY_SCAN_TX,
   governorAddress,
-  provider,
+  SUBGRAPH_URL,
 } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { BOUNTY_ABI } from '~/app/ABIs/Bounty'
@@ -52,7 +51,8 @@ import {
 } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
-import { createApolloClient } from '~/app/apollo-client'
+import { localhost } from '~/app/providers'
+import { sepolia } from 'wagmi/chains'
 
 export default function ForBountyPage({
   params: { locale, ...params },
@@ -73,7 +73,10 @@ export default function ForBountyPage({
   const { address, chainId } = useAccount()
   const { data: hash, error, writeContractAsync } = useWriteContract()
 
-  const client = createApolloClient()
+  const client = new ApolloClient({
+    uri: SUBGRAPH_URL[chainId || localhost.id] as string,
+    cache: new InMemoryCache(),
+  })
 
   const [proposalData, setProposalData] = useState<Proposal[]>([])
   const [contributorData, setContributorData] = useState<Contributor[]>([])
@@ -82,6 +85,17 @@ export default function ForBountyPage({
     useWaitForTransactionReceipt({
       hash,
     })
+
+  const [provider, setProvider] = useState<any>(null)
+  useEffect(() => {
+    if (chainId) {
+      const provider = createClient({
+        chain: chainId === sepolia.id ? sepolia : localhost,
+        transport: http(),
+      })
+      setProvider(provider)
+    }
+  }, [chainId])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -116,7 +130,7 @@ export default function ForBountyPage({
   const [proposalId, setProposalId] = useState('')
 
   const { data: pceBalance, refetch: refetchBalance } = useReadContract({
-    address: pceAddress,
+    address: pceAddress[chainId || localhost.id] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'balanceOf',
     args: [address],
@@ -124,7 +138,7 @@ export default function ForBountyPage({
 
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
-      address: governorAddress,
+      address: governorAddress[chainId || localhost.id] as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
       args: [],
@@ -137,7 +151,7 @@ export default function ForBountyPage({
       for (let i = 0; i < parseInt(proposalCount as string); i++) {
         const amount = await readContract(config, {
           abi: BOUNTY_ABI,
-          address: bountyAddress,
+          address: bountyAddress[chainId || localhost.id] as `0x${string}`,
           functionName: 'proposalBounties',
           args: [i],
         })
@@ -152,14 +166,14 @@ export default function ForBountyPage({
 
   const { data: contributorBounties, refetch: refetchContributorBounties } =
     useReadContract({
-      address: bountyAddress,
+      address: bountyAddress[chainId || localhost.id] as `0x${string}`,
       abi: BOUNTY_ABI,
       functionName: 'contributorBounties',
       args: [address],
     })
 
   const { data: _amount, refetch: refetchBountyAmount } = useReadContract({
-    address: bountyAddress,
+    address: bountyAddress[chainId || localhost.id] as `0x${string}`,
     abi: BOUNTY_ABI,
     functionName: 'bountyAmount',
     args: [],
@@ -187,7 +201,7 @@ export default function ForBountyPage({
     try {
       const claimProposalBountyTX = await writeContractAsync({
         abi: BOUNTY_ABI,
-        address: bountyAddress,
+        address: bountyAddress[chainId || localhost.id] as `0x${string}`,
         functionName: 'claimProposalBounty',
         args: [proposalId],
       })
@@ -202,7 +216,7 @@ export default function ForBountyPage({
     try {
       const claimContributorBountyTX = await writeContractAsync({
         abi: BOUNTY_ABI,
-        address: bountyAddress,
+        address: bountyAddress[chainId || localhost.id] as `0x${string}`,
         functionName: 'claimContributorBounty',
         args: [],
       })
@@ -219,7 +233,7 @@ export default function ForBountyPage({
     try {
       const allowance = await readContract(config, {
         abi: PCE_ABI,
-        address: pceAddress,
+        address: pceAddress[chainId || localhost.id] as `0x${string}`,
         functionName: 'allowance',
         args: [address, bountyAddress],
       })
@@ -228,9 +242,12 @@ export default function ForBountyPage({
         const tx = await writeContractAsync(
           {
             abi: PCE_ABI,
-            address: pceAddress,
+            address: pceAddress[chainId || localhost.id] as `0x${string}`,
             functionName: 'approve',
-            args: [bountyAddress, parseEther(bountyAmount)],
+            args: [
+              bountyAddress[chainId || localhost.id] as `0x${string}`,
+              parseEther(bountyAmount),
+            ],
           },
           {
             onSuccess: (data) => {},
@@ -239,12 +256,10 @@ export default function ForBountyPage({
             },
           }
         )
-
-        await provider.waitForTransaction(tx)
       }
       const addProposalBountyTX = await writeContractAsync({
         abi: BOUNTY_ABI,
-        address: bountyAddress,
+        address: bountyAddress[chainId || localhost.id] as `0x${string}`,
         functionName: 'addProposalBounty',
         args: [proposalId, parseEther(bountyAmount)],
       })
@@ -261,7 +276,7 @@ export default function ForBountyPage({
     try {
       const allowance = await readContract(config, {
         abi: PCE_ABI,
-        address: pceAddress,
+        address: pceAddress[chainId || localhost.id] as `0x${string}`,
         functionName: 'allowance',
         args: [address, bountyAddress],
       })
@@ -270,9 +285,12 @@ export default function ForBountyPage({
         const tx = await writeContractAsync(
           {
             abi: PCE_ABI,
-            address: pceAddress,
+            address: pceAddress[chainId || localhost.id] as `0x${string}`,
             functionName: 'approve',
-            args: [bountyAddress, parseEther(bountyAmount)],
+            args: [
+              bountyAddress[chainId || localhost.id] as `0x${string}`,
+              parseEther(bountyAmount),
+            ],
           },
           {
             onSuccess: (data) => {},
@@ -281,12 +299,10 @@ export default function ForBountyPage({
             },
           }
         )
-
-        await provider.waitForTransaction(tx)
       }
       const addContributorBountyTX = await writeContractAsync({
         abi: BOUNTY_ABI,
-        address: bountyAddress,
+        address: bountyAddress[chainId || localhost.id] as `0x${string}`,
         functionName: 'addContributorBounty',
         args: [contributorAddr, parseEther(bountyAmount)],
       })
@@ -303,7 +319,14 @@ export default function ForBountyPage({
     const notify = async () => {
       if (isConfirmed) {
         toast.success(
-          <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
+          <Link
+            href={`${
+              chainId === sepolia.id
+                ? sepolia.blockExplorers?.default?.url
+                : localhost.blockExplorers?.default?.url
+            }/tx/${hash}`}
+            target="_blank"
+          >
             Transaction Succeed!
           </Link>
         )

@@ -29,8 +29,9 @@ function AppBar({ locale }: { locale: Locale }) {
   const { disconnect } = useDisconnect()
   const { openConnectModal } = useConnectModal()
   const { address, isConnected, chain } = useAccount()
-  const { data: balance } = useBalance({
+  const { data: balance, isError: isBalanceError } = useBalance({
     address,
+    chainId: chain?.id,
   })
 
   useEffect(() => {

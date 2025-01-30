@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useNavigate } from 'react-router-dom'
 
+import { Alchemy, Network } from 'alchemy-sdk'
+
 import 'react-toastify/dist/ReactToastify.css'
 import RingLoader from 'react-spinners/RingLoader'
 import { ringStyle } from '~/app/constants/styles'
@@ -23,7 +25,7 @@ import {
 import { Input } from '~/components/ui/input'
 import { readContract } from '@wagmi/core'
 
-import { ethers, formatEther } from 'ethers'
+import { ethers, formatEther, parseEther } from 'ethers'
 import { ToastContainer, toast } from 'react-toastify'
 import {
   useAccount,
@@ -39,6 +41,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '~/components/ui/dialog'
 import {
   Select,
@@ -48,8 +51,7 @@ import {
   SelectValue,
 } from '~/components/ui/select'
 
-import { createDaoFactoryClient } from '~/app/apollo-client'
-import { gql } from '@apollo/client'
+import { ApolloClient, InMemoryCache, gql } from '@apollo/client'
 
 import { getDict } from '~/i18n/get-dict'
 
@@ -59,12 +61,16 @@ import { useParams } from 'react-router-dom'
 import { formatString, shortenAddress } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
-import { POLY_SCAN_TX, provider } from '~/app/constants/constants'
 import { Textarea } from '~/components/ui/textarea'
 import { config } from '~/lib/config'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 import { TooltipComponent } from '~/components/custom/TooltipComponent'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
+import { sepolia } from 'wagmi/chains'
+import { localhost } from '~/app/providers'
+import { waitForTransactionReceipt } from '@wagmi/core'
+import { SUBGRAPH_URL } from '~/app/constants/constants'
+import { Env } from '~/env'
 
 type Dao = {
   id: string
@@ -87,51 +93,27 @@ type Proposal = {
   status: string
 }
 
-const DelegateDialog = ({
-  isOpen,
-  onOpenChange,
-  delegateAddr,
-  handleChange,
-  handleDelegate,
-}: {
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
-  delegateAddr: string
-  handleChange: (e: any) => void
-  handleDelegate: () => void
-}) => (
-  <Dialog open={isOpen} onOpenChange={onOpenChange}>
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Delegate</DialogTitle>
-        <DialogDescription className="flex flex-col gap-4">
-          <Input
-            placeholder="Enter address"
-            value={delegateAddr}
-            name="delegateAddr"
-            onChange={handleChange}
-          />
-          <div>
-            <Button onClick={handleDelegate}>Delegate</Button>
-          </div>
-        </DialogDescription>
-      </DialogHeader>
-    </DialogContent>
-  </Dialog>
-)
+type TokenBalance = {
+  contractAddress: string
+  tokenBalance: number
+  name: string
+  symbol: string
+  decimals: number
+  logo: string
+}
 
 export default function ForSubmitPage({
   params: { locale },
 }: PagePropsWithLocale<{}>) {
   const navigate = useNavigate()
   const [dict, setDict] = useState<Dictionary | null>(null)
-  const client = createDaoFactoryClient()
 
   const [daoInfo, setDaoInfo] = useState<Dao[]>([])
   const [delegateAddr, setDelegateAddr] = useState('')
   const [transferAddr, setTransferAddr] = useState('')
   const [description, setDescription] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
+  const [tokenAddress, setTokenAddress] = useState('')
 
   const [proposals, setProposals] = useState<any[]>([])
   const [proposalStatus, setStatus] = useState<any[]>([])
@@ -140,6 +122,7 @@ export default function ForSubmitPage({
   const [category, setCategory] = useState('')
 
   const [isDelegateDialogOpened, setIsDelegateDialogOpened] = useState(false)
+  const [isDepositDialogOpened, setIsDepositDialogOpened] = useState(false)
   const [isCreateProposalDialogOpened, setIsCreateProposalDialogOpened] =
     useState(false)
   const [isProposalDetailDialogOpened, setIsProposalDetailDialogOpened] =
@@ -148,10 +131,100 @@ export default function ForSubmitPage({
 
   const [tabContent, setTabContent] = useState('about')
 
+  const [treasuryBalances, setTreasuryBalances] = useState<TokenBalance[]>([])
+
+  const [blockNumber, setBlockNumber] = useState(0)
+
   const pathname = useParams()
   const id = pathname.id
 
   const { address, chainId } = useAccount()
+
+  const alchemyConfig = {
+    apiKey: Env.ALCHEMY_API_KEY,
+    network: Network.ETH_SEPOLIA,
+  }
+
+  const alchemy = new Alchemy(alchemyConfig)
+
+  const getBlockNumber = async () => {
+    const _blockNumber = await alchemy.core.getBlockNumber()
+
+    setBlockNumber(_blockNumber)
+    return _blockNumber
+  }
+
+  const getBlockInfo = async (blockNumber: number) => {
+    const blockInfo = await alchemy.core.getBlock(blockNumber)
+    return blockInfo.timestamp
+  }
+
+  const getTokenMetadata = async (address: string) => {
+    const metadata = await alchemy.core.getTokenMetadata(address)
+    return metadata
+  }
+
+  const getTreasuryBalances = async (address: string) => {
+    const balances = (await alchemy.core.getTokenBalances(address))
+      .tokenBalances
+
+    const formatedBalances = (await Promise.all(
+      balances.map(async (balance) => ({
+        tokenBalance: Number(balance.tokenBalance),
+        contractAddress: balance.contractAddress,
+        ...(await getTokenMetadata(balance.contractAddress)),
+      }))
+    )) as TokenBalance[]
+
+    setTreasuryBalances(formatedBalances)
+  }
+
+  useEffect(() => {
+    getBlockNumber()
+
+    if (daoInfo[0]?.timelock) {
+      getTreasuryBalances(daoInfo[0]?.timelock)
+    }
+  }, [daoInfo])
+
+  const DelegateDialog = ({
+    isOpen,
+    onOpenChange,
+    delegateAddr,
+
+    handleDelegate,
+  }: {
+    isOpen: boolean
+    onOpenChange: (open: boolean) => void
+    delegateAddr: string
+
+    handleDelegate: () => void
+  }) => (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delegate</DialogTitle>
+          <DialogDescription className="flex flex-col gap-4">
+            <Input
+              placeholder="Enter address"
+              value={delegateAddr}
+              name="delegateAddr"
+              onChange={(e) => setDelegateAddr(e.target.value)}
+            />
+            <div>
+              <Button onClick={handleDelegate}>Delegate</Button>
+            </div>
+          </DialogDescription>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
+  )
+
+  const client = new ApolloClient({
+    uri: SUBGRAPH_URL[chainId || localhost.id] as string,
+    cache: new InMemoryCache(),
+  })
+
   const {
     data: hash,
     error,
@@ -175,14 +248,6 @@ export default function ForSubmitPage({
     abi: GOVERNOR_ABI,
     functionName: 'votingDelay',
   })
-
-  const { data: treasuryBalance, refetch: refetchTreasuryBalance } =
-    useReadContract({
-      address: daoInfo[0]?.governanceToken as `0x${string}`,
-      abi: PCE_ABI,
-      functionName: 'balanceOf',
-      args: [daoInfo[0]?.timelock as `0x${string}`],
-    })
 
   const { data: commityTokenBalance, refetch: refetchCommityTokenBalance } =
     useReadContract({
@@ -226,12 +291,22 @@ export default function ForSubmitPage({
       functionName: 'delay',
     })
 
+  const getCurrentTimestamp = () => {
+    return Math.floor(Date.now() / 1000)
+  }
+
+  const timestampToDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleString()
+  }
+
   const ProposalCard = ({
     proposal,
     status,
+    index,
   }: {
     proposal: any
     status: string
+    index: number
   }) => (
     <article
       className="flex flex-col w-full bg-gray-100 p-4 rounded-xl gap-2 cursor-pointer"
@@ -257,70 +332,149 @@ export default function ForSubmitPage({
           setIsProposalDetailDialogOpened(open)
         }}
       >
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-row justify-between">
-            <h1>Vote For</h1>
-            <h1>
-              {Number(formatEther(proposal[5] || 0)).toLocaleString()} (
-              {proposal[5] && proposal[6] !== undefined
-                ? proposal[6] === 0 && proposal[5] > 0
-                  ? 100
-                  : (
-                      (Number(formatEther(proposal[5])) /
-                        (Number(formatEther(proposal[5])) +
-                          Number(formatEther(proposal[6])))) *
-                      100
-                    ).toFixed(2)
-                : '0'}
-              %)
-            </h1>
-          </div>
-          <Line
-            percent={
-              Number(proposal[5] || 0) > 0 &&
-              Number(BigInt(quorum?.toString() || '0')) > 0
-                ? (Number(formatEther(proposal[5])) /
-                    Number(formatEther(quorum?.toString() || '0'))) *
-                  100
-                : 0
-            }
-            strokeColor="#1995AD"
-            trailColor="#A1D6E2"
-            strokeWidth={1}
-            trailWidth={1}
-          />
-          <div className="flex flex-row justify-between">
-            <h1>Vote Against</h1>
-            <h1>
-              {Number(formatEther(proposal[6] || 0)).toLocaleString()} (
-              {proposal[5] && proposal[6] !== undefined
-                ? proposal[5] === 0 && proposal[6] > 0
-                  ? 100
-                  : (
-                      (Number(formatEther(proposal[6])) /
-                        (Number(formatEther(proposal[5])) +
-                          Number(formatEther(proposal[6])))) *
-                      100
-                    ).toFixed(2)
-                : '0'}
-              %)
-            </h1>
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-row justify-between">
+              <h1>Vote For</h1>
+              <h1>
+                {Number(formatEther(proposal[5] || 0)).toLocaleString()} (
+                {proposal[5] && proposal[6] !== undefined
+                  ? proposal[6] === 0 && proposal[5] > 0
+                    ? 100
+                    : (
+                        (Number(formatEther(proposal[5])) /
+                          (Number(formatEther(proposal[5])) +
+                            Number(formatEther(proposal[6])))) *
+                        100
+                      ).toFixed(2)
+                  : '0'}
+                %)
+              </h1>
+            </div>
+            <Line
+              percent={
+                Number(proposal[5] || 0) > 0 &&
+                Number(BigInt(quorum?.toString() || '0')) > 0
+                  ? (Number(formatEther(proposal[5])) /
+                      Number(formatEther(quorum?.toString() || '0'))) *
+                    100
+                  : 0
+              }
+              strokeColor="#1995AD"
+              trailColor="#A1D6E2"
+              strokeWidth={1}
+              trailWidth={1}
+            />
           </div>
 
-          <Line
-            percent={
-              Number(proposal[6] || 0) > 0 &&
-              Number(BigInt(quorum?.toString() || '0')) > 0
-                ? (Number(formatEther(proposal[6])) /
-                    Number(formatEther(quorum?.toString() || '0'))) *
-                  100
-                : 0
-            }
-            strokeColor="#1995AD"
-            trailColor="#A1D6E2"
-            strokeWidth={1}
-            trailWidth={1}
-          />
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-row justify-between">
+              <h1>Vote Against</h1>
+              <h1>
+                {Number(formatEther(proposal[6] || 0)).toLocaleString()} (
+                {proposal[5] && proposal[6] !== undefined
+                  ? proposal[5] === 0 && proposal[6] > 0
+                    ? 100
+                    : (
+                        (Number(formatEther(proposal[6])) /
+                          (Number(formatEther(proposal[5])) +
+                            Number(formatEther(proposal[6])))) *
+                        100
+                      ).toFixed(2)
+                  : '0'}
+                %)
+              </h1>
+            </div>
+
+            <Line
+              percent={
+                Number(proposal[6] || 0) > 0 &&
+                Number(BigInt(quorum?.toString() || '0')) > 0
+                  ? (Number(formatEther(proposal[6])) /
+                      Number(formatEther(quorum?.toString() || '0'))) *
+                    100
+                  : 0
+              }
+              strokeColor="#1995AD"
+              trailColor="#A1D6E2"
+              strokeWidth={1}
+              trailWidth={1}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-row justify-between">
+              <h1>Voting Period</h1>
+              <h1>Current Block: {Number(blockNumber)}</h1>
+            </div>
+
+            <Line
+              percent={
+                Number(proposal[3]) > 0
+                  ? Math.min(
+                      ((blockNumber - Number(proposal[3])) /
+                        Number(votingPeriod)) *
+                        100,
+                      100
+                    )
+                  : 0
+              }
+              className="w-full"
+              strokeColor="#1995AD"
+              trailColor="#A1D6E2"
+              strokeWidth={1}
+              trailWidth={1}
+            />
+
+            <div className="flex flex-row justify-between">
+              <h1>Started at {Number(proposal[3])}</h1>
+              <h1>Ending at {Number(proposal[4])}</h1>
+            </div>
+          </div>
+
+          {Number(proposal[2]) !== 0 && status === 'Queued' && (
+            <div className="flex flex-col justify-between gap-2">
+              <div className="flex flex-row justify-between">
+                <h1>Timelock Delay</h1>
+                <h1>{timestampToDate(Number(proposal[2]))}</h1>
+              </div>
+
+              <Line
+                percent={
+                  Number(proposal[2]) > 0
+                    ? Math.min(
+                        ((getCurrentTimestamp() -
+                          (Number(proposal[2]) - Number(timelockDelay))) *
+                          100) /
+                          Number(timelockDelay),
+                        100
+                      )
+                    : 0
+                }
+                strokeColor="#1995AD"
+                trailColor="#A1D6E2"
+                strokeWidth={1}
+                trailWidth={1}
+              />
+
+              <div className="flex flex-row justify-between">
+                <h1>
+                  Started at{' '}
+                  {Number(proposal[2]) > 0
+                    ? timestampToDate(
+                        Number(proposal[2]) - Number(timelockDelay)
+                      )
+                    : '-'}
+                </h1>
+                <h1>
+                  Ending at{' '}
+                  {Number(proposal[2]) > 0
+                    ? timestampToDate(Number(proposal[2]))
+                    : 0}
+                </h1>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-row gap-1 md:gap-4 w-full">
             <Button
@@ -370,7 +524,10 @@ export default function ForSubmitPage({
             </Button>
             <Button
               className="w-full bg-dark_blue"
-              disabled={status !== 'Queued'}
+              disabled={
+                Math.floor(Date.now() / 1000) < Number(proposal[2]) ||
+                status !== 'Queued'
+              }
               onClick={async () => {
                 await writeContract({
                   abi: GOVERNOR_ABI,
@@ -391,20 +548,6 @@ export default function ForSubmitPage({
 
   function handleSelect(value: any) {
     setCategory(value)
-  }
-
-  function handleChange(event: any) {
-    const name = event.target.name
-    const value = event.target.value
-    if (name === 'delegateAddr') {
-      setDelegateAddr(value)
-    } else if (name === 'transferAddr') {
-      setTransferAddr(value)
-    } else if (name === 'description') {
-      setDescription(value)
-    } else if (name === 'transferAmount') {
-      setTransferAmount(value)
-    }
   }
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
@@ -513,7 +656,7 @@ export default function ForSubmitPage({
 
     const _calldata = new ethers.AbiCoder().encode(
       ['address', 'uint256'],
-      [transferAddr, BigInt(transferAmount) * BigInt(1e18)]
+      [transferAddr, parseEther(transferAmount)]
     )
     const _signature = 'transfer(address,uint256)'
 
@@ -522,7 +665,7 @@ export default function ForSubmitPage({
       address: daoInfo[0]?.governor as `0x${string}`,
       functionName: 'propose',
       args: [
-        [daoInfo[0]?.governanceToken as `0x${string}`],
+        [tokenAddress as `0x${string}`],
         [0],
         [_signature],
         [_calldata],
@@ -560,6 +703,10 @@ export default function ForSubmitPage({
           commityTokenBalance,
         ],
       })
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
     }
 
     if (BigInt(commityTokenBalance as string) > 0) {
@@ -569,7 +716,11 @@ export default function ForSubmitPage({
         functionName: 'deposit',
         args: [commityTokenBalance],
       })
-      await provider.waitForTransaction(tx)
+
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
       await refetchGovTokenBalance()
       await refetchCommityTokenBalance()
       await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -584,7 +735,11 @@ export default function ForSubmitPage({
         functionName: 'withdraw',
         args: [governanceTokenBalance],
       })
-      await provider.waitForTransaction(tx)
+
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
       await refetchGovTokenBalance()
       await refetchCommityTokenBalance()
       await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -601,8 +756,6 @@ export default function ForSubmitPage({
         functionName: 'delegate',
         args: [delegateAddr],
       })
-
-      await provider.waitForTransaction(tx)
     }
   }
 
@@ -611,7 +764,14 @@ export default function ForSubmitPage({
       if (isConfirmed) {
         toast.success(
           <div onClick={(e) => e.stopPropagation()}>
-            <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
+            <Link
+              href={`${
+                chainId === sepolia.id
+                  ? sepolia.blockExplorers?.default?.url
+                  : localhost.blockExplorers?.default?.url
+              }/tx/${hash}`}
+              target="_blank"
+            >
               Transaction Succeed!
             </Link>
           </div>
@@ -619,7 +779,7 @@ export default function ForSubmitPage({
 
         setDelegateAddr('')
         await refetchVotes()
-        await refetchTreasuryBalance()
+        await getTreasuryBalances(daoInfo[0]?.timelock as `0x${string}`)
         await refetchProposalCount()
       } else if (isConfirming) {
         toast.info(
@@ -736,6 +896,7 @@ export default function ForSubmitPage({
                       key={index}
                       proposal={proposal}
                       status={[...proposalStatus].reverse()[index]}
+                      index={index}
                     />
                   ))}
 
@@ -756,7 +917,7 @@ export default function ForSubmitPage({
                       className="font-bold rounded-xl flex"
                     />
                     <Link
-                      href={`https://amoy.polygonscan.com/address/${daoInfo[0]?.governanceToken}`}
+                      href={`${chainId === sepolia.id ? sepolia.blockExplorers?.default?.url : localhost.blockExplorers?.default?.url}/address/${daoInfo[0]?.governanceToken}`}
                       className="text-dark_blue"
                     >
                       {shortenAddress(daoInfo[0]?.governanceToken)}
@@ -770,7 +931,11 @@ export default function ForSubmitPage({
                       className="font-bold rounded-xl flex"
                     />
                     <Link
-                      href={`https://amoy.polygonscan.com/address/${daoInfo[0]?.timelock}`}
+                      href={`${
+                        chainId === sepolia.id
+                          ? sepolia.blockExplorers?.default?.url
+                          : localhost.blockExplorers?.default?.url
+                      }/address/${daoInfo[0]?.timelock}`}
                       className="text-dark_blue"
                     >
                       {shortenAddress(daoInfo[0]?.timelock)}
@@ -784,7 +949,11 @@ export default function ForSubmitPage({
                       className="font-bold rounded-xl flex"
                     />
                     <Link
-                      href={`https://amoy.polygonscan.com/address/${daoInfo[0]?.governor}`}
+                      href={`${
+                        chainId === sepolia.id
+                          ? sepolia.blockExplorers?.default?.url
+                          : localhost.blockExplorers?.default?.url
+                      }/address/${daoInfo[0]?.governor}`}
                       className="text-dark_blue"
                     >
                       {shortenAddress(daoInfo[0]?.governor)}
@@ -983,6 +1152,7 @@ export default function ForSubmitPage({
                           key={index}
                           proposal={proposal}
                           status={proposalStatus[index]}
+                          index={index}
                         />
                       )
                     })
@@ -1006,6 +1176,7 @@ export default function ForSubmitPage({
                             key={index}
                             proposal={proposal}
                             status={proposalStatus[index]}
+                            index={index}
                           />
                         )
                       }
@@ -1032,6 +1203,7 @@ export default function ForSubmitPage({
                             key={index}
                             proposal={proposal}
                             status={proposalStatus[index]}
+                            index={index}
                           />
                         )
                       }
@@ -1058,6 +1230,7 @@ export default function ForSubmitPage({
                             key={index}
                             proposal={proposal}
                             status={proposalStatus[index]}
+                            index={index}
                           />
                         )
                       }
@@ -1077,36 +1250,29 @@ export default function ForSubmitPage({
               <div className="flex flex-col w-full">
                 <h1 className="text-2xl font-bold">Treasury</h1>
                 <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
-                  <div className="flex flex-row gap-2 justify-between items-center">
-                    <h1>{daoInfo[0]?.name} Token</h1>
-                  </div>
-                  <div className="flex flex-row gap-2 justify-between items-center">
-                    <h1>DAO Supply Token</h1>
-                    <h1>
-                      {treasuryBalance
-                        ? formatString(
-                            formatEther(BigInt(treasuryBalance as string))
-                          )
-                        : '0'}{' '}
-                      {''}
-                      {daoInfo[0]?.name}
-                    </h1>
-                  </div>
-
-                  <div className="flex flex-row gap-2 justify-between items-center">
-                    <h1>% of total Supply</h1>
-                    <h1>
-                      {totalSupply && treasuryBalance
-                        ? Number(
-                            (BigInt(treasuryBalance as string) *
-                              BigInt(100) *
-                              BigInt(1e18)) /
-                              BigInt(totalSupply as string)
-                          ) / 1e18
-                        : 0}
-                      %
-                    </h1>
-                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="font-bold">Token</TableHead>
+                        <TableHead className="font-bold">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {treasuryBalances?.map((token, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-bold">
+                            {token.name === '' ? 'PCE TEST' : token.name}
+                          </TableCell>
+                          <TableCell className="font-bold">
+                            {formatString(
+                              formatEther(BigInt(token.tokenBalance).toString())
+                            )}{' '}
+                            {token.symbol === '' ? 'PCE TEST' : token.symbol}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
               <div className="flex flex-col w-full md:w-[40%]">
@@ -1124,12 +1290,7 @@ export default function ForSubmitPage({
                       Number of Tokens
                     </h1>
                     <h1 className="font-bold rounded-xl  flex">
-                      {treasuryBalance
-                        ? formatString(
-                            formatEther(BigInt(treasuryBalance as string))
-                          )
-                        : '0'}{' '}
-                      {daoInfo[0]?.name}
+                      {treasuryBalances.length}
                     </h1>
                   </div>
 
@@ -1140,19 +1301,56 @@ export default function ForSubmitPage({
                     <h1 className="font-bold rounded-xl  flex">$0</h1>
                   </div>
 
-                  <Button
-                    onClick={async () =>
-                      await writeContract({
-                        abi: PCE_ABI,
-                        address: daoInfo[0]?.governanceToken as `0x${string}`,
-                        functionName: 'transfer',
-                        args: [daoInfo[0]?.timelock, BigInt(1e18)],
-                      })
-                    }
-                    className="w-full bg-dark_blue"
+                  <Dialog
+                    open={isDepositDialogOpened}
+                    onOpenChange={() => {
+                      setIsDepositDialogOpened(!isDepositDialogOpened)
+                    }}
                   >
-                    Deposit to DAO Treasury
-                  </Button>
+                    <DialogTrigger>
+                      <Button className="w-full bg-dark_blue">
+                        Deposit to DAO Treasury
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader className="flex flex-col gap-2">
+                        <DialogTitle>Address</DialogTitle>
+                        <DialogDescription>
+                          Token address to deposit
+                        </DialogDescription>
+                        <Input
+                          onChange={(e) => setTokenAddress(e.target.value)}
+                          placeholder="Address"
+                        />
+                        <DialogTitle>Amount</DialogTitle>
+                        <DialogDescription>Amount to deposit</DialogDescription>
+                        <Input
+                          onChange={(e) => setTransferAmount(e.target.value)}
+                          placeholder="Amount"
+                        />
+                        <Button
+                          className="w-full bg-dark_blue"
+                          onClick={async () => {
+                            await writeContract({
+                              abi: PCE_ABI,
+                              address: tokenAddress as `0x${string}`,
+                              functionName: 'transfer',
+                              args: [
+                                daoInfo[0]?.timelock,
+                                parseEther(transferAmount),
+                              ],
+                            })
+
+                            setTokenAddress('')
+                            setTransferAmount('')
+                            setIsDepositDialogOpened(!isDepositDialogOpened)
+                          }}
+                        >
+                          Deposit
+                        </Button>
+                      </DialogHeader>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
@@ -1297,7 +1495,7 @@ export default function ForSubmitPage({
                                 )
                               )
                             : '0'}{' '}
-                          {daoInfo[0]?.name}
+                          {daoInfo[0]?.name + '(Governance)'}
                         </TableCell>
                         <TableCell className="font-bold font-md text-dark_blue">
                           {votes
@@ -1315,7 +1513,6 @@ export default function ForSubmitPage({
               isOpen={isDelegateDialogOpened}
               onOpenChange={setIsDelegateDialogOpened}
               delegateAddr={delegateAddr}
-              handleChange={handleChange}
               handleDelegate={handleDelegate}
             />
           </TabsContent>
@@ -1338,24 +1535,33 @@ export default function ForSubmitPage({
             </Select>
 
             <Input
-              placeholder="Enter address"
-              value={transferAddr}
-              name="transferAddr"
-              onChange={handleChange}
+              placeholder="Enter Token Address"
+              value={tokenAddress}
+              onChange={(e) => setTokenAddress(e.target.value)}
             />
 
             <Input
               placeholder="Enter amount"
               value={transferAmount}
-              name="transferAmount"
-              onChange={handleChange}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setTransferAmount(e.target.value)
+              }
+            />
+
+            <Input
+              placeholder="Enter Address To Transfer To"
+              value={transferAddr}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setTransferAddr(e.target.value)
+              }
             />
 
             <Textarea
               placeholder="Enter description"
               value={description}
-              name="description"
-              onChange={handleChange}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setDescription(e.target.value)
+              }
             />
 
             <Button onClick={handleCreateProposal}>Create</Button>

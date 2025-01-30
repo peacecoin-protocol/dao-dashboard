@@ -29,13 +29,14 @@ import { getDict } from '~/i18n/get-dict'
 import {
   pceAddress,
   governorAddress,
-  POLY_SCAN_TX,
   factoryAddress,
   timelockAddress,
 } from '~/app/constants/constants'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { sepolia } from 'wagmi/chains'
+import { localhost } from '~/app/providers'
 
 export default function ForSubmitPage({
   params: { locale, ...params },
@@ -94,7 +95,10 @@ export default function ForSubmitPage({
   useEffect(() => {
     if (isConfirmed) {
       toast.success(
-        <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
+        <Link
+          href={`${chainId === sepolia.id ? sepolia.blockExplorers?.default?.url : localhost.blockExplorers?.default?.url}/tx/${hash}`}
+          target="_blank"
+        >
           Transaction Succeed!
         </Link>
       )
@@ -243,7 +247,9 @@ export default function ForSubmitPage({
 
               writeContract({
                 abi: GOVERNOR_ABI,
-                address: governorAddress,
+                address: governorAddress[
+                  chainId || localhost.id
+                ] as `0x${string}`,
                 functionName: 'propose',
                 args: [
                   [_address],

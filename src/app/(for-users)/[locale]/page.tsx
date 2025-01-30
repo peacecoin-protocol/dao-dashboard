@@ -34,9 +34,7 @@ import { getDict } from '~/i18n/get-dict'
 
 import { useEffect, useState } from 'react'
 import { formatEther } from 'ethers'
-import { createClient } from 'viem'
 import { readContract } from '@wagmi/core'
-import { http, createConfig } from '@wagmi/core'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { useAccount, useReadContract } from 'wagmi'
@@ -44,7 +42,7 @@ import { useAccount, useReadContract } from 'wagmi'
 import { config } from '~/lib/config'
 
 import RingLoader from 'react-spinners/RingLoader'
-
+import { localhost } from '~/app/providers'
 export default function ForUsersIndexPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
@@ -78,7 +76,7 @@ export default function ForUsersIndexPage({
   }
 
   const { data: pceBalance, refetch: refetchBalance } = useReadContract({
-    address: pceAddress,
+    address: pceAddress[chainId || localhost.id] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'balanceOf',
     args: [address],
@@ -86,7 +84,7 @@ export default function ForUsersIndexPage({
 
   const { data: contributorBounties, refetch: refetchContributorBounties } =
     useReadContract({
-      address: bountyAddress,
+      address: bountyAddress[chainId || localhost.id] as `0x${string}`,
       abi: BOUNTY_ABI,
       functionName: 'contributorBounties',
       args: [address],
@@ -94,7 +92,7 @@ export default function ForUsersIndexPage({
 
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
-      address: governorAddress,
+      address: governorAddress[chainId || localhost.id] as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
       args: [],
@@ -113,14 +111,14 @@ export default function ForUsersIndexPage({
       let status = null
       try {
         proposal = await readContract(config, {
-          address: governorAddress,
+          address: governorAddress[chainId || localhost.id] as `0x${string}`,
           abi: GOVERNOR_ABI,
           functionName: 'proposals',
           args: [i],
         })
 
         status = await readContract(config, {
-          address: governorAddress,
+          address: governorAddress[chainId || localhost.id] as `0x${string}`,
           abi: GOVERNOR_ABI,
           functionName: 'state',
           args: [i],

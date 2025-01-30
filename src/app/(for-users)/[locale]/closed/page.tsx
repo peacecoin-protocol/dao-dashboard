@@ -28,13 +28,15 @@ import {
 import { shortenAddress, formatString } from '~/components/utils'
 import useWindowWidth from '~/components/useWindWidth'
 
-import { governorAddress, POLY_SCAN_TX } from '~/app/constants/constants'
+import { governorAddress } from '~/app/constants/constants'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { ringStyle } from '~/app/constants/styles'
+import { sepolia } from 'wagmi/chains'
+import { localhost } from '~/app/providers'
 
 export default function ForClosedPage({
   params: { locale, ...params },
@@ -68,7 +70,7 @@ export default function ForClosedPage({
 
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
-      address: governorAddress,
+      address: governorAddress[chainId || localhost.id] as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
       args: [],
@@ -77,7 +79,14 @@ export default function ForClosedPage({
   useEffect(() => {
     if (isConfirmed) {
       toast.success(
-        <Link href={`${POLY_SCAN_TX}${hash}`} target="_blank">
+        <Link
+          href={`${
+            chainId === sepolia.id
+              ? sepolia.blockExplorers?.default?.url
+              : localhost.blockExplorers?.default?.url
+          }${hash}`}
+          target="_blank"
+        >
           Transaction Succeed!
         </Link>
       )
@@ -97,7 +106,7 @@ export default function ForClosedPage({
     for (let i = 1; i <= count; i++) {
       proposalPromises.push(
         readContract(config, {
-          address: governorAddress,
+          address: governorAddress[chainId || localhost.id] as `0x${string}`,
           abi: GOVERNOR_ABI,
           functionName: 'proposals',
           args: [i],
@@ -105,7 +114,7 @@ export default function ForClosedPage({
       )
       statusPromises.push(
         readContract(config, {
-          address: governorAddress,
+          address: governorAddress[chainId || localhost.id] as `0x${string}`,
           abi: GOVERNOR_ABI,
           functionName: 'state',
           args: [i],
