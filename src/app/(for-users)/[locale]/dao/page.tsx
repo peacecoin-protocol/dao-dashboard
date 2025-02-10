@@ -39,42 +39,33 @@ import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { formatEther, parseEther } from 'viem'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
-// import { ethers } from 'ethers'
-// import { provider } from '~/app/constants/constants'
+import { ethers } from 'ethers'
+import { Env } from '~/env'
+const abi = [
+  'event Transfer(address indexed from, address indexed to, uint256 value)',
+]
 
-// const contractAddress = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'
-// const abi = [
-//   // ERC20 ABI fragment
-//   'event Transfer(address indexed from, address indexed to, uint256 value)',
-//   'function totalSupply() view returns (uint256)',
-// ]
-// const contract = new ethers.Contract(contractAddress, abi, provider)
+async function getHolders(chainId: number, tokenAddress: string) {
+  const provider = new ethers.JsonRpcProvider(
+    chainId === sepolia.id
+      ? Env.NEXT_PUBLIC_SEPOLIA_RPC_URL
+      : localhost.rpcUrls.default.http[0]
+  )
+  const contract = new ethers.Contract(tokenAddress, abi, provider)
+  const transferEvents = await contract.queryFilter('Transfer', 0, 'latest')
 
-// // Define your token contract's ABI and address
-// const tokenAddress = '0xdac17f958d2ee523a2206206994597c13d831ec7'
-// const tokenABI = [
-//   'event Transfer(address indexed from, address indexed to, uint256 value)',
-//   'function balanceOf(address owner) view returns (uint256)',
-// ]
+  const balances = new Map<string, bigint>()
 
-// const listenForTransfers = () => {
-//   let holders: { [key: string]: number } = {}
-//   const contract = new ethers.Contract(tokenAddress, tokenABI, provider)
+  for (const event of transferEvents) {
+    const { from, to, value } = (event as any).args
+    if (from !== ethers.ZeroAddress) {
+      balances.set(from, (balances.get(from) || BigInt(0)) - value)
+    }
+    balances.set(to, (balances.get(to) || BigInt(0)) + value)
+  }
 
-//   contract.on('Transfer', (from: string, to: string, value: number) => {
-//     // Update balances for 'from' and 'to' addresses
-//     try {
-//       if (from && to && value) {
-//         holders[from] = (holders[from] || 0) - Number(value)
-//         holders[to] = (holders[to] || 0) + Number(value)
-//       }
-//     } catch (error) {
-//       console.error('Error updating holder balances:', error)
-//     }
-//   })
-
-//   return holders
-// }
+  return [...balances.entries()].filter(([_, balance]) => balance > 0)
+}
 
 type Dao = {
   id: string
@@ -88,6 +79,7 @@ type Dao = {
   telegram: string
   votes: number
   identicon: string
+  holders: number
 }
 
 type DaoMetadata = {
@@ -116,19 +108,31 @@ import { config } from '~/lib/config'
 import { sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
 
+const showConnectWalletAlert = () => {
+  toast.error('Please connect wallet')
+}
+
 const DaoCard = ({
   dao,
   locale,
   navigate,
+  chainId,
 }: {
   dao: Dao
   locale: string
   navigate: any
+  chainId: number
 }) => (
   <div
     key={dao.id}
     className="flex flex-col xl:flex-row bg-gray-100 rounded-xl md:px-10 items-start xl:items-center cursor-pointer my-4 gap-4 w-full py-6"
-    onClick={() => navigate(`/${locale}/dao/detail/${dao.id}`)}
+    onClick={() => {
+      if (chainId === 0) {
+        showConnectWalletAlert()
+        return
+      }
+      navigate(`/${locale}/dao/detail/${dao.id}`)
+    }}
   >
     <div className="flex flex-row w-full items-center justify-between">
       <div className="flex flex-row gap-4 md:gap-8 items-center border-none mx-8 md:mx-4">
@@ -163,8 +167,8 @@ const DaoCard = ({
         label="My Power"
         value={dao.votes ? formatString(formatEther(BigInt(dao.votes))) : 0}
       />
-      <StatItem label="TVL" value="$0" />
-      <StatItem label="Members" value="0" />
+      {/* <StatItem label="TVL" value="$0" /> */}
+      <StatItem label="Members" value={dao.holders ? dao.holders + 1 : 1} />
     </div>
   </div>
 )
@@ -196,7 +200,7 @@ export default function ForDAOPage({
   const { address, chainId } = useAccount()
 
   const client = new ApolloClient({
-    uri: SUBGRAPH_URL[chainId || localhost.id] as string,
+    uri: SUBGRAPH_URL[chainId || sepolia.id] as string,
     cache: new InMemoryCache(),
   })
 
@@ -210,9 +214,12 @@ export default function ForDAOPage({
   const { chains, switchChain } = useSwitchChain()
 
   useEffect(() => {
-    if (chainId && !chains.some((chain) => chain.id === chainId)) {
-      switchChain({ chainId: sepolia.id })
+    const switchChainAndReload = async () => {
+      if (chainId && !chains.some((chain) => chain.id === chainId)) {
+        switchChain({ chainId: sepolia.id })
+      }
     }
+    switchChainAndReload()
   }, [chainId])
 
   let [loading, setLoading] = useState(true)
@@ -353,8 +360,17 @@ export default function ForDAOPage({
               )
             }
 
+            const holders = await getHolders(
+              chainId === sepolia.id ? sepolia.id : localhost.id,
+              dao.governanceToken as string
+            )
             const identicon = await generateIdenteapot(dao.governor, '')
-            updatedDaos.push({ ...dao, votes, identicon })
+            updatedDaos.push({
+              ...dao,
+              votes,
+              identicon,
+              holders: holders.length,
+            })
           } catch (error) {
             const identicon = await generateIdenteapot(dao.governor, '')
             updatedDaos.push({ ...dao, votes: 0, identicon })
@@ -372,7 +388,7 @@ export default function ForDAOPage({
     }
 
     fetchData()
-  }, [isConfirmed])
+  }, [isConfirmed, chainId])
 
   return (
     <div className="items-center justify-center flex flex-col mx-10 md:mx-20 gap-4">
@@ -384,6 +400,10 @@ export default function ForDAOPage({
         <Button
           className="bg-dark_blue text-light_white"
           onClick={() => {
+            if (chainId === 0 || chainId === undefined) {
+              showConnectWalletAlert()
+              return
+            }
             setIsDialogOpened(!isDialogOpened)
           }}
         >
@@ -549,6 +569,7 @@ export default function ForDAOPage({
                   dao={dao}
                   locale={locale}
                   navigate={navigate}
+                  chainId={chainId || 0}
                 />
               ))}
           </TabsContent>
@@ -569,6 +590,7 @@ export default function ForDAOPage({
                   dao={dao}
                   locale={locale}
                   navigate={navigate}
+                  chainId={chainId || 0}
                 />
               ))}
           </TabsContent>
