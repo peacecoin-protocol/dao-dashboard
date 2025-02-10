@@ -108,19 +108,31 @@ import { config } from '~/lib/config'
 import { sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
 
+const showConnectWalletAlert = () => {
+  toast.error('Please connect wallet')
+}
+
 const DaoCard = ({
   dao,
   locale,
   navigate,
+  chainId,
 }: {
   dao: Dao
   locale: string
   navigate: any
+  chainId: number
 }) => (
   <div
     key={dao.id}
     className="flex flex-col xl:flex-row bg-gray-100 rounded-xl md:px-10 items-start xl:items-center cursor-pointer my-4 gap-4 w-full py-6"
-    onClick={() => navigate(`/${locale}/dao/detail/${dao.id}`)}
+    onClick={() => {
+      if (chainId === 0) {
+        showConnectWalletAlert()
+        return
+      }
+      navigate(`/${locale}/dao/detail/${dao.id}`)
+    }}
   >
     <div className="flex flex-row w-full items-center justify-between">
       <div className="flex flex-row gap-4 md:gap-8 items-center border-none mx-8 md:mx-4">
@@ -155,7 +167,7 @@ const DaoCard = ({
         label="My Power"
         value={dao.votes ? formatString(formatEther(BigInt(dao.votes))) : 0}
       />
-      <StatItem label="TVL" value="$0" />
+      {/* <StatItem label="TVL" value="$0" /> */}
       <StatItem label="Members" value={dao.holders ? dao.holders + 1 : 1} />
     </div>
   </div>
@@ -188,7 +200,7 @@ export default function ForDAOPage({
   const { address, chainId } = useAccount()
 
   const client = new ApolloClient({
-    uri: SUBGRAPH_URL[chainId || localhost.id] as string,
+    uri: SUBGRAPH_URL[chainId || sepolia.id] as string,
     cache: new InMemoryCache(),
   })
 
@@ -202,9 +214,12 @@ export default function ForDAOPage({
   const { chains, switchChain } = useSwitchChain()
 
   useEffect(() => {
-    if (chainId && !chains.some((chain) => chain.id === chainId)) {
-      switchChain({ chainId: sepolia.id })
+    const switchChainAndReload = async () => {
+      if (chainId && !chains.some((chain) => chain.id === chainId)) {
+        switchChain({ chainId: sepolia.id })
+      }
     }
+    switchChainAndReload()
   }, [chainId])
 
   let [loading, setLoading] = useState(true)
@@ -373,7 +388,7 @@ export default function ForDAOPage({
     }
 
     fetchData()
-  }, [isConfirmed])
+  }, [isConfirmed, chainId])
 
   return (
     <div className="items-center justify-center flex flex-col mx-10 md:mx-20 gap-4">
@@ -385,6 +400,10 @@ export default function ForDAOPage({
         <Button
           className="bg-dark_blue text-light_white"
           onClick={() => {
+            if (chainId === 0 || chainId === undefined) {
+              showConnectWalletAlert()
+              return
+            }
             setIsDialogOpened(!isDialogOpened)
           }}
         >
@@ -550,6 +569,7 @@ export default function ForDAOPage({
                   dao={dao}
                   locale={locale}
                   navigate={navigate}
+                  chainId={chainId || 0}
                 />
               ))}
           </TabsContent>
@@ -570,6 +590,7 @@ export default function ForDAOPage({
                   dao={dao}
                   locale={locale}
                   navigate={navigate}
+                  chainId={chainId || 0}
                 />
               ))}
           </TabsContent>

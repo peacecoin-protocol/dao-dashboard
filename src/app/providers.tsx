@@ -62,7 +62,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <>
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
-          <RainbowKitProvider>
+          <RainbowKitProvider initialChain={sepolia}>
             <RouterProvider router={router} />
           </RainbowKitProvider>
         </QueryClientProvider>
