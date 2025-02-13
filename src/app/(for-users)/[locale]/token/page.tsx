@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { formatEther } from 'ethers'
+import { formatEther, parseEther } from 'ethers'
 import { readContract } from '@wagmi/core'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -13,6 +13,7 @@ import {
   type BaseError,
 } from 'wagmi'
 import Link from 'next/link'
+import { waitForTransactionReceipt } from '@wagmi/core'
 
 import { Input } from '~/components/ui/input'
 import {
@@ -33,13 +34,14 @@ import {
   DialogFooter,
 } from '~/components/ui/dialog'
 import { Button } from '~/components/ui/button'
-import { shortenAddress, formatString } from '~/components/utils'
+import { formatString } from '~/components/utils'
 import useWindowWidth from '~/components/useWindWidth'
 
 import { pceAddress } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
+import { COMMUNITY_TOKEN_ABI } from '~/app/ABIs/CommunityToken'
 
 import { config } from '~/lib/config'
 import { sepolia } from 'wagmi/chains'
@@ -53,7 +55,12 @@ export default function ForTokenPage({
   const colSpan = width < 1280
 
   const { address, chainId } = useAccount()
-  const { data: hash, error, writeContract } = useWriteContract()
+  const {
+    data: hash,
+    error,
+    writeContract,
+    writeContractAsync,
+  } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
@@ -152,10 +159,12 @@ export default function ForTokenPage({
         _tokenInfo.symbol = value
         break
       case 'amountToExchange':
-        _tokenInfo.amountToExchange = value
+        _tokenInfo.amountToExchange =
+          value == '0' || value == '' ? '0' : parseEther(value).toString()
         break
       case 'dilutionFactor':
-        _tokenInfo.dilutionFactor = value
+        _tokenInfo.dilutionFactor =
+          value == '0' || value == '' ? '0' : parseEther(value).toString()
         break
       case 'decreaseIntervalDays':
         _tokenInfo.decreaseIntervalDays = value
@@ -177,24 +186,65 @@ export default function ForTokenPage({
         break
     }
 
-    // Test Token Data
-    _tokenInfo.name = 'test'
-    _tokenInfo.symbol = 'TEST'
-    _tokenInfo.amountToExchange = 10e18
-    _tokenInfo.dilutionFactor = 2e18
-    _tokenInfo.decreaseIntervalDays = 7
-    _tokenInfo.afterDecreaseBp = 20
-    _tokenInfo.maxIncreaseOfTotalSupplyBp = 20
-    _tokenInfo.maxIncreaseBp = 2000
-    _tokenInfo.maxUsageBp = 3000
-    _tokenInfo.changeBp = 3000
-
-    _tokenInfo.incomeExchangeAllowMethod = 3
-    _tokenInfo.outgoExchangeAllowMethod = 3
+    _tokenInfo.incomeExchangeAllowMethod = 0
+    _tokenInfo.outgoExchangeAllowMethod = 0
     _tokenInfo.incomeTargetTokens = []
     _tokenInfo.outgoTargetTokens = []
     setTokenInfo(_tokenInfo)
   }
+
+  const [communityTokenInfo, setCommunityTokenInfo] = useState<{
+    [key: string]: { name: string; symbol: string; balance: bigint }
+  }>({})
+
+  const getCommunityTokenInfo = async (tokenAddress: string) => {
+    if (!tokenAddress || !tokenAddress.startsWith('0x')) return
+    try {
+      const name = (await readContract(config, {
+        address: tokenAddress as `0x${string}`,
+        abi: PCE_ABI,
+        functionName: 'name',
+        args: [],
+      })) as string
+
+      const symbol = (await readContract(config, {
+        address: tokenAddress as `0x${string}`,
+        abi: PCE_ABI,
+        functionName: 'symbol',
+        args: [],
+      })) as string
+
+      const balance = (await readContract(config, {
+        address: tokenAddress as `0x${string}`,
+        abi: PCE_ABI,
+        functionName: 'balanceOf',
+        args: [address],
+      })) as bigint
+
+      const swapToLocalAllowance = (await readContract(config, {
+        address: tokenAddress as `0x${string}`,
+        abi: COMMUNITY_TOKEN_ABI,
+        functionName: 'getTodaySwapableToPCEBalanceForIndividual',
+        args: [address],
+      })) as bigint
+
+      setCommunityTokenInfo((prev) => ({
+        ...prev,
+        [tokenAddress]: { name, symbol, balance, swapToLocalAllowance },
+      }))
+    } catch (err) {
+      console.error('Error getting balance:', err)
+      return null
+    }
+  }
+
+  useEffect(() => {
+    if (tokens) {
+      tokens.map((token) => {
+        getCommunityTokenInfo(token)
+      })
+    }
+  }, [tokens])
 
   useEffect(() => {
     if (isConfirmed) {
@@ -211,6 +261,7 @@ export default function ForTokenPage({
         </Link>
       )
       refetchBalance()
+      refetchTokens()
     } else if (isConfirming) {
       toast.info(<div className="disabled">TX is Pending, Please Wait...</div>)
     } else if (error) {
@@ -221,49 +272,12 @@ export default function ForTokenPage({
   const handleSwapFromLocalToken = async (token: any) => {
     if (!token || !INITIAL_FACTOR || !lastModifiedFactor) return
 
-    const allowance = await readContract(config, {
-      address: token,
+    writeContract({
       abi: PCE_ABI,
-      functionName: 'allowance',
-      args: [address, pceAddress],
-    })
-
-    const _exchangeRate = await readContract(config, {
       address: pceAddress[chainId || localhost.id] as `0x${string}`,
-      abi: PCE_ABI,
-      functionName: 'getExchangeRate',
-      args: [token],
+      functionName: 'swapFromLocalToken',
+      args: [token, 1e5],
     })
-
-    if (!_exchangeRate) return
-    const allowanceBigInt = BigInt(allowance as string)
-    const INITIAL_FACTORBigInt = BigInt(INITIAL_FACTOR as string)
-    const _exchangeRateBigInt = BigInt(_exchangeRate as string)
-    const _lastModifiedFactorBigInt = BigInt(lastModifiedFactor as string)
-
-    const factor = await readContract(config, {
-      address: token,
-      abi: PCE_ABI,
-      functionName: 'getCurrentFactor',
-      args: [],
-    })
-    const requiredAllowance = BigInt(100) * BigInt(factor as string)
-
-    if (allowanceBigInt < requiredAllowance) {
-      writeContract({
-        abi: PCE_ABI,
-        address: token,
-        functionName: 'approve',
-        args: [pceAddress, requiredAllowance],
-      })
-    } else {
-      writeContract({
-        abi: PCE_ABI,
-        address: pceAddress[chainId || localhost.id] as `0x${string}`,
-        functionName: 'swapFromLocalToken',
-        args: [token, BigInt(100)],
-      })
-    }
   }
 
   const handleCreateToken = async () => {
@@ -273,7 +287,22 @@ export default function ForTokenPage({
       abi: PCE_ABI,
       address: pceAddress[chainId || localhost.id] as `0x${string}`,
       functionName: 'createToken',
-      args: [tokenInfo],
+      args: [
+        tokenInfo.name,
+        tokenInfo.symbol,
+        tokenInfo.amountToExchange,
+        tokenInfo.dilutionFactor,
+        tokenInfo.decreaseIntervalDays,
+        tokenInfo.afterDecreaseBp,
+        tokenInfo.maxIncreaseOfTotalSupplyBp,
+        tokenInfo.maxIncreaseBp,
+        tokenInfo.maxUsageBp,
+        tokenInfo.changeBp,
+        tokenInfo.incomeExchangeAllowMethod,
+        tokenInfo.outgoExchangeAllowMethod,
+        tokenInfo.incomeTargetTokens,
+        tokenInfo.outgoTargetTokens,
+      ],
     })
   }
 
@@ -334,48 +363,56 @@ export default function ForTokenPage({
                   placeholder="amountToExchange - 100"
                   className="my-2"
                   onChange={handleChange}
+                  type="number"
                 ></Input>
                 <Input
                   name="dilutionFactor"
-                  placeholder="dilutionFactor - 1E18"
+                  placeholder="dilutionFactor - 1"
                   className="my-2"
                   onChange={handleChange}
+                  type="number"
                 ></Input>
                 <Input
                   name="decreaseIntervalDays"
-                  placeholder="decreaseIntervalDays - 3"
+                  placeholder="decreaseIntervalDays - 7"
                   className="my-2"
                   onChange={handleChange}
+                  type="number"
                 ></Input>
                 <Input
                   name="afterDecreaseBp"
-                  placeholder="afterDecreaseBp - 1000"
+                  placeholder="afterDecreaseBp - 9980"
                   className="my-2"
                   onChange={handleChange}
+                  type="number"
                 ></Input>
                 <Input
                   name="maxIncreaseOfTotalSupplyBp"
-                  placeholder="maxIncreaseOfTotalSupplyBp - 100"
+                  placeholder="maxIncreaseOfTotalSupplyBp - 20"
                   className="my-2"
                   onChange={handleChange}
+                  type="number"
                 ></Input>
                 <Input
                   name="maxIncreaseBp"
                   placeholder="maxIncreaseBp - 2000"
                   className="my-2"
                   onChange={handleChange}
+                  type="number"
                 ></Input>
                 <Input
                   name="maxUsageBp"
                   placeholder="maxUsageBp - 3000"
                   className="my-2"
                   onChange={handleChange}
+                  type="number"
                 ></Input>
                 <Input
                   name="changeBp"
                   placeholder="changeBp - 3000"
                   className="my-2"
                   onChange={handleChange}
+                  type="number"
                 ></Input>
               </div>
             </DialogHeader>
@@ -394,8 +431,10 @@ export default function ForTokenPage({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Symbol</TableHead>
                 <TableHead>{token.tokenAddress ?? ''}</TableHead>
-                <TableHead>{token.exchnageRate ?? ''}</TableHead>
+                <TableHead>{token.balance ?? 'Balance'}</TableHead>
                 <TableHead className="max-xl:hidden">
                   {token.swapToLocal ?? ''}
                 </TableHead>
@@ -404,27 +443,47 @@ export default function ForTokenPage({
             </TableHeader>
             <TableBody>
               {tokens &&
-                tokens.map((token, index) => (
+                tokens.map((tokenAddress, index) => (
                   <TableRow key={index}>
-                    <TableCell className="font-medium">
-                      {shortenAddress(token)}
+                    <TableCell>
+                      {communityTokenInfo[tokenAddress]
+                        ? communityTokenInfo[tokenAddress].name
+                        : ''}
                     </TableCell>
                     <TableCell>
-                      {exchangeRates &&
-                        exchangeRates[index] &&
-                        formatEther(exchangeRates[index])}
+                      {communityTokenInfo[tokenAddress]
+                        ? communityTokenInfo[tokenAddress].symbol
+                        : ''}
                     </TableCell>
+                    <TableCell>{tokenAddress ? tokenAddress : ''}</TableCell>
+                    <TableCell>
+                      {communityTokenInfo[tokenAddress]
+                        ? formatString(
+                            formatEther(
+                              communityTokenInfo[tokenAddress].balance
+                            )
+                          )
+                        : 0}
+                    </TableCell>
+
                     <TableCell className="flex flex-col xl:flex-row font-medium gap-2">
                       <Button
                         onClick={async () => {
-                          writeContract({
+                          const hash = await writeContractAsync({
                             abi: PCE_ABI,
                             address: pceAddress[
                               chainId || localhost.id
                             ] as `0x${string}`,
                             functionName: 'swapToLocalToken',
-                            args: [tokens[2], 100],
+                            args: [tokenAddress, 1000e18],
                           })
+
+                          await waitForTransactionReceipt(config, {
+                            hash: hash,
+                            confirmations: 1,
+                          })
+
+                          await getCommunityTokenInfo(tokenAddress)
                         }}
                       >
                         {token.swapToLocal ?? ''}
@@ -433,7 +492,7 @@ export default function ForTokenPage({
                       <Button
                         className="xl:hidden"
                         onClick={() => {
-                          handleSwapFromLocalToken(token)
+                          handleSwapFromLocalToken(tokenAddress)
                         }}
                       >
                         {token.swapFromLocal ?? ''}
@@ -442,7 +501,7 @@ export default function ForTokenPage({
                     <TableCell className="max-xl:hidden">
                       <Button
                         onClick={() => {
-                          handleSwapFromLocalToken(token)
+                          handleSwapFromLocalToken(tokenAddress)
                         }}
                       >
                         {token.swapFromLocal ?? ''}
@@ -453,7 +512,7 @@ export default function ForTokenPage({
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell colSpan={colSpan ? 2 : 3}>
+                <TableCell colSpan={colSpan ? 4 : 3}>
                   {token.totalToken ?? ''}
                 </TableCell>
                 <TableCell>{tokens && tokens.length}</TableCell>

@@ -37,7 +37,6 @@ import { getDict } from '~/i18n/get-dict'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { formatEther, parseEther } from 'viem'
-import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
 import { ethers } from 'ethers'
 import { Env } from '~/env'
@@ -107,7 +106,7 @@ import RingLoader from 'react-spinners/RingLoader'
 import { config } from '~/lib/config'
 import { sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
-
+import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 const showConnectWalletAlert = () => {
   toast.error('Please connect wallet')
 }
@@ -134,7 +133,7 @@ const DaoCard = ({
       navigate(`/${locale}/dao/detail/${dao.id}`)
     }}
   >
-    <div className="flex flex-row w-full items-center justify-between">
+    <div className="flex flex-row w-full items-center ">
       <div className="flex flex-row gap-4 md:gap-8 items-center border-none mx-8 md:mx-4">
         {dao.identicon ? (
           <img src={dao.identicon} alt="" className="w-24 rounded-full" />
@@ -162,7 +161,7 @@ const DaoCard = ({
       </div>
     </div>
 
-    <div className="flex flex-row gap-4 w-full items-center">
+    <div className="flex flex-row gap-4 w-[40%] items-center">
       <StatItem
         label="My Power"
         value={dao.votes ? formatString(formatEther(BigInt(dao.votes))) : 0}
@@ -353,7 +352,7 @@ export default function ForDAOPage({
               votes = Number(
                 await readContract(config, {
                   address: dao.governanceToken as `0x${string}`,
-                  abi: PCE_ABI,
+                  abi: PCE_C_GOV_TOKEN_ABI,
                   functionName: 'getVotes',
                   args: [address],
                 })

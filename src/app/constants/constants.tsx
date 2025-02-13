@@ -2,38 +2,43 @@ import { sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
 
 export const pceAddress = {
-  [sepolia.id]: '0x000e6DBbB00b0B6921557Be1D4Bb9b67715aEf40',
-  [localhost.id]: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+  [sepolia.id]: '0x8a72e4C32A9f8AaCA6890EFFFd629e2a5FFD53c3',
+  [localhost.id]: '0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e',
 } as Record<number, `0x${string}`>
 
 export const pceCommunity = {
-  [sepolia.id]: '0x4C49aDFad2E9bc865d22B970F325d056909763Cf',
-  [localhost.id]: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+  [sepolia.id]: '0x830a929801e03639f1287855f0c08b18fdb884dc',
+  [localhost.id]: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+} as Record<number, `0x${string}`>
+
+export const pceGovToken = {
+  [sepolia.id]: '0x19E030BD225a373A8769c3402b533C3CD8cc4c3d',
+  [localhost.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
 export const timelockAddress = {
-  [sepolia.id]: '0x79BA635335212D67f68F717821e4d6dE971D2eFD',
-  [localhost.id]: '0x0165878A594ca255338adfa4d48449f69242Eb8F',
+  [sepolia.id]: '0x44884b82BC9Fd8b93802f6F85BA103f54fe9D3e9',
+  [localhost.id]: '0x09635F643e140090A9A8Dcd712eD6285858ceBef',
 } as Record<number, `0x${string}`>
 
 export const governorAddress = {
-  [sepolia.id]: '0x53056457ced3a389e85bb15184101e5799aD4d14',
+  [sepolia.id]: '0x6C22f8E1aD460500e06c67Ac5079b0f01e7220F3',
   [localhost.id]: '0xa513E6E4b8f2a923D98304ec87F64353C4D5C853',
 } as Record<number, `0x${string}`>
 
 export const bountyAddress = {
-  [sepolia.id]: '0xeF0062597e81011Ac8f5d5b686946cF5401E1bF4',
-  [localhost.id]: '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6',
+  [sepolia.id]: '0xB1c86049493ab2DE6F70816760202849fC24AF28',
+  [localhost.id]: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
 } as Record<number, `0x${string}`>
 
 export const factoryAddress = {
-  [sepolia.id]: '0x90af8F49a768F6f32F233586aD6b581a16861fA9',
-  [localhost.id]: '0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0',
+  [sepolia.id]: '0xF63175ecD1E6Fc464Fa449dF646749CE3cf567b4',
+  [localhost.id]: '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9',
 } as Record<number, `0x${string}`>
 
 export const daoStudioAddress = {
-  [sepolia.id]: '0x524a549FFb543980645251A9dde8b0BDBf429B15',
-  [localhost.id]: '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82',
+  [sepolia.id]: '0xFf6eF3e8CA9dEfb0A6E42d10fBAA3261981B93D1',
+  [localhost.id]: '0x5FC8d32690cc91D4c39d9d3abcBD16989F875707',
 } as Record<number, `0x${string}`>
 
 export const SUBGRAPH_URL = {
