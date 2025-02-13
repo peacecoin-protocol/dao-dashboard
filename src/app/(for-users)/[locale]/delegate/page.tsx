@@ -18,8 +18,8 @@ import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 import { formatString } from '~/components/utils'
 
-import { pceAddress } from '~/app/constants/constants'
-import { PCE_ABI } from '~/app/ABIs/PCEToken'
+import { pceGovToken } from '~/app/constants/constants'
+import { PCE_GOV_TOKEN_ABI } from '~/app/ABIs/PCEGovToken'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
@@ -52,8 +52,8 @@ export default function ForDelegatePage({
   const [delegateAddr, setDelegateAddr] = useState('')
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
-    address: pceAddress[chainId || localhost.id] as `0x${string}`,
-    abi: PCE_ABI,
+    address: pceGovToken[chainId || localhost.id] as `0x${string}`,
+    abi: PCE_GOV_TOKEN_ABI,
     functionName: 'getVotes',
     args: [address],
   })
@@ -68,8 +68,8 @@ export default function ForDelegatePage({
 
   const handleDelegate = async () => {
     writeContract({
-      abi: PCE_ABI,
-      address: pceAddress[chainId || localhost.id] as `0x${string}`,
+      abi: PCE_GOV_TOKEN_ABI,
+      address: pceGovToken[chainId || localhost.id] as `0x${string}`,
       functionName: 'delegate',
       args: [delegateAddr],
     })

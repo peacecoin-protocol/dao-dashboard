@@ -71,6 +71,7 @@ import { localhost } from '~/app/providers'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { SUBGRAPH_URL } from '~/app/constants/constants'
 import { Env } from '~/env'
+import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 
 type Dao = {
   id: string
@@ -85,6 +86,7 @@ type Dao = {
   governanceToken: string
   timelock: string
   communityToken: string
+  communityTokenSymbol: string
 }
 
 type Proposal = {
@@ -108,7 +110,7 @@ export default function ForSubmitPage({
   const navigate = useNavigate()
   const [dict, setDict] = useState<Dictionary | null>(null)
 
-  const [daoInfo, setDaoInfo] = useState<Dao[]>([])
+  const [daoInfo, setDaoInfo] = useState<Dao>()
   const [delegateAddr, setDelegateAddr] = useState('')
   const [transferAddr, setTransferAddr] = useState('')
   const [description, setDescription] = useState('')
@@ -182,8 +184,8 @@ export default function ForSubmitPage({
   useEffect(() => {
     getBlockNumber()
 
-    if (daoInfo[0]?.timelock) {
-      getTreasuryBalances(daoInfo[0]?.timelock)
+    if (daoInfo?.timelock) {
+      getTreasuryBalances(daoInfo?.timelock)
     }
   }, [daoInfo])
 
@@ -238,20 +240,20 @@ export default function ForSubmitPage({
     })
 
   const { data: quorum, refetch: refetchQuorum } = useReadContract({
-    address: daoInfo[0]?.governor as `0x${string}`,
+    address: daoInfo?.governor as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'quorumVotes',
   })
 
   const { data: votingDelay, refetch: refetchVotingDelay } = useReadContract({
-    address: daoInfo[0]?.governor as `0x${string}`,
+    address: daoInfo?.governor as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'votingDelay',
   })
 
   const { data: commityTokenBalance, refetch: refetchCommityTokenBalance } =
     useReadContract({
-      address: daoInfo[0]?.communityToken as `0x${string}`,
+      address: daoInfo?.communityToken as `0x${string}`,
       abi: PCE_ABI,
       functionName: 'balanceOf',
       args: [address],
@@ -259,34 +261,34 @@ export default function ForSubmitPage({
 
   const { data: governanceTokenBalance, refetch: refetchGovTokenBalance } =
     useReadContract({
-      address: daoInfo[0]?.governanceToken as `0x${string}`,
+      address: daoInfo?.governanceToken as `0x${string}`,
       abi: PCE_ABI,
       functionName: 'balanceOf',
       args: [address],
     })
 
   const { data: totalSupply, refetch: refetchTotalSupply } = useReadContract({
-    address: daoInfo[0]?.governanceToken as `0x${string}`,
+    address: daoInfo?.governanceToken as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'totalSupply',
   })
 
   const { data: proposalThreshold, refetch: refetchProposalThreshold } =
     useReadContract({
-      address: daoInfo[0]?.governor as `0x${string}`,
+      address: daoInfo?.governor as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalThreshold',
     })
 
   const { data: votingPeriod, refetch: refetchVotingPeriod } = useReadContract({
-    address: daoInfo[0]?.governor as `0x${string}`,
+    address: daoInfo?.governor as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'votingPeriod',
   })
 
   const { data: timelockDelay, refetch: refetchTimelockDelay } =
     useReadContract({
-      address: daoInfo[0]?.timelock as `0x${string}`,
+      address: daoInfo?.timelock as `0x${string}`,
       abi: TIMELOCK_ABI,
       functionName: 'delay',
     })
@@ -483,7 +485,7 @@ export default function ForSubmitPage({
               onClick={async () => {
                 await writeContract({
                   abi: GOVERNOR_ABI,
-                  address: daoInfo[0]?.governor as `0x${string}`,
+                  address: daoInfo?.governor as `0x${string}`,
                   functionName: 'castVote',
                   args: [proposal[0], true],
                 })
@@ -498,7 +500,7 @@ export default function ForSubmitPage({
               onClick={async () => {
                 await writeContract({
                   abi: GOVERNOR_ABI,
-                  address: daoInfo[0]?.governor as `0x${string}`,
+                  address: daoInfo?.governor as `0x${string}`,
                   functionName: 'castVote',
                   args: [proposal[0], false],
                 })
@@ -513,7 +515,7 @@ export default function ForSubmitPage({
               onClick={async () => {
                 await writeContract({
                   abi: GOVERNOR_ABI,
-                  address: daoInfo[0]?.governor as `0x${string}`,
+                  address: daoInfo?.governor as `0x${string}`,
                   functionName: 'queue',
                   args: [proposal[0]],
                 })
@@ -531,7 +533,7 @@ export default function ForSubmitPage({
               onClick={async () => {
                 await writeContract({
                   abi: GOVERNOR_ABI,
-                  address: daoInfo[0]?.governor as `0x${string}`,
+                  address: daoInfo?.governor as `0x${string}`,
                   functionName: 'execute',
                   args: [proposal[0]],
                 })
@@ -551,22 +553,22 @@ export default function ForSubmitPage({
   }
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
-    address: daoInfo[0]?.governanceToken as `0x${string}`,
-    abi: PCE_ABI,
+    address: daoInfo?.governanceToken as `0x${string}`,
+    abi: PCE_C_GOV_TOKEN_ABI,
     functionName: 'getVotes',
     args: [address],
   })
 
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
-      address: daoInfo[0]?.governor as `0x${string}`,
+      address: daoInfo?.governor as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
     })
 
   const fetchData = async (count: any) => {
     setLoading(true)
-    if (!count || !daoInfo[0]?.governor || count === 0) {
+    if (!count || !daoInfo?.governor || count === 0) {
       setProposals([])
       setStatus([])
       setLoading(false)
@@ -581,14 +583,14 @@ export default function ForSubmitPage({
       let status = null
       try {
         proposal = await readContract(config, {
-          address: daoInfo[0]?.governor as `0x${string}`,
+          address: daoInfo?.governor as `0x${string}`,
           abi: GOVERNOR_ABI,
           functionName: 'proposals',
           args: [i],
         })
 
         status = await readContract(config, {
-          address: daoInfo[0]?.governor as `0x${string}`,
+          address: daoInfo?.governor as `0x${string}`,
           abi: GOVERNOR_ABI,
           functionName: 'state',
           args: [i],
@@ -645,8 +647,8 @@ export default function ForSubmitPage({
 
   useEffect(() => {
     const fetchIdenticon = async () => {
-      if (daoInfo[0]?.governor) {
-        setIdenticon(await generateIdenteapot(daoInfo[0]?.governor, ''))
+      if (daoInfo?.governor) {
+        setIdenticon(await generateIdenteapot(daoInfo?.governor, ''))
       }
     }
     fetchIdenticon()
@@ -662,7 +664,7 @@ export default function ForSubmitPage({
 
     writeContract({
       abi: GOVERNOR_ABI,
-      address: daoInfo[0]?.governor as `0x${string}`,
+      address: daoInfo?.governor as `0x${string}`,
       functionName: 'propose',
       args: [
         [tokenAddress as `0x${string}`],
@@ -678,17 +680,17 @@ export default function ForSubmitPage({
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     abi: PCE_ABI,
-    address: daoInfo[0]?.communityToken as `0x${string}`,
+    address: daoInfo?.communityToken as `0x${string}`,
     functionName: 'allowance',
-    args: [address, daoInfo[0]?.governanceToken as `0x${string}`],
+    args: [address, daoInfo?.governanceToken as `0x${string}`],
   })
 
   const handleStake = async () => {
     const allowance = await readContract(config, {
       abi: PCE_ABI,
-      address: daoInfo[0]?.communityToken as `0x${string}`,
+      address: daoInfo?.communityToken as `0x${string}`,
       functionName: 'allowance',
-      args: [address, daoInfo[0]?.governanceToken as `0x${string}`],
+      args: [address, daoInfo?.governanceToken as `0x${string}`],
     })
     if (
       (BigInt(allowance as string) as bigint) <
@@ -696,12 +698,9 @@ export default function ForSubmitPage({
     ) {
       const tx = await writeContractAsync({
         abi: PCE_ABI,
-        address: daoInfo[0]?.communityToken as `0x${string}`,
+        address: daoInfo?.communityToken as `0x${string}`,
         functionName: 'approve',
-        args: [
-          daoInfo[0]?.governanceToken as `0x${string}`,
-          commityTokenBalance,
-        ],
+        args: [daoInfo?.governanceToken as `0x${string}`, commityTokenBalance],
       })
       await waitForTransactionReceipt(config, {
         hash: tx,
@@ -712,7 +711,7 @@ export default function ForSubmitPage({
     if (BigInt(commityTokenBalance as string) > 0) {
       const tx = await writeContractAsync({
         abi: CommunityGov_ABI,
-        address: daoInfo[0]?.governanceToken as `0x${string}`,
+        address: daoInfo?.governanceToken as `0x${string}`,
         functionName: 'deposit',
         args: [commityTokenBalance],
       })
@@ -731,7 +730,7 @@ export default function ForSubmitPage({
     if (BigInt(governanceTokenBalance as string) > 0) {
       const tx = await writeContractAsync({
         abi: CommunityGov_ABI,
-        address: daoInfo[0]?.governanceToken as `0x${string}`,
+        address: daoInfo?.governanceToken as `0x${string}`,
         functionName: 'withdraw',
         args: [governanceTokenBalance],
       })
@@ -752,7 +751,7 @@ export default function ForSubmitPage({
     if (BigInt(governanceTokenBalance as string) > 0) {
       const tx = await writeContractAsync({
         abi: CommunityGov_ABI,
-        address: daoInfo[0]?.governanceToken as `0x${string}`,
+        address: daoInfo?.governanceToken as `0x${string}`,
         functionName: 'delegate',
         args: [delegateAddr],
       })
@@ -779,7 +778,7 @@ export default function ForSubmitPage({
 
         setDelegateAddr('')
         await refetchVotes()
-        await getTreasuryBalances(daoInfo[0]?.timelock as `0x${string}`)
+        await getTreasuryBalances(daoInfo?.timelock as `0x${string}`)
         await refetchProposalCount()
       } else if (isConfirming) {
         toast.info(
@@ -830,7 +829,16 @@ export default function ForSubmitPage({
           `,
         })
 
-        setDaoInfo(data.daocreateds)
+        const symbol = await readContract(config, {
+          abi: PCE_ABI,
+          address: data.daocreateds[0]?.communityToken as `0x${string}`,
+          functionName: 'symbol',
+        })
+
+        setDaoInfo({
+          ...data.daocreateds[0],
+          communityTokenSymbol: symbol as string,
+        })
       } catch (error) {
         console.error('Error fetching data', error)
       }
@@ -845,7 +853,7 @@ export default function ForSubmitPage({
         <img src={identicon} alt="" className="w-24 rounded-full" />
 
         <div className="flex flex-row gap-2 font-bold text-5xl">
-          {daoInfo[0]?.name}{' '}
+          {daoInfo?.name}{' '}
         </div>
       </div>
 
@@ -917,10 +925,10 @@ export default function ForSubmitPage({
                       className="font-bold rounded-xl flex"
                     />
                     <Link
-                      href={`${chainId === sepolia.id ? sepolia.blockExplorers?.default?.url : localhost.blockExplorers?.default?.url}/address/${daoInfo[0]?.governanceToken}`}
+                      href={`${chainId === sepolia.id ? sepolia.blockExplorers?.default?.url : localhost.blockExplorers?.default?.url}/address/${daoInfo?.governanceToken}`}
                       className="text-dark_blue"
                     >
-                      {shortenAddress(daoInfo[0]?.governanceToken)}
+                      {shortenAddress(daoInfo?.governanceToken)}
                     </Link>
                   </div>
 
@@ -935,10 +943,10 @@ export default function ForSubmitPage({
                         chainId === sepolia.id
                           ? sepolia.blockExplorers?.default?.url
                           : localhost.blockExplorers?.default?.url
-                      }/address/${daoInfo[0]?.timelock}`}
+                      }/address/${daoInfo?.timelock}`}
                       className="text-dark_blue"
                     >
-                      {shortenAddress(daoInfo[0]?.timelock)}
+                      {shortenAddress(daoInfo?.timelock)}
                     </Link>
                   </div>
 
@@ -953,10 +961,10 @@ export default function ForSubmitPage({
                         chainId === sepolia.id
                           ? sepolia.blockExplorers?.default?.url
                           : localhost.blockExplorers?.default?.url
-                      }/address/${daoInfo[0]?.governor}`}
+                      }/address/${daoInfo?.governor}`}
                       className="text-dark_blue"
                     >
-                      {shortenAddress(daoInfo[0]?.governor)}
+                      {shortenAddress(daoInfo?.governor)}
                     </Link>
                   </div>
                 </div>
@@ -1073,7 +1081,7 @@ export default function ForSubmitPage({
                   <h1 className="font-bold rounded-xl  flex">
                     Created at{' '}
                     {new Date(
-                      Number(daoInfo[0]?.blockTimestamp) * 1000
+                      Number(daoInfo?.blockTimestamp) * 1000
                     ).toLocaleString()}
                   </h1>
                 </div>
@@ -1082,8 +1090,8 @@ export default function ForSubmitPage({
                     <h1 className="font-bold rounded-xl flex">
                       <Link
                         href={
-                          daoInfo[0]?.website
-                            ? daoInfo[0]?.website
+                          daoInfo?.website
+                            ? daoInfo?.website
                             : 'https://website.com'
                         }
                         className="text-dark_blue"
@@ -1096,8 +1104,8 @@ export default function ForSubmitPage({
                     <h1 className="font-bold rounded-xl flex">
                       <Link
                         href={
-                          daoInfo[0]?.linkedin
-                            ? daoInfo[0]?.linkedin
+                          daoInfo?.linkedin
+                            ? daoInfo?.linkedin
                             : 'https://www.linkedin.com/'
                         }
                         className="text-dark_blue"
@@ -1110,8 +1118,8 @@ export default function ForSubmitPage({
                     <h1 className="font-bold rounded-xl flex">
                       <Link
                         href={
-                          daoInfo[0]?.twitter
-                            ? daoInfo[0]?.twitter
+                          daoInfo?.twitter
+                            ? daoInfo?.twitter
                             : 'https://twitter.com'
                         }
                         className="text-dark_blue"
@@ -1336,7 +1344,7 @@ export default function ForSubmitPage({
                               address: tokenAddress as `0x${string}`,
                               functionName: 'transfer',
                               args: [
-                                daoInfo[0]?.timelock,
+                                daoInfo?.timelock,
                                 parseEther(transferAmount),
                               ],
                             })
@@ -1485,7 +1493,7 @@ export default function ForSubmitPage({
                                 )
                               )
                             : '0'}{' '}
-                          {daoInfo[0]?.name}
+                          {daoInfo?.communityTokenSymbol}
                         </TableCell>
                         <TableCell className="font-bold font-md text-dark_blue">
                           {governanceTokenBalance
@@ -1495,7 +1503,7 @@ export default function ForSubmitPage({
                                 )
                               )
                             : '0'}{' '}
-                          {daoInfo[0]?.name + '(Governance)'}
+                          {daoInfo?.communityTokenSymbol}
                         </TableCell>
                         <TableCell className="font-bold font-md text-dark_blue">
                           {votes
