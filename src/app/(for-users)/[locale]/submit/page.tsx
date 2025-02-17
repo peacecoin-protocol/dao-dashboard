@@ -140,6 +140,8 @@ export default function ForSubmitPage({
           <Input
             className={`mt-5 ${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
             type="number"
+            min="0"
+            step="0.1"
             placeholder={submit.amount ?? ''}
             name="values"
             value={values}
@@ -149,6 +151,8 @@ export default function ForSubmitPage({
           <Input
             className={`mt-5 ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
             type="number"
+            min="0"
+            step="0.1"
             placeholder={
               category === '5' ? submit.gracePeriod : submit.quorum_votes
             }
@@ -160,6 +164,8 @@ export default function ForSubmitPage({
           <Input
             className={`mt-5 ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
             type="number"
+            min="0"
+            step="0.1"
             placeholder={
               category === '5' ? submit.min_delay : submit.proposal_threshold
             }
@@ -171,6 +177,8 @@ export default function ForSubmitPage({
           <Input
             className={`mt-5 ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
             type="number"
+            min="0"
+            step="0.1"
             placeholder={
               category === '5'
                 ? submit.max_delay
