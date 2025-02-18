@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Button } from './button'
+import Image from 'next/image'
 import {
   Dialog,
   DialogClose,
@@ -8,7 +9,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '~/components/ui/dialog'
+
 import { Input } from '~/components/ui/input'
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { cn } from '~/components/utils'
 import { type VariantProps, cva } from 'class-variance-authority'
 
@@ -45,11 +48,12 @@ export interface ExchangeInputProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof amountInputVariants> {
   setSwapAmount: (amount: string) => void
-  handleSwap: () => void
-  setIsFromLocal: (isFromLocal: boolean) => void
+  handleSwap: (isFromLocal: boolean) => void
+  swappableAmount: number
   maxAmount: number
   exchangeRate: number
   symbol: string
+  communityTokenBalance: number
   asChild?: boolean
 }
 
@@ -58,10 +62,11 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
     {
       setSwapAmount,
       handleSwap,
-      setIsFromLocal,
       maxAmount,
       exchangeRate,
+      swappableAmount,
       symbol,
+      communityTokenBalance,
       className,
       variant,
       size,
@@ -71,6 +76,11 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
     ref
   ) => {
     const [amount, setAmount] = React.useState('')
+    const [_isFromLocal, _setIsFromLocal] = React.useState(false)
+    const [toggleGroupValue, setToggleGroupValue] = React.useState('')
+    const [exchangeAmount, setExchangeAmount] = React.useState('')
+    const PCE_SYMBOL = 'PEACE COIN'
+
     return (
       <Dialog>
         <DialogTrigger
@@ -84,11 +94,15 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
             <div className="flex flex-col">
               <div className="flex flex-col gap-2 bg-grey p-2 px-6 rounded-t-xl">
                 <h1 className="text-sm text-[#505050]">
-                  I have {Number(maxAmount).toFixed(2)} PEACE COIN
+                  I have{' '}
+                  {_isFromLocal
+                    ? Number(communityTokenBalance).toFixed(2)
+                    : Number(maxAmount).toFixed(2)}{' '}
+                  {_isFromLocal ? symbol : PCE_SYMBOL}
                 </h1>
                 <div className="flex flex-row items-center">
                   <h1 className="whitespace-nowrap font-bold text-xl">
-                    PEACE COIN
+                    {_isFromLocal ? symbol : PCE_SYMBOL}
                   </h1>
                   <Input
                     className="w-full text-right border-none bg-grey font-bold text-xl"
@@ -96,28 +110,48 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
                     min="0"
                     step="0.1"
                     placeholder="0.00"
+                    value={exchangeAmount}
                     onChange={(e) => {
                       const newValue = e.target.value
                       if (Number(newValue) < 0) {
                         e.target.value = '0'
                         return
                       }
+                      setExchangeAmount(newValue)
                       setAmount(newValue)
                       setSwapAmount(newValue)
+                      setToggleGroupValue('0')
                     }}
                   ></Input>
                 </div>
               </div>
 
+              <div className="flex justify-center -my-5 z-10">
+                <Button
+                  className="w-10 h-10 bg-transparent border-none outline-none hover:bg-transparent p-2"
+                  onClick={() => {
+                    _setIsFromLocal(!_isFromLocal)
+                  }}
+                  disabled={communityTokenBalance == 0}
+                >
+                  <Image
+                    src="/swap-icon.png"
+                    alt="Swap"
+                    width={30}
+                    height={30}
+                  />
+                </Button>
+              </div>
+
               <div className="flex flex-col">
                 <div className="flex flex-col gap-2 bg-light_black p-2 px-6 rounded-b-xl">
                   <h1 className="text-sm text-[#505050]">
-                    I want to get {symbol}
+                    I want to get {_isFromLocal ? PCE_SYMBOL : symbol}
                   </h1>
                   <div className="flex flex-row items-center">
                     {' '}
                     <h1 className="whitespace-nowrap font-bold text-xl">
-                      {symbol}
+                      {_isFromLocal ? PCE_SYMBOL : symbol}
                     </h1>
                     <Input
                       className="w-full text-right border-none bg-light_black font-bold text-xl"
@@ -126,12 +160,64 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
                       disabled={true}
                       step="0.1"
                       placeholder="0.00"
-                      value={Number(amount) * exchangeRate}
+                      value={
+                        !_isFromLocal
+                          ? (Number(amount) * exchangeRate).toFixed(2)
+                          : (Number(amount) / exchangeRate).toFixed(2)
+                      }
                     ></Input>
                   </div>
                 </div>
               </div>
             </div>
+
+            <ToggleGroup
+              type="single"
+              className="flex flex-row gap-2 w-full rounded-full bg-grey"
+              defaultValue="default"
+              value={toggleGroupValue}
+              onValueChange={(value) => {
+                setToggleGroupValue(value)
+                if (value === 'clear') {
+                  setExchangeAmount('0')
+                  setAmount('0')
+                  setSwapAmount('0')
+                } else if (value === 'half') {
+                  const _value = _isFromLocal
+                    ? (Number(communityTokenBalance) / 2).toFixed(2)
+                    : (Number(maxAmount) / 2).toFixed(2)
+                  setExchangeAmount(_value)
+                  setAmount(_value)
+                  setSwapAmount(_value)
+                } else if (value === 'all') {
+                  const _value = _isFromLocal
+                    ? communityTokenBalance.toFixed(2)
+                    : maxAmount.toFixed(2)
+                  setExchangeAmount(_value)
+                  setAmount(_value)
+                  setSwapAmount(_value)
+                }
+              }}
+            >
+              <ToggleGroupItem
+                value="clear"
+                className="w-full rounded-full data-[state=on]:bg-[#D0E6FF]"
+              >
+                Clear
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="half"
+                className="w-full rounded-full data-[state=on]:bg-[#D0E6FF]"
+              >
+                Half
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="all"
+                className="w-full rounded-full data-[state=on]:bg-[#D0E6FF]"
+              >
+                All
+              </ToggleGroupItem>
+            </ToggleGroup>
 
             {amount === '0' && (
               <h1 className="text-sm text-red-500 text-right">
@@ -139,9 +225,20 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
               </h1>
             )}
 
-            {Number(amount) > maxAmount && (
+            {Number(amount) >
+              (!_isFromLocal ? maxAmount : communityTokenBalance) && (
               <h1 className="text-sm text-red-500 text-right">
-                Amount should be less than {maxAmount}.
+                Amount should be less than{' '}
+                {!_isFromLocal
+                  ? maxAmount.toFixed(2)
+                  : communityTokenBalance.toFixed(2)}
+                .
+              </h1>
+            )}
+
+            {Number(amount) > swappableAmount && _isFromLocal && (
+              <h1 className="text-sm text-red-500 text-right">
+                Today's swappable amount is {swappableAmount}.
               </h1>
             )}
 
@@ -150,7 +247,7 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
                 size="lg"
                 className="w-full text-xl rounded-full"
                 onClick={() => {
-                  handleSwap()
+                  handleSwap(_isFromLocal)
                 }}
               >
                 Swap

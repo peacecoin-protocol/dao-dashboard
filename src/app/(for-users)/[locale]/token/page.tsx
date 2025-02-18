@@ -71,7 +71,6 @@ export default function ForTokenPage({
   const [exchangeRates, setExchangeRate] = useState<any[]>([])
   const [tokens, setTokens] = useState<any[]>([])
   const [swapAmount, setSwapAmount] = useState('')
-  const [isFromLocal, setIsFromLocal] = useState(true)
   const [transferAmount, setTransferAmount] = useState('')
   const [transferAddress, setTransferAddress] = useState('')
 
@@ -123,6 +122,16 @@ export default function ForTokenPage({
       functionName: 'INITIAL_FACTOR',
       args: [],
     })
+
+  const {
+    data: todaySwapableToPCEBalance,
+    refetch: refetchTodaySwapableToPCEBalance,
+  } = useReadContract({
+    address: pceAddress[chainId || localhost.id] as `0x${string}`,
+    abi: PCE_ABI,
+    functionName: 'getTodaySwapableToPCEBalance',
+    args: [],
+  })
 
   const fetchExchangeRate = async (_tokens: []) => {
     if (!_tokens || _tokens.length == 0) return
@@ -201,7 +210,12 @@ export default function ForTokenPage({
   }
 
   const [communityTokenInfo, setCommunityTokenInfo] = useState<{
-    [key: string]: { name: string; symbol: string; balance: bigint }
+    [key: string]: {
+      name: string
+      symbol: string
+      balance: bigint
+      swapToLocalAllowance: bigint
+    }
   }>({})
 
   const getCommunityTokenInfo = async (tokenAddress: string) => {
@@ -530,10 +544,34 @@ export default function ForTokenPage({
                         size="sm"
                         className="w-full"
                         setSwapAmount={setSwapAmount}
-                        handleSwap={() => handleSwapToLocalToken(tokenAddress)}
+                        handleSwap={(isFromLocal: boolean) =>
+                          isFromLocal
+                            ? handleSwapFromLocalToken(tokenAddress)
+                            : handleSwapToLocalToken(tokenAddress)
+                        }
                         maxAmount={
                           balance
                             ? Number(formatEther(BigInt(balance as string)))
+                            : 0
+                        }
+                        swappableAmount={
+                          todaySwapableToPCEBalance &&
+                          communityTokenInfo[tokenAddress]?.swapToLocalAllowance
+                            ? Math.min(
+                                Number(
+                                  formatEther(
+                                    BigInt(
+                                      communityTokenInfo[tokenAddress]
+                                        ?.swapToLocalAllowance
+                                    )
+                                  )
+                                ),
+                                Number(
+                                  formatEther(
+                                    BigInt(todaySwapableToPCEBalance as string)
+                                  )
+                                )
+                              )
                             : 0
                         }
                         exchangeRate={
@@ -550,7 +588,15 @@ export default function ForTokenPage({
                             ? communityTokenInfo[tokenAddress].symbol
                             : ''
                         }
-                        setIsFromLocal={setIsFromLocal}
+                        communityTokenBalance={
+                          communityTokenInfo[tokenAddress]
+                            ? Number(
+                                formatEther(
+                                  communityTokenInfo[tokenAddress].balance
+                                )
+                              )
+                            : 0
+                        }
                       ></ExchangeInput>
                     </TableCell>
                     <TableCell className="max-xl:hidden">
