@@ -14,7 +14,8 @@ import {
 } from 'wagmi'
 import Link from 'next/link'
 import { waitForTransactionReceipt } from '@wagmi/core'
-
+import { ExchangeInput } from '~/components/custom/exchange-input'
+import { TransferInput } from '~/components/custom/transfer-input'
 import { Input } from '~/components/ui/input'
 import {
   Table,
@@ -69,6 +70,9 @@ export default function ForTokenPage({
   const [tokenInfo, setTokenInfo] = useState<any>()
   const [exchangeRates, setExchangeRate] = useState<any[]>([])
   const [tokens, setTokens] = useState<any[]>([])
+  const [swapAmount, setSwapAmount] = useState('')
+  const [transferAmount, setTransferAmount] = useState('')
+  const [transferAddress, setTransferAddress] = useState('')
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -119,8 +123,20 @@ export default function ForTokenPage({
       args: [],
     })
 
+  const {
+    data: todaySwapableToPCEBalance,
+    refetch: refetchTodaySwapableToPCEBalance,
+  } = useReadContract({
+    address: pceAddress[chainId || localhost.id] as `0x${string}`,
+    abi: PCE_ABI,
+    functionName: 'getTodaySwapableToPCEBalance',
+    args: [],
+  })
+
   const fetchExchangeRate = async (_tokens: []) => {
     if (!_tokens || _tokens.length == 0) return
+    if (!pceAddress[chainId || localhost.id]) return
+
     let _exchangeRates = []
     for (let i = 0; i < _tokens.length; i++) {
       const exchangeRate = await readContract(config, {
@@ -194,7 +210,12 @@ export default function ForTokenPage({
   }
 
   const [communityTokenInfo, setCommunityTokenInfo] = useState<{
-    [key: string]: { name: string; symbol: string; balance: bigint }
+    [key: string]: {
+      name: string
+      symbol: string
+      balance: bigint
+      swapToLocalAllowance: bigint
+    }
   }>({})
 
   const getCommunityTokenInfo = async (tokenAddress: string) => {
@@ -276,8 +297,51 @@ export default function ForTokenPage({
       abi: PCE_ABI,
       address: pceAddress[chainId || localhost.id] as `0x${string}`,
       functionName: 'swapFromLocalToken',
-      args: [token, 1e5],
+      args: [token, swapAmount],
     })
+  }
+
+  const handleTransfer = async (token: `0x${string}`) => {
+    let hash
+    try {
+      hash = await writeContractAsync({
+        abi: PCE_ABI,
+        address: token,
+        functionName: 'transfer',
+        args: [transferAddress, parseEther(transferAmount)],
+      })
+    } catch (error) {
+      toast.error((error as BaseError).shortMessage)
+      return
+    }
+    await waitForTransactionReceipt(config, {
+      hash: hash,
+      confirmations: 1,
+    })
+
+    await getCommunityTokenInfo(token)
+  }
+
+  const handleSwapToLocalToken = async (tokenAddress: string) => {
+    let hash
+    try {
+      hash = await writeContractAsync({
+        abi: PCE_ABI,
+        address: pceAddress[chainId || localhost.id] as `0x${string}`,
+        functionName: 'swapToLocalToken',
+        args: [tokenAddress, parseEther(swapAmount)],
+      })
+    } catch (error) {
+      toast.error((error as BaseError).shortMessage)
+      return
+    }
+
+    await waitForTransactionReceipt(config, {
+      hash: hash,
+      confirmations: 1,
+    })
+
+    await getCommunityTokenInfo(tokenAddress)
   }
 
   const handleCreateToken = async () => {
@@ -326,7 +390,6 @@ export default function ForTokenPage({
         </p>
         <Button
           className="w-40 my-2"
-          variant="outline"
           onClick={() => {
             setDialogStatus(true)
           }}
@@ -364,6 +427,8 @@ export default function ForTokenPage({
                   className="my-2"
                   onChange={handleChange}
                   type="number"
+                  min="0"
+                  step="0.1"
                 ></Input>
                 <Input
                   name="dilutionFactor"
@@ -371,6 +436,8 @@ export default function ForTokenPage({
                   className="my-2"
                   onChange={handleChange}
                   type="number"
+                  min="0"
+                  step="0.1"
                 ></Input>
                 <Input
                   name="decreaseIntervalDays"
@@ -378,6 +445,8 @@ export default function ForTokenPage({
                   className="my-2"
                   onChange={handleChange}
                   type="number"
+                  min="0"
+                  step="0.1"
                 ></Input>
                 <Input
                   name="afterDecreaseBp"
@@ -385,6 +454,8 @@ export default function ForTokenPage({
                   className="my-2"
                   onChange={handleChange}
                   type="number"
+                  min="0"
+                  step="0.1"
                 ></Input>
                 <Input
                   name="maxIncreaseOfTotalSupplyBp"
@@ -392,6 +463,8 @@ export default function ForTokenPage({
                   className="my-2"
                   onChange={handleChange}
                   type="number"
+                  min="0"
+                  step="0.1"
                 ></Input>
                 <Input
                   name="maxIncreaseBp"
@@ -399,6 +472,8 @@ export default function ForTokenPage({
                   className="my-2"
                   onChange={handleChange}
                   type="number"
+                  min="0"
+                  step="0.1"
                 ></Input>
                 <Input
                   name="maxUsageBp"
@@ -406,6 +481,8 @@ export default function ForTokenPage({
                   className="my-2"
                   onChange={handleChange}
                   type="number"
+                  min="0"
+                  step="0.1"
                 ></Input>
                 <Input
                   name="changeBp"
@@ -413,15 +490,13 @@ export default function ForTokenPage({
                   className="my-2"
                   onChange={handleChange}
                   type="number"
+                  min="0"
+                  step="0.1"
                 ></Input>
               </div>
             </DialogHeader>
             <DialogFooter>
-              <Button
-                className="mt-5"
-                variant="outline"
-                onClick={handleCreateToken}
-              >
+              <Button className="mt-5" onClick={handleCreateToken}>
                 {dict?.token?.confirm ?? ''}
               </Button>
             </DialogFooter>
@@ -435,10 +510,8 @@ export default function ForTokenPage({
                 <TableHead>Symbol</TableHead>
                 <TableHead>{token.tokenAddress ?? ''}</TableHead>
                 <TableHead>{token.balance ?? 'Balance'}</TableHead>
-                <TableHead className="max-xl:hidden">
-                  {token.swapToLocal ?? ''}
-                </TableHead>
-                <TableHead>{token.swapFromLocal ?? ''}</TableHead>
+                <TableHead className="max-xl:hidden"></TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -467,52 +540,91 @@ export default function ForTokenPage({
                     </TableCell>
 
                     <TableCell className="flex flex-col xl:flex-row font-medium gap-2">
-                      <Button
-                        onClick={async () => {
-                          const hash = await writeContractAsync({
-                            abi: PCE_ABI,
-                            address: pceAddress[
-                              chainId || localhost.id
-                            ] as `0x${string}`,
-                            functionName: 'swapToLocalToken',
-                            args: [tokenAddress, 1000e18],
-                          })
-
-                          await waitForTransactionReceipt(config, {
-                            hash: hash,
-                            confirmations: 1,
-                          })
-
-                          await getCommunityTokenInfo(tokenAddress)
-                        }}
-                      >
-                        {token.swapToLocal ?? ''}
-                      </Button>
-
-                      <Button
-                        className="xl:hidden"
-                        onClick={() => {
-                          handleSwapFromLocalToken(tokenAddress)
-                        }}
-                      >
-                        {token.swapFromLocal ?? ''}
-                      </Button>
+                      <ExchangeInput
+                        size="sm"
+                        className="w-full"
+                        setSwapAmount={setSwapAmount}
+                        handleSwap={(isFromLocal: boolean) =>
+                          isFromLocal
+                            ? handleSwapFromLocalToken(tokenAddress)
+                            : handleSwapToLocalToken(tokenAddress)
+                        }
+                        maxAmount={
+                          balance
+                            ? Number(formatEther(BigInt(balance as string)))
+                            : 0
+                        }
+                        swappableAmount={
+                          todaySwapableToPCEBalance &&
+                          communityTokenInfo[tokenAddress]?.swapToLocalAllowance
+                            ? Math.min(
+                                Number(
+                                  formatEther(
+                                    BigInt(
+                                      communityTokenInfo[tokenAddress]
+                                        ?.swapToLocalAllowance
+                                    )
+                                  )
+                                ),
+                                Number(
+                                  formatEther(
+                                    BigInt(todaySwapableToPCEBalance as string)
+                                  )
+                                )
+                              )
+                            : 0
+                        }
+                        exchangeRate={
+                          exchangeRates[index]
+                            ? Number(
+                                formatEther(
+                                  BigInt(exchangeRates[index] as string)
+                                )
+                              )
+                            : 0
+                        }
+                        symbol={
+                          communityTokenInfo[tokenAddress]
+                            ? communityTokenInfo[tokenAddress].symbol
+                            : ''
+                        }
+                        communityTokenBalance={
+                          communityTokenInfo[tokenAddress]
+                            ? Number(
+                                formatEther(
+                                  communityTokenInfo[tokenAddress].balance
+                                )
+                              )
+                            : 0
+                        }
+                      ></ExchangeInput>
                     </TableCell>
                     <TableCell className="max-xl:hidden">
-                      <Button
-                        onClick={() => {
-                          handleSwapFromLocalToken(tokenAddress)
-                        }}
-                      >
-                        {token.swapFromLocal ?? ''}
-                      </Button>
+                      <TransferInput
+                        className="w-full"
+                        setTransferAmount={setTransferAmount}
+                        setTransferAddress={setTransferAddress}
+                        handleTransfer={() => handleTransfer(tokenAddress)}
+                        symbol={
+                          communityTokenInfo[tokenAddress]
+                            ? communityTokenInfo[tokenAddress].symbol
+                            : ''
+                        }
+                        maxAmount={Number(
+                          formatEther(
+                            BigInt(
+                              communityTokenInfo[tokenAddress]?.balance ?? 0
+                            )
+                          )
+                        )}
+                      ></TransferInput>
                     </TableCell>
                   </TableRow>
                 ))}
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell colSpan={colSpan ? 4 : 3}>
+                <TableCell colSpan={colSpan ? 6 : 5}>
                   {token.totalToken ?? ''}
                 </TableCell>
                 <TableCell>{tokens && tokens.length}</TableCell>

@@ -257,12 +257,18 @@ export default function ForBountyPage({
           }
         )
       }
-      const addProposalBountyTX = await writeContractAsync({
-        abi: BOUNTY_ABI,
-        address: bountyAddress[chainId || localhost.id] as `0x${string}`,
-        functionName: 'addProposalBounty',
-        args: [proposalId, parseEther(bountyAmount)],
-      })
+      let addProposalBountyTX
+      try {
+        addProposalBountyTX = await writeContractAsync({
+          abi: BOUNTY_ABI,
+          address: bountyAddress[chainId || localhost.id] as `0x${string}`,
+          functionName: 'addProposalBounty',
+          args: [proposalId, parseEther(bountyAmount)],
+        })
+      } catch (error) {
+        console.error('Error adding proposal bounty:', error)
+        throw error
+      }
 
       provider.waitForTransaction(addProposalBountyTX)
 
@@ -300,12 +306,18 @@ export default function ForBountyPage({
           }
         )
       }
-      const addContributorBountyTX = await writeContractAsync({
-        abi: BOUNTY_ABI,
-        address: bountyAddress[chainId || localhost.id] as `0x${string}`,
-        functionName: 'addContributorBounty',
-        args: [contributorAddr, parseEther(bountyAmount)],
-      })
+      let addContributorBountyTX
+      try {
+        addContributorBountyTX = await writeContractAsync({
+          abi: BOUNTY_ABI,
+          address: bountyAddress[chainId || localhost.id] as `0x${string}`,
+          functionName: 'addContributorBounty',
+          args: [contributorAddr, parseEther(bountyAmount)],
+        })
+      } catch (error) {
+        console.error('Error adding contributor bounty:', error)
+        throw error
+      }
 
       await provider.waitForTransaction(addContributorBountyTX)
 
@@ -502,6 +514,8 @@ export default function ForBountyPage({
             <div className="gap-4 flex flex-col">
               <Input
                 type="number"
+                min="0"
+                step="0.1"
                 name="bountyAmount"
                 value={bountyAmount}
                 placeholder={bounty.bountyAmount ?? ''}
@@ -574,6 +588,8 @@ export default function ForBountyPage({
             <div>
               <Input
                 type="number"
+                min="0"
+                step="0.1"
                 name="bountyAmount"
                 value={bountyAmount}
                 placeholder={bounty.bountyAmount ?? ''}
@@ -583,6 +599,8 @@ export default function ForBountyPage({
               <Input
                 value={proposalId}
                 type="number"
+                min="0"
+                step="0.1"
                 name="proposalId"
                 placeholder={bounty.proposalID ?? ''}
                 className="mt-5"

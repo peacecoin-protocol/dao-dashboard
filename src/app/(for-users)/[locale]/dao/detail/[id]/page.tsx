@@ -51,6 +51,8 @@ import {
   SelectValue,
 } from '~/components/ui/select'
 
+import { AmountInput } from '~/components/custom/amount-input'
+
 import { ApolloClient, InMemoryCache, gql } from '@apollo/client'
 
 import { getDict } from '~/i18n/get-dict'
@@ -122,6 +124,8 @@ export default function ForSubmitPage({
   let [loading, setLoading] = useState(true)
 
   const [category, setCategory] = useState('')
+
+  const [stakingAmount, setStakingAmount] = useState('')
 
   const [isDelegateDialogOpened, setIsDelegateDialogOpened] = useState(false)
   const [isDepositDialogOpened, setIsDepositDialogOpened] = useState(false)
@@ -251,7 +255,7 @@ export default function ForSubmitPage({
     functionName: 'votingDelay',
   })
 
-  const { data: commityTokenBalance, refetch: refetchCommityTokenBalance } =
+  const { data: communityTokenBalance, refetch: refetchCommunityTokenBalance } =
     useReadContract({
       address: daoInfo?.communityToken as `0x${string}`,
       abi: PCE_ABI,
@@ -686,61 +690,88 @@ export default function ForSubmitPage({
   })
 
   const handleStake = async () => {
+    if (stakingAmount === '' || stakingAmount === '0') {
+      toast.error('Please enter a valid amount')
+      return
+    }
+
     const allowance = await readContract(config, {
       abi: PCE_ABI,
       address: daoInfo?.communityToken as `0x${string}`,
       functionName: 'allowance',
       args: [address, daoInfo?.governanceToken as `0x${string}`],
     })
+
     if (
       (BigInt(allowance as string) as bigint) <
-      BigInt(commityTokenBalance as string)
+      BigInt(parseEther(stakingAmount))
     ) {
-      const tx = await writeContractAsync({
-        abi: PCE_ABI,
-        address: daoInfo?.communityToken as `0x${string}`,
-        functionName: 'approve',
-        args: [daoInfo?.governanceToken as `0x${string}`, commityTokenBalance],
-      })
+      let tx
+      try {
+        tx = await writeContractAsync({
+          abi: PCE_ABI,
+          address: daoInfo?.communityToken as `0x${string}`,
+          functionName: 'approve',
+          args: [
+            daoInfo?.governanceToken as `0x${string}`,
+            parseEther(stakingAmount),
+          ],
+        })
+      } catch (error) {
+        console.error('Error approving tokens:', error)
+        return
+      }
       await waitForTransactionReceipt(config, {
         hash: tx,
         confirmations: 1,
       })
     }
 
-    if (BigInt(commityTokenBalance as string) > 0) {
-      const tx = await writeContractAsync({
+    let tx
+    try {
+      tx = await writeContractAsync({
         abi: CommunityGov_ABI,
         address: daoInfo?.governanceToken as `0x${string}`,
         functionName: 'deposit',
-        args: [commityTokenBalance],
+        args: [parseEther(stakingAmount)],
       })
-
-      await waitForTransactionReceipt(config, {
-        hash: tx,
-        confirmations: 1,
-      })
-      await refetchGovTokenBalance()
-      await refetchCommityTokenBalance()
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+    } catch (error) {
+      console.error('Error depositing tokens:', error)
+      return
     }
+
+    setStakingAmount('')
+
+    await waitForTransactionReceipt(config, {
+      hash: tx,
+      confirmations: 1,
+    })
+    await refetchGovTokenBalance()
+    await refetchCommunityTokenBalance()
+    await new Promise((resolve) => setTimeout(resolve, 1000))
   }
 
   const handleWithdraw = async () => {
     if (BigInt(governanceTokenBalance as string) > 0) {
-      const tx = await writeContractAsync({
-        abi: CommunityGov_ABI,
-        address: daoInfo?.governanceToken as `0x${string}`,
-        functionName: 'withdraw',
-        args: [governanceTokenBalance],
-      })
+      let tx
+      try {
+        tx = await writeContractAsync({
+          abi: CommunityGov_ABI,
+          address: daoInfo?.governanceToken as `0x${string}`,
+          functionName: 'withdraw',
+          args: [governanceTokenBalance],
+        })
+      } catch (error) {
+        console.error('Error withdrawing tokens:', error)
+        return
+      }
 
       await waitForTransactionReceipt(config, {
         hash: tx,
         confirmations: 1,
       })
       await refetchGovTokenBalance()
-      await refetchCommityTokenBalance()
+      await refetchCommunityTokenBalance()
       await new Promise((resolve) => setTimeout(resolve, 1000))
     }
   }
@@ -749,12 +780,18 @@ export default function ForSubmitPage({
     setIsDelegateDialogOpened(false)
 
     if (BigInt(governanceTokenBalance as string) > 0) {
-      const tx = await writeContractAsync({
-        abi: CommunityGov_ABI,
-        address: daoInfo?.governanceToken as `0x${string}`,
-        functionName: 'delegate',
-        args: [delegateAddr],
-      })
+      let tx
+      try {
+        tx = await writeContractAsync({
+          abi: CommunityGov_ABI,
+          address: daoInfo?.governanceToken as `0x${string}`,
+          functionName: 'delegate',
+          args: [delegateAddr],
+        })
+      } catch (error) {
+        console.error('Error delegating tokens:', error)
+        return
+      }
     }
   }
 
@@ -1442,10 +1479,18 @@ export default function ForSubmitPage({
                   </div>
                 </div>
                 <div className="flex flex-row gap-4">
-                  <Button className="w-60 bg-dark_blue" onClick={handleStake}>
-                    Stake
-                  </Button>
-
+                  <AmountInput
+                    className="w-60 bg-dark_blue"
+                    setStakingAmount={setStakingAmount}
+                    handleStake={handleStake}
+                    maxAmount={
+                      communityTokenBalance
+                        ? Number(
+                            formatEther(BigInt(communityTokenBalance as string))
+                          )
+                        : 0
+                    }
+                  />
                   <Button
                     className="w-60 bg-dark_blue"
                     onClick={handleWithdraw}
@@ -1467,9 +1512,7 @@ export default function ForSubmitPage({
                     <TableHeader>
                       <TableRow>
                         <TableHead>
-                          <div className="flex flex-row gap-4">
-                            Name/Address
-                          </div>
+                          <div className="flex flex-row gap-4">Address</div>
                         </TableHead>
                         <TableHead>Community Token</TableHead>
                         <TableHead>Governance Token</TableHead>
@@ -1481,15 +1524,15 @@ export default function ForSubmitPage({
                         <TableCell>
                           <div className="flex flex-row gap-2 items-center">
                             <h1 className="text-md text-dark_blue font-bold">
-                              {shortenAddress(address)}
+                              {daoInfo ? daoInfo.communityToken : '-'}
                             </h1>
                           </div>
                         </TableCell>
                         <TableCell className="font-bold font-md text-dark_blue">
-                          {commityTokenBalance
+                          {communityTokenBalance
                             ? formatString(
                                 formatEther(
-                                  BigInt(commityTokenBalance as string)
+                                  BigInt(communityTokenBalance as string)
                                 )
                               )
                             : '0'}{' '}
