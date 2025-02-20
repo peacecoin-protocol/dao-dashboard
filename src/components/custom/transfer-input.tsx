@@ -117,7 +117,7 @@ const TransferInput = React.forwardRef<HTMLInputElement, TransferInputProps>(
                     <Input
                       className="w-full text-right border-none bg-light_black font-bold text-sm"
                       type="text"
-                      placeholder="0x0000000000000000000000000000000000000000"
+                      placeholder="Enter public address {0x}"
                       onChange={(e) => {
                         setTransferAddress(e.target.value)
                       }}

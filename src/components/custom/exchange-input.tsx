@@ -92,7 +92,7 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
           <DialogHeader className="flex flex-col gap-2">
             <DialogTitle>EXCHANGE</DialogTitle>
             <div className="flex flex-col">
-              <div className="flex flex-col gap-2 bg-grey p-2 px-6 rounded-t-xl">
+              <div className="flex flex-col gap-4 bg-grey py-6 px-6 rounded-t-xl">
                 <h1 className="text-sm text-[#505050]">
                   I have{' '}
                   {_isFromLocal
@@ -128,7 +128,7 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
 
               <div className="flex justify-center -my-5 z-10">
                 <Button
-                  className="w-10 h-10 bg-transparent border-none outline-none hover:bg-transparent p-2"
+                  className="w-10 h-10 bg-white border-none outline-none hover:bg-white p-2"
                   onClick={() => {
                     _setIsFromLocal(!_isFromLocal)
                   }}
@@ -144,7 +144,7 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
               </div>
 
               <div className="flex flex-col">
-                <div className="flex flex-col gap-2 bg-light_black p-2 px-6 rounded-b-xl">
+                <div className="flex flex-col gap-4 bg-light_black py-6 px-6 rounded-b-xl">
                   <h1 className="text-sm text-[#505050]">
                     I want to get {_isFromLocal ? PCE_SYMBOL : symbol}
                   </h1>
@@ -238,7 +238,7 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
 
             {Number(amount) > swappableAmount && _isFromLocal && (
               <h1 className="text-sm text-red-500 text-right">
-                Today's swappable amount is {swappableAmount}.
+                Today's swappable amount is {swappableAmount.toFixed(2)}.
               </h1>
             )}
 

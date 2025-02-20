@@ -124,12 +124,12 @@ export default function ForTokenPage({
     })
 
   const {
-    data: todaySwapableToPCEBalance,
-    refetch: refetchTodaySwapableToPCEBalance,
+    data: swapableToPCEIndividualRate,
+    refetch: refetchSwapableToPCEIndividualRate,
   } = useReadContract({
     address: pceAddress[chainId || localhost.id] as `0x${string}`,
     abi: PCE_ABI,
-    functionName: 'getTodaySwapableToPCEBalance',
+    functionName: 'swapableToPCEIndividualRate',
     args: [],
   })
 
@@ -139,14 +139,18 @@ export default function ForTokenPage({
 
     let _exchangeRates = []
     for (let i = 0; i < _tokens.length; i++) {
-      const exchangeRate = await readContract(config, {
-        address: pceAddress[chainId || localhost.id] as `0x${string}`,
-        abi: PCE_ABI,
-        functionName: 'getExchangeRate',
-        args: [_tokens[i]],
-      })
+      try {
+        const exchangeRate = await readContract(config, {
+          address: pceAddress[chainId || localhost.id] as `0x${string}`,
+          abi: PCE_ABI,
+          functionName: 'getExchangeRate',
+          args: [_tokens[i]],
+        })
 
-      _exchangeRates.push(exchangeRate)
+        _exchangeRates.push(exchangeRate)
+      } catch (error) {
+        console.error('Error getting exchange rate:', error)
+      }
     }
     setExchangeRate(_exchangeRates)
   }
@@ -214,7 +218,7 @@ export default function ForTokenPage({
       name: string
       symbol: string
       balance: bigint
-      swapToLocalAllowance: bigint
+      swapToLocalAllowance: number
     }
   }>({})
 
@@ -242,16 +246,31 @@ export default function ForTokenPage({
         args: [address],
       })) as bigint
 
-      const swapToLocalAllowance = (await readContract(config, {
+      const swappableBalanceToday = (await readContract(config, {
+        address: tokenAddress as `0x${string}`,
+        abi: COMMUNITY_TOKEN_ABI,
+        functionName: 'getTodaySwapableToPCEBalance',
+        args: [],
+      })) as string
+
+      const swappableBalanceForIndividual = (await readContract(config, {
         address: tokenAddress as `0x${string}`,
         abi: COMMUNITY_TOKEN_ABI,
         functionName: 'getTodaySwapableToPCEBalanceForIndividual',
         args: [address],
-      })) as bigint
+      })) as string
 
       setCommunityTokenInfo((prev) => ({
         ...prev,
-        [tokenAddress]: { name, symbol, balance, swapToLocalAllowance },
+        [tokenAddress]: {
+          name,
+          symbol,
+          balance,
+          swapToLocalAllowance: Math.min(
+            Number(formatEther(swappableBalanceToday)),
+            Number(formatEther(swappableBalanceForIndividual))
+          ),
+        },
       }))
     } catch (err) {
       console.error('Error getting balance:', err)
@@ -293,12 +312,53 @@ export default function ForTokenPage({
   const handleSwapFromLocalToken = async (token: any) => {
     if (!token || !INITIAL_FACTOR || !lastModifiedFactor) return
 
-    writeContract({
-      abi: PCE_ABI,
-      address: pceAddress[chainId || localhost.id] as `0x${string}`,
-      functionName: 'swapFromLocalToken',
-      args: [token, swapAmount],
-    })
+    const allowance = (await readContract(config, {
+      abi: COMMUNITY_TOKEN_ABI,
+      address: token,
+      functionName: 'allowance',
+      args: [address, pceAddress[chainId || localhost.id] as `0x${string}`],
+    })) as bigint
+
+    try {
+      if (allowance < parseEther(swapAmount)) {
+        const hash = await writeContractAsync({
+          abi: COMMUNITY_TOKEN_ABI,
+          address: token,
+          functionName: 'approve',
+          args: [
+            pceAddress[chainId || localhost.id] as `0x${string}`,
+            parseEther(swapAmount),
+          ],
+        })
+
+        await waitForTransactionReceipt(config, {
+          hash: hash,
+          confirmations: 1,
+        })
+      }
+    } catch (error) {
+      toast.error((error as BaseError).shortMessage)
+      return
+    }
+
+    try {
+      const hash = await writeContractAsync({
+        abi: PCE_ABI,
+        address: pceAddress[chainId || localhost.id] as `0x${string}`,
+        functionName: 'swapFromLocalToken',
+        args: [token, parseEther(swapAmount)],
+      })
+
+      await waitForTransactionReceipt(config, {
+        hash: hash,
+        confirmations: 1,
+      })
+
+      await getCommunityTokenInfo(token)
+    } catch (error) {
+      toast.error((error as BaseError).shortMessage)
+      return
+    }
   }
 
   const handleTransfer = async (token: `0x${string}`) => {
@@ -310,16 +370,17 @@ export default function ForTokenPage({
         functionName: 'transfer',
         args: [transferAddress, parseEther(transferAmount)],
       })
+
+      await waitForTransactionReceipt(config, {
+        hash: hash,
+        confirmations: 1,
+      })
+
+      await getCommunityTokenInfo(token)
     } catch (error) {
       toast.error((error as BaseError).shortMessage)
       return
     }
-    await waitForTransactionReceipt(config, {
-      hash: hash,
-      confirmations: 1,
-    })
-
-    await getCommunityTokenInfo(token)
   }
 
   const handleSwapToLocalToken = async (tokenAddress: string) => {
@@ -555,23 +616,9 @@ export default function ForTokenPage({
                             : 0
                         }
                         swappableAmount={
-                          todaySwapableToPCEBalance &&
                           communityTokenInfo[tokenAddress]?.swapToLocalAllowance
-                            ? Math.min(
-                                Number(
-                                  formatEther(
-                                    BigInt(
-                                      communityTokenInfo[tokenAddress]
-                                        ?.swapToLocalAllowance
-                                    )
-                                  )
-                                ),
-                                Number(
-                                  formatEther(
-                                    BigInt(todaySwapableToPCEBalance as string)
-                                  )
-                                )
-                              )
+                            ? communityTokenInfo[tokenAddress]
+                                ?.swapToLocalAllowance
                             : 0
                         }
                         exchangeRate={
