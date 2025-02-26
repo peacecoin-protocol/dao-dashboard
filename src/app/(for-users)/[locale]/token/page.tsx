@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { formatEther, parseEther } from 'ethers'
+import { formatEther, parseEther, ZeroAddress } from 'ethers'
 import { readContract } from '@wagmi/core'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -48,6 +48,8 @@ import { config } from '~/lib/config'
 import { sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
 
+import { TOKEN } from '~/i18n/types'
+
 export default function ForTokenPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
@@ -68,7 +70,7 @@ export default function ForTokenPage({
     })
   const [isOpened, setDialogStatus] = useState(false)
   const [tokenInfo, setTokenInfo] = useState<any>()
-  const [exchangeRates, setExchangeRate] = useState<any[]>([])
+  const [exchangeRates, setExchangeRate] = useState<Record<string, bigint>>({})
   const [tokens, setTokens] = useState<any[]>([])
   const [swapAmount, setSwapAmount] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
@@ -133,25 +135,30 @@ export default function ForTokenPage({
     args: [],
   })
 
-  const fetchExchangeRate = async (_tokens: []) => {
+  const fetchExchangeRate = async (_tokens: string[]) => {
     if (!_tokens || _tokens.length == 0) return
     if (!pceAddress[chainId || localhost.id]) return
 
-    let _exchangeRates = []
+    const _exchangeRates: Record<string, bigint> = {}
+
     for (let i = 0; i < _tokens.length; i++) {
       try {
+        const tokenAddress = _tokens[i]
+        if (!tokenAddress) continue // Skip if undefined
+
         const exchangeRate = await readContract(config, {
           address: pceAddress[chainId || localhost.id] as `0x${string}`,
           abi: PCE_ABI,
           functionName: 'getExchangeRate',
-          args: [_tokens[i]],
+          args: [tokenAddress],
         })
 
-        _exchangeRates.push(exchangeRate)
+        _exchangeRates[tokenAddress] = exchangeRate as bigint
       } catch (error) {
         console.error('Error getting exchange rate:', error)
       }
     }
+
     setExchangeRate(_exchangeRates)
   }
 
@@ -206,21 +213,14 @@ export default function ForTokenPage({
         break
     }
 
-    _tokenInfo.incomeExchangeAllowMethod = 0
-    _tokenInfo.outgoExchangeAllowMethod = 0
+    _tokenInfo.incomeExchangeAllowMethod = 3
+    _tokenInfo.outgoExchangeAllowMethod = 3
     _tokenInfo.incomeTargetTokens = []
     _tokenInfo.outgoTargetTokens = []
     setTokenInfo(_tokenInfo)
   }
 
-  const [communityTokenInfo, setCommunityTokenInfo] = useState<{
-    [key: string]: {
-      name: string
-      symbol: string
-      balance: bigint
-      swapToLocalAllowance: number
-    }
-  }>({})
+  const [communityTokenInfo, setCommunityTokenInfo] = useState<TOKEN[]>([])
 
   const getCommunityTokenInfo = async (tokenAddress: string) => {
     if (!tokenAddress || !tokenAddress.startsWith('0x')) return
@@ -260,18 +260,38 @@ export default function ForTokenPage({
         args: [address],
       })) as string
 
-      setCommunityTokenInfo((prev) => ({
-        ...prev,
-        [tokenAddress]: {
-          name,
-          symbol,
-          balance,
-          swapToLocalAllowance: Math.min(
-            Number(formatEther(swappableBalanceToday)),
-            Number(formatEther(swappableBalanceForIndividual))
-          ),
-        },
-      }))
+      setCommunityTokenInfo((prev) => {
+        const existingTokenIndex = prev.findIndex(
+          (t) => t.address === tokenAddress
+        )
+        if (existingTokenIndex >= 0) {
+          const newArray = [...prev]
+          newArray[existingTokenIndex] = {
+            address: tokenAddress,
+            name,
+            symbol,
+            balance,
+            swapToLocalAllowance: Math.min(
+              Number(formatEther(swappableBalanceToday)),
+              Number(formatEther(swappableBalanceForIndividual))
+            ),
+          }
+          return newArray
+        }
+        return [
+          ...prev,
+          {
+            address: tokenAddress,
+            name,
+            symbol,
+            balance,
+            swapToLocalAllowance: Math.min(
+              Number(formatEther(swappableBalanceToday)),
+              Number(formatEther(swappableBalanceForIndividual))
+            ),
+          },
+        ]
+      })
     } catch (err) {
       console.error('Error getting balance:', err)
       return null
@@ -308,6 +328,54 @@ export default function ForTokenPage({
       toast.error((error as BaseError).shortMessage)
     }
   }, [isConfirmed, isConfirming, error, hash, refetchBalance])
+
+  const handleSwap = async (fromToken: TOKEN, toToken: TOKEN) => {
+    const allowance = (await readContract(config, {
+      abi: COMMUNITY_TOKEN_ABI,
+      address: fromToken.address as `0x${string}`,
+      functionName: 'allowance',
+      args: [address, toToken.address as `0x${string}`],
+    })) as bigint
+
+    try {
+      if (allowance < parseEther(swapAmount)) {
+        const hash = await writeContractAsync({
+          abi: COMMUNITY_TOKEN_ABI,
+          address: fromToken.address as `0x${string}`,
+          functionName: 'approve',
+          args: [toToken.address as `0x${string}`, parseEther(swapAmount)],
+        })
+
+        await waitForTransactionReceipt(config, {
+          hash: hash,
+          confirmations: 1,
+        })
+      }
+    } catch (error) {
+      toast.error((error as BaseError).shortMessage)
+      return
+    }
+
+    try {
+      const hash = await writeContractAsync({
+        abi: COMMUNITY_TOKEN_ABI,
+        address: fromToken.address as `0x${string}`,
+        functionName: 'swapTokens',
+        args: [toToken.address as `0x${string}`, parseEther(swapAmount)],
+      })
+
+      await waitForTransactionReceipt(config, {
+        hash: hash,
+        confirmations: 1,
+      })
+
+      await getCommunityTokenInfo(toToken.address as `0x${string}`)
+      await getCommunityTokenInfo(fromToken.address as `0x${string}`)
+    } catch (error) {
+      toast.error((error as BaseError).shortMessage)
+      return
+    }
+  }
 
   const handleSwapFromLocalToken = async (token: any) => {
     if (!token || !INITIAL_FACTOR || !lastModifiedFactor) return
@@ -576,27 +644,15 @@ export default function ForTokenPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tokens &&
-                tokens.map((tokenAddress, index) => (
+              {communityTokenInfo &&
+                communityTokenInfo.map((token, index) => (
                   <TableRow key={index}>
+                    <TableCell>{token.name}</TableCell>
+                    <TableCell>{token.symbol}</TableCell>
+                    <TableCell>{token.address}</TableCell>
                     <TableCell>
-                      {communityTokenInfo[tokenAddress]
-                        ? communityTokenInfo[tokenAddress].name
-                        : ''}
-                    </TableCell>
-                    <TableCell>
-                      {communityTokenInfo[tokenAddress]
-                        ? communityTokenInfo[tokenAddress].symbol
-                        : ''}
-                    </TableCell>
-                    <TableCell>{tokenAddress ? tokenAddress : ''}</TableCell>
-                    <TableCell>
-                      {communityTokenInfo[tokenAddress]
-                        ? formatString(
-                            formatEther(
-                              communityTokenInfo[tokenAddress].balance
-                            )
-                          )
+                      {token.balance
+                        ? formatString(formatEther(token.balance))
                         : 0}
                     </TableCell>
 
@@ -605,45 +661,21 @@ export default function ForTokenPage({
                         size="sm"
                         className="w-full"
                         setSwapAmount={setSwapAmount}
-                        handleSwap={(isFromLocal: boolean) =>
-                          isFromLocal
-                            ? handleSwapFromLocalToken(tokenAddress)
-                            : handleSwapToLocalToken(tokenAddress)
-                        }
-                        maxAmount={
-                          balance
-                            ? Number(formatEther(BigInt(balance as string)))
-                            : 0
-                        }
-                        swappableAmount={
-                          communityTokenInfo[tokenAddress]?.swapToLocalAllowance
-                            ? communityTokenInfo[tokenAddress]
-                                ?.swapToLocalAllowance
-                            : 0
-                        }
-                        exchangeRate={
-                          exchangeRates[index]
-                            ? Number(
-                                formatEther(
-                                  BigInt(exchangeRates[index] as string)
-                                )
-                              )
-                            : 0
-                        }
-                        symbol={
-                          communityTokenInfo[tokenAddress]
-                            ? communityTokenInfo[tokenAddress].symbol
-                            : ''
-                        }
-                        communityTokenBalance={
-                          communityTokenInfo[tokenAddress]
-                            ? Number(
-                                formatEther(
-                                  communityTokenInfo[tokenAddress].balance
-                                )
-                              )
-                            : 0
-                        }
+                        handleSwap={(fromToken, toToken) => {
+                          if (fromToken.address === ZeroAddress) {
+                            handleSwapToLocalToken(toToken.address)
+                          } else {
+                            if (toToken.address === ZeroAddress) {
+                              handleSwapFromLocalToken(fromToken.address)
+                            } else {
+                              handleSwap(fromToken, toToken)
+                            }
+                          }
+                        }}
+                        tokenLists={communityTokenInfo}
+                        selectedToken={token}
+                        pceBalance={balance as bigint}
+                        exchangeRates={exchangeRates}
                       ></ExchangeInput>
                     </TableCell>
                     <TableCell className="max-xl:hidden">
@@ -651,19 +683,15 @@ export default function ForTokenPage({
                         className="w-full"
                         setTransferAmount={setTransferAmount}
                         setTransferAddress={setTransferAddress}
-                        handleTransfer={() => handleTransfer(tokenAddress)}
-                        symbol={
-                          communityTokenInfo[tokenAddress]
-                            ? communityTokenInfo[tokenAddress].symbol
-                            : ''
+                        handleTransfer={() =>
+                          handleTransfer(token.address as `0x${string}`)
                         }
-                        maxAmount={Number(
-                          formatEther(
-                            BigInt(
-                              communityTokenInfo[tokenAddress]?.balance ?? 0
-                            )
-                          )
-                        )}
+                        symbol={token.symbol}
+                        maxAmount={
+                          token.balance
+                            ? Number(formatEther(BigInt(token.balance)))
+                            : 0
+                        }
                       ></TransferInput>
                     </TableCell>
                   </TableRow>

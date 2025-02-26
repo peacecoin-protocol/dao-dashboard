@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { Button } from './button'
-import Image from 'next/image'
 import {
   Dialog,
   DialogClose,
@@ -9,11 +8,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '~/components/ui/dialog'
-
+import SwapIcon from '../../../public/svg/swap'
 import { Input } from '~/components/ui/input'
-import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select'
+
 import { cn } from '~/components/utils'
 import { type VariantProps, cva } from 'class-variance-authority'
+import { TOKEN } from '~/i18n/types'
+import { formatString } from '~/components/utils'
+import { formatEther } from 'viem'
+import { ZeroAddress } from 'ethers'
 
 const amountInputVariants = cva(
   'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
@@ -48,12 +59,11 @@ export interface ExchangeInputProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof amountInputVariants> {
   setSwapAmount: (amount: string) => void
-  handleSwap: (isFromLocal: boolean) => void
-  swappableAmount: number
-  maxAmount: number
-  exchangeRate: number
-  symbol: string
-  communityTokenBalance: number
+  handleSwap: (fromToken: TOKEN, toToken: TOKEN) => void
+  tokenLists: TOKEN[]
+  selectedToken: TOKEN
+  exchangeRates: Record<string, bigint>
+  pceBalance: bigint
   asChild?: boolean
 }
 
@@ -62,11 +72,10 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
     {
       setSwapAmount,
       handleSwap,
-      maxAmount,
-      exchangeRate,
-      swappableAmount,
-      symbol,
-      communityTokenBalance,
+      tokenLists,
+      pceBalance,
+      selectedToken,
+      exchangeRates,
       className,
       variant,
       size,
@@ -75,14 +84,39 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
     },
     ref
   ) => {
+    const PCE_TOKEN = {
+      symbol: 'PCE',
+      address: ZeroAddress,
+      balance: pceBalance,
+      name: 'PEACE COIN',
+      swapToLocalAllowance: Number(formatEther(pceBalance)),
+    }
+
     const [amount, setAmount] = React.useState('')
     const [_isFromLocal, _setIsFromLocal] = React.useState(false)
     const [toggleGroupValue, setToggleGroupValue] = React.useState('')
     const [exchangeAmount, setExchangeAmount] = React.useState('')
-    const PCE_SYMBOL = 'PEACE COIN'
+
+    const [_tokenList, setTokenList] = React.useState<TOKEN[]>([])
+    const [toToken, setToToken] = React.useState<TOKEN>()
+    const [fromToken, setFromToken] = React.useState<TOKEN>()
+
+    React.useEffect(() => {
+      const list = tokenLists
+      setTokenList([PCE_TOKEN, ...list])
+    }, [])
 
     return (
-      <Dialog>
+      <Dialog
+        onOpenChange={(open) => {
+          if (!open) {
+            setExchangeAmount('0')
+            setAmount('0')
+            setFromToken(undefined)
+            setToToken(undefined)
+          }
+        }}
+      >
         <DialogTrigger
           className={cn(amountInputVariants({ variant, size, className }))}
         >
@@ -95,29 +129,78 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
               <div className="flex flex-col gap-4 bg-grey py-6 px-6 rounded-t-xl">
                 <h1 className="text-sm text-[#505050]">
                   I have{' '}
-                  {_isFromLocal
-                    ? Number(communityTokenBalance).toFixed(2)
-                    : Number(maxAmount).toFixed(2)}{' '}
-                  {_isFromLocal ? symbol : PCE_SYMBOL}
+                  {fromToken?.address === PCE_TOKEN.address
+                    ? formatString(formatEther(pceBalance))
+                    : formatString(formatEther(selectedToken.balance))}{' '}
+                  {fromToken?.address === PCE_TOKEN.address
+                    ? PCE_TOKEN.symbol
+                    : selectedToken.symbol}
                 </h1>
+
                 <div className="flex flex-row items-center">
-                  <h1 className="whitespace-nowrap font-bold text-xl">
-                    {_isFromLocal ? symbol : PCE_SYMBOL}
-                  </h1>
+                  <Select
+                    value={fromToken?.address}
+                    onValueChange={(value) => {
+                      if (value === PCE_TOKEN.address) {
+                        setFromToken(PCE_TOKEN)
+                      } else {
+                        setFromToken(selectedToken)
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a token" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value={PCE_TOKEN.address}>
+                          {PCE_TOKEN.symbol}
+                        </SelectItem>
+                        <SelectItem value={selectedToken.address}>
+                          {selectedToken.symbol}
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                   <Input
                     className="w-full text-right border-none bg-grey font-bold text-xl"
                     type="number"
                     min="0"
                     step="0.1"
                     placeholder="0.00"
-                    value={exchangeAmount}
                     onChange={(e) => {
+                      if (fromToken === undefined || toToken === undefined) {
+                        return
+                      }
+
                       const newValue = e.target.value
                       if (Number(newValue) < 0) {
                         e.target.value = '0'
                         return
                       }
-                      setExchangeAmount(newValue)
+
+                      let exchangeRate = '0'
+                      let exchangeAmount = '0'
+
+                      if (fromToken.address == PCE_TOKEN.address) {
+                        exchangeRate = formatEther(
+                          exchangeRates[toToken.address] || BigInt(0)
+                        ).toString()
+
+                        exchangeAmount = (
+                          Number(newValue) * Number(exchangeRate)
+                        ).toFixed(2)
+                      } else if (toToken.address == PCE_TOKEN.address) {
+                        exchangeRate = formatEther(
+                          exchangeRates[fromToken.address] || BigInt(0)
+                        ).toString()
+
+                        exchangeAmount = (
+                          Number(newValue) / Number(exchangeRate)
+                        ).toFixed(2)
+                      }
+
+                      setExchangeAmount(exchangeAmount)
                       setAmount(newValue)
                       setSwapAmount(newValue)
                       setToggleGroupValue('0')
@@ -130,124 +213,114 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
                 <Button
                   className="w-10 h-10 bg-white border-none outline-none hover:bg-white p-2"
                   onClick={() => {
-                    _setIsFromLocal(!_isFromLocal)
+                    const _fromToken = fromToken
+                    const _toToken = toToken
+                    setFromToken(_toToken)
+                    setToToken(_fromToken)
                   }}
-                  disabled={communityTokenBalance == 0}
                 >
-                  <Image
-                    src="/swap-icon.png"
-                    alt="Swap"
-                    width={30}
-                    height={30}
-                  />
+                  <SwapIcon colorClass="fill-current" />
                 </Button>
               </div>
 
               <div className="flex flex-col">
                 <div className="flex flex-col gap-4 bg-light_black py-6 px-6 rounded-b-xl">
                   <h1 className="text-sm text-[#505050]">
-                    I want to get {_isFromLocal ? PCE_SYMBOL : symbol}
+                    I want to get {toToken?.symbol}
                   </h1>
                   <div className="flex flex-row items-center">
-                    {' '}
-                    <h1 className="whitespace-nowrap font-bold text-xl">
-                      {_isFromLocal ? PCE_SYMBOL : symbol}
-                    </h1>
+                    <Select
+                      value={toToken?.address}
+                      onValueChange={(value) => {
+                        const _selectedToken = _tokenList.find(
+                          (token) => token.address === value
+                        )
+                        setToToken(_selectedToken)
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a token" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {_tokenList.map((token) => (
+                            <SelectItem
+                              key={token.address}
+                              value={token.address}
+                            >
+                              {token.symbol}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                     <Input
                       className="w-full text-right border-none bg-light_black font-bold text-xl"
                       type="number"
                       min="0"
                       disabled={true}
                       step="0.1"
-                      placeholder="0.00"
-                      value={
-                        !_isFromLocal
-                          ? (Number(amount) * exchangeRate).toFixed(2)
-                          : (Number(amount) / exchangeRate).toFixed(2)
-                      }
+                      placeholder="0"
+                      value={exchangeAmount}
                     ></Input>
                   </div>
                 </div>
               </div>
             </div>
 
-            <ToggleGroup
-              type="single"
-              className="flex flex-row gap-2 w-full rounded-full bg-grey"
-              defaultValue="default"
-              value={toggleGroupValue}
-              onValueChange={(value) => {
-                setToggleGroupValue(value)
-                if (value === 'clear') {
-                  setExchangeAmount('0')
-                  setAmount('0')
-                  setSwapAmount('0')
-                } else if (value === 'half') {
-                  const _value = _isFromLocal
-                    ? (Number(communityTokenBalance) / 2).toFixed(2)
-                    : (Number(maxAmount) / 2).toFixed(2)
-                  setExchangeAmount(_value)
-                  setAmount(_value)
-                  setSwapAmount(_value)
-                } else if (value === 'all') {
-                  const _value = _isFromLocal
-                    ? communityTokenBalance.toFixed(2)
-                    : maxAmount.toFixed(2)
-                  setExchangeAmount(_value)
-                  setAmount(_value)
-                  setSwapAmount(_value)
-                }
-              }}
-            >
-              <ToggleGroupItem
-                value="clear"
-                className="w-full rounded-full data-[state=on]:bg-[#D0E6FF]"
-              >
-                Clear
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="half"
-                className="w-full rounded-full data-[state=on]:bg-[#D0E6FF]"
-              >
-                Half
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="all"
-                className="w-full rounded-full data-[state=on]:bg-[#D0E6FF]"
-              >
-                All
-              </ToggleGroupItem>
-            </ToggleGroup>
-
-            {amount === '0' && (
+            {fromToken && toToken && amount === '0' && (
               <h1 className="text-sm text-red-500 text-right">
                 Amount should be greater than 0.
               </h1>
             )}
 
-            {Number(amount) >
-              (!_isFromLocal ? maxAmount : communityTokenBalance) && (
+            {fromToken?.address == PCE_TOKEN.address &&
+              Number(amount) > Number(formatEther(pceBalance ?? BigInt(0))) && (
+                <h1 className="text-sm text-red-500 text-right">
+                  Amount should be less than{' '}
+                  {Number(formatEther(pceBalance ?? BigInt(0))).toFixed(2)}
+                </h1>
+              )}
+
+            {fromToken?.address != PCE_TOKEN.address &&
+              Number(amount) >
+                Number(formatEther(selectedToken?.balance ?? BigInt(0))) && (
+                <h1 className="text-sm text-red-500 text-right">
+                  Amount should be less than{' '}
+                  {Number(
+                    formatEther(selectedToken?.balance ?? BigInt(0))
+                  ).toFixed(2)}
+                  .
+                </h1>
+              )}
+
+            {Number(amount) > (fromToken?.swapToLocalAllowance ?? 0) && (
               <h1 className="text-sm text-red-500 text-right">
-                Amount should be less than{' '}
-                {!_isFromLocal
-                  ? maxAmount.toFixed(2)
-                  : communityTokenBalance.toFixed(2)}
-                .
+                Today's swappable amount is{' '}
+                {fromToken?.swapToLocalAllowance.toFixed(2)}.
               </h1>
             )}
 
-            {Number(amount) > swappableAmount && _isFromLocal && (
-              <h1 className="text-sm text-red-500 text-right">
-                Today's swappable amount is {swappableAmount.toFixed(2)}.
-              </h1>
-            )}
+            {fromToken &&
+              toToken &&
+              fromToken?.address === toToken?.address && (
+                <h1 className="text-sm text-red-500 text-right">
+                  You cannot swap to the same token.
+                </h1>
+              )}
 
             <DialogClose>
               <Button
                 size="lg"
                 className="w-full text-xl rounded-full"
                 onClick={() => {
-                  handleSwap(_isFromLocal)
+                  if (fromToken && toToken) {
+                    handleSwap(fromToken, toToken)
+                    setExchangeAmount('0')
+                    setAmount('0')
+                    setFromToken(undefined)
+                    setToToken(undefined)
+                  }
                 }}
               >
                 Swap
