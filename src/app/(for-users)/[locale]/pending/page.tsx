@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import Link from '~/components/custom/Link'
 
 import { formatEther } from 'ethers'
 import {
@@ -38,7 +38,6 @@ import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
-import { sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
 
 export default function ForPendingPage({
@@ -94,15 +93,11 @@ export default function ForPendingPage({
       if (isConfirmed) {
         toast.success(
           <Link
-            href={`${
-              chainId === sepolia.id
-                ? sepolia.blockExplorers?.default?.url
-                : localhost.blockExplorers?.default?.url
-            }/tx/${hash}`}
-            target="_blank"
-          >
-            Transaction Succeed!
-          </Link>
+            chainId={chainId}
+            type="txHash"
+            hash={hash}
+            message="Transaction Succeed!"
+          ></Link>
         )
       } else if (isConfirming) {
         toast.info(

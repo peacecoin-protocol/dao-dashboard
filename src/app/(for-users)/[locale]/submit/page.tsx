@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import Link from '~/components/custom/Link'
 
 import { ethers, parseEther } from 'ethers'
 import { ToastContainer, toast } from 'react-toastify'
@@ -35,7 +35,6 @@ import {
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
 
 export default function ForSubmitPage({
@@ -96,11 +95,11 @@ export default function ForSubmitPage({
     if (isConfirmed) {
       toast.success(
         <Link
-          href={`${chainId === sepolia.id ? sepolia.blockExplorers?.default?.url : localhost.blockExplorers?.default?.url}/tx/${hash}`}
-          target="_blank"
-        >
-          Transaction Succeed!
-        </Link>
+          chainId={chainId}
+          type="txHash"
+          hash={hash}
+          message="Transaction Succeed!"
+        ></Link>
       )
       setDescription('')
       setValues('')

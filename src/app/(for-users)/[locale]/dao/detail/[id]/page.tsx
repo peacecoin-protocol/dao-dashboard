@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import * as CustomLink from '~/components/custom/Link'
+
 import { useNavigate } from 'react-router-dom'
 
 import { Alchemy, Network } from 'alchemy-sdk'
@@ -68,7 +70,6 @@ import { config } from '~/lib/config'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 import { TooltipComponent } from '~/components/custom/TooltipComponent'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
-import { sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { SUBGRAPH_URL } from '~/app/constants/constants'
@@ -800,16 +801,12 @@ export default function ForSubmitPage({
       if (isConfirmed) {
         toast.success(
           <div onClick={(e) => e.stopPropagation()}>
-            <Link
-              href={`${
-                chainId === sepolia.id
-                  ? sepolia.blockExplorers?.default?.url
-                  : localhost.blockExplorers?.default?.url
-              }/tx/${hash}`}
-              target="_blank"
-            >
-              Transaction Succeed!
-            </Link>
+            <CustomLink.default
+              chainId={chainId}
+              type="txHash"
+              hash={hash}
+              message="Transaction Succeed!"
+            ></CustomLink.default>
           </div>
         )
 
@@ -961,12 +958,12 @@ export default function ForSubmitPage({
                       tooltipText="A token that represents voting power in the DAO. Holders can vote on proposals and participate in governance decisions."
                       className="font-bold rounded-xl flex"
                     />
-                    <Link
-                      href={`${chainId === sepolia.id ? sepolia.blockExplorers?.default?.url : localhost.blockExplorers?.default?.url}/address/${daoInfo?.governanceToken}`}
-                      className="text-dark_blue"
-                    >
-                      {shortenAddress(daoInfo?.governanceToken)}
-                    </Link>
+                    <CustomLink.default
+                      chainId={chainId}
+                      type="address"
+                      address={daoInfo?.governanceToken}
+                      message={shortenAddress(daoInfo?.governanceToken)}
+                    ></CustomLink.default>
                   </div>
 
                   <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
@@ -975,16 +972,12 @@ export default function ForSubmitPage({
                       tooltipText="A smart contract that adds a delay between when a proposal passes and when it can be executed. This delay gives token holders time to review and react to approved proposals before they take effect."
                       className="font-bold rounded-xl flex"
                     />
-                    <Link
-                      href={`${
-                        chainId === sepolia.id
-                          ? sepolia.blockExplorers?.default?.url
-                          : localhost.blockExplorers?.default?.url
-                      }/address/${daoInfo?.timelock}`}
-                      className="text-dark_blue"
-                    >
-                      {shortenAddress(daoInfo?.timelock)}
-                    </Link>
+                    <CustomLink.default
+                      chainId={chainId}
+                      type="address"
+                      address={daoInfo?.timelock}
+                      message={shortenAddress(daoInfo?.timelock)}
+                    ></CustomLink.default>
                   </div>
 
                   <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
@@ -993,16 +986,12 @@ export default function ForSubmitPage({
                       tooltipText="The core contract that manages the DAO's governance process. It handles proposal creation, voting, and execution of approved proposals. This contract implements the rules and parameters for how governance works."
                       className="font-bold rounded-xl flex"
                     />
-                    <Link
-                      href={`${
-                        chainId === sepolia.id
-                          ? sepolia.blockExplorers?.default?.url
-                          : localhost.blockExplorers?.default?.url
-                      }/address/${daoInfo?.governor}`}
-                      className="text-dark_blue"
-                    >
-                      {shortenAddress(daoInfo?.governor)}
-                    </Link>
+                    <CustomLink.default
+                      chainId={chainId}
+                      type="address"
+                      address={daoInfo?.governor}
+                      message={shortenAddress(daoInfo?.governor)}
+                    ></CustomLink.default>
                   </div>
                 </div>
 

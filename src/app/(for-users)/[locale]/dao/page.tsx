@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import 'react-toastify/dist/ReactToastify.css'
 import { ToastContainer, toast } from 'react-toastify'
 import {
@@ -28,6 +27,7 @@ import {
   DropdownMenuItem,
 } from '~/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogTitle } from '~/components/ui/dialog'
+import Link from '~/components/custom/Link'
 
 import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
 
@@ -278,15 +278,11 @@ export default function ForDAOPage({
       if (isConfirmed) {
         toast.success(
           <Link
-            href={`${
-              chainId === sepolia.id
-                ? sepolia.blockExplorers?.default?.url
-                : localhost.blockExplorers?.default?.url
-            }/tx/${hash}`}
-            target="_blank"
-          >
-            Transaction Succeed!
-          </Link>
+            chainId={chainId}
+            type="txHash"
+            hash={hash}
+            message="Transaction Succeed!"
+          ></Link>
         )
       } else if (isConfirming) {
         toast.info(

@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 
 import { formatEther } from 'ethers'
 import { readContract } from '@wagmi/core'
@@ -26,6 +25,8 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { shortenAddress, formatString } from '~/components/utils'
+import Link from '~/components/custom/Link'
+
 import useWindowWidth from '~/components/useWindWidth'
 
 import { governorAddress } from '~/app/constants/constants'
@@ -35,7 +36,6 @@ import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { ringStyle } from '~/app/constants/styles'
-import { sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
 
 export default function ForClosedPage({
@@ -80,15 +80,11 @@ export default function ForClosedPage({
     if (isConfirmed) {
       toast.success(
         <Link
-          href={`${
-            chainId === sepolia.id
-              ? sepolia.blockExplorers?.default?.url
-              : localhost.blockExplorers?.default?.url
-          }${hash}`}
-          target="_blank"
-        >
-          Transaction Succeed!
-        </Link>
+          chainId={chainId}
+          type="txHash"
+          hash={hash}
+          message="Transaction Succeed!"
+        ></Link>
       )
     } else if (isConfirming) {
       toast.info(<div className="disabled">TX is Pending, Please Wait...</div>)

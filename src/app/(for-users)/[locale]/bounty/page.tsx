@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
-
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
@@ -52,7 +50,9 @@ import {
 import { getDict } from '~/i18n/get-dict'
 
 import { localhost } from '~/app/providers'
-import { sepolia } from 'wagmi/chains'
+import { polygon, sepolia } from 'wagmi/chains'
+
+import Link from '~/components/custom/Link'
 
 export default function ForBountyPage({
   params: { locale, ...params },
@@ -90,7 +90,12 @@ export default function ForBountyPage({
   useEffect(() => {
     if (chainId) {
       const provider = createClient({
-        chain: chainId === sepolia.id ? sepolia : localhost,
+        chain:
+          chainId === sepolia.id
+            ? sepolia
+            : chainId === polygon.id
+              ? polygon
+              : localhost,
         transport: http(),
       })
       setProvider(provider)
@@ -332,15 +337,11 @@ export default function ForBountyPage({
       if (isConfirmed) {
         toast.success(
           <Link
-            href={`${
-              chainId === sepolia.id
-                ? sepolia.blockExplorers?.default?.url
-                : localhost.blockExplorers?.default?.url
-            }/tx/${hash}`}
-            target="_blank"
-          >
-            Transaction Succeed!
-          </Link>
+            chainId={chainId}
+            type="txHash"
+            hash={hash}
+            message="Transaction Succeed!"
+          ></Link>
         )
 
         setBountyAmount('')

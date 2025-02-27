@@ -13,7 +13,7 @@ import {
   trustWallet,
   ledgerWallet,
 } from '@rainbow-me/rainbowkit/wallets'
-import { sepolia } from 'wagmi/chains'
+import { sepolia, polygon } from 'wagmi/chains'
 import { defineChain } from 'viem'
 
 export const localhost = defineChain({
@@ -47,11 +47,12 @@ const config = getDefaultConfig({
       wallets: [argentWallet, trustWallet, ledgerWallet],
     },
   ],
-  chains: [sepolia, localhost],
+  chains: [sepolia, localhost, polygon],
   ssr: true,
   transports: {
     [sepolia.id]: http(Env.NEXT_PUBLIC_SEPOLIA_RPC_URL),
     [localhost.id]: http(Env.NEXT_PUBLIC_LOCALHOST_RPC_URL),
+    [polygon.id]: http(Env.NEXT_PUBLIC_POLYGON_RPC_URL),
   },
 })
 
