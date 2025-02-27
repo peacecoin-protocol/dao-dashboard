@@ -44,3 +44,11 @@ export interface Dictionary {
   faq: Section
   daofaq: Section
 }
+
+export interface TOKEN {
+  address: string
+  name: string
+  symbol: string
+  balance: bigint
+  swapToLocalAllowance: number
+}
