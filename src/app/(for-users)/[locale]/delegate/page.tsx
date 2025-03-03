@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import Link from '~/components/custom/Link'
 
 import { formatEther } from 'ethers'
 import { ToastContainer, toast } from 'react-toastify'
@@ -23,7 +23,7 @@ import { PCE_GOV_TOKEN_ABI } from '~/app/ABIs/PCEGovToken'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
-import { localhost, sepolia } from 'wagmi/chains'
+import { localhost } from 'wagmi/chains'
 
 export default function ForDelegatePage({
   params: { locale, ...params },
@@ -80,11 +80,11 @@ export default function ForDelegatePage({
       if (isConfirmed) {
         toast.success(
           <Link
-            href={`${chainId === sepolia.id ? sepolia.blockExplorers?.default?.url : localhost.blockExplorers?.default?.url}/tx/${hash}`}
-            target="_blank"
-          >
-            Transaction Succeed!
-          </Link>
+            chainId={chainId}
+            type="txHash"
+            hash={hash}
+            message="Transaction Succeed!"
+          ></Link>
         )
 
         setDelegateAddr('')

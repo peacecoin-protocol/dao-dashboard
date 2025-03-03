@@ -12,7 +12,7 @@ import {
   useWaitForTransactionReceipt,
   type BaseError,
 } from 'wagmi'
-import Link from 'next/link'
+import Link from '~/components/custom/Link'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { ExchangeInput } from '~/components/custom/exchange-input'
 import { TransferInput } from '~/components/custom/transfer-input'
@@ -45,7 +45,6 @@ import { getDict } from '~/i18n/get-dict'
 import { COMMUNITY_TOKEN_ABI } from '~/app/ABIs/CommunityToken'
 
 import { config } from '~/lib/config'
-import { sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
 
 import { TOKEN } from '~/i18n/types'
@@ -310,15 +309,11 @@ export default function ForTokenPage({
     if (isConfirmed) {
       toast.success(
         <Link
-          href={`${
-            chainId === sepolia.id
-              ? sepolia.blockExplorers?.default?.url
-              : localhost.blockExplorers?.default?.url
-          }/tx/${hash}`}
-          target="_blank"
-        >
-          Transaction Succeed!
-        </Link>
+          chainId={chainId}
+          type="txHash"
+          hash={hash}
+          message="Transaction Succeed!"
+        ></Link>
       )
       refetchBalance()
       refetchTokens()
