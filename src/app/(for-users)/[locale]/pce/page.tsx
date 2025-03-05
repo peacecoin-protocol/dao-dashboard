@@ -484,7 +484,9 @@ export default function PCEPage({
               onClick={async () => {
                 await writeContract({
                   abi: GOVERNOR_ABI,
-                  address: governorAddress as `0x${string}`,
+                  address: governorAddress[
+                    chainId || localhost.id
+                  ] as `0x${string}`,
                   functionName: 'castVote',
                   args: [proposal[0], true],
                 })
@@ -499,7 +501,9 @@ export default function PCEPage({
               onClick={async () => {
                 await writeContract({
                   abi: GOVERNOR_ABI,
-                  address: governorAddress as `0x${string}`,
+                  address: governorAddress[
+                    chainId || localhost.id
+                  ] as `0x${string}`,
                   functionName: 'castVote',
                   args: [proposal[0], false],
                 })
@@ -514,7 +518,9 @@ export default function PCEPage({
               onClick={async () => {
                 await writeContract({
                   abi: GOVERNOR_ABI,
-                  address: governorAddress as `0x${string}`,
+                  address: governorAddress[
+                    chainId || localhost.id
+                  ] as `0x${string}`,
                   functionName: 'queue',
                   args: [proposal[0]],
                 })
@@ -644,7 +650,7 @@ export default function PCEPage({
   useEffect(() => {
     console.log('proposalCount', proposalCount)
     fetchData(Number(proposalCount))
-  }, [proposalCount, isConfirmed, governorAddress, chainId])
+  }, [proposalCount, governorAddress, chainId])
 
   useEffect(() => {
     const fetchIdenticon = async () => {
@@ -658,7 +664,7 @@ export default function PCEPage({
       }
     }
     fetchIdenticon()
-  }, [governorAddress])
+  }, [governorAddress, chainId])
   const handleCreateProposal = async () => {
     setIsCreateProposalDialogOpened(false)
 
@@ -737,17 +743,18 @@ export default function PCEPage({
         functionName: 'deposit',
         args: [parseEther(stakingAmount)],
       })
+
+      setStakingAmount('')
+
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
     } catch (error) {
       console.error('Error depositing tokens:', error)
       return
     }
 
-    setStakingAmount('')
-
-    await waitForTransactionReceipt(config, {
-      hash: tx,
-      confirmations: 1,
-    })
     await refetchGovTokenBalance()
     await refetchPCEBalance()
     await new Promise((resolve) => setTimeout(resolve, 1000))

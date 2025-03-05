@@ -11,7 +11,6 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   type BaseError,
-  useReadContract,
 } from 'wagmi'
 import { Textarea } from '@headlessui/react'
 
@@ -227,16 +226,16 @@ export default function ForSubmitPage({
               } else if (category === '4') {
                 _signature = 'deploy(bytes)'
                 _calldata = new ethers.AbiCoder().encode(['bytes'], [bytescode])
-                _address = factoryAddress
+                _address = factoryAddress[chainId || localhost.id]
               } else if (category === '5') {
-                _address = timelockAddress
+                _address = timelockAddress[chainId || localhost.id]
                 _signature = 'updateVariables(uint256,uint256,uint256)'
                 _calldata = new ethers.AbiCoder().encode(
                   ['uint256', 'uint256', 'uint256'],
                   [variable1, variable2, variable3]
                 )
               } else if (category === '6') {
-                _address = governorAddress
+                _address = governorAddress[chainId || localhost.id]
                 _signature = 'updateVariables(uint256,uint256,uint256)'
                 _calldata = new ethers.AbiCoder().encode(
                   ['uint256', 'uint256', 'uint256'],
