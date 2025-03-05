@@ -1,28 +1,5 @@
 export const GOVERNOR_ABI = [
   {
-    type: 'constructor',
-    inputs: [
-      { name: 'timelock_', type: 'address', internalType: 'address' },
-      { name: 'pce_', type: 'address', internalType: 'address' },
-      { name: 'guardian_', type: 'address', internalType: 'address' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'BALLOT_TYPEHASH',
-    inputs: [],
-    outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'DOMAIN_TYPEHASH',
-    inputs: [],
-    outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
     type: 'function',
     name: '__abdicate',
     inputs: [],
@@ -40,11 +17,7 @@ export const GOVERNOR_ABI = [
     type: 'function',
     name: '__executeSetTimelockPendingAdmin',
     inputs: [
-      {
-        name: 'newPendingAdmin',
-        type: 'address',
-        internalType: 'address',
-      },
+      { name: 'newPendingAdmin', type: 'address', internalType: 'address' },
       { name: 'eta', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [],
@@ -54,11 +27,7 @@ export const GOVERNOR_ABI = [
     type: 'function',
     name: '__queueSetTimelockPendingAdmin',
     inputs: [
-      {
-        name: 'newPendingAdmin',
-        type: 'address',
-        internalType: 'address',
-      },
+      { name: 'newPendingAdmin', type: 'address', internalType: 'address' },
       { name: 'eta', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [],
@@ -68,11 +37,7 @@ export const GOVERNOR_ABI = [
     type: 'function',
     name: 'batchExecute',
     inputs: [
-      {
-        name: 'proposalIds',
-        type: 'uint256[]',
-        internalType: 'uint256[]',
-      },
+      { name: 'proposalIds', type: 'uint256[]', internalType: 'uint256[]' },
     ],
     outputs: [],
     stateMutability: 'payable',
@@ -81,11 +46,7 @@ export const GOVERNOR_ABI = [
     type: 'function',
     name: 'batchQueue',
     inputs: [
-      {
-        name: 'proposalIds',
-        type: 'uint256[]',
-        internalType: 'uint256[]',
-      },
+      { name: 'proposalIds', type: 'uint256[]', internalType: 'uint256[]' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -109,19 +70,6 @@ export const GOVERNOR_ABI = [
   },
   {
     type: 'function',
-    name: 'castVoteBySig',
-    inputs: [
-      { name: 'proposalId', type: 'uint256', internalType: 'uint256' },
-      { name: 'support', type: 'bool', internalType: 'bool' },
-      { name: 'v', type: 'uint8', internalType: 'uint8' },
-      { name: 'r', type: 'bytes32', internalType: 'bytes32' },
-      { name: 's', type: 'bytes32', internalType: 'bytes32' },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     name: 'execute',
     inputs: [{ name: 'proposalId', type: 'uint256', internalType: 'uint256' }],
     outputs: [],
@@ -134,11 +82,7 @@ export const GOVERNOR_ABI = [
     outputs: [
       { name: 'targets', type: 'address[]', internalType: 'address[]' },
       { name: 'values', type: 'uint256[]', internalType: 'uint256[]' },
-      {
-        name: 'signatures',
-        type: 'string[]',
-        internalType: 'string[]',
-      },
+      { name: 'signatures', type: 'string[]', internalType: 'string[]' },
       { name: 'calldatas', type: 'bytes[]', internalType: 'bytes[]' },
     ],
     stateMutability: 'view',
@@ -173,6 +117,21 @@ export const GOVERNOR_ABI = [
   },
   {
     type: 'function',
+    name: 'initialize',
+    inputs: [
+      { name: 'daoName', type: 'string', internalType: 'string' },
+      { name: '_token', type: 'address', internalType: 'address' },
+      { name: '_timelock', type: 'address', internalType: 'address' },
+      { name: '_votingDelay', type: 'uint256', internalType: 'uint256' },
+      { name: '_votingPeriod', type: 'uint256', internalType: 'uint256' },
+      { name: '_proposalThreshold', type: 'uint256', internalType: 'uint256' },
+      { name: '_quorumVotes', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'latestProposalIds',
     inputs: [{ name: '', type: 'address', internalType: 'address' }],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
@@ -187,19 +146,6 @@ export const GOVERNOR_ABI = [
   },
   {
     type: 'function',
-    name: 'pce',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'contract PCEInterface',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'proposalCount',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
@@ -210,14 +156,14 @@ export const GOVERNOR_ABI = [
     name: 'proposalMaxOperations',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'pure',
+    stateMutability: 'view',
   },
   {
     type: 'function',
     name: 'proposalThreshold',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'pure',
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -230,11 +176,7 @@ export const GOVERNOR_ABI = [
       { name: 'startBlock', type: 'uint256', internalType: 'uint256' },
       { name: 'endBlock', type: 'uint256', internalType: 'uint256' },
       { name: 'forVotes', type: 'uint256', internalType: 'uint256' },
-      {
-        name: 'againstVotes',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: 'againstVotes', type: 'uint256', internalType: 'uint256' },
       { name: 'canceled', type: 'bool', internalType: 'bool' },
       { name: 'executed', type: 'bool', internalType: 'bool' },
       { name: 'description', type: 'string', internalType: 'string' },
@@ -247,11 +189,7 @@ export const GOVERNOR_ABI = [
     inputs: [
       { name: 'targets', type: 'address[]', internalType: 'address[]' },
       { name: 'values', type: 'uint256[]', internalType: 'uint256[]' },
-      {
-        name: 'signatures',
-        type: 'string[]',
-        internalType: 'string[]',
-      },
+      { name: 'signatures', type: 'string[]', internalType: 'string[]' },
       { name: 'calldatas', type: 'bytes[]', internalType: 'bytes[]' },
       { name: 'description', type: 'string', internalType: 'string' },
     ],
@@ -277,7 +215,7 @@ export const GOVERNOR_ABI = [
     name: 'quorumVotes',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'pure',
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -297,38 +235,53 @@ export const GOVERNOR_ABI = [
     name: 'timelock',
     inputs: [],
     outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'contract TimelockInterface',
-      },
+      { name: '', type: 'address', internalType: 'contract TimelockInterface' },
     ],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'token',
+    inputs: [],
+    outputs: [
+      { name: '', type: 'address', internalType: 'contract GovInterface' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'updateVariables',
+    inputs: [
+      { name: 'quorumVotes_', type: 'uint256', internalType: 'uint256' },
+      { name: 'proposalThreshold_', type: 'uint256', internalType: 'uint256' },
+      {
+        name: 'proposalMaxOperations_',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
     name: 'votingDelay',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'pure',
+    stateMutability: 'view',
   },
   {
     type: 'function',
     name: 'votingPeriod',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'pure',
+    stateMutability: 'view',
   },
   {
     type: 'event',
     name: 'ProposalCanceled',
     inputs: [
-      {
-        name: 'id',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
+      { name: 'id', type: 'uint256', indexed: false, internalType: 'uint256' },
     ],
     anonymous: false,
   },
@@ -336,12 +289,7 @@ export const GOVERNOR_ABI = [
     type: 'event',
     name: 'ProposalCreated',
     inputs: [
-      {
-        name: 'id',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
+      { name: 'id', type: 'uint256', indexed: false, internalType: 'uint256' },
       {
         name: 'proposer',
         type: 'address',
@@ -397,12 +345,7 @@ export const GOVERNOR_ABI = [
     type: 'event',
     name: 'ProposalExecuted',
     inputs: [
-      {
-        name: 'id',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
+      { name: 'id', type: 'uint256', indexed: false, internalType: 'uint256' },
     ],
     anonymous: false,
   },
@@ -410,18 +353,8 @@ export const GOVERNOR_ABI = [
     type: 'event',
     name: 'ProposalQueued',
     inputs: [
-      {
-        name: 'id',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-      {
-        name: 'eta',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
+      { name: 'id', type: 'uint256', indexed: false, internalType: 'uint256' },
+      { name: 'eta', type: 'uint256', indexed: false, internalType: 'uint256' },
     ],
     anonymous: false,
   },
@@ -441,12 +374,7 @@ export const GOVERNOR_ABI = [
         indexed: false,
         internalType: 'uint256',
       },
-      {
-        name: 'support',
-        type: 'bool',
-        indexed: false,
-        internalType: 'bool',
-      },
+      { name: 'support', type: 'bool', indexed: false, internalType: 'bool' },
       {
         name: 'votes',
         type: 'uint256',

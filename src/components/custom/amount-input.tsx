@@ -110,6 +110,7 @@ const AmountInput = React.forwardRef<HTMLInputElement, AmountInputProps>(
             <DialogClose>
               <Button
                 onClick={() => {
+                  if (Number(amount) === 0) return
                   handleStake()
                 }}
               >

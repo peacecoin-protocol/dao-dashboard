@@ -12,14 +12,22 @@ export interface SVGProps {
   className?: string
 }
 
-export interface Contributor {
-  contributor: string | null
-  totalAmount: BigNumberish
-  id?: string
+export interface BOUNTY_CONTRIBUTOR {
+  contributor: string
+  amount: BigNumberish
+  id: string
+  blockTimestamp?: number
+}
+
+export interface BOUNTY_PROPOSAL {
+  amount: BigNumberish
+  proposalId: string
+  id: string
+  blockTimestamp?: number
 }
 
 export interface Proposal {
-  id: string | null
+  id: string
   amount: BigNumberish
 }
 

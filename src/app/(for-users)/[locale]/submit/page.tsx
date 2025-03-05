@@ -11,6 +11,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   type BaseError,
+  useReadContract,
 } from 'wagmi'
 import { Textarea } from '@headlessui/react'
 
@@ -216,7 +217,7 @@ export default function ForSubmitPage({
               let _signature = 'approve(address,uint256)'
               let _value = '0'
               let _calldata = ''
-              let _address = pceAddress
+              let _address = pceAddress[chainId || localhost.id]
               if (category === '2') {
                 _calldata = new ethers.AbiCoder().encode(
                   ['address', 'uint256'],

@@ -15,7 +15,7 @@ export const pceCommunity = {
 
 export const pceGovToken = {
   [sepolia.id]: '0x19E030BD225a373A8769c3402b533C3CD8cc4c3d',
-  [localhost.id]: '0x0000000000000000000000000000000000000000',
+  [localhost.id]: '0x610178dA211FEF7D417bC0e6FeD39F05609AD788',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
@@ -56,3 +56,15 @@ export const SUBGRAPH_URL = {
   [polygon.id]:
     'https://api.studio.thegraph.com/query/81073/dao_dashboard/version/latest',
 } as Record<number, string>
+
+export const createdAt = {
+  [sepolia.id]: '1714857600',
+  [localhost.id]: '1714857600',
+  [polygon.id]: '1714857600',
+} as Record<number, string>
+
+export const WEB = 'https://peacecoin.xyz'
+
+export const LINKEDIN = 'https://www.linkedin.com/company'
+
+export const TWITTER = 'https://twitter.com'

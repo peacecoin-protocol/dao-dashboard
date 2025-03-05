@@ -94,57 +94,55 @@ export default function ForClosedPage({
   }, [isConfirmed, isConfirming, error, hash])
 
   const fetchData = async (count: number) => {
-    if (!count) return
+    if (count == 0) return
 
     const proposalPromises = []
-    const statusPromises = []
+    let temp = []
+    let _status = []
 
     for (let i = 1; i <= count; i++) {
-      proposalPromises.push(
-        readContract(config, {
-          address: governorAddress[chainId || localhost.id] as `0x${string}`,
-          abi: GOVERNOR_ABI,
-          functionName: 'proposals',
-          args: [i],
-        })
-      )
-      statusPromises.push(
-        readContract(config, {
-          address: governorAddress[chainId || localhost.id] as `0x${string}`,
-          abi: GOVERNOR_ABI,
-          functionName: 'state',
-          args: [i],
-        })
-      )
-    }
+      const proposal = await readContract(config, {
+        address: governorAddress[chainId || localhost.id] as `0x${string}`,
+        abi: GOVERNOR_ABI,
+        functionName: 'proposals',
+        args: [i],
+      })
+      const status = await readContract(config, {
+        address: governorAddress[chainId || localhost.id] as `0x${string}`,
+        abi: GOVERNOR_ABI,
+        functionName: 'state',
+        args: [i],
+      })
 
-    const [proposals, statuses] = await Promise.all([
-      Promise.all(proposalPromises),
-      Promise.all(statusPromises),
-    ])
-
-    const statusLabels = statuses.map((status) => {
       switch (status as number) {
         case 2:
-          return 'Canceled'
+          _status.push('Canceled')
+          temp.push(proposal)
+          break
         case 3:
-          return 'Defeated'
+          _status.push('Defeated')
+          temp.push(proposal)
+          break
         case 6:
-          return 'Expired'
+          _status.push('Expired')
+          temp.push(proposal)
+          break
         case 7:
-          return 'Executed'
+          _status.push('Executed')
+          temp.push(proposal)
+          break
         default:
-          return 'Unknown'
+          break
       }
-    })
+    }
 
-    setProposals(proposals)
-    setStatus(statusLabels)
+    setProposals(temp)
+    setStatus(_status)
     setLoading(false)
   }
 
   useEffect(() => {
-    fetchData(proposalCount as number)
+    fetchData(Number(proposalCount))
   }, [proposalCount])
 
   const dashboard = dict?.dashboard ?? {}

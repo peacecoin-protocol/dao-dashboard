@@ -3,11 +3,7 @@ export const BOUNTY_ABI = [
     type: 'function',
     name: 'addContributorBounty',
     inputs: [
-      {
-        name: '_contributor',
-        type: 'address',
-        internalType: 'address',
-      },
+      { name: '_contributor', type: 'address', internalType: 'address' },
       { name: '_amount', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [],
@@ -35,11 +31,7 @@ export const BOUNTY_ABI = [
     name: 'bountyToken',
     inputs: [],
     outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'contract ERC20Upgradeable',
-      },
+      { name: '', type: 'address', internalType: 'contract ERC20Upgradeable' },
     ],
     stateMutability: 'view',
   },
@@ -76,11 +68,7 @@ export const BOUNTY_ABI = [
     name: 'contributorBounties',
     inputs: [{ name: '', type: 'address', internalType: 'address' }],
     outputs: [
-      {
-        name: 'bountyAmount',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: 'bountyAmount', type: 'uint256', internalType: 'uint256' },
       { name: 'withdrawn', type: 'uint256', internalType: 'uint256' },
     ],
     stateMutability: 'view',
@@ -101,11 +89,7 @@ export const BOUNTY_ABI = [
         type: 'address',
         internalType: 'contract ERC20Upgradeable',
       },
-      {
-        name: '_bountyAmount',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_bountyAmount', type: 'uint256', internalType: 'uint256' },
       { name: '_governance', type: 'address', internalType: 'address' },
     ],
     outputs: [],
@@ -163,11 +147,7 @@ export const BOUNTY_ABI = [
     type: 'function',
     name: 'setBountyAmount',
     inputs: [
-      {
-        name: '_bountyAmount',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_bountyAmount', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -176,11 +156,7 @@ export const BOUNTY_ABI = [
     type: 'function',
     name: 'setContributor',
     inputs: [
-      {
-        name: '_contributor',
-        type: 'address',
-        internalType: 'address',
-      },
+      { name: '_contributor', type: 'address', internalType: 'address' },
       { name: 'status', type: 'bool', internalType: 'bool' },
     ],
     outputs: [],
@@ -197,12 +173,7 @@ export const BOUNTY_ABI = [
     type: 'event',
     name: 'AddedContributorBounty',
     inputs: [
-      {
-        name: 'user',
-        type: 'address',
-        indexed: true,
-        internalType: 'address',
-      },
+      { name: 'user', type: 'address', indexed: true, internalType: 'address' },
       {
         name: 'contributor',
         type: 'address',
@@ -222,12 +193,7 @@ export const BOUNTY_ABI = [
     type: 'event',
     name: 'AddedProposalBounty',
     inputs: [
-      {
-        name: 'user',
-        type: 'address',
-        indexed: true,
-        internalType: 'address',
-      },
+      { name: 'user', type: 'address', indexed: true, internalType: 'address' },
       {
         name: 'proposalId',
         type: 'uint256',
@@ -247,17 +213,25 @@ export const BOUNTY_ABI = [
     type: 'event',
     name: 'ClaimedBounty',
     inputs: [
-      {
-        name: 'user',
-        type: 'address',
-        indexed: true,
-        internalType: 'address',
-      },
+      { name: 'user', type: 'address', indexed: true, internalType: 'address' },
       {
         name: 'amount',
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'Initialized',
+    inputs: [
+      {
+        name: 'version',
+        type: 'uint64',
+        indexed: false,
+        internalType: 'uint64',
       },
     ],
     anonymous: false,
@@ -293,5 +267,17 @@ export const BOUNTY_ABI = [
       },
     ],
     anonymous: false,
+  },
+  { type: 'error', name: 'InvalidInitialization', inputs: [] },
+  { type: 'error', name: 'NotInitializing', inputs: [] },
+  {
+    type: 'error',
+    name: 'OwnableInvalidOwner',
+    inputs: [{ name: 'owner', type: 'address', internalType: 'address' }],
+  },
+  {
+    type: 'error',
+    name: 'OwnableUnauthorizedAccount',
+    inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
   },
 ]

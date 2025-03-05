@@ -16,17 +16,17 @@ const loadComponent = async (key: string) => {
     case 'app-shell':
       Component = (await import('~/components/app-shell')).default
       break
-    case 'delegate':
-      Component = (await import('./(for-users)/[locale]/delegate/page')).default
-      break
-    case 'submit':
-      Component = (await import('./(for-users)/[locale]/submit/page')).default
-      break
-    case 'closed':
-      Component = (await import('./(for-users)/[locale]/closed/page')).default
-      break
-    case 'pending':
-      Component = (await import('./(for-users)/[locale]/pending/page')).default
+      // case 'delegate':
+      //   Component = (await import('./(for-users)/[locale]/delegate/page')).default
+      //   break
+      // case 'submit':
+      //   Component = (await import('./(for-users)/[locale]/submit/page')).default
+      //   break
+      // case 'closed':
+      //   Component = (await import('./(for-users)/[locale]/closed/page')).default
+      //   break
+      // case 'pending':
+      //   Component = (await import('./(for-users)/[locale]/pending/page')).default
       break
     case 'pip':
       Component = (await import('./(for-users)/[locale]/pip/page')).default
@@ -37,10 +37,10 @@ const loadComponent = async (key: string) => {
     case 'token':
       Component = (await import('./(for-users)/[locale]/token/page')).default
       break
-    case 'proposals':
-      Component = (await import('./(for-users)/[locale]/proposals/page'))
-        .default
-      break
+    // case 'proposals':
+    //   Component = (await import('./(for-users)/[locale]/proposals/page'))
+    //     .default
+    //   break
     case 'dashboard':
       Component = (await import('./(for-users)/[locale]/page')).default
       break
@@ -81,6 +81,9 @@ const loadComponent = async (key: string) => {
       break
     case 'daofaq':
       Component = (await import('./(for-users)/[locale]/daofaq/page')).default
+      break
+    case 'pce':
+      Component = (await import('./(for-users)/[locale]/pce/page')).default
       break
     default:
       Component = (await import('~/components/app-shell')).default
@@ -233,6 +236,11 @@ const router = createBrowserRouter([
         path: '/:locale/daofaq',
         loader: createLoader('daofaq'),
         lazy: createLazy('daofaq'),
+      },
+      {
+        path: '/:locale/pce',
+        loader: createLoader('pce'),
+        lazy: createLazy('pce'),
       },
     ],
   },
