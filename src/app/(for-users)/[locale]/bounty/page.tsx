@@ -28,7 +28,7 @@ import {
   TableFooter,
 } from '~/components/ui/table'
 import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/card'
-import { shortenAddress, formatString } from '~/components/utils'
+import { formatString } from '~/components/utils'
 
 import {
   pceAddress,
@@ -43,7 +43,8 @@ import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 import { config } from '~/lib/config'
 import {
   PagePropsWithLocale,
-  Contributor,
+  BOUNTY_CONTRIBUTOR,
+  BOUNTY_PROPOSAL,
   Proposal,
   Dictionary,
 } from '~/i18n/types'
@@ -79,8 +80,12 @@ export default function ForBountyPage({
   })
 
   const [proposalData, setProposalData] = useState<Proposal[]>([])
-  const [contributorData, setContributorData] = useState<Contributor[]>([])
-
+  const [contributorData, setContributorData] = useState<BOUNTY_CONTRIBUTOR[]>(
+    []
+  )
+  const [proposalBountyData, setProposalBountyData] = useState<
+    BOUNTY_PROPOSAL[]
+  >([])
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
@@ -108,20 +113,33 @@ export default function ForBountyPage({
         const { data } = await client.query({
           query: gql`
             query totalBounties {
-              contributorTotalBounties(
+              addedContributorBounties(
                 first: 10
-                orderBy: totalAmount
+                orderBy: id
                 orderDirection: desc
               ) {
-                totalAmount
+                amount
                 id
                 contributor
+                blockTimestamp
+              }
+
+              addedProposalBounties(
+                first: 10
+                orderBy: id
+                orderDirection: desc
+              ) {
+                amount
+                blockTimestamp
+                id
+                proposalId
               }
             }
           `,
         })
 
-        setContributorData(data.contributorTotalBounties)
+        setContributorData(data.addedContributorBounties)
+        setProposalBountyData(data.addedProposalBounties)
       } catch (error) {
         console.error('Error fetching data', error)
       }
@@ -208,7 +226,7 @@ export default function ForBountyPage({
         abi: BOUNTY_ABI,
         address: bountyAddress[chainId || localhost.id] as `0x${string}`,
         functionName: 'claimProposalBounty',
-        args: [proposalId],
+        args: [],
       })
 
       await provider.waitForTransaction(claimProposalBountyTX)
@@ -240,7 +258,10 @@ export default function ForBountyPage({
         abi: PCE_ABI,
         address: pceAddress[chainId || localhost.id] as `0x${string}`,
         functionName: 'allowance',
-        args: [address, bountyAddress],
+        args: [
+          address,
+          bountyAddress[chainId || localhost.id] as `0x${string}`,
+        ],
       })
 
       if ((BigInt(allowance as string) as bigint) <= parseEther(bountyAmount)) {
@@ -289,7 +310,10 @@ export default function ForBountyPage({
         abi: PCE_ABI,
         address: pceAddress[chainId || localhost.id] as `0x${string}`,
         functionName: 'allowance',
-        args: [address, bountyAddress],
+        args: [
+          address,
+          bountyAddress[chainId || localhost.id] as `0x${string}`,
+        ],
       })
 
       if ((BigInt(allowance as string) as bigint) < parseEther(bountyAmount)) {
@@ -562,16 +586,16 @@ export default function ForBountyPage({
                   </TableHeader>
                   <TableBody>
                     {contributorData &&
-                      contributorData.map((contributor: Contributor, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            {shortenAddress(contributor.contributor)}
-                          </TableCell>
-                          <TableCell>
-                            {formatEther(contributor.totalAmount)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      contributorData.map(
+                        (contributor: BOUNTY_CONTRIBUTOR, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{contributor.contributor}</TableCell>
+                            <TableCell>
+                              {formatEther(contributor.amount)}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      )}
                   </TableBody>{' '}
                   <TableFooter>
                     <TableRow>
@@ -622,7 +646,6 @@ export default function ForBountyPage({
                 <Button
                   variant="outline"
                   onClick={() => {
-                    if (!proposalId) return
                     handleClaimProposalBounty()
                   }}
                 >
@@ -639,15 +662,17 @@ export default function ForBountyPage({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {proposalData &&
-                      proposalData.map((proposal: Proposal, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell>{proposal.id}</TableCell>
-                          <TableCell>
-                            {formatString(formatEther(proposal.amount))}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                    {proposalBountyData &&
+                      proposalBountyData.map(
+                        (proposal: BOUNTY_PROPOSAL, index: number) => (
+                          <TableRow key={index}>
+                            <TableCell>{proposal.proposalId}</TableCell>
+                            <TableCell>
+                              {formatString(formatEther(proposal.amount))}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      )}
                   </TableBody>{' '}
                   <TableFooter>
                     <TableRow>

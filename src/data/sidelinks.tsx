@@ -73,37 +73,43 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
         },
       ],
     },
+    // {
+    //   title: sidebar.proposals ?? 'Proposals',
+    //   label: '',
+    //   href: '/proposals',
+    //   icon: <IconChecklist size={18} />,
+    //   sub: [
+    //     {
+    //       title: sidebar.delegate ?? 'Delegate',
+    //       label: '',
+    //       href: '/delegate',
+    //       icon: <IconHexagonNumber1 size={18} />,
+    //     },
+    //     {
+    //       title: sidebar.submit ?? 'Submit',
+    //       label: '',
+    //       href: '/submit',
+    //       icon: <IconHexagonNumber2 size={18} />,
+    //     },
+    //     {
+    //       title: sidebar.pending ?? 'Pending',
+    //       label: '',
+    //       href: '/pending',
+    //       icon: <IconHexagonNumber3 size={18} />,
+    //     },
+    //     {
+    //       title: sidebar.closed ?? 'Closed',
+    //       label: '',
+    //       href: '/closed',
+    //       icon: <IconHexagonNumber4 size={18} />,
+    //     },
+    //   ],
+    // },
     {
-      title: sidebar.proposals ?? 'Proposals',
+      title: sidebar.pce ?? 'PeaceCoin Protocol DAO',
       label: '',
-      href: '/proposals',
-      icon: <IconChecklist size={18} />,
-      sub: [
-        {
-          title: sidebar.delegate ?? 'Delegate',
-          label: '',
-          href: '/delegate',
-          icon: <IconHexagonNumber1 size={18} />,
-        },
-        {
-          title: sidebar.submit ?? 'Submit',
-          label: '',
-          href: '/submit',
-          icon: <IconHexagonNumber2 size={18} />,
-        },
-        {
-          title: sidebar.pending ?? 'Pending',
-          label: '',
-          href: '/pending',
-          icon: <IconHexagonNumber3 size={18} />,
-        },
-        {
-          title: sidebar.closed ?? 'Closed',
-          label: '',
-          href: '/closed',
-          icon: <IconHexagonNumber4 size={18} />,
-        },
-      ],
+      href: '/pce',
+      icon: <IconMessages size={18} />,
     },
     {
       title: sidebar.token ?? 'Token',

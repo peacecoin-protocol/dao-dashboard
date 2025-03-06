@@ -9,6 +9,8 @@ import {
   useReadContract,
   useWriteContract,
   useWaitForTransactionReceipt,
+  useBlockNumber,
+  useBlock,
   type BaseError,
 } from 'wagmi'
 import { readContract } from '@wagmi/core'
@@ -16,6 +18,7 @@ import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import RingLoader from 'react-spinners/RingLoader'
 
+import { governorAddress } from '~/app/constants/constants'
 import {
   Table,
   TableBody,
@@ -30,9 +33,7 @@ import useWindowWidth from '~/components/useWindWidth'
 
 import { shortenAddress, formatString } from '~/components/utils'
 
-import { pceAddress, governorAddress } from '~/app/constants/constants'
 import { ringStyle } from '~/app/constants/styles'
-import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 import { config } from '~/lib/config'
@@ -49,9 +50,11 @@ export default function ForPendingPage({
 
   let [loading, setLoading] = useState(true)
 
-  let blockTimestamp = Date.now() / 1000
-
   const { address, chainId } = useAccount()
+  const { data: blockNumber } = useBlockNumber()
+  const { data: block } = useBlock({
+    blockNumber,
+  })
   const { data: hash, error, writeContract } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
@@ -60,6 +63,13 @@ export default function ForPendingPage({
 
   const [proposals, setProposals] = useState<any[]>([])
   const [proposalStatus, setStatus] = useState<any[]>([])
+  const [blockTimestamp, setBlockTimestamp] = useState(0)
+
+  useEffect(() => {
+    if (block) {
+      setBlockTimestamp(Number(block.timestamp))
+    }
+  }, [block])
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -74,8 +84,8 @@ export default function ForPendingPage({
   }, [locale])
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
-    address: pceAddress[chainId || localhost.id] as `0x${string}`,
-    abi: PCE_ABI,
+    address: governorAddress[chainId || localhost.id] as `0x${string}`,
+    abi: GOVERNOR_ABI,
     functionName: 'getVotes',
     args: [address],
   })
@@ -111,8 +121,14 @@ export default function ForPendingPage({
     notify()
   }, [isConfirmed, isConfirming, error, hash])
 
-  const fetchData = async (count: any) => {
-    if (!count) return
+  const { data: votingDelay, refetch: refetchVotingDelay } = useReadContract({
+    address: governorAddress[chainId || localhost.id] as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'votingDelay',
+  })
+
+  const fetchData = async (count: number) => {
+    if (count == 0) return
     let temp = []
     let _status = []
     for (let i = 1; i <= count; i++) {
@@ -122,6 +138,7 @@ export default function ForPendingPage({
         functionName: 'proposals',
         args: [i],
       })
+
       const status = await readContract(config, {
         address: governorAddress[chainId || localhost.id] as `0x${string}`,
         abi: GOVERNOR_ABI,
@@ -156,7 +173,7 @@ export default function ForPendingPage({
   }
 
   useEffect(() => {
-    fetchData(proposalCount)
+    fetchData(Number(proposalCount))
   }, [proposalCount, isConfirmed])
 
   const propose = dict?.proposal ?? {}

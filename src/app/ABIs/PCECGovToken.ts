@@ -1,17 +1,9 @@
 export const PCE_C_GOV_TOKEN_ABI = [
-  { type: 'receive', stateMutability: 'payable' },
   {
     type: 'function',
     name: 'CLOCK_MODE',
     inputs: [],
     outputs: [{ name: '', type: 'string', internalType: 'string' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: '_calculateAnnualReward',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -43,13 +35,6 @@ export const PCE_C_GOV_TOKEN_ABI = [
   },
   {
     type: 'function',
-    name: 'blocksWithRewardsPassed',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'checkpoints',
     inputs: [
       { name: 'account', type: 'address', internalType: 'address' },
@@ -73,6 +58,15 @@ export const PCE_C_GOV_TOKEN_ABI = [
     name: 'clock',
     inputs: [],
     outputs: [{ name: '', type: 'uint48', internalType: 'uint48' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'communityToken',
+    inputs: [],
+    outputs: [
+      { name: '', type: 'address', internalType: 'contract ERC20Upgradeable' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -112,13 +106,10 @@ export const PCE_C_GOV_TOKEN_ABI = [
   },
   {
     type: 'function',
-    name: 'earned',
-    inputs: [
-      { name: '_account', type: 'address', internalType: 'address' },
-      { name: '_rewardPerToken', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
+    name: 'deposit',
+    inputs: [{ name: '_amount', type: 'uint256', internalType: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -133,20 +124,6 @@ export const PCE_C_GOV_TOKEN_ABI = [
       { name: 'salt', type: 'bytes32', internalType: 'bytes32' },
       { name: 'extensions', type: 'uint256[]', internalType: 'uint256[]' },
     ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'exit',
-    inputs: [],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'firstBlockWithReward',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -168,13 +145,6 @@ export const PCE_C_GOV_TOKEN_ABI = [
   },
   {
     type: 'function',
-    name: 'getReward',
-    inputs: [],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     name: 'getVotes',
     inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
@@ -184,25 +154,10 @@ export const PCE_C_GOV_TOKEN_ABI = [
     type: 'function',
     name: 'initialize',
     inputs: [
-      { name: '_stakingToken', type: 'address', internalType: 'address' },
-      { name: '_rewardsToken', type: 'address', internalType: 'address' },
+      { name: '_communityToken', type: 'address', internalType: 'address' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'lastBlockWithReward',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'lastUpdateBlock',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -234,27 +189,6 @@ export const PCE_C_GOV_TOKEN_ABI = [
   },
   {
     type: 'function',
-    name: 'pause',
-    inputs: [],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'paused',
-    inputs: [],
-    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'recoverNonLockedRewardTokens',
-    inputs: [],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     name: 'renounceOwnership',
     inputs: [],
     outputs: [],
@@ -262,94 +196,9 @@ export const PCE_C_GOV_TOKEN_ABI = [
   },
   {
     type: 'function',
-    name: 'rewardPerBlock',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'rewardPerToken',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'rewardPerTokenStored',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'rewardTokensLocked',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'rewards',
-    inputs: [{ name: '', type: 'address', internalType: 'address' }],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'rewardsToken',
-    inputs: [],
-    outputs: [
-      { name: '', type: 'address', internalType: 'contract ERC20Upgradeable' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'setRewards',
-    inputs: [
-      { name: '_rewardPerBlock', type: 'uint256', internalType: 'uint256' },
-      { name: '_startingBlock', type: 'uint256', internalType: 'uint256' },
-      { name: '_blocksAmount', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'stake',
-    inputs: [{ name: '_amount', type: 'uint256', internalType: 'uint256' }],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'staked',
-    inputs: [{ name: '', type: 'address', internalType: 'address' }],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'stakingToken',
-    inputs: [],
-    outputs: [
-      { name: '', type: 'address', internalType: 'contract ERC20Upgradeable' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'symbol',
     inputs: [],
     outputs: [{ name: '', type: 'string', internalType: 'string' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'totalStaked',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -386,20 +235,6 @@ export const PCE_C_GOV_TOKEN_ABI = [
     inputs: [{ name: 'newOwner', type: 'address', internalType: 'address' }],
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'unpause',
-    inputs: [],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'userRewardPerTokenPaid',
-    inputs: [{ name: '', type: 'address', internalType: 'address' }],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -483,6 +318,20 @@ export const PCE_C_GOV_TOKEN_ABI = [
     ],
     anonymous: false,
   },
+  {
+    type: 'event',
+    name: 'Deposited',
+    inputs: [
+      { name: 'user', type: 'address', indexed: true, internalType: 'address' },
+      {
+        name: 'amount',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
   { type: 'event', name: 'EIP712DomainChanged', inputs: [], anonymous: false },
   {
     type: 'event',
@@ -518,85 +367,6 @@ export const PCE_C_GOV_TOKEN_ABI = [
   },
   {
     type: 'event',
-    name: 'Paused',
-    inputs: [
-      {
-        name: 'account',
-        type: 'address',
-        indexed: false,
-        internalType: 'address',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'RewardPaid',
-    inputs: [
-      { name: 'user', type: 'address', indexed: true, internalType: 'address' },
-      {
-        name: 'reward',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'RewardTokensRecovered',
-    inputs: [
-      {
-        name: 'amount',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'RewardsSet',
-    inputs: [
-      {
-        name: '_rewardPerBlock',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-      {
-        name: '_firstBlockWithReward',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-      {
-        name: '_lastBlockWithReward',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'Staked',
-    inputs: [
-      { name: 'user', type: 'address', indexed: true, internalType: 'address' },
-      {
-        name: 'amount',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
     name: 'Transfer',
     inputs: [
       { name: 'from', type: 'address', indexed: true, internalType: 'address' },
@@ -606,19 +376,6 @@ export const PCE_C_GOV_TOKEN_ABI = [
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'Unpaused',
-    inputs: [
-      {
-        name: 'account',
-        type: 'address',
-        indexed: false,
-        internalType: 'address',
       },
     ],
     anonymous: false,
@@ -636,16 +393,6 @@ export const PCE_C_GOV_TOKEN_ABI = [
       },
     ],
     anonymous: false,
-  },
-  {
-    type: 'error',
-    name: 'AddressEmptyCode',
-    inputs: [{ name: 'target', type: 'address', internalType: 'address' }],
-  },
-  {
-    type: 'error',
-    name: 'AddressInsufficientBalance',
-    inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
   },
   { type: 'error', name: 'CheckpointUnorderedInsertion', inputs: [] },
   { type: 'error', name: 'ECDSAInvalidSignature', inputs: [] },
@@ -714,9 +461,6 @@ export const PCE_C_GOV_TOKEN_ABI = [
     ],
   },
   { type: 'error', name: 'ERC6372InconsistentClock', inputs: [] },
-  { type: 'error', name: 'EnforcedPause', inputs: [] },
-  { type: 'error', name: 'ExpectedPause', inputs: [] },
-  { type: 'error', name: 'FailedInnerCall', inputs: [] },
   {
     type: 'error',
     name: 'InvalidAccountNonce',
@@ -737,7 +481,6 @@ export const PCE_C_GOV_TOKEN_ABI = [
     name: 'OwnableUnauthorizedAccount',
     inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
   },
-  { type: 'error', name: 'ReentrancyGuardReentrantCall', inputs: [] },
   {
     type: 'error',
     name: 'SafeCastOverflowedUintDowncast',
@@ -745,11 +488,6 @@ export const PCE_C_GOV_TOKEN_ABI = [
       { name: 'bits', type: 'uint8', internalType: 'uint8' },
       { name: 'value', type: 'uint256', internalType: 'uint256' },
     ],
-  },
-  {
-    type: 'error',
-    name: 'SafeERC20FailedOperation',
-    inputs: [{ name: 'token', type: 'address', internalType: 'address' }],
   },
   {
     type: 'error',

@@ -15,18 +15,18 @@ export const pceCommunity = {
 
 export const pceGovToken = {
   [sepolia.id]: '0x19E030BD225a373A8769c3402b533C3CD8cc4c3d',
-  [localhost.id]: '0x0000000000000000000000000000000000000000',
+  [localhost.id]: '0x610178dA211FEF7D417bC0e6FeD39F05609AD788',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
 export const timelockAddress = {
-  [sepolia.id]: '0x44884b82BC9Fd8b93802f6F85BA103f54fe9D3e9',
+  [sepolia.id]: '0x90B6e6e7eaFcf81e32262af9BbaD1c07cEa172bd',
   [localhost.id]: '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
 export const governorAddress = {
-  [sepolia.id]: '0x6C22f8E1aD460500e06c67Ac5079b0f01e7220F3',
+  [sepolia.id]: '0x6d2cecad09D6baD75756741A1AD0a9F81654516d',
   [localhost.id]: '0x5FC8d32690cc91D4c39d9d3abcBD16989F875707',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
@@ -56,3 +56,15 @@ export const SUBGRAPH_URL = {
   [polygon.id]:
     'https://api.studio.thegraph.com/query/81073/dao_dashboard/version/latest',
 } as Record<number, string>
+
+export const createdAt = {
+  [sepolia.id]: '1714857600',
+  [localhost.id]: '1714857600',
+  [polygon.id]: '1714857600',
+} as Record<number, string>
+
+export const WEB = 'https://peacecoin.xyz'
+
+export const LINKEDIN = 'https://www.linkedin.com/company'
+
+export const TWITTER = 'https://twitter.com'

@@ -14,9 +14,7 @@ const Link: FC<LinkProps> = ({ chainId, type, hash, address, message }) => {
 
   // Find the explorer URL for the given chainId
   const getExplorerUrl = () => {
-    console.log(chains, 'chains')
     const chain = chains.find((c) => c.id == chainId)
-    console.log(chain, 'chain')
     return chain?.blockExplorers?.default?.url || 'https://sepolia.etherscan.io'
   }
 
@@ -24,7 +22,6 @@ const Link: FC<LinkProps> = ({ chainId, type, hash, address, message }) => {
   const transactionUrl = `${getExplorerUrl()}/${
     type === 'txHash' ? 'tx/' : 'address/'
   }${type === 'txHash' ? hash : address}`
-  console.log(transactionUrl, 'transactionUrl')
   return (
     <a
       href={transactionUrl}
