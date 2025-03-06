@@ -406,7 +406,7 @@ export default function ForSubmitPage({
 
             <Line
               percent={
-                Number(proposal[3]) > 0
+                Number(proposal[3]) < Number(blockNumber)
                   ? Math.min(
                       ((Number(blockNumber) - Number(proposal[3])) /
                         Number(votingPeriod)) *

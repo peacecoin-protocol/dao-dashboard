@@ -55,9 +55,6 @@ import {
 } from '~/components/ui/select'
 
 import { AmountInput } from '~/components/custom/amount-input'
-
-import { ApolloClient, InMemoryCache } from '@apollo/client'
-
 import { getDict } from '~/i18n/get-dict'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
@@ -77,8 +74,8 @@ import {
   governorAddress,
   pceAddress,
   pceGovToken,
-  SUBGRAPH_URL,
   timelockAddress,
+  factoryAddress,
 } from '~/app/constants/constants'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 
@@ -131,6 +128,12 @@ export default function PCEPage({
   const [description, setDescription] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
   const [tokenAddress, setTokenAddress] = useState('')
+
+  const [values, setValues] = useState('')
+  const [bytescode, setBytesCodes] = useState('')
+  const [variable1, setVariable1] = useState('')
+  const [variable2, setVariable2] = useState('')
+  const [variable3, setVariable3] = useState('')
 
   const [proposals, setProposals] = useState<any[]>([])
   const [proposalStatus, setStatus] = useState<any[]>([])
@@ -221,11 +224,6 @@ export default function PCEPage({
       </DialogContent>
     </Dialog>
   )
-
-  const client = new ApolloClient({
-    uri: SUBGRAPH_URL[chainId || localhost.id] as string,
-    cache: new InMemoryCache(),
-  })
 
   const {
     data: hash,
@@ -411,7 +409,7 @@ export default function PCEPage({
 
             <Line
               percent={
-                Number(proposal[3]) > 0
+                Number(proposal[3]) < Number(blockNumber)
                   ? Math.min(
                       ((Number(blockNumber) - Number(proposal[3])) /
                         Number(votingPeriod)) *
@@ -490,6 +488,7 @@ export default function PCEPage({
                   functionName: 'castVote',
                   args: [proposal[0], true],
                 })
+
                 setIsProposalDetailDialogOpened(false)
               }}
             >
@@ -554,6 +553,25 @@ export default function PCEPage({
       </Dialog>
     </article>
   )
+
+  function handleChange(event: any) {
+    const name = event.target.name
+    const value = event.target.value
+    if (name === 'targets') {
+    } else if (name === 'values') {
+      setValues(value)
+    } else if (name === 'description') {
+      setDescription(value)
+    } else if (name === 'bytescode') {
+      setBytesCodes(value)
+    } else if (name === 'variable1') {
+      setVariable1(value)
+    } else if (name === 'variable2') {
+      setVariable2(value)
+    } else if (name === 'variable3') {
+      setVariable3(value)
+    }
+  }
 
   function handleSelect(value: any) {
     setCategory(value)
@@ -648,9 +666,8 @@ export default function PCEPage({
     setLoading(false)
   }
   useEffect(() => {
-    console.log('proposalCount', proposalCount)
     fetchData(Number(proposalCount))
-  }, [proposalCount, governorAddress, chainId])
+  }, [proposalCount, governorAddress, chainId, isConfirmed])
 
   useEffect(() => {
     const fetchIdenticon = async () => {
@@ -665,26 +682,63 @@ export default function PCEPage({
     }
     fetchIdenticon()
   }, [governorAddress, chainId])
+
   const handleCreateProposal = async () => {
     setIsCreateProposalDialogOpened(false)
 
-    const _calldata = new ethers.AbiCoder().encode(
-      ['address', 'uint256'],
-      [transferAddr, parseEther(transferAmount)]
-    )
-    const _signature = 'transfer(address,uint256)'
+    if (category.length == 0) {
+      toast.error('Please Select Category')
+      return
+    }
+
+    if (tokenAddress.length == 0) {
+      toast.error('Please enter a valid token address')
+      return
+    }
+
+    let _signature = 'approve(address,uint256)'
+    let _value = '0'
+    let _calldata = ''
+    let _address
+
+    if (category === '2') {
+      _calldata = new ethers.AbiCoder().encode(
+        ['address', 'uint256'],
+        [address, parseEther(values)]
+      )
+      _signature = 'transfer(address,uint256)'
+      _address = tokenAddress
+    } else if (category === '4') {
+      _signature = 'deploy(bytes)'
+      _calldata = new ethers.AbiCoder().encode(['bytes'], [bytescode])
+      _address = factoryAddress[chainId || localhost.id]
+    } else if (category === '5') {
+      _address = timelockAddress[chainId || localhost.id]
+      _signature = 'updateVariables(uint256,uint256,uint256)'
+      _calldata = new ethers.AbiCoder().encode(
+        ['uint256', 'uint256', 'uint256'],
+        [variable1, variable2, variable3]
+      )
+    } else if (category === '6') {
+      _address = governorAddress[chainId || localhost.id]
+      _signature = 'updateVariables(uint256,uint256,uint256)'
+      _calldata = new ethers.AbiCoder().encode(
+        ['uint256', 'uint256', 'uint256'],
+        [parseEther(variable1), parseEther(variable2), parseEther(variable3)]
+      )
+    } else {
+      _address = tokenAddress
+      _calldata = new ethers.AbiCoder().encode(
+        ['address', 'uint256'],
+        [address, parseEther(values)]
+      )
+    }
 
     writeContract({
       abi: GOVERNOR_ABI,
       address: governorAddress[chainId || localhost.id] as `0x${string}`,
       functionName: 'propose',
-      args: [
-        [tokenAddress as `0x${string}`],
-        [0],
-        [_signature],
-        [_calldata],
-        description,
-      ],
+      args: [[_address], [_value], [_signature], [_calldata], description],
     })
 
     await refetchProposalCount()
@@ -1471,7 +1525,7 @@ export default function PCEPage({
                         <TableHead>
                           <div className="flex flex-row gap-4">Address</div>
                         </TableHead>
-                        <TableHead>Community Token</TableHead>
+                        <TableHead>PCE Token</TableHead>
                         <TableHead>Governance Token</TableHead>
                         <TableHead>Delegated Amount</TableHead>
                       </TableRow>
@@ -1532,50 +1586,100 @@ export default function PCEPage({
       >
         <DialogContent>
           <DialogTitle>Create a Proposal</DialogTitle>
-          <DialogDescription className="flex flex-col gap-4">
-            <Select onValueChange={handleSelect}>
+          <DialogDescription className="flex flex-col gap-4 mb-2">
+            <Select onValueChange={(value) => handleSelect(value)}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">Transfer Tokens</SelectItem>
+                <SelectItem value="1">{dict?.submit?.category1}</SelectItem>
+                <SelectItem value="2">{dict?.submit?.category2}</SelectItem>
+                <SelectItem value="3">{dict?.submit?.category3}</SelectItem>
+                <SelectItem value="4">{dict?.submit?.category4}</SelectItem>
+                <SelectItem value="5">{dict?.submit?.category5}</SelectItem>
+                <SelectItem value="6">{dict?.submit?.category6}</SelectItem>
               </SelectContent>
             </Select>
 
-            <Input
-              placeholder="Enter Token Address"
-              value={tokenAddress}
-              onChange={(e) => setTokenAddress(e.target.value)}
-            />
+            <div className="w-full flex flex-col gap-4">
+              <Input
+                className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+                onChange={(e) => setTokenAddress(e.target.value)}
+                placeholder="Address"
+              />
 
-            <Input
-              placeholder="Enter amount"
-              value={transferAmount}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setTransferAmount(e.target.value)
-              }
-            />
+              <Input
+                className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder={dict?.submit?.amount ?? ''}
+                name="values"
+                onChange={handleChange}
+              />
 
-            <Input
-              placeholder="Enter Address To Transfer To"
-              value={transferAddr}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setTransferAddr(e.target.value)
-              }
-            />
+              <Input
+                className={`${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder={
+                  category === '5'
+                    ? dict?.submit?.gracePeriod
+                    : dict?.submit?.quorum_votes
+                }
+                name="variable1"
+                onChange={handleChange}
+              />
 
-            <Textarea
-              placeholder="Enter description"
-              value={description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setDescription(e.target.value)
-              }
-            />
+              <Input
+                className={`${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder={
+                  category === '5'
+                    ? dict?.submit?.min_delay
+                    : dict?.submit?.proposal_threshold
+                }
+                name="variable2"
+                onChange={handleChange}
+              />
+
+              <Input
+                className={` ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder={
+                  category === '5'
+                    ? dict?.submit?.max_delay
+                    : dict?.submit?.proposal_maxOperations
+                }
+                name="variable3"
+                onChange={handleChange}
+              />
+
+              <Textarea
+                className="max-md:h-60 h-60 w-full align-center p-2 rounded-md border-[1px] border-gray94"
+                placeholder={dict?.submit?.description ?? ''}
+                name="description"
+                onChange={handleChange}
+              />
+
+              <Textarea
+                className={`max-md:h-60 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94 outline-none ${category != '4' ? 'hidden' : ''}`}
+                placeholder={dict?.submit?.bytescode ?? ''}
+                name="byescode"
+                onChange={handleChange}
+              />
+            </div>
 
             <Button onClick={handleCreateProposal}>Create</Button>
           </DialogDescription>
         </DialogContent>
       </Dialog>
+
       <ToastContainer position="bottom-right" draggable></ToastContainer>
       <RingLoader
         style={{

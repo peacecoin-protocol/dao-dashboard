@@ -121,7 +121,7 @@ export default function ForSubmitPage({
         <h2 className="text-2xl font-bold tracking-tight my-4">
           {submit.title ?? ''}
         </h2>
-        <Select onValueChange={handleSelect}>
+        <Select onValueChange={(value) => handleSelect(value)}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder={submit.select ?? ''} />
           </SelectTrigger>
@@ -143,7 +143,6 @@ export default function ForSubmitPage({
             step="0.1"
             placeholder={submit.amount ?? ''}
             name="values"
-            value={values}
             onChange={handleChange}
           />
 
@@ -156,7 +155,6 @@ export default function ForSubmitPage({
               category === '5' ? submit.gracePeriod : submit.quorum_votes
             }
             name="variable1"
-            value={variable1}
             onChange={handleChange}
           />
 
@@ -169,7 +167,6 @@ export default function ForSubmitPage({
               category === '5' ? submit.min_delay : submit.proposal_threshold
             }
             name="variable2"
-            value={variable2}
             onChange={handleChange}
           />
 
@@ -184,7 +181,6 @@ export default function ForSubmitPage({
                 : submit.proposal_maxOperations
             }
             name="variable3"
-            value={variable3}
             onChange={handleChange}
           />
 
@@ -199,7 +195,6 @@ export default function ForSubmitPage({
           <Textarea
             className={`mt-5 max-md:h-60 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94 focus:outline-none ${category != '4' ? 'hidden' : ''}`}
             placeholder={submit.bytescode ?? ''}
-            value={bytescode}
             name="byescode"
             onChange={handleChange}
           />

@@ -106,7 +106,7 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
     //   ],
     // },
     {
-      title: sidebar.pce ?? 'PCE',
+      title: sidebar.pce ?? 'PeaceCoin Protocol DAO',
       label: '',
       href: '/pce',
       icon: <IconMessages size={18} />,
