@@ -317,239 +317,246 @@ export default function PCEPage({
         <h1 className="flex flex-row text-xl font-bold w-full">
           {proposal[9] || 'Description'}
         </h1>
+      </div>
+      <p className="description">{proposal[9] || 'Description'}</p>
+      <div className="flex flex-row gap-2">
+        <span className="flex bg-dark_blue rounded-xl text-light_white font-bold w-44 p-1 items-center justify-center text-sm px-4">
+          Transfer tokens
+        </span>
         <span className="flex bg-dark_blue rounded-xl text-light_white font-bold p-1 items-center justify-center text-sm px-4">
           {status}
         </span>
       </div>
-      <p className="description">{proposal[9] || 'Description'}</p>
-      <span className="flex bg-dark_blue rounded-xl text-light_white font-bold w-44 p-1 items-center justify-center text-sm px-4">
-        Transfer tokens
-      </span>
+
+      <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-row justify-between">
+            <h1>Vote For</h1>
+            <h1>
+              {Number(formatEther(proposal[5] || 0)).toLocaleString()} (
+              {proposal[5] && proposal[6] !== undefined
+                ? proposal[6] === 0 && proposal[5] > 0
+                  ? 100
+                  : (
+                      (Number(formatEther(proposal[5])) /
+                        (Number(formatEther(proposal[5])) +
+                          Number(formatEther(proposal[6])))) *
+                      100
+                    ).toFixed(2)
+                : '0'}
+              %)
+            </h1>
+          </div>
+          <Line
+            percent={
+              Number(proposal[5] || 0) > 0 &&
+              Number(BigInt(quorum?.toString() || '0')) > 0
+                ? (Number(formatEther(proposal[5])) /
+                    Number(formatEther(quorum?.toString() || '0'))) *
+                  100
+                : 0
+            }
+            strokeColor="#1995AD"
+            trailColor="#A1D6E2"
+            strokeWidth={1}
+            trailWidth={1}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-row justify-between">
+            <h1>Vote Against</h1>
+            <h1>
+              {Number(formatEther(proposal[6] || 0)).toLocaleString()} (
+              {proposal[5] && proposal[6] !== undefined
+                ? proposal[5] === 0 && proposal[6] > 0
+                  ? 100
+                  : (
+                      (Number(formatEther(proposal[6])) /
+                        (Number(formatEther(proposal[5])) +
+                          Number(formatEther(proposal[6])))) *
+                      100
+                    ).toFixed(2)
+                : '0'}
+              %)
+            </h1>
+          </div>
+
+          <Line
+            percent={
+              Number(proposal[6] || 0) > 0 &&
+              Number(BigInt(quorum?.toString() || '0')) > 0
+                ? (Number(formatEther(proposal[6])) /
+                    Number(formatEther(quorum?.toString() || '0'))) *
+                  100
+                : 0
+            }
+            strokeColor="#1995AD"
+            trailColor="#A1D6E2"
+            strokeWidth={1}
+            trailWidth={1}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-row justify-between">
+            <h1>Voting Period</h1>
+            <h1>Current Block: {Number(blockNumber)}</h1>
+          </div>
+
+          <Line
+            percent={
+              Number(proposal[3]) < Number(blockNumber)
+                ? Math.min(
+                    ((Number(blockNumber) - Number(proposal[3])) /
+                      Number(votingPeriod)) *
+                      100,
+                    100
+                  )
+                : 0
+            }
+            className="w-full"
+            strokeColor="#1995AD"
+            trailColor="#A1D6E2"
+            strokeWidth={1}
+            trailWidth={1}
+          />
+
+          <div className="flex flex-row justify-between">
+            <h1>Started at {Number(proposal[3])}</h1>
+            <h1>Ending at {Number(proposal[4])}</h1>
+          </div>
+        </div>
+
+        {Number(proposal[2]) !== 0 && status === 'Queued' && (
+          <div className="flex flex-col justify-between gap-2">
+            <div className="flex flex-row justify-between">
+              <h1>Timelock Delay</h1>
+              <h1>{timestampToDate(Number(proposal[2]))}</h1>
+            </div>
+
+            <Line
+              percent={
+                Number(proposal[2]) > 0
+                  ? Math.min(
+                      ((getCurrentTimestamp() -
+                        (Number(proposal[2]) - Number(timelockDelay))) *
+                        100) /
+                        Number(timelockDelay),
+                      100
+                    )
+                  : 0
+              }
+              strokeColor="#1995AD"
+              trailColor="#A1D6E2"
+              strokeWidth={1}
+              trailWidth={1}
+            />
+
+            <div className="flex flex-row justify-between">
+              <h1>
+                Started at{' '}
+                {Number(proposal[2]) > 0
+                  ? timestampToDate(Number(proposal[2]) - Number(timelockDelay))
+                  : '-'}
+              </h1>
+              <h1>
+                Ending at{' '}
+                {Number(proposal[2]) > 0
+                  ? timestampToDate(Number(proposal[2]))
+                  : 0}
+              </h1>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-row gap-1 md:gap-4 w-full">
+          <Button
+            className="w-full bg-dark_blue"
+            disabled={status !== 'Active'}
+            onClick={async () => {
+              await writeContract({
+                abi: GOVERNOR_ABI,
+                address: governorAddress[
+                  chainId || localhost.id
+                ] as `0x${string}`,
+                functionName: 'castVote',
+                args: [proposal[0], true],
+              })
+            }}
+          >
+            Vote For
+          </Button>
+          <Button
+            className="w-full bg-dark_blue"
+            disabled={status !== 'Active'}
+            onClick={async () => {
+              await writeContract({
+                abi: GOVERNOR_ABI,
+                address: governorAddress[
+                  chainId || localhost.id
+                ] as `0x${string}`,
+                functionName: 'castVote',
+                args: [proposal[0], false],
+              })
+            }}
+          >
+            Vote Against
+          </Button>
+          <Button
+            className="w-full bg-dark_blue"
+            disabled={status !== 'Succeeded'}
+            onClick={async () => {
+              await writeContract({
+                abi: GOVERNOR_ABI,
+                address: governorAddress[
+                  chainId || localhost.id
+                ] as `0x${string}`,
+                functionName: 'queue',
+                args: [proposal[0]],
+              })
+            }}
+          >
+            Queue
+          </Button>
+          <Button
+            className="w-full bg-dark_blue"
+            disabled={
+              Math.floor(Date.now() / 1000) < Number(proposal[2]) ||
+              status !== 'Queued'
+            }
+            onClick={async () => {
+              await writeContract({
+                abi: GOVERNOR_ABI,
+                address: governorAddress[
+                  chainId || localhost.id
+                ] as `0x${string}`,
+                functionName: 'execute',
+                args: [proposal[0]],
+              })
+            }}
+          >
+            Execute
+          </Button>
+        </div>
+      </div>
       <Dialog
         open={isProposalDetailDialogOpened}
         onOpenChange={(open) => {
           setIsProposalDetailDialogOpened(open)
         }}
       >
-        <div className="flex flex-col gap-8">
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-row justify-between">
-              <h1>Vote For</h1>
-              <h1>
-                {Number(formatEther(proposal[5] || 0)).toLocaleString()} (
-                {proposal[5] && proposal[6] !== undefined
-                  ? proposal[6] === 0 && proposal[5] > 0
-                    ? 100
-                    : (
-                        (Number(formatEther(proposal[5])) /
-                          (Number(formatEther(proposal[5])) +
-                            Number(formatEther(proposal[6])))) *
-                        100
-                      ).toFixed(2)
-                  : '0'}
-                %)
-              </h1>
-            </div>
-            <Line
-              percent={
-                Number(proposal[5] || 0) > 0 &&
-                Number(BigInt(quorum?.toString() || '0')) > 0
-                  ? (Number(formatEther(proposal[5])) /
-                      Number(formatEther(quorum?.toString() || '0'))) *
-                    100
-                  : 0
-              }
-              strokeColor="#1995AD"
-              trailColor="#A1D6E2"
-              strokeWidth={1}
-              trailWidth={1}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-row justify-between">
-              <h1>Vote Against</h1>
-              <h1>
-                {Number(formatEther(proposal[6] || 0)).toLocaleString()} (
-                {proposal[5] && proposal[6] !== undefined
-                  ? proposal[5] === 0 && proposal[6] > 0
-                    ? 100
-                    : (
-                        (Number(formatEther(proposal[6])) /
-                          (Number(formatEther(proposal[5])) +
-                            Number(formatEther(proposal[6])))) *
-                        100
-                      ).toFixed(2)
-                  : '0'}
-                %)
-              </h1>
-            </div>
-
-            <Line
-              percent={
-                Number(proposal[6] || 0) > 0 &&
-                Number(BigInt(quorum?.toString() || '0')) > 0
-                  ? (Number(formatEther(proposal[6])) /
-                      Number(formatEther(quorum?.toString() || '0'))) *
-                    100
-                  : 0
-              }
-              strokeColor="#1995AD"
-              trailColor="#A1D6E2"
-              strokeWidth={1}
-              trailWidth={1}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-row justify-between">
-              <h1>Voting Period</h1>
-              <h1>Current Block: {Number(blockNumber)}</h1>
-            </div>
-
-            <Line
-              percent={
-                Number(proposal[3]) < Number(blockNumber)
-                  ? Math.min(
-                      ((Number(blockNumber) - Number(proposal[3])) /
-                        Number(votingPeriod)) *
-                        100,
-                      100
-                    )
-                  : 0
-              }
-              className="w-full"
-              strokeColor="#1995AD"
-              trailColor="#A1D6E2"
-              strokeWidth={1}
-              trailWidth={1}
-            />
-
-            <div className="flex flex-row justify-between">
-              <h1>Started at {Number(proposal[3])}</h1>
-              <h1>Ending at {Number(proposal[4])}</h1>
-            </div>
-          </div>
-
-          {Number(proposal[2]) !== 0 && status === 'Queued' && (
-            <div className="flex flex-col justify-between gap-2">
-              <div className="flex flex-row justify-between">
-                <h1>Timelock Delay</h1>
-                <h1>{timestampToDate(Number(proposal[2]))}</h1>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Proposal Details</DialogTitle>
+            <DialogDescription>
+              <div className="flex flex-col gap-2">
+                <h1>Proposal ID: {index}</h1>
+                <h1>Proposal Description: {proposal[9]}</h1>
               </div>
-
-              <Line
-                percent={
-                  Number(proposal[2]) > 0
-                    ? Math.min(
-                        ((getCurrentTimestamp() -
-                          (Number(proposal[2]) - Number(timelockDelay))) *
-                          100) /
-                          Number(timelockDelay),
-                        100
-                      )
-                    : 0
-                }
-                strokeColor="#1995AD"
-                trailColor="#A1D6E2"
-                strokeWidth={1}
-                trailWidth={1}
-              />
-
-              <div className="flex flex-row justify-between">
-                <h1>
-                  Started at{' '}
-                  {Number(proposal[2]) > 0
-                    ? timestampToDate(
-                        Number(proposal[2]) - Number(timelockDelay)
-                      )
-                    : '-'}
-                </h1>
-                <h1>
-                  Ending at{' '}
-                  {Number(proposal[2]) > 0
-                    ? timestampToDate(Number(proposal[2]))
-                    : 0}
-                </h1>
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-row gap-1 md:gap-4 w-full">
-            <Button
-              className="w-full bg-dark_blue"
-              disabled={status !== 'Active'}
-              onClick={async () => {
-                await writeContract({
-                  abi: GOVERNOR_ABI,
-                  address: governorAddress[
-                    chainId || localhost.id
-                  ] as `0x${string}`,
-                  functionName: 'castVote',
-                  args: [proposal[0], true],
-                })
-
-                setIsProposalDetailDialogOpened(false)
-              }}
-            >
-              Vote For
-            </Button>
-            <Button
-              className="w-full bg-dark_blue"
-              disabled={status !== 'Active'}
-              onClick={async () => {
-                await writeContract({
-                  abi: GOVERNOR_ABI,
-                  address: governorAddress[
-                    chainId || localhost.id
-                  ] as `0x${string}`,
-                  functionName: 'castVote',
-                  args: [proposal[0], false],
-                })
-                setIsProposalDetailDialogOpened(false)
-              }}
-            >
-              Vote Against
-            </Button>
-            <Button
-              className="w-full bg-dark_blue"
-              disabled={status !== 'Succeeded'}
-              onClick={async () => {
-                await writeContract({
-                  abi: GOVERNOR_ABI,
-                  address: governorAddress[
-                    chainId || localhost.id
-                  ] as `0x${string}`,
-                  functionName: 'queue',
-                  args: [proposal[0]],
-                })
-                setIsProposalDetailDialogOpened(false)
-              }}
-            >
-              Queue
-            </Button>
-            <Button
-              className="w-full bg-dark_blue"
-              disabled={
-                Math.floor(Date.now() / 1000) < Number(proposal[2]) ||
-                status !== 'Queued'
-              }
-              onClick={async () => {
-                await writeContract({
-                  abi: GOVERNOR_ABI,
-                  address: governorAddress[
-                    chainId || localhost.id
-                  ] as `0x${string}`,
-                  functionName: 'execute',
-                  args: [proposal[0]],
-                })
-                setIsProposalDetailDialogOpened(false)
-              }}
-            >
-              Execute
-            </Button>
-          </div>
-        </div>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
       </Dialog>
     </article>
   )
