@@ -30,7 +30,7 @@ export function TooltipComponent({
           </svg>
         </TooltipTrigger>
         <TooltipContent className="bg-dark_blue text-oil px-3 py-2">
-          <p className="text-sm text-light_white">
+          <p className="text-sm text-white">
             {tooltipText.split('.').map(
               (sentence, index, array) =>
                 sentence.trim() && (

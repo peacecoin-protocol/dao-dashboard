@@ -76,6 +76,7 @@ import { governorAddress, SUBGRAPH_URL } from '~/app/constants/constants'
 import { Env } from '~/env'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { useBlockNumber, useBlock } from 'wagmi'
+import { pinata } from '~/lib/config'
 
 type Dao = {
   id: string
@@ -120,6 +121,8 @@ export default function ForSubmitPage({
   const [description, setDescription] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
   const [tokenAddress, setTokenAddress] = useState('')
+  const [imageHash, setImageHash] = useState('')
+  const [file, setFile] = useState<File>()
 
   const [proposals, setProposals] = useState<any[]>([])
   const [proposalStatus, setStatus] = useState<any[]>([])
@@ -180,6 +183,26 @@ export default function ForSubmitPage({
   useEffect(() => {
     if (daoInfo?.timelock) {
       getTreasuryBalances(daoInfo?.timelock)
+    }
+  }, [daoInfo])
+
+  const fetchImage = async (name: string) => {
+    const file = await pinata.files.public.list().then((files) => {
+      const pceFiles = files.files.filter((file) => file.name == name)
+
+      if (pceFiles.length > 0) {
+        setImageHash(pceFiles[0]?.cid as string)
+      }
+      return pceFiles
+    })
+    return file
+  }
+
+  useEffect(() => {
+    if (daoInfo?.id) {
+      toast.info('Fetching image...')
+      fetchImage(daoInfo?.id)
+      toast.success('Image fetched successfully')
     }
   }, [daoInfo])
 
@@ -267,6 +290,12 @@ export default function ForSubmitPage({
     functionName: 'totalSupply',
   })
 
+  const { data: _owner, refetch: refetchOwner } = useReadContract({
+    address: daoInfo?.communityToken as `0x${string}`,
+    abi: PCE_ABI,
+    functionName: 'owner',
+  })
+
   const { data: proposalThreshold, refetch: refetchProposalThreshold } =
     useReadContract({
       address: daoInfo?.governor as `0x${string}`,
@@ -317,10 +346,10 @@ export default function ForSubmitPage({
       </div>
       <p className="description">{proposal[9] || 'Description'}</p>
       <div className="flex flex-row gap-2">
-        <span className="flex bg-dark_blue rounded-xl text-light_white font-bold w-44 p-1 items-center justify-center text-sm px-4">
+        <span className="flex bg-dark_blue rounded-xl text-white font-bold w-44 p-1 items-center justify-center text-sm px-4">
           Transfer tokens
         </span>
-        <span className="flex bg-dark_blue rounded-xl text-light_white font-bold p-1 items-center justify-center text-sm px-4">
+        <span className="flex bg-dark_blue rounded-xl text-white font-bold p-1 items-center justify-center text-sm px-4">
           {status}
         </span>
       </div>
@@ -887,10 +916,71 @@ export default function ForSubmitPage({
     fetchData()
   }, [id])
 
+  useEffect(() => {
+    const updateImage = async () => {
+      try {
+        if (!file || !daoInfo?.id) return
+
+        toast.info('Updating image...')
+        const prevImages = await fetchImage(daoInfo?.id)
+        if (prevImages) {
+          const res = await pinata.files.public.delete(
+            prevImages.map((file: any) => file.id)
+          )
+        }
+
+        const _file = new File([file], daoInfo?.id, { type: file.type })
+        const upload = await pinata.upload.public.file(_file, {
+          metadata: {
+            name: daoInfo?.id,
+          },
+        })
+        setImageHash(upload.cid)
+        toast.success('Image updated successfully')
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
+    updateImage()
+  }, [file])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFile(e.target?.files?.[0])
+  }
+
   return (
     <div className="items-center justify-center flex flex-col mx-4 md:mx-20 gap-4">
       <div className="flex flex-row w-full items-center gap-4 mt-8">
-        <img src={identicon} alt="" className="w-24 rounded-full" />
+        <div className="relative cursor-pointer">
+          <img
+            src={
+              imageHash
+                ? `https://orange-elegant-takin-78.mypinata.cloud/ipfs/${imageHash}`
+                : identicon
+            }
+            alt=""
+            className="w-24 h-24 rounded-full border-2 border-gray-300"
+          />
+          <div
+            className="w-full h-full absolute top-0 left-0"
+            onClick={() => {
+              if (address != (_owner as `0x${string}`)) {
+                toast.error('You are not the owner of this DAO')
+                return
+              } else {
+                const fileInput = document.createElement('input')
+                fileInput.type = 'file'
+                fileInput.onchange = (e) => {
+                  const event =
+                    e as unknown as React.ChangeEvent<HTMLInputElement>
+                  handleFileChange(event)
+                }
+                fileInput.click()
+              }
+            }}
+          ></div>
+        </div>
 
         <div className="flex flex-row gap-2 font-bold text-5xl">
           {daoInfo?.name}{' '}
@@ -1093,7 +1183,7 @@ export default function ForSubmitPage({
                         TVL
                       </div>
 
-                      <div className="flex bg-dark_blue rounded-xl text-light_white font-bold p-1 w-full items-center justify-center text-sm">
+                      <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-full items-center justify-center text-sm">
                         $0
                       </div>
                     </div>
@@ -1102,7 +1192,7 @@ export default function ForSubmitPage({
                       <div className="text-heavy_white text-sm flex justify-center items-center">
                         Memebers
                       </div>
-                      <div className="flex bg-dark_blue rounded-xl text-light_white font-bold p-1 w-full items-center justify-center text-sm">
+                      <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-full items-center justify-center text-sm">
                         0%
                       </div>
                     </div>
@@ -1452,7 +1542,7 @@ export default function ForSubmitPage({
                   <div className="flex flex-col gap-4">
                     <h1 className="flex flex-row text-2xl font-bold gap-4">
                       Voting Power Breakdown
-                      {/* <div className="flex bg-dark_blue rounded-xl text-light_white font-bold items-center justify-center text-xs px-4">
+                      {/* <div className="flex bg-dark_blue rounded-xl text-white font-bold items-center justify-center text-xs px-4">
                         0
                       </div> */}
                     </h1>

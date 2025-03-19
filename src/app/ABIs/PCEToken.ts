@@ -282,20 +282,7 @@ export const PCE_ABI = [
   {
     type: 'function',
     name: 'initialize',
-    inputs: [
-      { name: '_name', type: 'string', internalType: 'string' },
-      { name: '_symbol', type: 'string', internalType: 'string' },
-      {
-        name: 'communityTokenAddress',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: '_polygonChainManager',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
+    inputs: [],
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -810,6 +797,7 @@ export const PCE_ABI = [
   },
   { type: 'error', name: 'FailedInnerCall', inputs: [] },
   { type: 'error', name: 'InvalidInitialization', inputs: [] },
+  { type: 'error', name: 'MathOverflowedMulDiv', inputs: [] },
   { type: 'error', name: 'NotInitializing', inputs: [] },
   {
     type: 'error',

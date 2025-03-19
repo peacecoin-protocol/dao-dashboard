@@ -85,6 +85,10 @@ const loadComponent = async (key: string) => {
     case 'pce':
       Component = (await import('./(for-users)/[locale]/pce/page')).default
       break
+    case 'pce_detail':
+      Component = (await import('./(for-users)/[locale]/pce/detail/page'))
+        .default
+      break
     default:
       Component = (await import('~/components/app-shell')).default
       break
@@ -241,6 +245,11 @@ const router = createBrowserRouter([
         path: '/:locale/pce',
         loader: createLoader('pce'),
         lazy: createLazy('pce'),
+      },
+      {
+        path: '/:locale/pce/detail',
+        loader: createLoader('pce_detail'),
+        lazy: createLazy('pce_detail'),
       },
     ],
   },

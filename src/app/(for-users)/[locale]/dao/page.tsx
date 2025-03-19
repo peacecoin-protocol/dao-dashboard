@@ -78,6 +78,7 @@ type Dao = {
   telegram: string
   votes: number
   identicon: string
+  imageHash: string
   holders: number
 }
 
@@ -107,6 +108,8 @@ import { config } from '~/lib/config'
 import { sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
+import { pinata } from '~/lib/config'
+
 const showConnectWalletAlert = () => {
   toast.error('Please connect wallet')
 }
@@ -135,26 +138,27 @@ const DaoCard = ({
   >
     <div className="flex flex-row w-full items-center ">
       <div className="flex flex-row gap-4 md:gap-8 items-center border-none mx-8 md:mx-4">
-        {dao.identicon ? (
-          <img src={dao.identicon} alt="" className="w-24 rounded-full" />
-        ) : (
-          <div
-            className="rounded-full flex items-center justify-center"
-            style={{
-              backgroundColor: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
-            }}
-          >
-            <span className="text-4xl text-white font-bold w-20 h-20 xl:w-24 xl:h-24 flex items-center justify-center">
-              {dao.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-        )}
+        <div className="w-24 min-w-24 h-24">
+          {dao.imageHash ? (
+            <img
+              src={`https://orange-elegant-takin-78.mypinata.cloud/ipfs/${dao.imageHash}`}
+              alt=""
+              className="w-full h-full rounded-full border-2 border-gray-300"
+            />
+          ) : (
+            <img
+              src={dao.identicon}
+              alt=""
+              className="w-full h-full rounded-full border-2 border-gray-300"
+            />
+          )}
+        </div>
 
         <div className="flex flex-col gap-4 w-full">
           <div className="font-bold text-xl md:text-2xl w-full flex">
             {dao.name}
           </div>
-          <div className="flex bg-dark_blue rounded-xl text-light_white font-bold p-1 w-16 items-center justify-center">
+          <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-16 items-center justify-center">
             DAO
           </div>
         </div>
@@ -181,7 +185,7 @@ const StatItem = ({
 }) => (
   <div className="flex flex-col gap-4 w-full justify-center items-center">
     <div className="text-heavy_white text-sm">{label}</div>
-    <div className="flex bg-dark_blue rounded-xl text-light_white font-bold py-1 px-2 min-w-16 items-center justify-center text-sm">
+    <div className="flex bg-dark_blue rounded-xl text-white font-bold py-1 px-2 min-w-16 items-center justify-center text-sm">
       {value}
     </div>
   </div>
@@ -308,6 +312,20 @@ export default function ForDAOPage({
     fetchDict()
   }, [locale])
 
+  const fetchImage = async (name: string) => {
+    let imageHash = ''
+
+    const file = await pinata.files.public.list().then((files) => {
+      const pceFiles = files.files.filter((file) => file.name == name)
+
+      if (pceFiles.length > 0) {
+        imageHash = pceFiles[0]?.cid as string
+      }
+    })
+
+    return imageHash
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -360,15 +378,18 @@ export default function ForDAOPage({
               dao.governanceToken as string
             )
             const identicon = await generateIdenteapot(dao.governor, '')
+            const imageHash = await fetchImage(dao.id)
+
             updatedDaos.push({
               ...dao,
               votes,
               identicon,
               holders: holders.length,
+              imageHash,
             })
           } catch (error) {
             const identicon = await generateIdenteapot(dao.governor, '')
-            updatedDaos.push({ ...dao, votes: 0, identicon })
+            updatedDaos.push({ ...dao, votes: 0, identicon, imageHash: '' })
 
             console.log('error', error)
           }
@@ -393,7 +414,7 @@ export default function ForDAOPage({
         </h1>
 
         <Button
-          className="bg-dark_blue text-light_white"
+          className="bg-dark_blue text-white"
           onClick={() => {
             if (chainId === 0 || chainId === undefined) {
               showConnectWalletAlert()
