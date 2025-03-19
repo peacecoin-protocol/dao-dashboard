@@ -54,6 +54,7 @@
     "lucide-react": "^0.378.0",
     "negotiator": "^0.6.3",
     "next": "13.4",
+    "pinata": "^2.0.1",
     "pino-pretty": "^11.0.0",
     "rc-progress": "^4.0.0",
     "react": "^18",

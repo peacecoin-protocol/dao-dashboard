@@ -2,6 +2,7 @@ import { http, createConfig } from '@wagmi/core'
 import { polygon, sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
 import { Env } from '~/env'
+import { PinataSDK } from 'pinata'
 
 export const config = createConfig({
   chains: [sepolia, localhost],
@@ -12,4 +13,9 @@ export const config = createConfig({
   },
   multiInjectedProviderDiscovery: false,
   syncConnectedChain: true,
+})
+
+export const pinata = new PinataSDK({
+  pinataJwt: Env.PINATA_JWT,
+  pinataGateway: Env.NEXT_PUBLIC_GATEWAY_URL,
 })

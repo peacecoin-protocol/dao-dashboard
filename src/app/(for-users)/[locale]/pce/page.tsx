@@ -124,7 +124,6 @@ export default function PCEPage({
   })
 
   const [delegateAddr, setDelegateAddr] = useState('')
-  const [transferAddr, setTransferAddr] = useState('')
   const [description, setDescription] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
   const [tokenAddress, setTokenAddress] = useState('')
@@ -147,10 +146,9 @@ export default function PCEPage({
   const [isDepositDialogOpened, setIsDepositDialogOpened] = useState(false)
   const [isCreateProposalDialogOpened, setIsCreateProposalDialogOpened] =
     useState(false)
-  const [isProposalDetailDialogOpened, setIsProposalDetailDialogOpened] =
-    useState(false)
   const [identicon, setIdenticon] = useState('')
-
+  const [file, setFile] = useState<File>()
+  const [imageHash, setImageHash] = useState('')
   const [tabContent, setTabContent] = useState('about')
 
   const [treasuryBalances, setTreasuryBalances] = useState<TokenBalance[]>([])
@@ -307,27 +305,32 @@ export default function PCEPage({
     status: string
     index: number
   }) => (
-    <article
-      className="flex flex-col w-full bg-gray-100 p-4 rounded-xl gap-2 cursor-pointer"
-      onClick={() => {
-        setIsProposalDetailDialogOpened(true)
-      }}
-    >
-      <div className="flex flex-row items-center justify-between w-full rounded-xl">
-        <h1 className="flex flex-row text-xl font-bold w-full">
+    <article className="flex flex-col w-full bg-gray-100 p-4 rounded-xl gap-2">
+      <div
+        className="flex flex-col gap-2 cursor-pointer"
+        onClick={() => {
+          navigate(`/${locale}/pce/detail/`, {
+            state: { proposal },
+          })
+        }}
+      >
+        <div className="flex flex-row items-center justify-between w-full rounded-xl">
+          <h1 className="flex flex-row text-xl font-bold w-full truncate">
+            {proposal[9] || 'Description'}
+          </h1>
+        </div>
+        <p className="text-sm text-gray-600 line-clamp-2 mb-2">
           {proposal[9] || 'Description'}
-        </h1>
+        </p>
+        <div className="flex flex-row gap-2">
+          <span className="flex bg-dark_blue rounded-xl text-white font-bold w-44 p-1 items-center justify-center text-sm px-4">
+            Transfer tokens
+          </span>
+          <span className="flex bg-dark_blue rounded-xl text-white font-bold p-1 items-center justify-center text-sm px-4">
+            {status}
+          </span>
+        </div>
       </div>
-      <p className="description">{proposal[9] || 'Description'}</p>
-      <div className="flex flex-row gap-2">
-        <span className="flex bg-dark_blue rounded-xl text-light_white font-bold w-44 p-1 items-center justify-center text-sm px-4">
-          Transfer tokens
-        </span>
-        <span className="flex bg-dark_blue rounded-xl text-light_white font-bold p-1 items-center justify-center text-sm px-4">
-          {status}
-        </span>
-      </div>
-
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
           <div className="flex flex-row justify-between">
@@ -540,7 +543,7 @@ export default function PCEPage({
           </Button>
         </div>
       </div>
-      <Dialog
+      {/* <Dialog
         open={isProposalDetailDialogOpened}
         onOpenChange={(open) => {
           setIsProposalDetailDialogOpened(open)
@@ -557,7 +560,7 @@ export default function PCEPage({
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </article>
   )
 
@@ -912,7 +915,11 @@ export default function PCEPage({
   return (
     <div className="items-center justify-center flex flex-col mx-4 md:mx-20 gap-4">
       <div className="flex flex-row w-full items-center gap-4 mt-8">
-        <img src={identicon} alt="" className="w-24 rounded-full" />
+        <img
+          src="/pce_logo.jpg"
+          alt=""
+          className="w-24 h-24 rounded-full border-2 border-gray-300"
+        />
 
         <div className="flex flex-row gap-2 font-bold text-5xl">
           Peace Coin DAO
@@ -1135,7 +1142,7 @@ export default function PCEPage({
                         TVL
                       </div>
 
-                      <div className="flex bg-dark_blue rounded-xl text-light_white font-bold p-1 w-full items-center justify-center text-sm">
+                      <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-full items-center justify-center text-sm">
                         $0
                       </div>
                     </div>
@@ -1144,7 +1151,7 @@ export default function PCEPage({
                       <div className="text-heavy_white text-sm flex justify-center items-center">
                         Memebers
                       </div>
-                      <div className="flex bg-dark_blue rounded-xl text-light_white font-bold p-1 w-full items-center justify-center text-sm">
+                      <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-full items-center justify-center text-sm">
                         0%
                       </div>
                     </div>
@@ -1477,7 +1484,7 @@ export default function PCEPage({
                   <div className="flex flex-col gap-4">
                     <h1 className="flex flex-row text-2xl font-bold gap-4">
                       Voting Power Breakdown
-                      {/* <div className="flex bg-dark_blue rounded-xl text-light_white font-bold items-center justify-center text-xs px-4">
+                      {/* <div className="flex bg-dark_blue rounded-xl text-white font-bold items-center justify-center text-xs px-4">
                         0
                       </div> */}
                     </h1>
