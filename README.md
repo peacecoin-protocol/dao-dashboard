@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Node.js 20.12.2 LTS (2024-04-19)
+- Node.js v20.18.1
 
 ## Getting Started
 
