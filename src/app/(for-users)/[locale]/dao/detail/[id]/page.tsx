@@ -77,6 +77,7 @@ import { Env } from '~/env'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { useBlockNumber, useBlock } from 'wagmi'
 import { pinata } from '~/lib/config'
+import ImageCropModal from '~/components/ui/ImageCropModal'
 
 type Dao = {
   id: string
@@ -143,6 +144,10 @@ export default function ForSubmitPage({
   const [tabContent, setTabContent] = useState('about')
 
   const [treasuryBalances, setTreasuryBalances] = useState<TokenBalance[]>([])
+
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [croppedImage, setCroppedImage] = useState<string | null>(null)
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false)
 
   const pathname = useParams()
   const id = pathname.id
@@ -919,7 +924,7 @@ export default function ForSubmitPage({
   useEffect(() => {
     const updateImage = async () => {
       try {
-        if (!file || !daoInfo?.id) return
+        if (!daoInfo?.id) return
 
         toast.info('Updating image...')
         const prevImages = await fetchImage(daoInfo?.id)
@@ -929,7 +934,11 @@ export default function ForSubmitPage({
           )
         }
 
-        const _file = new File([file], daoInfo?.id, { type: file.type })
+        const response = await fetch(croppedImage as string)
+        const blob = await response.blob()
+        const _file = new File([blob], daoInfo?.id || 'dao-image', {
+          type: 'image/png',
+        })
         const upload = await pinata.upload.public.file(_file, {
           metadata: {
             name: daoInfo?.id,
@@ -943,16 +952,44 @@ export default function ForSubmitPage({
     }
 
     updateImage()
-  }, [file])
+  }, [croppedImage])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFile(e.target?.files?.[0])
+  const deleteImage = async () => {
+    try {
+      if (!daoInfo?.id) return
+
+      toast.info('Deleting image...')
+      const prevImages = await fetchImage(daoInfo?.id)
+      if (prevImages) {
+        const res = await pinata.files.public.delete(
+          prevImages.map((file: any) => file.id)
+        )
+      }
+      setImageHash('')
+      toast.success('Image deleted successfully')
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0]
+      if (file) {
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = () => {
+          setSelectedImage(reader.result as string)
+          setIsCropModalOpen(true)
+        }
+      }
+    }
   }
 
   return (
     <div className="items-center justify-center flex flex-col mx-4 md:mx-20 gap-4">
       <div className="flex flex-row w-full items-center gap-4 mt-8">
-        <div className="relative cursor-pointer">
+        <div className="relative group">
           <img
             src={
               imageHash
@@ -962,13 +999,14 @@ export default function ForSubmitPage({
             alt=""
             className="w-24 h-24 rounded-full border-2 border-gray-300"
           />
-          <div
-            className="w-full h-full absolute top-0 left-0"
-            onClick={() => {
-              if (address != (_owner as `0x${string}`)) {
-                toast.error('You are not the owner of this DAO')
-                return
-              } else {
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-full">
+            <button
+              className="p-2 text-white hover:text-gray-200"
+              onClick={() => {
+                if (address != (_owner as `0x${string}`)) {
+                  toast.error('You are not the owner of this DAO')
+                  return
+                }
                 const fileInput = document.createElement('input')
                 fileInput.type = 'file'
                 fileInput.onchange = (e) => {
@@ -977,16 +1015,63 @@ export default function ForSubmitPage({
                   handleFileChange(event)
                 }
                 fileInput.click()
-              }
-            }}
-          ></div>
+              }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+            </button>
+            <button
+              className="p-2 text-white hover:text-gray-200"
+              onClick={async () => {
+                if (address != (_owner as `0x${string}`)) {
+                  toast.error('You are not the owner of this DAO')
+                  return
+                }
+
+                await deleteImage()
+              }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-row gap-2 font-bold text-5xl">
           {daoInfo?.name}{' '}
         </div>
       </div>
-
+      {selectedImage && isCropModalOpen && (
+        <ImageCropModal
+          imageSrc={selectedImage}
+          onClose={() => setIsCropModalOpen(false)}
+          onCropComplete={(cropped) => setCroppedImage(cropped)}
+        />
+      )}
       <div className="flex flex-row w-full items-center">
         <Tabs defaultValue="about" className="w-full" value={tabContent}>
           <TabsList>
