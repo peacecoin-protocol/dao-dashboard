@@ -245,7 +245,12 @@ export default function PCEPage({
     address: governorAddress[chainId || localhost.id] as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'votingDelay',
+    chainId: localhost.id,
   })
+
+  useEffect(() => {
+    console.log(votingDelay)
+  }, [votingDelay])
 
   const { data: pceBalance, refetch: refetchPCEBalance } = useReadContract({
     address: pceAddress[chainId || localhost.id] as `0x${string}`,
@@ -315,13 +320,11 @@ export default function PCEPage({
         }}
       >
         <div className="flex flex-row items-center justify-between w-full rounded-xl">
-          <h1 className="flex flex-row text-xl font-bold w-full truncate">
+          <h1 className="flex flex-row text-xl font-bold w-full">
             {proposal[9] || 'Description'}
           </h1>
         </div>
-        <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-          {proposal[9] || 'Description'}
-        </p>
+        <p className="description">{proposal[9] || 'Description'}</p>
         <div className="flex flex-row gap-2">
           <span className="flex bg-dark_blue rounded-xl text-white font-bold w-44 p-1 items-center justify-center text-sm px-4">
             Transfer tokens
@@ -473,7 +476,7 @@ export default function PCEPage({
           </div>
         )}
 
-        <div className="flex flex-row gap-1 md:gap-4 w-full">
+        <div className="flex flex-row gap-1 sm:gap-4 w-full">
           <Button
             className="w-full bg-dark_blue"
             disabled={status !== 'Active'}
@@ -913,13 +916,9 @@ export default function PCEPage({
   }, [locale])
 
   return (
-    <div className="items-center justify-center flex flex-col mx-4 md:mx-20 gap-4">
+    <div className="items-center justify-center flex flex-col mx-4 sm:mx-20 gap-4">
       <div className="flex flex-row w-full items-center gap-4 mt-8">
-        <img
-          src="/pce_logo.jpg"
-          alt=""
-          className="w-24 h-24 rounded-full border-2 border-gray-300"
-        />
+        <img src="/pce_logo.jpg" alt="" className="w-36 h-36" />
 
         <div className="flex flex-row gap-2 font-bold text-5xl">
           Peace Coin DAO
@@ -949,9 +948,9 @@ export default function PCEPage({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="about" className="">
-            <div className="flex md:flex-row flex-col w-full gap-8">
+            <div className="flex sm:flex-row flex-col w-full gap-8">
               <div className="flex flex-col w-full mt-4 gap-4">
-                <div className="flex flex-col md:flex-row md:justify-between md:items-center w-full gap-2">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-2">
                   <h1 className="text-2xl font-bold">Latest Proposals</h1>
                   <div className="flex flex-row gap-4">
                     <Button
@@ -983,11 +982,11 @@ export default function PCEPage({
                   </div>
                 )}
               </div>
-              <div className="flex flex-col md:w-[40%] gap-4">
+              <div className="flex flex-col sm:w-[40%] gap-4">
                 <h1 className="text-2xl font-bold mt-4">About DAO</h1>
 
                 <div className="flex flex-col border rounded-xl p-4 mt-2 bg-gray-100 gap-2">
-                  <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
+                  <div className="flex flex-row justify-between items-center rounded-xl mt-2 w-full">
                     <TooltipComponent
                       title="Governor Token"
                       tooltipText="A token that represents voting power in the DAO. Holders can vote on proposals and participate in governance decisions."
@@ -1314,7 +1313,7 @@ export default function PCEPage({
             </div>
           </TabsContent>
           <TabsContent value="balance">
-            <div className="flex flex-col md:flex-row mt-4 gap-4 ">
+            <div className="flex flex-col sm:flex-row mt-4 gap-4 ">
               <div className="flex flex-col w-full">
                 <h1 className="text-2xl font-bold">Treasury</h1>
                 <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
@@ -1343,7 +1342,7 @@ export default function PCEPage({
                   </Table>
                 </div>
               </div>
-              <div className="flex flex-col w-full md:w-[40%]">
+              <div className="flex flex-col w-full sm:w-[40%]">
                 <h1 className="text-2xl font-bold">DAO Balance</h1>
 
                 <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
@@ -1480,7 +1479,7 @@ export default function PCEPage({
           <TabsContent value="holders">
             <div className="flex flex-row mt-4 gap-4">
               <div className="flex flex-col w-full gap-4">
-                <div className="flex flex-col md:flex-row w-full gap-4 items-center justify-between">
+                <div className="flex flex-col sm:flex-row w-full gap-4 items-center justify-between">
                   <div className="flex flex-col gap-4">
                     <h1 className="flex flex-row text-2xl font-bold gap-4">
                       Voting Power Breakdown
@@ -1675,14 +1674,14 @@ export default function PCEPage({
               />
 
               <Textarea
-                className="max-md:h-60 h-60 w-full align-center p-2 rounded-md border-[1px] border-gray94"
+                className="max-sm:h-60 h-60 w-full align-center p-2 rounded-md border-[1px] border-gray94"
                 placeholder={dict?.submit?.description ?? ''}
                 name="description"
                 onChange={handleChange}
               />
 
               <Textarea
-                className={`max-md:h-60 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94 outline-none ${category != '4' ? 'hidden' : ''}`}
+                className={`max-sm:h-60 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94 outline-none ${category != '4' ? 'hidden' : ''}`}
                 placeholder={dict?.submit?.bytescode ?? ''}
                 name="byescode"
                 onChange={handleChange}

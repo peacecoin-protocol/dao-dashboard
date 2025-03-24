@@ -143,14 +143,10 @@ const DaoCard = ({
             <img
               src={`https://orange-elegant-takin-78.mypinata.cloud/ipfs/${dao.imageHash}`}
               alt=""
-              className="w-full h-full rounded-full border-2 border-gray-300"
+              className="w-full h-full"
             />
           ) : (
-            <img
-              src={dao.identicon}
-              alt=""
-              className="w-full h-full rounded-full border-2 border-gray-300"
-            />
+            <img src={dao.identicon} alt="" className="w-full h-full " />
           )}
         </div>
 

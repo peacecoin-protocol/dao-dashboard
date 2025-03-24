@@ -78,6 +78,12 @@ import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { useBlockNumber, useBlock } from 'wagmi'
 import { pinata } from '~/lib/config'
 import ImageCropModal from '~/components/ui/ImageCropModal'
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu'
 
 type Dao = {
   id: string
@@ -997,10 +1003,10 @@ export default function ForSubmitPage({
                 : identicon
             }
             alt=""
-            className="w-24 h-24 rounded-full border-2 border-gray-300"
+            className="w-24 h-24"
           />
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-full">
-            <button
+          <div className="absolute inset-0 flex items-end justify-start opacity-0 group-hover:opacity-80 transition-opacity bg-black/50">
+            {/* <button
               className="p-2 text-white hover:text-gray-200"
               onClick={() => {
                 if (address != (_owner as `0x${string}`)) {
@@ -1031,8 +1037,8 @@ export default function ForSubmitPage({
                   d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                 />
               </svg>
-            </button>
-            <button
+            </button> */}
+            {/* <button
               className="p-2 text-white hover:text-gray-200"
               onClick={async () => {
                 if (address != (_owner as `0x${string}`)) {
@@ -1057,7 +1063,60 @@ export default function ForSubmitPage({
                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                 />
               </svg>
-            </button>
+            </button> */}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                {/* <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button> */}
+                <Button className="w-full h-full bg-transparent gap-2 items-end justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                    <path d="m15 5 4 4" />
+                  </svg>
+                  Edit
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  onClick={() => {
+                    const fileInput = document.createElement('input')
+                    fileInput.type = 'file'
+                    fileInput.onchange = (e) => {
+                      const event =
+                        e as unknown as React.ChangeEvent<HTMLInputElement>
+                      handleFileChange(event)
+                    }
+                    fileInput.click()
+                  }}
+                >
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    if (address != (_owner as `0x${string}`)) {
+                      toast.error('You are not the owner of this DAO')
+                      return
+                    }
+                    await deleteImage()
+                  }}
+                >
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -1133,7 +1192,7 @@ export default function ForSubmitPage({
                 <h1 className="text-2xl font-bold mt-4">About DAO</h1>
 
                 <div className="flex flex-col border rounded-xl p-4 mt-2 bg-gray-100 gap-2">
-                  <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
+                  <div className="flex flex-row justify-between items-center rounded-xl mt-2 w-full">
                     <TooltipComponent
                       title="Governor Token"
                       tooltipText="A token that represents voting power in the DAO. Holders can vote on proposals and participate in governance decisions."
