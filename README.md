@@ -9,3 +9,7 @@
 ```bash
 make dev
 ```
+
+```bash
+npm run dev
+```
