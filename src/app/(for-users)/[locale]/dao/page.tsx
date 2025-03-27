@@ -119,9 +119,11 @@ const DaoCard = ({
   locale,
   navigate,
   chainId,
+  localeDict,
 }: {
   dao: Dao
   locale: string
+  localeDict: any
   navigate: any
   chainId: number
 }) => (
@@ -163,11 +165,14 @@ const DaoCard = ({
 
     <div className="flex flex-row gap-4 w-[40%] items-center">
       <StatItem
-        label="My Power"
+        label={localeDict.myPower}
         value={dao.votes ? formatString(formatEther(BigInt(dao.votes))) : 0}
       />
       {/* <StatItem label="TVL" value="$0" /> */}
-      <StatItem label="Members" value={dao.holders ? dao.holders + 1 : 1} />
+      <StatItem
+        label={localeDict.members}
+        value={dao.holders ? dao.holders + 1 : 1}
+      />
     </div>
   </div>
 )
@@ -193,6 +198,7 @@ export default function ForDAOPage({
   const navigate = useNavigate()
 
   const [dict, setDict] = useState<Dictionary | null>(null)
+  const localeDict = dict?.studio ?? {}
 
   const [daos, setDaos] = useState<any[]>([])
 
@@ -405,9 +411,7 @@ export default function ForDAOPage({
   return (
     <div className="items-center justify-center flex flex-col mx-10 md:mx-20 gap-4">
       <div className="flex flex-col md:flex-row h-20 w-full justify-between items-center">
-        <h1 className="text-2xl font-bold text-dark_bg">
-          DAO: What's in it for me?
-        </h1>
+        <h1 className="text-2xl font-bold text-dark_bg">{localeDict.title}</h1>
 
         <Button
           className="bg-dark_blue text-white"
@@ -419,7 +423,7 @@ export default function ForDAOPage({
             setIsDialogOpened(!isDialogOpened)
           }}
         >
-          Create a DAO
+          {localeDict.createDao}
         </Button>
 
         <Dialog
@@ -436,19 +440,19 @@ export default function ForDAOPage({
               <h1>About DAO</h1>
               <div className="flex flex-col gap-2">
                 <Input
-                  placeholder="DAO Name"
+                  placeholder={localeDict.daoName}
                   onChange={(e) => updateDaoForm('name', e.target.value)}
                   value={daoForm.name}
                 />
                 <Input
-                  placeholder="DAO Description"
+                  placeholder={localeDict.description}
                   onChange={(e) =>
                     updateDaoMetadata('description', e.target.value)
                   }
                   value={daoForm.metadata.description}
                 />
                 <Input
-                  placeholder="DAO Site"
+                  placeholder={localeDict.website}
                   onChange={(e) => updateDaoMetadata('website', e.target.value)}
                   value={daoForm.metadata.website}
                 />
@@ -458,19 +462,19 @@ export default function ForDAOPage({
               <h1>Social Links</h1>
               <div className="flex flex-col gap-2">
                 <Input
-                  placeholder="Linkedin"
+                  placeholder={localeDict.linkedin}
                   onChange={(e) =>
                     updateDaoMetadata('linkedin', e.target.value)
                   }
                   value={daoForm.metadata.linkedin}
                 />
                 <Input
-                  placeholder="Twitter"
+                  placeholder={localeDict.twitter}
                   onChange={(e) => updateDaoMetadata('twitter', e.target.value)}
                   value={daoForm.metadata.twitter}
                 />
                 <Input
-                  placeholder="Telegram"
+                  placeholder={localeDict.telegram}
                   onChange={(e) =>
                     updateDaoMetadata('telegram', e.target.value)
                   }
@@ -479,10 +483,10 @@ export default function ForDAOPage({
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <h1>Enter community token address</h1>
+              <h1>{localeDict.enterAddress}</h1>
               <div className="flex flex-col gap-2">
                 <Input
-                  placeholder="Token Address"
+                  placeholder={localeDict.tokenAddress}
                   onChange={(e) =>
                     updateDaoForm('tokenAddress', e.target.value)
                   }
@@ -494,31 +498,31 @@ export default function ForDAOPage({
               <h1>Voting Parameters</h1>
               <div className="flex flex-col gap-2">
                 <Input
-                  placeholder="Voting Delay - 1 Block"
+                  placeholder={localeDict.votingDelay + ' - 1 Block'}
                   onChange={(e) => updateDaoForm('votingDelay', e.target.value)}
                   value={daoForm.votingDelay}
                 />
                 <Input
-                  placeholder="Voting Period - 100 Blocks"
+                  placeholder={localeDict.votingPeriod + ' - 100 Blocks'}
                   onChange={(e) =>
                     updateDaoForm('votingPeriod', e.target.value)
                   }
                   value={daoForm.votingPeriod}
                 />
                 <Input
-                  placeholder="Proposal Threshold - 1000 Power"
+                  placeholder={localeDict.proposalThreshold + ' - 1000 Power'}
                   onChange={(e) =>
                     updateDaoForm('proposalThreshold', e.target.value)
                   }
                   value={daoForm.proposalThreshold}
                 />
                 <Input
-                  placeholder="Quorum Votes - 2000 Power"
+                  placeholder={localeDict.quorum + ' - 2000 Power'}
                   onChange={(e) => updateDaoForm('quorumVotes', e.target.value)}
                   value={daoForm.quorumVotes}
                 />
                 <Input
-                  placeholder="Timelock Delay - 86400 (1day)"
+                  placeholder={localeDict.timelockDelay + ' - 86400 (1day)'}
                   onChange={(e) =>
                     updateDaoForm('timelockDelay', e.target.value)
                   }
@@ -531,7 +535,7 @@ export default function ForDAOPage({
                 handleCreateDao()
               }}
             >
-              Confirm
+              {localeDict.confirm}
             </Button>
           </DialogContent>
         </Dialog>
@@ -540,15 +544,15 @@ export default function ForDAOPage({
         <Tabs defaultValue="all" className="flex flex-col w-full items-center">
           <TabsList className="flex flex-row w-full">
             <TabsTrigger className="w-full flex" value="all">
-              All DAOs
+              {localeDict.allDaos}
             </TabsTrigger>
             <TabsTrigger className="w-full flex" value="my">
-              My activity
+              {localeDict.allActivities}
             </TabsTrigger>
           </TabsList>
           <div className="flex flex-row gap-4 h-8 w-full mt-4">
             <Input
-              placeholder="Search"
+              placeholder={localeDict.search}
               className="w-full"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -580,6 +584,7 @@ export default function ForDAOPage({
                   key={dao.id}
                   dao={dao}
                   locale={locale}
+                  localeDict={localeDict}
                   navigate={navigate}
                   chainId={chainId || 0}
                 />
@@ -601,6 +606,7 @@ export default function ForDAOPage({
                   key={dao.id}
                   dao={dao}
                   locale={locale}
+                  localeDict={localeDict}
                   navigate={navigate}
                   chainId={chainId || 0}
                 />

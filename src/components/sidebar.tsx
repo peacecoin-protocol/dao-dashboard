@@ -6,7 +6,8 @@ import Nav from './nav'
 import { cn } from '~/lib/utils'
 import { Locale } from '~/i18n/types'
 import { useSideLinks } from '~/data/sidelinks'
-
+import { getDict } from '~/i18n/get-dict'
+import { Dictionary } from '~/i18n/types'
 interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   isCollapsed: boolean
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
@@ -19,8 +20,23 @@ export default function Sidebar({
   setIsCollapsed,
   locale,
 }: SidebarProps) {
+  const [dict, setDict] = useState<Dictionary | null>(null)
+
   const [navOpened, setNavOpened] = useState(false)
   const sideLinks = useSideLinks(locale)
+  const localDict = dict?.sidebar ?? {}
+
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
 
   /* Make body not scrollable when navBar is opened */
   useEffect(() => {
@@ -59,8 +75,10 @@ export default function Sidebar({
             <div
               className={`flex flex-col justify-end truncate ${isCollapsed ? 'invisible w-0' : 'visible w-auto'}`}
             >
-              <span className="font-medium">Peace Coin</span>
-              <span className="text-xs">DAO Studio</span>
+              <span className="font-medium">{localDict.pceCoin}</span>
+              <span className="text-xs">
+                {localDict.daoStudio ?? 'DAO Studio'}
+              </span>
             </div>
           </div>
 

@@ -211,24 +211,24 @@ export default function ForDelegatePage({
     notify()
   }, [isConfirmed, isConfirming, error, hash])
 
-  const delegate = dict?.delegate ?? {}
+  const localDict = dict?.delegate ?? {}
 
   return (
     <div className="items-center justify-center flex w-full">
       <div className="flex flex-col max-xl:mx-10 mx-80 max-xl:my-0 my-20 gap-4">
         <h2 className="text-2xl font-bold tracking-tight my-4 text-center">
-          {delegate.title ?? ''}
+          {localDict.title ?? ''}
         </h2>
 
         <div className="text-muted-foreground">
-          Peace Coin:
+          {localDict.peaceCoin ?? 'Peace Coin'}:
           {pceBalance
             ? formatString(formatEther(BigInt(pceBalance as string)))
             : '0'}
         </div>
 
         <div className="text-muted-foreground">
-          {delegate.votingPower ?? ''} :{' '}
+          {localDict.votingPower ?? ''} :{' '}
           {votes ? formatString(formatEther(BigInt(votes as string))) : '0'}
         </div>
 
@@ -240,11 +240,12 @@ export default function ForDelegatePage({
         </div>
 
         <div className="text-muted-foreground">
-          {delegate.description ?? ''}
+          {localDict.description ?? ''}
         </div>
 
         <div className="flex gap-2 w-full items-center justify-center flex-row">
           <AmountInput
+            localDict={localDict}
             className="w-60 w-full"
             variant="outline"
             setStakingAmount={setStakingAmount}

@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
 
-import { useNavigate } from 'react-router-dom'
-
 import { Alchemy, Network } from 'alchemy-sdk'
 
 import 'react-toastify/dist/ReactToastify.css'
@@ -119,8 +117,8 @@ type TokenBalance = {
 export default function ForSubmitPage({
   params: { locale },
 }: PagePropsWithLocale<{}>) {
-  const navigate = useNavigate()
   const [dict, setDict] = useState<Dictionary | null>(null)
+  const localDict = dict?.daoInfo ?? {}
 
   const [daoInfo, setDaoInfo] = useState<Dao>()
   const [delegateAddr, setDelegateAddr] = useState('')
@@ -129,7 +127,6 @@ export default function ForSubmitPage({
   const [transferAmount, setTransferAmount] = useState('')
   const [tokenAddress, setTokenAddress] = useState('')
   const [imageHash, setImageHash] = useState('')
-  const [file, setFile] = useState<File>()
 
   const [proposals, setProposals] = useState<any[]>([])
   const [proposalStatus, setStatus] = useState<any[]>([])
@@ -210,39 +207,43 @@ export default function ForSubmitPage({
   }
 
   useEffect(() => {
-    if (daoInfo?.id) {
-      toast.info('Fetching image...')
+    if (daoInfo?.id && localDict) {
+      toast.info(localDict.fetchingImage ?? 'Fetching image...')
       fetchImage(daoInfo?.id)
-      toast.success('Image fetched successfully')
+      toast.success(
+        localDict.imageFetchedSuccessfully ?? 'Image fetched successfully'
+      )
     }
-  }, [daoInfo])
+  }, [daoInfo, localDict])
 
   const DelegateDialog = ({
     isOpen,
     onOpenChange,
     delegateAddr,
-
+    localDict,
     handleDelegate,
   }: {
     isOpen: boolean
     onOpenChange: (open: boolean) => void
     delegateAddr: string
-
+    localDict: any
     handleDelegate: () => void
   }) => (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delegate</DialogTitle>
+          <DialogTitle>{localDict.delegate ?? 'Delegate'}</DialogTitle>
           <DialogDescription className="flex flex-col gap-4">
             <Input
-              placeholder="Enter address"
+              placeholder={localDict.enterAddress ?? 'Enter address'}
               value={delegateAddr}
               name="delegateAddr"
               onChange={(e) => setDelegateAddr(e.target.value)}
             />
             <div>
-              <Button onClick={handleDelegate}>Delegate</Button>
+              <Button onClick={handleDelegate}>
+                {localDict.delegate ?? 'Delegate'}
+              </Button>
             </div>
           </DialogDescription>
         </DialogHeader>
@@ -358,7 +359,7 @@ export default function ForSubmitPage({
       <p className="description">{proposal[9] || 'Description'}</p>
       <div className="flex flex-row gap-2">
         <span className="flex bg-dark_blue rounded-xl text-white font-bold w-44 p-1 items-center justify-center text-sm px-4">
-          Transfer tokens
+          {localDict.transferTokens ?? 'Transfer tokens'}
         </span>
         <span className="flex bg-dark_blue rounded-xl text-white font-bold p-1 items-center justify-center text-sm px-4">
           {status}
@@ -368,7 +369,7 @@ export default function ForSubmitPage({
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
           <div className="flex flex-row justify-between">
-            <h1>Vote For</h1>
+            <h1>{localDict.voteFor ?? 'Vote For'}</h1>
             <h1>
               {Number(formatEther(proposal[5] || 0)).toLocaleString()} (
               {proposal[5] && proposal[6] !== undefined
@@ -402,7 +403,7 @@ export default function ForSubmitPage({
 
         <div className="flex flex-col gap-2">
           <div className="flex flex-row justify-between">
-            <h1>Vote Against</h1>
+            <h1>{localDict.voteAgainst ?? 'Vote Against'}</h1>
             <h1>
               {Number(formatEther(proposal[6] || 0)).toLocaleString()} (
               {proposal[5] && proposal[6] !== undefined
@@ -437,8 +438,10 @@ export default function ForSubmitPage({
 
         <div className="flex flex-col gap-2">
           <div className="flex flex-row justify-between">
-            <h1>Voting Period</h1>
-            <h1>Current Block: {Number(blockNumber)}</h1>
+            <h1>{localDict.votingPeriod ?? 'Voting Period'}</h1>
+            <h1>
+              {localDict.currentBlock ?? 'Current Block'}: {Number(blockNumber)}
+            </h1>
           </div>
 
           <Line
@@ -460,15 +463,19 @@ export default function ForSubmitPage({
           />
 
           <div className="flex flex-row justify-between">
-            <h1>Started at {Number(proposal[3])}</h1>
-            <h1>Ending at {Number(proposal[4])}</h1>
+            <h1>
+              {localDict.startedAt ?? 'Started at'} {Number(proposal[3])}
+            </h1>
+            <h1>
+              {localDict.endingAt ?? 'Ending at'} {Number(proposal[4])}
+            </h1>
           </div>
         </div>
 
         {Number(proposal[2]) !== 0 && status === 'Queued' && (
           <div className="flex flex-col justify-between gap-2">
             <div className="flex flex-row justify-between">
-              <h1>Timelock Delay</h1>
+              <h1>{localDict.timelockDelay ?? 'Timelock Delay'}</h1>
               <h1>{timestampToDate(Number(proposal[2]))}</h1>
             </div>
 
@@ -492,13 +499,13 @@ export default function ForSubmitPage({
 
             <div className="flex flex-row justify-between">
               <h1>
-                Started at{' '}
+                {localDict.startedAt ?? 'Started at'}
                 {Number(proposal[2]) > 0
                   ? timestampToDate(Number(proposal[2]) - Number(timelockDelay))
                   : '-'}
               </h1>
               <h1>
-                Ending at{' '}
+                {localDict.endingAt ?? 'Ending at'}
                 {Number(proposal[2]) > 0
                   ? timestampToDate(Number(proposal[2]))
                   : 0}
@@ -522,7 +529,7 @@ export default function ForSubmitPage({
               })
             }}
           >
-            Vote For
+            {localDict.voteFor ?? 'Vote For'}
           </Button>
           <Button
             className="w-full bg-dark_blue"
@@ -538,7 +545,7 @@ export default function ForSubmitPage({
               })
             }}
           >
-            Vote Against
+            {localDict.voteAgainst ?? 'Vote Against'}
           </Button>
           <Button
             className="w-full bg-dark_blue"
@@ -554,7 +561,7 @@ export default function ForSubmitPage({
               })
             }}
           >
-            Queue
+            {localDict.queue ?? 'Queue'}
           </Button>
           <Button
             className="w-full bg-dark_blue"
@@ -573,7 +580,7 @@ export default function ForSubmitPage({
               })
             }}
           >
-            Execute
+            {localDict.execute ?? 'Execute'}
           </Button>
         </div>
       </div>
@@ -585,11 +592,18 @@ export default function ForSubmitPage({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Proposal Details</DialogTitle>
+            <DialogTitle>
+              {localDict.proposalDetails ?? 'Proposal Details'}
+            </DialogTitle>
             <DialogDescription>
               <div className="flex flex-col gap-2">
-                <h1>Proposal ID: {index}</h1>
-                <h1>Proposal Description: {proposal[9]}</h1>
+                <h1>
+                  {localDict.proposalId ?? 'Proposal ID'}: {index}
+                </h1>
+                <h1>
+                  {localDict.proposalDescription ?? 'Proposal Description'}:{' '}
+                  {proposal[9]}
+                </h1>
               </div>
             </DialogDescription>
           </DialogHeader>
@@ -932,7 +946,7 @@ export default function ForSubmitPage({
       try {
         if (!daoInfo?.id) return
 
-        toast.info('Updating image...')
+        toast.info(localDict.updatingImage ?? 'Updating image...')
         const prevImages = await fetchImage(daoInfo?.id)
         if (prevImages) {
           const res = await pinata.files.public.delete(
@@ -951,7 +965,9 @@ export default function ForSubmitPage({
           },
         })
         setImageHash(upload.cid)
-        toast.success('Image updated successfully')
+        toast.success(
+          localDict.imageUpdatedSuccessfully ?? 'Image updated successfully'
+        )
       } catch (error) {
         console.log(error)
       }
@@ -1086,7 +1102,7 @@ export default function ForSubmitPage({
                     <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
                     <path d="m15 5 4 4" />
                   </svg>
-                  Edit
+                  {localDict.edit ?? 'Edit'}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -1102,7 +1118,7 @@ export default function ForSubmitPage({
                     fileInput.click()
                   }}
                 >
-                  Edit
+                  {localDict.edit ?? 'Edit'}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
@@ -1113,7 +1129,7 @@ export default function ForSubmitPage({
                     await deleteImage()
                   }}
                 >
-                  Delete
+                  {localDict.delete ?? 'Delete'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1126,6 +1142,7 @@ export default function ForSubmitPage({
       </div>
       {selectedImage && isCropModalOpen && (
         <ImageCropModal
+          localDict={localDict}
           imageSrc={selectedImage}
           onClose={() => setIsCropModalOpen(false)}
           onCropComplete={(cropped) => setCroppedImage(cropped)}
@@ -1135,29 +1152,31 @@ export default function ForSubmitPage({
         <Tabs defaultValue="about" className="w-full" value={tabContent}>
           <TabsList>
             <TabsTrigger value="about" onClick={() => setTabContent('about')}>
-              About DAO
+              {localDict.aboutDao}
             </TabsTrigger>
             <TabsTrigger value="all" onClick={() => setTabContent('all')}>
-              All Proposals
+              {localDict.allProposals}
             </TabsTrigger>
             <TabsTrigger
               value="balance"
               onClick={() => setTabContent('balance')}
             >
-              Balance
+              {localDict.balance}
             </TabsTrigger>
             <TabsTrigger
               value="holders"
               onClick={() => setTabContent('holders')}
             >
-              Holders
+              {localDict.holders}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="about" className="">
             <div className="flex md:flex-row flex-col w-full gap-8">
               <div className="flex flex-col w-full mt-4 gap-4">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center w-full gap-2">
-                  <h1 className="text-2xl font-bold">Latest Proposals</h1>
+                  <h1 className="text-2xl font-bold">
+                    {localDict.lastProposal}
+                  </h1>
                   <div className="flex flex-row gap-4">
                     <Button
                       className="w-full bg-dark_blue"
@@ -1165,7 +1184,7 @@ export default function ForSubmitPage({
                         setIsCreateProposalDialogOpened(true)
                       }}
                     >
-                      + Create new
+                      {localDict.createNewProposal}
                     </Button>
                   </div>
                 </div>
@@ -1184,17 +1203,17 @@ export default function ForSubmitPage({
 
                 {proposals.length === 0 && (
                   <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                    No proposals at the moment
+                    {localDict.noProposals}
                   </div>
                 )}
               </div>
               <div className="flex flex-col md:w-[40%] gap-4">
-                <h1 className="text-2xl font-bold mt-4">About DAO</h1>
+                <h1 className="text-2xl font-bold mt-4">{localDict.daoInfo}</h1>
 
                 <div className="flex flex-col border rounded-xl p-4 mt-2 bg-gray-100 gap-2">
                   <div className="flex flex-row justify-between items-center rounded-xl mt-2 w-full">
                     <TooltipComponent
-                      title="Governor Token"
+                      title={localDict.govenorToken ?? 'Governor Token'}
                       tooltipText="A token that represents voting power in the DAO. Holders can vote on proposals and participate in governance decisions."
                       className="font-bold rounded-xl flex"
                     />
@@ -1208,7 +1227,7 @@ export default function ForSubmitPage({
 
                   <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
                     <TooltipComponent
-                      title="Timelock"
+                      title={localDict.timelock ?? 'Timelock'}
                       tooltipText="A smart contract that adds a delay between when a proposal passes and when it can be executed. This delay gives token holders time to review and react to approved proposals before they take effect."
                       className="font-bold rounded-xl flex"
                     />
@@ -1222,7 +1241,7 @@ export default function ForSubmitPage({
 
                   <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
                     <TooltipComponent
-                      title="Governor"
+                      title={localDict.governor ?? 'Governor'}
                       tooltipText="The core contract that manages the DAO's governance process. It handles proposal creation, voting, and execution of approved proposals. This contract implements the rules and parameters for how governance works."
                       className="font-bold rounded-xl flex"
                     />
@@ -1238,7 +1257,7 @@ export default function ForSubmitPage({
                 <div className="flex flex-col border rounded-xl p-4 bg-gray-100 gap-4">
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
-                      title="Vote Delay"
+                      title={localDict.voteDelay ?? 'Vote Delay'}
                       tooltipText="The number of blocks that must pass between when a proposal is created and when voting begins. This delay gives token holders time to research and discuss the proposal before voting starts."
                       className="font-bold rounded-xl flex"
                     />
@@ -1249,7 +1268,7 @@ export default function ForSubmitPage({
 
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
-                      title="Voting Period"
+                      title={localDict.votingPeriod ?? 'Voting Period'}
                       tooltipText="The duration (in blocks) during which token holders can cast their votes on a proposal. Once this period ends, no more votes can be cast and the proposal's outcome is determined based on the votes received."
                       className="font-bold rounded-xl flex"
                     />
@@ -1262,7 +1281,7 @@ export default function ForSubmitPage({
 
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
-                      title="Timelock Delay"
+                      title={localDict.timelockDelay ?? 'Timelock Delay'}
                       tooltipText="The mandatory waiting period between when a proposal passes and when it can be executed. This delay gives token holders time to prepare for the changes and exit the protocol if they disagree with a passed proposal. Longer delays provide more security but reduce governance agility."
                       className="font-bold rounded-xl flex"
                     />
@@ -1276,7 +1295,9 @@ export default function ForSubmitPage({
 
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
-                      title="Proposal Threshold"
+                      title={
+                        localDict.proposalThreshold ?? 'Proposal Threshold'
+                      }
                       tooltipText="The minimum number of votes a delegate must have to create a proposal. This threshold ensures that only members with sufficient stake in the DAO can initiate governance actions."
                       className="font-bold rounded-xl flex"
                     />
@@ -1290,7 +1311,7 @@ export default function ForSubmitPage({
 
                   <div className="flex flex-row gap-4 justify-between items-center">
                     <TooltipComponent
-                      title="Quorum Votes"
+                      title={localDict.quorum ?? 'Quorum Votes'}
                       tooltipText="The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
                       className="font-bold rounded-xl flex"
                     />
@@ -1304,7 +1325,7 @@ export default function ForSubmitPage({
 
                 <div className="flex flex-row justify-between items-center border rounded-xl p-4 bg-gray-100">
                   <TooltipComponent
-                    title="My Power"
+                    title={localDict.myPower ?? 'My Power'}
                     tooltipText={
                       'Your current voting power in this DAO, ' +
                       'determined by the number of governance tokens you hold ' +
@@ -1345,7 +1366,7 @@ export default function ForSubmitPage({
 
                 <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
                   <h1 className="font-bold rounded-xl  flex">
-                    Created at{' '}
+                    {localDict.createdAt ?? 'Created at'}{' '}
                     {new Date(
                       Number(daoInfo?.blockTimestamp) * 1000
                     ).toLocaleString()}
@@ -1403,16 +1424,16 @@ export default function ForSubmitPage({
               <Tabs defaultValue="all" className="gap-0 w-full">
                 <TabsList>
                   <TabsTrigger className="w-20" value="all">
-                    All
+                    {localDict.all}
                   </TabsTrigger>
                   <TabsTrigger className="w-20" value="active">
-                    Active
+                    {localDict.active}
                   </TabsTrigger>
                   <TabsTrigger className="w-20" value="executed">
-                    Executed
+                    {localDict.executed}
                   </TabsTrigger>
                   <TabsTrigger className="w-20" value="defeated">
-                    Defeated
+                    {localDict.defeated}
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent
@@ -1432,7 +1453,7 @@ export default function ForSubmitPage({
                     })
                   ) : (
                     <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      No proposals at the moment
+                      {localDict.noProposals ?? 'No proposals at the moment'}
                     </div>
                   )}
                 </TabsContent>
@@ -1458,7 +1479,8 @@ export default function ForSubmitPage({
                     })
                   ) : (
                     <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      No active proposals at the moment
+                      {localDict.noProposals ??
+                        'No active proposals at the moment'}
                     </div>
                   )}
                 </TabsContent>
@@ -1485,7 +1507,8 @@ export default function ForSubmitPage({
                     })
                   ) : (
                     <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      No succeeded proposals at the moment
+                      {localDict.noProposals ??
+                        'No succeeded proposals at the moment'}
                     </div>
                   )}
                 </TabsContent>
@@ -1512,7 +1535,8 @@ export default function ForSubmitPage({
                     })
                   ) : (
                     <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      No defeated proposals at the moment
+                      {localDict.noProposals ??
+                        'No defeated proposals at the moment'}
                     </div>
                   )}
                 </TabsContent>
@@ -1522,13 +1546,19 @@ export default function ForSubmitPage({
           <TabsContent value="balance">
             <div className="flex flex-col md:flex-row mt-4 gap-4 ">
               <div className="flex flex-col w-full">
-                <h1 className="text-2xl font-bold">Treasury</h1>
+                <h1 className="text-2xl font-bold">
+                  {localDict.treasury ?? 'Treasury'}
+                </h1>
                 <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="font-bold">Token</TableHead>
-                        <TableHead className="font-bold">Amount</TableHead>
+                        <TableHead className="font-bold">
+                          {localDict.token ?? 'Token'}
+                        </TableHead>
+                        <TableHead className="font-bold">
+                          {localDict.amount ?? 'Amount'}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1550,18 +1580,24 @@ export default function ForSubmitPage({
                 </div>
               </div>
               <div className="flex flex-col w-full md:w-[40%]">
-                <h1 className="text-2xl font-bold">DAO Balance</h1>
+                <h1 className="text-2xl font-bold">
+                  {localDict.daoBalance ?? 'DAO Balance'}
+                </h1>
 
                 <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
-                  <h1 className="font-bold rounded-xl flex">DAO Treasury</h1>
+                  <h1 className="font-bold rounded-xl flex">
+                    {localDict.daoTreasury ?? 'DAO Treasury'}
+                  </h1>
                   <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">Total Value</h1>
+                    <h1 className="font-bold rounded-xl  flex">
+                      {localDict.totalValue ?? 'Total Value'}
+                    </h1>
                     <h1 className="font-bold rounded-xl  flex">$0</h1>
                   </div>
 
                   <div className="flex flex-row justify-between">
                     <h1 className="font-bold rounded-xl  flex">
-                      Number of Tokens
+                      {localDict.numberOfTokens ?? 'Number of Tokens'}
                     </h1>
                     <h1 className="font-bold rounded-xl  flex">
                       {treasuryBalances.length}
@@ -1570,7 +1606,7 @@ export default function ForSubmitPage({
 
                   <div className="flex flex-row justify-between">
                     <h1 className="font-bold rounded-xl  flex">
-                      Number of NFTs
+                      {localDict.numberOfNfts ?? 'Number of NFTs'}
                     </h1>
                     <h1 className="font-bold rounded-xl  flex">$0</h1>
                   </div>
@@ -1583,24 +1619,30 @@ export default function ForSubmitPage({
                   >
                     <DialogTrigger>
                       <Button className="w-full bg-dark_blue">
-                        Deposit to DAO Treasury
+                        {localDict.depositToDaoTreasury ??
+                          'Deposit to DAO Treasury'}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader className="flex flex-col gap-2">
                         <DialogTitle>Address</DialogTitle>
                         <DialogDescription>
-                          Token address to deposit
+                          {localDict.tokenAddressToDeposit ??
+                            'Token address to deposit'}
                         </DialogDescription>
                         <Input
                           onChange={(e) => setTokenAddress(e.target.value)}
-                          placeholder="Address"
+                          placeholder={localDict.address ?? 'Address'}
                         />
-                        <DialogTitle>Amount</DialogTitle>
-                        <DialogDescription>Amount to deposit</DialogDescription>
+                        <DialogTitle>
+                          {localDict.amount ?? 'Amount'}
+                        </DialogTitle>
+                        <DialogDescription>
+                          {localDict.amountToDeposit ?? 'Amount to deposit'}
+                        </DialogDescription>
                         <Input
                           onChange={(e) => setTransferAmount(e.target.value)}
-                          placeholder="Amount"
+                          placeholder={localDict.amount ?? 'Amount'}
                         />
                         <Button
                           className="w-full bg-dark_blue"
@@ -1620,14 +1662,14 @@ export default function ForSubmitPage({
                             setIsDepositDialogOpened(!isDepositDialogOpened)
                           }}
                         >
-                          Deposit
+                          {localDict.deposit ?? 'Deposit'}
                         </Button>
                       </DialogHeader>
                     </DialogContent>
                   </Dialog>
                 </div>
 
-                <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
+                {/* <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
                   <h1 className="font-bold rounded-xl flex">DAO Delegated</h1>
                   <div className="flex flex-row justify-between">
                     <h1 className="font-bold rounded-xl  flex">
@@ -1649,33 +1691,7 @@ export default function ForSubmitPage({
                     </h1>
                     <h1 className="font-bold rounded-xl  flex">$0</h1>
                   </div>
-                </div>
-
-                <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
-                  <h1 className="font-bold rounded-xl flex">
-                    Delegated to DAO
-                  </h1>
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      Delegated to DAO
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      Historical Rewards Earned
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      Available to claim
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </TabsContent>
@@ -1685,7 +1701,8 @@ export default function ForSubmitPage({
                 <div className="flex flex-col md:flex-row w-full gap-4 items-center justify-between">
                   <div className="flex flex-col gap-4">
                     <h1 className="flex flex-row text-2xl font-bold gap-4">
-                      Voting Power Breakdown
+                      {localDict.votingPowerBreakdown ??
+                        'Voting Power Breakdown'}
                       {/* <div className="flex bg-dark_blue rounded-xl text-white font-bold items-center justify-center text-xs px-4">
                         0
                       </div> */}
@@ -1709,6 +1726,7 @@ export default function ForSubmitPage({
                 </div>
                 <div className="flex flex-row gap-4">
                   <AmountInput
+                    localDict={localDict}
                     className="w-60 bg-dark_blue"
                     setStakingAmount={setStakingAmount}
                     handleStake={handleStake}
@@ -1724,7 +1742,7 @@ export default function ForSubmitPage({
                     className="w-60 bg-dark_blue"
                     onClick={handleWithdraw}
                   >
-                    Withdraw
+                    {localDict.withdraw ?? 'Withdraw'}
                   </Button>
 
                   <Button
@@ -1733,7 +1751,7 @@ export default function ForSubmitPage({
                       setIsDelegateDialogOpened(true)
                     }}
                   >
-                    Delegate
+                    {localDict.delegate ?? 'Delegate'}
                   </Button>
                 </div>
                 <div className="rounded-xl flex border mt-4 flex-row w-full gap-4">
@@ -1741,11 +1759,19 @@ export default function ForSubmitPage({
                     <TableHeader>
                       <TableRow>
                         <TableHead>
-                          <div className="flex flex-row gap-4">Address</div>
+                          <div className="flex flex-row gap-4">
+                            {localDict.address ?? 'Address'}
+                          </div>
                         </TableHead>
-                        <TableHead>Community Token</TableHead>
-                        <TableHead>Governance Token</TableHead>
-                        <TableHead>Delegated Amount</TableHead>
+                        <TableHead>
+                          {localDict.communityToken ?? 'Community Token'}
+                        </TableHead>
+                        <TableHead>
+                          {localDict.governanceToken ?? 'Governance Token'}
+                        </TableHead>
+                        <TableHead>
+                          {localDict.delegatedAmount ?? 'Delegated Amount'}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1793,6 +1819,7 @@ export default function ForSubmitPage({
               isOpen={isDelegateDialogOpened}
               onOpenChange={setIsDelegateDialogOpened}
               delegateAddr={delegateAddr}
+              localDict={localDict}
               handleDelegate={handleDelegate}
             />
           </TabsContent>
@@ -1803,25 +1830,31 @@ export default function ForSubmitPage({
         onOpenChange={setIsCreateProposalDialogOpened}
       >
         <DialogContent>
-          <DialogTitle>Create a Proposal</DialogTitle>
+          <DialogTitle>
+            {localDict.createProposal ?? 'Create a Proposal'}
+          </DialogTitle>
           <DialogDescription className="flex flex-col gap-4">
             <Select onValueChange={handleSelect}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a category" />
+                <SelectValue
+                  placeholder={localDict.selectACategory ?? 'Select a category'}
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">Transfer Tokens</SelectItem>
+                <SelectItem value="1">
+                  {localDict.transferTokens ?? 'Transfer Tokens'}
+                </SelectItem>
               </SelectContent>
             </Select>
 
             <Input
-              placeholder="Enter Token Address"
+              placeholder={localDict.enterTokenAddress ?? 'Enter Token Address'}
               value={tokenAddress}
               onChange={(e) => setTokenAddress(e.target.value)}
             />
 
             <Input
-              placeholder="Enter amount"
+              placeholder={localDict.enterAmount ?? 'Enter amount'}
               value={transferAmount}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setTransferAmount(e.target.value)
@@ -1829,7 +1862,10 @@ export default function ForSubmitPage({
             />
 
             <Input
-              placeholder="Enter Address To Transfer To"
+              placeholder={
+                localDict.enterAddressToTransferTo ??
+                'Enter Address To Transfer To'
+              }
               value={transferAddr}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setTransferAddr(e.target.value)
@@ -1837,14 +1873,16 @@ export default function ForSubmitPage({
             />
 
             <Textarea
-              placeholder="Enter description"
+              placeholder={localDict.enterDescription ?? 'Enter description'}
               value={description}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                 setDescription(e.target.value)
               }
             />
 
-            <Button onClick={handleCreateProposal}>Create</Button>
+            <Button onClick={handleCreateProposal}>
+              {localDict.create ?? 'Create'}
+            </Button>
           </DialogDescription>
         </DialogContent>
       </Dialog>
