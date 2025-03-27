@@ -48,6 +48,7 @@ export interface AmountInputProps
   setStakingAmount: (amount: string) => void
   handleStake: () => void
   maxAmount: number
+  localDict: any
   asChild?: boolean
 }
 
@@ -60,6 +61,7 @@ const AmountInput = React.forwardRef<HTMLInputElement, AmountInputProps>(
       className,
       variant,
       size,
+      localDict,
       asChild = false,
       ...props
     },
@@ -71,13 +73,14 @@ const AmountInput = React.forwardRef<HTMLInputElement, AmountInputProps>(
         <DialogTrigger
           className={cn(amountInputVariants({ variant, size, className }))}
         >
-          Stake
+          {localDict.stake ?? 'Stake'}
         </DialogTrigger>
         <DialogContent>
           <DialogHeader className="flex flex-col gap-2">
-            <DialogTitle>Enter Amount</DialogTitle>
+            <DialogTitle>{localDict.enterAmount ?? 'Enter Amount'}</DialogTitle>
             <DialogDescription>
-              Enter the amount of tokens you want to stake.
+              {localDict.enterTheAmountOfTokensYouWantToStake ??
+                'Enter the amount of tokens you want to stake.'}
             </DialogDescription>
             <Input
               type="number"

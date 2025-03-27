@@ -630,8 +630,8 @@ export default function ForTokenPage({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Symbol</TableHead>
+                <TableHead>{dict?.token?.name ?? ''}</TableHead>
+                <TableHead>{dict?.token?.symbol ?? ''}</TableHead>
                 <TableHead>{token.tokenAddress ?? ''}</TableHead>
                 <TableHead>{token.balance ?? 'Balance'}</TableHead>
                 <TableHead className="max-xl:hidden"></TableHead>

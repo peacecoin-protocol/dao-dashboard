@@ -51,6 +51,9 @@ export interface Dictionary {
   delegate: Section
   faq: Section
   daofaq: Section
+  studio: Section
+  daoInfo: Section
+  pceDetail: Section
 }
 
 export interface TOKEN {

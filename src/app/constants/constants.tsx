@@ -15,7 +15,7 @@ export const pceCommunity = {
 
 export const pceGovToken = {
   [sepolia.id]: '0x19E030BD225a373A8769c3402b533C3CD8cc4c3d',
-  [localhost.id]: '0x610178dA211FEF7D417bC0e6FeD39F05609AD788',
+  [localhost.id]: '0x0B306BF915C4d645ff596e518fAf3F9669b97016',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
@@ -27,7 +27,7 @@ export const timelockAddress = {
 
 export const governorAddress = {
   [sepolia.id]: '0x6d2cecad09D6baD75756741A1AD0a9F81654516d',
-  [localhost.id]: '0x5FC8d32690cc91D4c39d9d3abcBD16989F875707',
+  [localhost.id]: '0x610178dA211FEF7D417bC0e6FeD39F05609AD788',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
