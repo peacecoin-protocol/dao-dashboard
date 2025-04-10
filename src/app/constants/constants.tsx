@@ -50,7 +50,7 @@ export const daoStudioAddress = {
 } as Record<number, `0x${string}`>
 
 export const campaginAddress = {
-  [sepolia.id]: '0xF678a87E593b432D30d565c00061c3Bf8689Aa57',
+  [sepolia.id]: '0xa7C1323B4219D9BBE50eA20569969b744da98724',
   [localhost.id]: '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
