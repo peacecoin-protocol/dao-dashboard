@@ -81,6 +81,7 @@ import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 
 import { createdAt, WEB, LINKEDIN, TWITTER } from '~/app/constants/constants'
 import { Env } from '~/env'
+import { timestampToDate } from '~/components/utils'
 
 type Dao = {
   id: string
@@ -253,10 +254,6 @@ export default function PCEPage({
     chainId: localhost.id,
   })
 
-  useEffect(() => {
-    console.log(votingDelay)
-  }, [votingDelay])
-
   const { data: pceBalance, refetch: refetchPCEBalance } = useReadContract({
     address: pceAddress[chainId || localhost.id] as `0x${string}`,
     abi: PCE_ABI,
@@ -300,10 +297,6 @@ export default function PCEPage({
 
   const getCurrentTimestamp = () => {
     return Number(block?.timestamp)
-  }
-
-  const timestampToDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleString()
   }
 
   const ProposalCard = ({

@@ -82,6 +82,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
+import { timestampToDate } from '~/components/utils'
 
 type Dao = {
   id: string
@@ -330,10 +331,6 @@ export default function ForSubmitPage({
 
   const getCurrentTimestamp = () => {
     return Number(block?.timestamp)
-  }
-
-  const timestampToDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleString()
   }
 
   const ProposalCard = ({

@@ -292,5 +292,11 @@
     "description": "Description",
     "ofTotalVotes": "% of total votes",
     "proposalNotFound": "Proposal not found"
+  },
+  "campagin": {
+    "title": "Campagin",
+    "description": "This is a Campagin Program that provide incentives for winners",
+    "announcement": "Announcement",
+    "pastCampagin": "Past Campagins"
   }
 }
