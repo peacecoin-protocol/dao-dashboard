@@ -117,7 +117,6 @@ export default function ForCampaginPage({
       } else if (error) {
         toast.error((error as BaseError).shortMessage)
       }
-      setCampaginId(-1)
     }
 
     notify()
@@ -211,6 +210,7 @@ export default function ForCampaginPage({
     }
 
     try {
+      setCampaginId(-1)
       writeContract(
         {
           abi: CAMPAGIN_ABI,
