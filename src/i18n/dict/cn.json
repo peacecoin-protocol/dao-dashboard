@@ -292,5 +292,9 @@
     "description": "描述",
     "ofTotalVotes": "占总票数百分比",
     "proposalNotFound": "未找到提案"
+  },
+  "campaign": {
+    "title": "活动",
+    "description": "活动"
   }
 }

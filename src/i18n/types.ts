@@ -19,6 +19,17 @@ export interface BOUNTY_CONTRIBUTOR {
   blockTimestamp?: number
 }
 
+export interface CAMPAIGN {
+  campaignId: string
+  amount: BigNumberish
+  title: string
+  description: string
+  startDate: string
+  endDate: string
+  validateSignatures: boolean
+  isNFT: boolean
+}
+
 export interface BOUNTY_PROPOSAL {
   amount: BigNumberish
   proposalId: string
@@ -54,6 +65,7 @@ export interface Dictionary {
   studio: Section
   daoInfo: Section
   pceDetail: Section
+  campaign: Section
 }
 
 export interface TOKEN {

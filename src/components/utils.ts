@@ -28,7 +28,7 @@ export const LINKS = {
   },
   DISCORD: {
     label: 'Discord',
-    link: 'https://discord.gg/ateRuGUJgX',
+    link: 'https://discord.com/invite/fXmkg4xY',
   },
 }
 
@@ -40,4 +40,8 @@ export const shortenAddress = (address: any) => {
 export const formatString = (str: string) => {
   if (str.length == 0) return 0
   return parseFloat(parseFloat(str).toFixed(2))
+}
+
+export const timestampToDate = (timestamp: number) => {
+  return new Date(timestamp * 1000).toLocaleString()
 }

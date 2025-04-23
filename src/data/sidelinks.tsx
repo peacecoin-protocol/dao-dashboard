@@ -117,10 +117,16 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       href: '/token',
       icon: <IconMessages size={18} />,
     },
+    // {
+    //   title: sidebar.bounty ?? 'Bounty',
+    //   label: '',
+    //   href: '/bounty',
+    //   icon: <IconApps size={18} />,
+    // },
     {
-      title: sidebar.bounty ?? 'Bounty',
+      title: sidebar.campaign ?? 'Campaign',
       label: '',
-      href: '/bounty',
+      href: '/campaign',
       icon: <IconApps size={18} />,
     },
     {

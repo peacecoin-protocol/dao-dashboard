@@ -292,5 +292,9 @@
     "description": "Descrição",
     "ofTotalVotes": "% do total de votos",
     "proposalNotFound": "Proposta não encontrada"
+  },
+  "campaign": {
+    "title": "Campanha",
+    "description": "Esta é um programa de campanha que fornece incentivos para os vencedores"
   }
 }

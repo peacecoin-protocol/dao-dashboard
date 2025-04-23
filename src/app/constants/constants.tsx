@@ -49,6 +49,18 @@ export const daoStudioAddress = {
   [polygon.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
+export const campaignAddress = {
+  [sepolia.id]: '0x6bb66e0FD44f878A7Fdb7F3Dd74EA40f4841774f',
+  [localhost.id]: '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1',
+  [polygon.id]: '0x0000000000000000000000000000000000000000',
+} as Record<number, `0x${string}`>
+
+export const sbtAddress = {
+  [sepolia.id]: '0x0000000000000000000000000000000000000000',
+  [localhost.id]: '0x322813fd9a801c5507c9de605d63cea4f2ce6c44',
+  [polygon.id]: '0x0000000000000000000000000000000000000000',
+} as Record<number, `0x${string}`>
+
 export const SUBGRAPH_URL = {
   [sepolia.id]:
     'https://api.studio.thegraph.com/query/81073/dao_dashboard/version/latest',

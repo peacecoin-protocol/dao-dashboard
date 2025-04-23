@@ -292,5 +292,9 @@
     "description": "Description",
     "ofTotalVotes": "% du total des votes",
     "proposalNotFound": "Proposition non trouvée"
+  },
+  "campaign": {
+    "title": "Campagne",
+    "description": "Campagne"
   }
 }
