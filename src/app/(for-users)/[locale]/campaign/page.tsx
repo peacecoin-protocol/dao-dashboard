@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
-import { formatEther } from 'ethers'
+import { ethers, formatEther } from 'ethers'
 import axios from 'axios'
 
 import {
@@ -13,9 +13,10 @@ import {
   useWaitForTransactionReceipt,
   useSignMessage,
   type BaseError,
+  type UseReadContractReturnType,
 } from 'wagmi'
 import { readContract } from '@wagmi/core'
-import { CAMPAGIN } from '~/i18n/types'
+import { CAMPAIGN } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
@@ -43,34 +44,41 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '~/components/ui/dialog'
 import { timestampToDate } from '~/components/utils'
 
-import { campaginAddress, SUBGRAPH_URL } from '~/app/constants/constants'
-import { CAMPAGIN_ABI } from '~/app/ABIs/Campagins'
+import {
+  campaignAddress,
+  sbtAddress,
+  SUBGRAPH_URL,
+} from '~/app/constants/constants'
+
+import { CAMPAIGN_ABI } from '~/app/ABIs/Campaigns'
 
 import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
+import { SBT_ABI } from '~/app/ABIs/SBT'
 
 import { localhost } from '~/app/providers'
 import Link from '~/components/custom/Link'
 import { toast } from 'react-toastify'
+import CopyIcon from '../../../../../public/svg/copy'
 
-export default function ForCampaginPage({
+export default function ForCampaignPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
   const [dict, setDict] = useState<Dictionary | null>(null)
-  const campagin = dict?.campagin ?? {}
+  const campaign = dict?.campaign ?? {}
   const dashboard = dict?.dashboard ?? {}
 
   const [isOpen, setIsOpen] = useState(false)
-  const [campaginData, setCampaginData] = useState<CAMPAGIN[]>([])
-  const [campaginId, setCampaginId] = useState<number>(-1)
+  const [campaignData, setCampaignData] = useState<CAMPAIGN[]>([])
+  const [campaignId, setCampaignId] = useState<number>(-1)
   const [isWinner, setIsWinner] = useState<boolean>(false)
   const [isClaimed, setIsClaimed] = useState<boolean>(false)
-
+  const [status, setStatus] = useState<number>(0)
+  const [githubId, setGithubId] = useState<string>('')
   const { address, chainId } = useAccount()
   const { signMessageAsync } = useSignMessage()
 
@@ -92,12 +100,30 @@ export default function ForCampaginPage({
       hash,
     })
 
-  const { data: totalClaimed } = useReadContract({
-    abi: CAMPAGIN_ABI,
-    address: campaginAddress[chainId || localhost.id] as `0x${string}`,
+  const { data: totalClaimed, refetch: refetchTotalClaimed } = useReadContract({
+    abi: CAMPAIGN_ABI,
+    address: campaignAddress[chainId || localhost.id] as `0x${string}`,
     functionName: 'totalClaimed',
     args: [address],
-  }) as { data: bigint }
+  })
+
+  const {
+    data: nftBalance,
+    refetch: refetchNftBalance,
+  }: UseReadContractReturnType = useReadContract({
+    abi: SBT_ABI,
+    address: sbtAddress[chainId || localhost.id] as `0x${string}`,
+    functionName: 'balanceOf',
+    args: [address],
+  })
+
+  const { data: totalClaimedNFTs, refetch: refetchTotalClaimedNFTs } =
+    useReadContract({
+      abi: SBT_ABI,
+      address: sbtAddress[chainId || localhost.id] as `0x${string}`,
+      functionName: 'totalClaimedNFT',
+      args: [address],
+    })
 
   useEffect(() => {
     const notify = async () => {
@@ -110,6 +136,8 @@ export default function ForCampaginPage({
             message="Transaction Succeed!"
           ></Link>
         )
+        await refetchTotalClaimed()
+        await refetchNftBalance()
       } else if (isConfirming) {
         toast.info(
           <div className="disabled">TX is Pending, Please Wait...</div>
@@ -140,29 +168,36 @@ export default function ForCampaginPage({
   })
 
   useEffect(() => {
+    if (!isOpen) {
+      setCampaignId(-1)
+    }
+  }, [isOpen])
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const { data } = await client.query({
           query: gql`
-            query campaginCreateds {
-              campaginCreateds(
+            query campaignCreateds {
+              campaignCreateds(
                 first: 10
                 orderDirection: asc
-                orderBy: campaginId
+                orderBy: campaignId
               ) {
-                campaginId
+                campaignId
                 title
                 description
                 endDate
                 startDate
                 validateSignatures
                 amount
+                isNFT
               }
             }
           `,
         })
 
-        setCampaginData(data.campaginCreateds)
+        setCampaignData(data.campaignCreateds)
       } catch (error) {
         console.error('Error fetching data', error)
       }
@@ -171,52 +206,51 @@ export default function ForCampaginPage({
     fetchData()
   }, [isConfirmed])
 
-  useEffect(() => {
-    const fetchGistData = async (url: string) => {
-      try {
-        const response = await fetch('/api/endpoint/router', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ url }),
-        })
-        const data = await response.json()
-        return data
-      } catch (error) {
-        console.error('Error fetching gist:', error)
-        return null
-      }
+  function parseGithubUsername(gistUrl: string): string | undefined {
+    try {
+      const url = new URL(gistUrl)
+      const parts = url.pathname.split('/')
+      return parts.length >= 2 ? parts[1] : undefined
+    } catch (err) {
+      return undefined
     }
+  }
 
-    fetchGistData('/api/endpoint/router')
-  }, [])
-
-  const claimCampagin = async (campaginId: number, gistUrl: string) => {
+  const claimCampaign = async (campaignId: number, gistUrl: string) => {
     setIsOpen(false)
 
     let _signature = '0x'
-    let _message = ''
-
-    if (campaginData[campaginId]?.validateSignatures) {
+    let _message = '_'
+    let gistUsername
+    if (campaignData[campaignId]?.validateSignatures) {
       try {
+        gistUsername = parseGithubUsername(gistUrl)
+
+        if (gistUsername == undefined) {
+          toast.error('Invalid Github Gist URL')
+          return
+        }
+
         const result = await axios.get(gistUrl)
         const gistData = result.data
-        _signature = gistData.signature
-        _message = gistData.message
+        _signature = gistData.Signature
+        _message = gistData.Message
       } catch (error) {
         console.error('Error fetching gist:', error)
       }
     }
 
+    let _gistUsername = ethers.keccak256(
+      ethers.toUtf8Bytes(gistUsername ? gistUsername : '0x')
+    )
+
     try {
-      setCampaginId(-1)
       writeContract(
         {
-          abi: CAMPAGIN_ABI,
-          address: campaginAddress[chainId || localhost.id] as `0x${string}`,
-          functionName: 'claimCampagin',
-          args: [campaginId, _message, _signature],
+          abi: CAMPAIGN_ABI,
+          address: campaignAddress[chainId || localhost.id] as `0x${string}`,
+          functionName: 'claimCampaign',
+          args: [campaignId, _gistUsername, _message, _signature],
         },
         {
           onSuccess: (data) => {},
@@ -226,32 +260,63 @@ export default function ForCampaginPage({
         }
       )
     } catch (error) {
-      console.error('Error claiming campagin', error)
+      console.error('Error claiming campaign', error)
     }
   }
+  useEffect(() => {
+    if (nftBalance) {
+      console.log(nftBalance)
+    }
+  }, [nftBalance])
 
   useEffect(() => {
+    const getStatus = async () => {
+      if (campaignId >= 0 && address) {
+        const status = (await readContract(config, {
+          abi: CAMPAIGN_ABI,
+          address: campaignAddress[chainId || localhost.id] as `0x${string}`,
+          functionName: 'getStatus',
+          args: [campaignId],
+        })) as number
+
+        setStatus(status)
+      }
+    }
+
     const checkWinner = async () => {
-      if (campaginId >= 0 && address) {
+      if (campaignId >= 0 && address) {
         const winner = (await readContract(config, {
-          abi: CAMPAGIN_ABI,
-          address: campaginAddress[chainId || localhost.id] as `0x${string}`,
+          abi: CAMPAIGN_ABI,
+          address: campaignAddress[chainId || localhost.id] as `0x${string}`,
           functionName: 'isWinner',
-          args: [campaginId, address],
+          args: [campaignId, address],
         })) as boolean
+
         setIsWinner(winner)
       }
     }
 
     const checkClaimed = async () => {
+      await getStatus()
       await checkWinner()
-      if (campaginId >= 0 && address) {
-        const claimed = (await readContract(config, {
-          abi: CAMPAGIN_ABI,
-          address: campaginAddress[chainId || localhost.id] as `0x${string}`,
-          functionName: 'champWinnersClaimed',
-          args: [campaginId, address],
-        })) as boolean
+      if (campaignId >= 0 && address) {
+        let claimed = false
+        if (campaignData[campaignId]?.isNFT && githubId) {
+          claimed = (await readContract(config, {
+            abi: CAMPAIGN_ABI,
+            address: campaignAddress[chainId || localhost.id] as `0x${string}`,
+            functionName: 'champGistsClaimed',
+            args: [campaignId, githubId],
+          })) as boolean
+        } else {
+          claimed = (await readContract(config, {
+            abi: CAMPAIGN_ABI,
+            address: campaignAddress[chainId || localhost.id] as `0x${string}`,
+            functionName: 'champWinnersClaimed',
+            args: [campaignId, address],
+          })) as boolean
+        }
+
         setIsClaimed(claimed)
 
         setIsOpen(true)
@@ -259,9 +324,19 @@ export default function ForCampaginPage({
     }
 
     checkClaimed()
-  }, [campaginId, address, chainId])
+  }, [campaignId, address, chainId])
 
-  const CampaginDialog = ({
+  const isActive = (campaign: CAMPAIGN | undefined) => {
+    if (!campaign) return false
+    const now = new Date()
+    const startDate = new Date(Number(campaign.startDate) * 1000)
+    const endDate = new Date(Number(campaign.endDate) * 1000)
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000)
+
+    return oneHourFromNow <= endDate
+  }
+
+  const CampaignDialog = ({
     isOpen,
     onOpenChange,
   }: {
@@ -272,54 +347,78 @@ export default function ForCampaginPage({
       <DialogContent className="gap-4 m-4">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold my-4">
-            {campaginData[campaginId]?.title}
+            {campaignData[campaignId]?.title}
           </DialogTitle>
           <DialogDescription>
-            {campaginData[campaginId]?.description}
+            {campaignData[campaignId]?.description}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4 text-muted-foreground">
-          <p>
-            Amount: {formatEther(campaginData[campaginId]?.amount ?? '0')} PCE
-          </p>
-          <p>
-            Start Time:{' '}
-            {timestampToDate(
-              parseInt(campaginData[campaginId]?.startDate ?? '0')
-            )}
-          </p>
-          <p>
-            End Time:{' '}
-            {timestampToDate(
-              parseInt(campaginData[campaginId]?.endDate ?? '0')
-            )}
-          </p>
-          {campaginData.length > 0 &&
-            (isWinner ? (
-              <>
-                <p>You are whitelisted as a winner</p>
-                {isClaimed ? (
-                  <p>You have already claimed this campagin</p>
-                ) : null}
-                {campaginData[campaginId]?.validateSignatures && !isClaimed && (
+          {campaignData[campaignId]?.isNFT ? (
+            <p>Reward: 1 Contributor NFT</p>
+          ) : (
+            <p>
+              Reward: {formatEther(campaignData[campaignId]?.amount ?? '0')} PCE
+            </p>
+          )}
+          {isActive(campaignData[campaignId]) && (
+            <>
+              <p>
+                Start Time:{' '}
+                {timestampToDate(
+                  parseInt(campaignData[campaignId]?.startDate ?? '0')
+                )}
+              </p>
+              <p>
+                End Time:{' '}
+                {timestampToDate(
+                  parseInt(campaignData[campaignId]?.endDate ?? '0')
+                )}
+              </p>
+            </>
+          )}
+          {campaignData.length > 0 &&
+          !campaignData[campaignId]?.validateSignatures ? (
+            <>
+              {isWinner ? (
+                <>
+                  <p>You are whitelisted as a winner</p>
+                </>
+              ) : (
+                <>
+                  <p>You are not whitelisted as a winner</p>
+                </>
+              )}
+            </>
+          ) : (
+            <></>
+          )}
+          {isClaimed ? <p>You have already claimed this campaign</p> : null}
+          {campaignData.length > 0 && (
+            <>
+              {campaignData[campaignId]?.validateSignatures &&
+                !isClaimed &&
+                status == 2 && (
                   <Input type="text" placeholder="Enter Github Gist URL" />
                 )}
-                <Button
-                  onClick={async () => {
-                    const gistUrlInput = document.querySelector(
-                      'input[placeholder="Enter Github Gist URL"]'
-                    ) as HTMLInputElement
-                    const gistUrlValue = gistUrlInput?.value
-                    await claimCampagin(campaginId, gistUrlValue)
-                  }}
-                  disabled={isClaimed}
-                >
-                  Claim
-                </Button>
-              </>
-            ) : (
-              <p>You are not whitelisted as a winner</p>
-            ))}
+              <Button
+                onClick={async () => {
+                  const gistUrlInput = document.querySelector(
+                    'input[placeholder="Enter Github Gist URL"]'
+                  ) as HTMLInputElement
+                  const gistUrlValue = gistUrlInput?.value
+                  await claimCampaign(campaignId, gistUrlValue)
+                }}
+                disabled={
+                  isClaimed ||
+                  status != 2 ||
+                  (!isWinner && !campaignData[campaignId]?.validateSignatures)
+                }
+              >
+                Claim
+              </Button>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -329,9 +428,9 @@ export default function ForCampaginPage({
     <div className="w-full">
       <div className="flex flex-col gap-4 mx-8">
         <h2 className="text-2xl font-bold tracking-tight mt-6">
-          {campagin.title ?? ''}
+          {campaign.title ?? ''}
         </h2>
-        <p className="text-muted-foreground">{campagin.description ?? ''}</p>
+        <p className="text-muted-foreground">{campaign.description ?? ''}</p>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
@@ -354,10 +453,7 @@ export default function ForCampaginPage({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {/* {contributorBounties
-                  ? formatString(getWithdrawnAmount(contributorBounties))
-                  : '0'}{' '} */}
-                {formatEther(totalClaimed ?? '0')} PCE
+                {totalClaimed ? formatEther(totalClaimed as bigint) : '0'} PCE
               </div>
             </CardContent>
           </Card>
@@ -381,10 +477,7 @@ export default function ForCampaginPage({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {/* {contributorBounties
-                  ? formatString(getClaimableAmount(contributorBounties))
-                  : '0'}{' '} */}
-                0 NFTs
+                {nftBalance ? nftBalance.toString() : '0'} NFTs
               </div>
             </CardContent>
           </Card>
@@ -392,57 +485,66 @@ export default function ForCampaginPage({
 
         <div className="flex flex-col gap-4">
           <h2 className="text-2xl font-bold tracking-tight mt-6">
-            {campagin.announcement ?? ''}
+            {campaign.announcement ?? ''}
           </h2>
 
-          {campaginData.length > 0 && (
+          {campaignData.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl font-bold">
-                  {campaginData[0]?.title ?? 'No Title'}
+                  {campaignData[0]?.title ?? 'No Title'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground text-lg">
-                {campaginData[0]?.description ?? 'No Description'}
+                {campaignData[0]?.description ?? 'No Description'}
               </CardContent>
               <CardFooter className="flex flex-col gap-2 text-muted-foreground justify-start items-start">
                 <p>
-                  Airdrop Amount: {formatEther(campaginData[0]?.amount ?? '0')}{' '}
+                  Airdrop Amount: {formatEther(campaignData[0]?.amount ?? '0')}{' '}
                   PCE
                 </p>
                 <p>
                   Start Time:{' '}
-                  {timestampToDate(parseInt(campaginData[0]?.startDate ?? '0'))}
+                  {timestampToDate(parseInt(campaignData[0]?.startDate ?? '0'))}
                 </p>
                 <p>
                   End Time:{' '}
-                  {timestampToDate(parseInt(campaginData[0]?.endDate ?? '0'))}
+                  {timestampToDate(parseInt(campaignData[0]?.endDate ?? '0'))}
                 </p>
-                {campaginData[0]?.validateSignatures ? (
-                  <DialogFooter className="gap-4 w-1/2">
-                    <div className="flex flex-col gap-2 w-full">
-                      <div className="flex flex-row gap-2 w-full">
-                        <Input
-                          type="text"
-                          className="w-full"
-                          placeholder="Enter Github Gist URL"
-                        />
-                      </div>
-                    </div>
-                  </DialogFooter>
-                ) : null}
 
                 <Button onClick={signMessage}>Sign Message</Button>
                 {signature.length > 0 && (
                   <div
                     className="flex flex-col gap-2 w-full"
                     onClick={() => {
-                      navigator.clipboard.writeText(signature)
+                      navigator.clipboard.writeText(
+                        JSON.stringify({
+                          Message: _message,
+                          Signature: signature,
+                          'Wallet Address': address,
+                        })
+                      )
                       toast.success('Signature copied to clipboard')
                     }}
                   >
-                    <h5 className="text-muted-foreground break-words whitespace-normal">
-                      Signature: {signature}
+                    <h5 className="text-muted-foreground break-words whitespace-normal bg-muted rounded-lg p-4 relative">
+                      <div className="absolute top-2 right-2">
+                        <CopyIcon />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
+                          <span className="font-semibold">Message:</span>
+                          <span>{_message}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="font-semibold">Signature:</span>
+                          <span className="break-all">{signature}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="font-semibold">Wallet Address:</span>
+                          <span className="break-all">{address}</span>
+                        </div>
+                      </div>
                     </h5>
                   </div>
                 )}
@@ -453,7 +555,7 @@ export default function ForCampaginPage({
 
         <div className="flex flex-col gap-4 mb-6">
           <h2 className="text-2xl font-bold tracking-tight mt-6">
-            {campagin.pastCampagin ?? ''}
+            {campaign.pastCampaign ?? ''}
           </h2>
 
           <Card>
@@ -463,27 +565,31 @@ export default function ForCampaginPage({
                   <TableHead>No.</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Amount</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Start Time</TableHead>
                   <TableHead>End Time</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {campaginData.map((campagin, index) => (
+                {campaignData.map((campaign, index) => (
                   <TableRow
                     key={index}
                     onClick={() => {
-                      setCampaginId(index)
+                      setCampaignId(index)
                     }}
                     className="cursor-pointer hover:bg-muted/50"
                   >
                     <TableCell>{index + 1}</TableCell>
-                    <TableCell>{campagin.title}</TableCell>
-                    <TableCell>{formatEther(campagin.amount)} PCE</TableCell>
+                    <TableCell>{campaign.title}</TableCell>
                     <TableCell>
-                      {timestampToDate(parseInt(campagin.startDate))}
+                      {campaign.isNFT ? '1' : formatEther(campaign.amount)}
+                    </TableCell>
+                    <TableCell>{campaign.isNFT ? 'NFT' : 'PCE'}</TableCell>
+                    <TableCell>
+                      {timestampToDate(parseInt(campaign.startDate))}
                     </TableCell>
                     <TableCell>
-                      {timestampToDate(parseInt(campagin.endDate))}
+                      {timestampToDate(parseInt(campaign.endDate))}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -492,7 +598,7 @@ export default function ForCampaginPage({
           </Card>
         </div>
       </div>
-      <CampaginDialog isOpen={isOpen} onOpenChange={setIsOpen} />
+      <CampaignDialog isOpen={isOpen} onOpenChange={setIsOpen} />
       <ToastContainer position="bottom-right" draggable></ToastContainer>
     </div>
   )

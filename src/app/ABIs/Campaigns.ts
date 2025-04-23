@@ -1,13 +1,24 @@
-export const CAMPAGIN_ABI = [
+export const CAMPAIGN_ABI = [
   {
     type: 'function',
     name: 'addCampWinners',
     inputs: [
-      { name: '_campaginId', type: 'uint256', internalType: 'uint256' },
-      { name: '_winners', type: 'address[]', internalType: 'address[]' },
+      { name: '_campaignId', type: 'uint256', internalType: 'uint256' },
+      { name: '_addresses', type: 'address[]', internalType: 'address[]' },
+      { name: '_gists', type: 'bytes32[]', internalType: 'bytes32[]' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'campGists',
+    inputs: [
+      { name: '', type: 'uint256', internalType: 'uint256' },
+      { name: '', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -17,6 +28,38 @@ export const CAMPAGIN_ABI = [
       { name: '', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'campaignId',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'campaigns',
+    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    outputs: [
+      { name: 'title', type: 'string', internalType: 'string' },
+      { name: 'description', type: 'string', internalType: 'string' },
+      { name: 'amount', type: 'uint256', internalType: 'uint256' },
+      { name: 'startDate', type: 'uint256', internalType: 'uint256' },
+      { name: 'endDate', type: 'uint256', internalType: 'uint256' },
+      { name: 'validateSignatures', type: 'bool', internalType: 'bool' },
+      { name: 'isNFT', type: 'bool', internalType: 'bool' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'champGistsClaimed',
+    inputs: [
+      { name: '', type: 'uint256', internalType: 'uint256' },
+      { name: '', type: 'bytes32', internalType: 'bytes32' },
+    ],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
     stateMutability: 'view',
   },
   {
@@ -31,30 +74,10 @@ export const CAMPAGIN_ABI = [
   },
   {
     type: 'function',
-    name: 'campaginId',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'campagins',
-    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    outputs: [
-      { name: 'title', type: 'string', internalType: 'string' },
-      { name: 'description', type: 'string', internalType: 'string' },
-      { name: 'amount', type: 'uint256', internalType: 'uint256' },
-      { name: 'startDate', type: 'uint256', internalType: 'uint256' },
-      { name: 'endDate', type: 'uint256', internalType: 'uint256' },
-      { name: 'validateSignatures', type: 'bool', internalType: 'bool' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'claimCampagin',
+    name: 'claimCampaign',
     inputs: [
-      { name: '_campaginId', type: 'uint256', internalType: 'uint256' },
+      { name: '_campaignId', type: 'uint256', internalType: 'uint256' },
+      { name: '_gist', type: 'bytes32', internalType: 'bytes32' },
       { name: '_message', type: 'string', internalType: 'string' },
       { name: '_signature', type: 'bytes', internalType: 'bytes' },
     ],
@@ -63,12 +86,12 @@ export const CAMPAGIN_ABI = [
   },
   {
     type: 'function',
-    name: 'createCampagin',
+    name: 'createCampaign',
     inputs: [
       {
-        name: '_campagin',
+        name: '_campaign',
         type: 'tuple',
-        internalType: 'struct Campagins.Campagin',
+        internalType: 'struct Campaigns.Campaign',
         components: [
           { name: 'title', type: 'string', internalType: 'string' },
           { name: 'description', type: 'string', internalType: 'string' },
@@ -76,6 +99,7 @@ export const CAMPAGIN_ABI = [
           { name: 'startDate', type: 'uint256', internalType: 'uint256' },
           { name: 'endDate', type: 'uint256', internalType: 'uint256' },
           { name: 'validateSignatures', type: 'bool', internalType: 'bool' },
+          { name: 'isNFT', type: 'bool', internalType: 'bool' },
         ],
       },
     ],
@@ -85,9 +109,9 @@ export const CAMPAGIN_ABI = [
   {
     type: 'function',
     name: 'getStatus',
-    inputs: [{ name: '_campaginId', type: 'uint256', internalType: 'uint256' }],
+    inputs: [{ name: '_campaignId', type: 'uint256', internalType: 'uint256' }],
     outputs: [
-      { name: '', type: 'uint8', internalType: 'enum Campagins.Status' },
+      { name: '', type: 'uint8', internalType: 'enum Campaigns.Status' },
     ],
     stateMutability: 'view',
   },
@@ -100,6 +124,7 @@ export const CAMPAGIN_ABI = [
         type: 'address',
         internalType: 'contract ERC20Upgradeable',
       },
+      { name: '_nft', type: 'address', internalType: 'contract SBT' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -108,10 +133,17 @@ export const CAMPAGIN_ABI = [
     type: 'function',
     name: 'isWinner',
     inputs: [
-      { name: '_campaginId', type: 'uint256', internalType: 'uint256' },
+      { name: '_campaignId', type: 'uint256', internalType: 'uint256' },
       { name: '_winner', type: 'address', internalType: 'address' },
     ],
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'nft',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'contract SBT' }],
     stateMutability: 'view',
   },
   {
@@ -159,6 +191,13 @@ export const CAMPAGIN_ABI = [
   },
   {
     type: 'function',
+    name: 'totalClaimedNFT',
+    inputs: [{ name: '', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'transferOwnership',
     inputs: [{ name: 'newOwner', type: 'address', internalType: 'address' }],
     outputs: [],
@@ -180,7 +219,7 @@ export const CAMPAGIN_ABI = [
     name: 'CampWinnersAdded',
     inputs: [
       {
-        name: 'campaginId',
+        name: 'campaignId',
         type: 'uint256',
         indexed: true,
         internalType: 'uint256',
@@ -199,7 +238,7 @@ export const CAMPAGIN_ABI = [
     name: 'CampWinnersClaimed',
     inputs: [
       {
-        name: 'campaginId',
+        name: 'campaignId',
         type: 'uint256',
         indexed: true,
         internalType: 'uint256',
@@ -215,10 +254,10 @@ export const CAMPAGIN_ABI = [
   },
   {
     type: 'event',
-    name: 'CampaginCreated',
+    name: 'CampaignCreated',
     inputs: [
       {
-        name: 'campaginId',
+        name: 'campaignId',
         type: 'uint256',
         indexed: true,
         internalType: 'uint256',
@@ -254,6 +293,7 @@ export const CAMPAGIN_ABI = [
         indexed: false,
         internalType: 'bool',
       },
+      { name: 'isNFT', type: 'bool', indexed: false, internalType: 'bool' },
     ],
     anonymous: false,
   },

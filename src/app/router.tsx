@@ -37,8 +37,8 @@ const loadComponent = async (key: string) => {
     case 'token':
       Component = (await import('./(for-users)/[locale]/token/page')).default
       break
-    case 'campagin':
-      Component = (await import('./(for-users)/[locale]/campagin/page')).default
+    case 'campaign':
+      Component = (await import('./(for-users)/[locale]/campaign/page')).default
       break
     // case 'proposals':
     //   Component = (await import('./(for-users)/[locale]/proposals/page'))
@@ -255,9 +255,9 @@ const router = createBrowserRouter([
         lazy: createLazy('pce_detail'),
       },
       {
-        path: '/:locale/campagin',
-        loader: createLoader('campagin'),
-        lazy: createLazy('campagin'),
+        path: '/:locale/campaign',
+        loader: createLoader('campaign'),
+        lazy: createLazy('campaign'),
       },
     ],
   },

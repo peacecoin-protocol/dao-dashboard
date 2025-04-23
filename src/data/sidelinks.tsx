@@ -124,9 +124,9 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
     //   icon: <IconApps size={18} />,
     // },
     {
-      title: sidebar.campagin ?? 'Campagin',
+      title: sidebar.campaign ?? 'Campaign',
       label: '',
-      href: '/campagin',
+      href: '/campaign',
       icon: <IconApps size={18} />,
     },
     {
