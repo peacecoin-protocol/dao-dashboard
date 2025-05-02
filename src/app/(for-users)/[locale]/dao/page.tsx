@@ -376,7 +376,7 @@ export default function ForDAOPage({
             }
 
             const holders = await getHolders(
-              chainId === sepolia.id ? sepolia.id : localhost.id,
+              chainId === localhost.id ? localhost.id : sepolia.id,
               dao.governanceToken as string
             )
             const identicon = await generateIdenteapot(dao.governor, '')

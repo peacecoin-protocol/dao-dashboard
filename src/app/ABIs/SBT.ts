@@ -1,34 +1,38 @@
 export const SBT_ABI = [
-  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
   {
-    type: 'function',
-    name: 'approve',
+    type: 'constructor',
     inputs: [
-      { name: 'to', type: 'address', internalType: 'address' },
-      { name: 'tokenId', type: 'uint256', internalType: 'uint256' },
+      { name: '_name', type: 'string', internalType: 'string' },
+      { name: '_symbol', type: 'string', internalType: 'string' },
+      { name: '_uri', type: 'string', internalType: 'string' },
     ],
-    outputs: [],
     stateMutability: 'nonpayable',
   },
   {
     type: 'function',
     name: 'balanceOf',
-    inputs: [{ name: 'owner', type: 'address', internalType: 'address' }],
+    inputs: [
+      { name: 'account', type: 'address', internalType: 'address' },
+      { name: 'id', type: 'uint256', internalType: 'uint256' },
+    ],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'getApproved',
-    inputs: [{ name: 'tokenId', type: 'uint256', internalType: 'uint256' }],
-    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    name: 'balanceOfBatch',
+    inputs: [
+      { name: 'accounts', type: 'address[]', internalType: 'address[]' },
+      { name: 'ids', type: 'uint256[]', internalType: 'uint256[]' },
+    ],
+    outputs: [{ name: '', type: 'uint256[]', internalType: 'uint256[]' }],
     stateMutability: 'view',
   },
   {
     type: 'function',
     name: 'isApprovedForAll',
     inputs: [
-      { name: 'owner', type: 'address', internalType: 'address' },
+      { name: 'account', type: 'address', internalType: 'address' },
       { name: 'operator', type: 'address', internalType: 'address' },
     ],
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
@@ -37,7 +41,10 @@ export const SBT_ABI = [
   {
     type: 'function',
     name: 'mint',
-    inputs: [{ name: 'to', type: 'address', internalType: 'address' }],
+    inputs: [
+      { name: 'to', type: 'address', internalType: 'address' },
+      { name: 'id', type: 'uint256', internalType: 'uint256' },
+    ],
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -64,13 +71,6 @@ export const SBT_ABI = [
   },
   {
     type: 'function',
-    name: 'ownerOf',
-    inputs: [{ name: 'tokenId', type: 'uint256', internalType: 'uint256' }],
-    outputs: [{ name: '', type: 'address', internalType: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'renounceOwnership',
     inputs: [],
     outputs: [],
@@ -78,11 +78,13 @@ export const SBT_ABI = [
   },
   {
     type: 'function',
-    name: 'safeTransferFrom',
+    name: 'safeBatchTransferFrom',
     inputs: [
       { name: 'from', type: 'address', internalType: 'address' },
       { name: 'to', type: 'address', internalType: 'address' },
-      { name: 'tokenId', type: 'uint256', internalType: 'uint256' },
+      { name: 'ids', type: 'uint256[]', internalType: 'uint256[]' },
+      { name: 'values', type: 'uint256[]', internalType: 'uint256[]' },
+      { name: 'data', type: 'bytes', internalType: 'bytes' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -91,13 +93,14 @@ export const SBT_ABI = [
     type: 'function',
     name: 'safeTransferFrom',
     inputs: [
-      { name: 'from', type: 'address', internalType: 'address' },
-      { name: 'to', type: 'address', internalType: 'address' },
-      { name: 'tokenId', type: 'uint256', internalType: 'uint256' },
-      { name: 'data', type: 'bytes', internalType: 'bytes' },
+      { name: '', type: 'address', internalType: 'address' },
+      { name: '', type: 'address', internalType: 'address' },
+      { name: '', type: 'uint256', internalType: 'uint256' },
+      { name: '', type: 'uint256', internalType: 'uint256' },
+      { name: '', type: 'bytes', internalType: 'bytes' },
     ],
     outputs: [],
-    stateMutability: 'nonpayable',
+    stateMutability: 'pure',
   },
   {
     type: 'function',
@@ -118,6 +121,16 @@ export const SBT_ABI = [
   },
   {
     type: 'function',
+    name: 'setTokenURI',
+    inputs: [
+      { name: '_id', type: 'uint256', internalType: 'uint256' },
+      { name: '_tokenURI', type: 'string', internalType: 'string' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'supportsInterface',
     inputs: [{ name: 'interfaceId', type: 'bytes4', internalType: 'bytes4' }],
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
@@ -132,21 +145,10 @@ export const SBT_ABI = [
   },
   {
     type: 'function',
-    name: 'tokenURI',
-    inputs: [{ name: 'tokenId', type: 'uint256', internalType: 'uint256' }],
+    name: 'tokenURIs',
+    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     outputs: [{ name: '', type: 'string', internalType: 'string' }],
     stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'transferFrom',
-    inputs: [
-      { name: '', type: 'address', internalType: 'address' },
-      { name: '', type: 'address', internalType: 'address' },
-      { name: '', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -156,36 +158,25 @@ export const SBT_ABI = [
     stateMutability: 'nonpayable',
   },
   {
-    type: 'event',
-    name: 'Approval',
-    inputs: [
-      {
-        name: 'owner',
-        type: 'address',
-        indexed: true,
-        internalType: 'address',
-      },
-      {
-        name: 'approved',
-        type: 'address',
-        indexed: true,
-        internalType: 'address',
-      },
-      {
-        name: 'tokenId',
-        type: 'uint256',
-        indexed: true,
-        internalType: 'uint256',
-      },
-    ],
-    anonymous: false,
+    type: 'function',
+    name: 'uri',
+    inputs: [{ name: '_id', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: '', type: 'string', internalType: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'uri_',
+    inputs: [],
+    outputs: [{ name: '', type: 'string', internalType: 'string' }],
+    stateMutability: 'view',
   },
   {
     type: 'event',
     name: 'ApprovalForAll',
     inputs: [
       {
-        name: 'owner',
+        name: 'account',
         type: 'address',
         indexed: true,
         internalType: 'address',
@@ -221,65 +212,107 @@ export const SBT_ABI = [
   },
   {
     type: 'event',
-    name: 'Transfer',
+    name: 'TransferBatch',
     inputs: [
+      {
+        name: 'operator',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
       { name: 'from', type: 'address', indexed: true, internalType: 'address' },
       { name: 'to', type: 'address', indexed: true, internalType: 'address' },
       {
-        name: 'tokenId',
-        type: 'uint256',
+        name: 'ids',
+        type: 'uint256[]',
+        indexed: false,
+        internalType: 'uint256[]',
+      },
+      {
+        name: 'values',
+        type: 'uint256[]',
+        indexed: false,
+        internalType: 'uint256[]',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'TransferSingle',
+    inputs: [
+      {
+        name: 'operator',
+        type: 'address',
         indexed: true,
+        internalType: 'address',
+      },
+      { name: 'from', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'to', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'id', type: 'uint256', indexed: false, internalType: 'uint256' },
+      {
+        name: 'value',
+        type: 'uint256',
+        indexed: false,
         internalType: 'uint256',
       },
     ],
     anonymous: false,
   },
   {
+    type: 'event',
+    name: 'URI',
+    inputs: [
+      { name: 'value', type: 'string', indexed: false, internalType: 'string' },
+      { name: 'id', type: 'uint256', indexed: true, internalType: 'uint256' },
+    ],
+    anonymous: false,
+  },
+  {
     type: 'error',
-    name: 'ERC721IncorrectOwner',
+    name: 'ERC1155InsufficientBalance',
     inputs: [
       { name: 'sender', type: 'address', internalType: 'address' },
-      { name: 'tokenId', type: 'uint256', internalType: 'uint256' },
-      { name: 'owner', type: 'address', internalType: 'address' },
-    ],
-  },
-  {
-    type: 'error',
-    name: 'ERC721InsufficientApproval',
-    inputs: [
-      { name: 'operator', type: 'address', internalType: 'address' },
+      { name: 'balance', type: 'uint256', internalType: 'uint256' },
+      { name: 'needed', type: 'uint256', internalType: 'uint256' },
       { name: 'tokenId', type: 'uint256', internalType: 'uint256' },
     ],
   },
   {
     type: 'error',
-    name: 'ERC721InvalidApprover',
+    name: 'ERC1155InvalidApprover',
     inputs: [{ name: 'approver', type: 'address', internalType: 'address' }],
   },
   {
     type: 'error',
-    name: 'ERC721InvalidOperator',
+    name: 'ERC1155InvalidArrayLength',
+    inputs: [
+      { name: 'idsLength', type: 'uint256', internalType: 'uint256' },
+      { name: 'valuesLength', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'ERC1155InvalidOperator',
     inputs: [{ name: 'operator', type: 'address', internalType: 'address' }],
   },
   {
     type: 'error',
-    name: 'ERC721InvalidOwner',
-    inputs: [{ name: 'owner', type: 'address', internalType: 'address' }],
-  },
-  {
-    type: 'error',
-    name: 'ERC721InvalidReceiver',
+    name: 'ERC1155InvalidReceiver',
     inputs: [{ name: 'receiver', type: 'address', internalType: 'address' }],
   },
   {
     type: 'error',
-    name: 'ERC721InvalidSender',
+    name: 'ERC1155InvalidSender',
     inputs: [{ name: 'sender', type: 'address', internalType: 'address' }],
   },
   {
     type: 'error',
-    name: 'ERC721NonexistentToken',
-    inputs: [{ name: 'tokenId', type: 'uint256', internalType: 'uint256' }],
+    name: 'ERC1155MissingApprovalForAll',
+    inputs: [
+      { name: 'operator', type: 'address', internalType: 'address' },
+      { name: 'owner', type: 'address', internalType: 'address' },
+    ],
   },
   {
     type: 'error',

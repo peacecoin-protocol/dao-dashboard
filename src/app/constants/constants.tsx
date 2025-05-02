@@ -1,3 +1,4 @@
+import { Network } from 'alchemy-sdk'
 import { polygon, sepolia } from 'wagmi/chains'
 import { localhost } from '~/app/providers'
 
@@ -50,14 +51,14 @@ export const daoStudioAddress = {
 } as Record<number, `0x${string}`>
 
 export const campaignAddress = {
-  [sepolia.id]: '0x6bb66e0FD44f878A7Fdb7F3Dd74EA40f4841774f',
-  [localhost.id]: '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1',
+  [sepolia.id]: '0x5AE1cd83161d756ebB4dDea8b8a8824898d8958B',
+  [localhost.id]: '0x67d269191c92Caf3cD7723F116c85e6E9bf55933',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
 export const sbtAddress = {
-  [sepolia.id]: '0x0000000000000000000000000000000000000000',
-  [localhost.id]: '0x322813fd9a801c5507c9de605d63cea4f2ce6c44',
+  [sepolia.id]: '0x89839cD8d1D5153Af347573C0E337775163e86eC',
+  [localhost.id]: '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
@@ -80,3 +81,8 @@ export const WEB = 'https://peacecoin.xyz'
 export const LINKEDIN = 'https://www.linkedin.com/company'
 
 export const TWITTER = 'https://twitter.com'
+
+export const ALCHEMY_CONFIG = {
+  apiKey: process.env.ALCHEMY_API_KEY,
+  network: Network.ETH_SEPOLIA,
+}

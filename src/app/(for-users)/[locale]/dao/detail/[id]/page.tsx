@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
 
-import { Alchemy, Network } from 'alchemy-sdk'
+import { Alchemy } from 'alchemy-sdk'
 
 import 'react-toastify/dist/ReactToastify.css'
 import RingLoader from 'react-spinners/RingLoader'
@@ -71,8 +71,6 @@ import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { localhost } from '~/app/providers'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { governorAddress, SUBGRAPH_URL } from '~/app/constants/constants'
-import { Env } from '~/env'
-import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { useBlockNumber, useBlock } from 'wagmi'
 import { pinata } from '~/lib/config'
 import ImageCropModal from '~/components/ui/ImageCropModal'
@@ -83,6 +81,8 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { timestampToDate } from '~/components/utils'
+import { ALCHEMY_CONFIG } from '~/app/constants/constants'
+import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 
 type Dao = {
   id: string
@@ -162,12 +162,7 @@ export default function ForSubmitPage({
     blockNumber,
   })
 
-  const alchemyConfig = {
-    apiKey: Env.ALCHEMY_API_KEY,
-    network: Network.ETH_SEPOLIA,
-  }
-
-  const alchemy = new Alchemy(alchemyConfig)
+  const alchemy = new Alchemy(ALCHEMY_CONFIG)
 
   const getTokenMetadata = async (address: string) => {
     const metadata = await alchemy.core.getTokenMetadata(address)

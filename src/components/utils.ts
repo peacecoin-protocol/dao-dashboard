@@ -28,7 +28,7 @@ export const LINKS = {
   },
   DISCORD: {
     label: 'Discord',
-    link: 'https://discord.com/invite/fXmkg4xY',
+    link: 'https://discord.gg/CP8NQsMq5R',
   },
 }
 
