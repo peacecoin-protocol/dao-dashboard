@@ -1,17 +1,30 @@
 import { http, createConfig } from '@wagmi/core'
 import { polygon, sepolia } from 'wagmi/chains'
-import { localhost } from '~/app/providers'
 import { Env } from '~/env'
 import { PinataSDK } from 'pinata'
+import { defineChain } from 'viem'
+
+export const localhost = defineChain({
+  id: 31337,
+  name: 'Localhost',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: { http: ['http://127.0.0.1:8545'] },
+  },
+})
 
 export const config = createConfig({
-  chains: [sepolia, localhost],
+  chains: [sepolia, localhost, polygon],
   transports: {
     [sepolia.id]: http(Env.NEXT_PUBLIC_SEPOLIA_RPC_URL),
     [localhost.id]: http(Env.NEXT_PUBLIC_LOCALHOST_RPC_URL),
     [polygon.id]: http(Env.NEXT_PUBLIC_POLYGON_RPC_URL),
   },
-  multiInjectedProviderDiscovery: false,
+  multiInjectedProviderDiscovery: true,
   syncConnectedChain: true,
 })
 

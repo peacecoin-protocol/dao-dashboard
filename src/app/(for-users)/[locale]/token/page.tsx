@@ -45,7 +45,7 @@ import { getDict } from '~/i18n/get-dict'
 import { COMMUNITY_TOKEN_ABI } from '~/app/ABIs/CommunityToken'
 
 import { config } from '~/lib/config'
-import { localhost } from '~/app/providers'
+import { localhost } from '~/lib/config'
 
 import { TOKEN } from '~/i18n/types'
 

@@ -67,7 +67,7 @@ import { config } from '~/lib/config'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 import { TooltipComponent } from '~/components/custom/TooltipComponent'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
-import { localhost } from '~/app/providers'
+import { localhost } from '~/lib/config'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { useBlock } from 'wagmi'
 import {

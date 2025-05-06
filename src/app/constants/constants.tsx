@@ -1,6 +1,6 @@
 import { Network } from 'alchemy-sdk'
 import { polygon, sepolia } from 'wagmi/chains'
-import { localhost } from '~/app/providers'
+import { localhost } from '~/lib/config'
 
 export const pceAddress = {
   [sepolia.id]: '0x8d4d8C9192C7df57840129D71c18ED49dda7Fe33',
@@ -52,7 +52,7 @@ export const daoStudioAddress = {
 
 export const campaignAddress = {
   [sepolia.id]: '0x5AE1cd83161d756ebB4dDea8b8a8824898d8958B',
-  [localhost.id]: '0x67d269191c92Caf3cD7723F116c85e6E9bf55933',
+  [localhost.id]: '0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 

@@ -50,7 +50,7 @@ import {
 } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
-import { localhost } from '~/app/providers'
+import { localhost } from '~/lib/config'
 import { polygon, sepolia } from 'wagmi/chains'
 
 import Link from '~/components/custom/Link'

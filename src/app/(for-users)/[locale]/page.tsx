@@ -42,7 +42,7 @@ import { useAccount, useReadContract } from 'wagmi'
 import { config } from '~/lib/config'
 
 import RingLoader from 'react-spinners/RingLoader'
-import { localhost } from '~/app/providers'
+import { localhost } from '~/lib/config'
 export default function ForUsersIndexPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {

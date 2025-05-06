@@ -35,7 +35,7 @@ import {
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { localhost } from '~/app/providers'
+import { localhost } from '~/lib/config'
 
 export default function ForSubmitPage({
   params: { locale, ...params },
