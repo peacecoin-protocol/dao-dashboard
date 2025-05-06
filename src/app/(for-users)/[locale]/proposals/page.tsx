@@ -14,7 +14,7 @@ import { pceAddress } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { localhost } from '~/app/providers'
+import { localhost } from '~/lib/config'
 
 export default function ForProposalPage({
   params: { locale, ...params },

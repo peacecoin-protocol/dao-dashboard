@@ -12,11 +12,11 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   useSignMessage,
+  useSwitchChain,
   type BaseError,
-  type UseReadContractReturnType,
 } from 'wagmi'
 import { readContract } from '@wagmi/core'
-import { CAMPAIGN } from '~/i18n/types'
+import { CAMPAIGN, Metadata } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
@@ -60,10 +60,13 @@ import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 
-import { localhost } from '~/app/providers'
+import { localhost } from '~/lib/config'
+import { sepolia } from 'wagmi/chains'
 import Link from '~/components/custom/Link'
 import { toast } from 'react-toastify'
 import CopyIcon from '../../../../../public/svg/copy'
+import Image from 'next/image'
+import { NFT_DETAIL } from '~/components/custom/nft-detail'
 
 export default function ForCampaignPage({
   params: { locale, ...params },
@@ -81,6 +84,11 @@ export default function ForCampaignPage({
   const [githubId, setGithubId] = useState<string>('')
   const { address, chainId } = useAccount()
   const { signMessageAsync } = useSignMessage()
+  const { chains, switchChain } = useSwitchChain()
+  const [nftBalances, setNftBalances] = useState<number[]>([])
+  const [nftMetadata, setNftMetadata] = useState<Metadata[]>([])
+  const [isNFT_DETAIL_Open, setIsNFT_DETAIL_Open] = useState<boolean>(false)
+  const [nftDetailIndex, setNftDetailIndex] = useState<number>(-1)
 
   const { data: hash, error, writeContract } = useWriteContract()
   const [signature, setSignature] = useState<string>('')
@@ -95,6 +103,15 @@ export default function ForCampaignPage({
     }
   }
 
+  useEffect(() => {
+    const switchChainAndReload = async () => {
+      if (!chainId || !chains.some((chain) => chain.id === chainId)) {
+        switchChain({ chainId: sepolia.id })
+      }
+    }
+    switchChainAndReload()
+  }, [chainId])
+
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
@@ -107,15 +124,74 @@ export default function ForCampaignPage({
     args: [address],
   })
 
-  const {
-    data: nftBalance,
-    refetch: refetchNftBalance,
-  }: UseReadContractReturnType = useReadContract({
-    abi: SBT_ABI,
-    address: sbtAddress[chainId || localhost.id] as `0x${string}`,
-    functionName: 'balanceOf',
-    args: [address],
+  const { data: _campaignId, refetch: refetchCampaignId } = useReadContract({
+    abi: CAMPAIGN_ABI,
+    address: campaignAddress[chainId || localhost.id] as `0x${string}`,
+    functionName: 'campaignId',
+    args: [],
   })
+
+  useEffect(() => {
+    const getSBTNFTs = async () => {
+      if (!chainId) {
+        return
+      }
+
+      if (_campaignId) {
+        toast.info('Loading SBT NFTs...')
+
+        let _nftBalances: number[] = []
+        for (let i = 0; i < (_campaignId as number); i++) {
+          const _balance = (await readContract(config, {
+            abi: SBT_ABI,
+            address: sbtAddress[chainId || localhost.id] as `0x${string}`,
+            functionName: 'balanceOf',
+            args: [address, i],
+          })) as number
+          console.log(_balance)
+          _nftBalances.push(_balance)
+        }
+        setNftBalances(_nftBalances)
+
+        const _nftMetadata: Metadata[] = []
+        for (let i = 0; i < (_campaignId as number); i++) {
+          const _metadata = (await readContract(config, {
+            abi: SBT_ABI,
+            address: sbtAddress[chainId || localhost.id] as `0x${string}`,
+            functionName: 'uri',
+            args: [i],
+          })) as string
+
+          try {
+            console.log(_metadata)
+            const response = await axios.get(`/api/get-nft-metadata`, {
+              params: {
+                metadata: _metadata,
+              },
+            })
+            const data = response.data
+            console.log(data)
+            _nftMetadata.push(data)
+          } catch (error) {
+            console.error('Error fetching NFT metadata:', error)
+            const metadata: Metadata = {
+              image: '',
+              name: '',
+              description: '',
+              attributes: [],
+              external_url: '',
+              token_id: 0,
+            }
+            _nftMetadata.push(metadata)
+          }
+        }
+        console.log(_nftMetadata)
+        setNftMetadata(_nftMetadata)
+      }
+    }
+
+    getSBTNFTs()
+  }, [_campaignId, isConfirmed, chainId])
 
   const { data: totalClaimedNFTs, refetch: refetchTotalClaimedNFTs } =
     useReadContract({
@@ -137,7 +213,6 @@ export default function ForCampaignPage({
           ></Link>
         )
         await refetchTotalClaimed()
-        await refetchNftBalance()
       } else if (isConfirming) {
         toast.info(
           <div className="disabled">TX is Pending, Please Wait...</div>
@@ -263,11 +338,6 @@ export default function ForCampaignPage({
       console.error('Error claiming campaign', error)
     }
   }
-  useEffect(() => {
-    if (nftBalance) {
-      console.log(nftBalance)
-    }
-  }, [nftBalance])
 
   useEffect(() => {
     const getStatus = async () => {
@@ -301,13 +371,17 @@ export default function ForCampaignPage({
       await checkWinner()
       if (campaignId >= 0 && address) {
         let claimed = false
-        if (campaignData[campaignId]?.isNFT && githubId) {
-          claimed = (await readContract(config, {
-            abi: CAMPAIGN_ABI,
-            address: campaignAddress[chainId || localhost.id] as `0x${string}`,
-            functionName: 'champGistsClaimed',
-            args: [campaignId, githubId],
-          })) as boolean
+        if (campaignData[campaignId]?.isNFT) {
+          if (githubId) {
+            claimed = (await readContract(config, {
+              abi: CAMPAIGN_ABI,
+              address: campaignAddress[
+                chainId || localhost.id
+              ] as `0x${string}`,
+              functionName: 'champGistsClaimed',
+              args: [campaignId, githubId],
+            })) as boolean
+          }
         } else {
           claimed = (await readContract(config, {
             abi: CAMPAIGN_ABI,
@@ -355,7 +429,7 @@ export default function ForCampaignPage({
         </DialogHeader>
         <div className="flex flex-col gap-4 text-muted-foreground">
           {campaignData[campaignId]?.isNFT ? (
-            <p>Reward: 1 Contributor NFT</p>
+            <p>Reward: {campaignData[campaignId]?.amount} Contributor NFT</p>
           ) : (
             <p>
               Reward: {formatEther(campaignData[campaignId]?.amount ?? '0')} PCE
@@ -432,7 +506,7 @@ export default function ForCampaignPage({
         </h2>
         <p className="text-muted-foreground">{campaign.description ?? ''}</p>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        {/* <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -481,13 +555,51 @@ export default function ForCampaignPage({
               </div>
             </CardContent>
           </Card>
-        </div>
+        </div> */}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold">NFT Balances</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {nftBalances.length > 0 && nftMetadata.length > 0 && (
+              <div className="flex flex-wrap">
+                {nftBalances.map((balance, index) => (
+                  <div key={index} className="flex flex-col items-center gap-2">
+                    {balance > 0 && (
+                      <div
+                        className="flex flex-col items-center gap-2 px-2"
+                        onClick={() => {
+                          setNftDetailIndex(index)
+                          setIsNFT_DETAIL_Open(true)
+                        }}
+                      >
+                        <div className="relative">
+                          <Image
+                            src={nftMetadata[index]?.image ?? ''}
+                            alt={`NFT #${index}`}
+                            className="rounded-lg h-[140px] w-[100px] object-fill cursor-pointer"
+                            width={100}
+                            height={140}
+                          />
+                          <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                            {balance.toString()}
+                          </div>
+                        </div>
+                        <p className="text-muted-foreground"># {index + 1}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="flex flex-col gap-4">
           <h2 className="text-2xl font-bold tracking-tight mt-6">
             {campaign.announcement ?? ''}
           </h2>
-
           {campaignData.length > 0 && (
             <Card>
               <CardHeader>
@@ -500,8 +612,11 @@ export default function ForCampaignPage({
               </CardContent>
               <CardFooter className="flex flex-col gap-2 text-muted-foreground justify-start items-start">
                 <p>
-                  Airdrop Amount: {formatEther(campaignData[0]?.amount ?? '0')}{' '}
-                  PCE
+                  Airdrop Amount:{' '}
+                  {campaignData[0]?.isNFT
+                    ? campaignData[0]?.amount
+                    : formatEther(campaignData[0]?.amount ?? '0')}{' '}
+                  {campaignData[0]?.isNFT ? 'NFT' : 'PCE'}
                 </p>
                 <p>
                   Start Time:{' '}
@@ -554,16 +669,16 @@ export default function ForCampaignPage({
         </div>
 
         <div className="flex flex-col gap-4 mb-6">
-          <h2 className="text-2xl font-bold tracking-tight mt-6">
-            {campaign.pastCampaign ?? ''}
-          </h2>
+          <h2 className="text-2xl font-bold tracking-tight mt-6">Campaigns</h2>
 
           <Card>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>No.</TableHead>
+                  <TableHead>SBT</TableHead>
                   <TableHead>Title</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Start Time</TableHead>
@@ -575,14 +690,37 @@ export default function ForCampaignPage({
                   <TableRow
                     key={index}
                     onClick={() => {
+                      if (!chainId) {
+                        toast.info('Please connect to your wallet')
+                        return
+                      }
+
                       setCampaignId(index)
                     }}
                     className="cursor-pointer hover:bg-muted/50"
                   >
                     <TableCell>{index + 1}</TableCell>
+                    <TableCell>
+                      <Image
+                        src={
+                          nftMetadata[index]?.image ?? '/images/empty-nft.svg'
+                        }
+                        alt={`NFT #${index}`}
+                        className="rounded-lg h-[140px] w-[100px] object-fill"
+                        width={100}
+                        height={140}
+                      />
+                    </TableCell>
                     <TableCell>{campaign.title}</TableCell>
                     <TableCell>
-                      {campaign.isNFT ? '1' : formatEther(campaign.amount)}
+                      {campaign.validateSignatures
+                        ? 'Verify Signature'
+                        : 'Whitelist'}
+                    </TableCell>
+                    <TableCell>
+                      {campaign.isNFT
+                        ? campaign.amount
+                        : formatEther(campaign.amount ?? '0')}
                     </TableCell>
                     <TableCell>{campaign.isNFT ? 'NFT' : 'PCE'}</TableCell>
                     <TableCell>
@@ -599,6 +737,15 @@ export default function ForCampaignPage({
         </div>
       </div>
       <CampaignDialog isOpen={isOpen} onOpenChange={setIsOpen} />
+      <NFT_DETAIL
+        isOpen={isNFT_DETAIL_Open}
+        onOpenChange={setIsNFT_DETAIL_Open}
+        imageSrc={nftMetadata[nftDetailIndex]?.image ?? ''}
+        imageName={campaignData[nftDetailIndex]?.title ?? ''}
+        tokenId={nftDetailIndex + 1}
+        description={campaignData[nftDetailIndex]?.description ?? ''}
+        metadata={JSON.stringify(nftMetadata[nftDetailIndex])}
+      />
       <ToastContainer position="bottom-right" draggable></ToastContainer>
     </div>
   )

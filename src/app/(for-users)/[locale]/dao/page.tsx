@@ -106,7 +106,7 @@ import RingLoader from 'react-spinners/RingLoader'
 
 import { config } from '~/lib/config'
 import { sepolia } from 'wagmi/chains'
-import { localhost } from '~/app/providers'
+import { localhost } from '~/lib/config'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { pinata } from '~/lib/config'
 
@@ -220,12 +220,18 @@ export default function ForDAOPage({
 
   useEffect(() => {
     const switchChainAndReload = async () => {
+      toast.info('SS')
       if (chainId && !chains.some((chain) => chain.id === chainId)) {
+        toast.info(chainId)
         switchChain({ chainId: sepolia.id })
       }
     }
     switchChainAndReload()
   }, [chainId])
+
+  useEffect(() => {
+    switchChain({ chainId: sepolia.id })
+  }, [])
 
   let [loading, setLoading] = useState(true)
 
@@ -376,7 +382,7 @@ export default function ForDAOPage({
             }
 
             const holders = await getHolders(
-              chainId === sepolia.id ? sepolia.id : localhost.id,
+              chainId === localhost.id ? localhost.id : sepolia.id,
               dao.governanceToken as string
             )
             const identicon = await generateIdenteapot(dao.governor, '')

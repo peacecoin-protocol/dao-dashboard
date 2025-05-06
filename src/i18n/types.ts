@@ -75,3 +75,16 @@ export interface TOKEN {
   balance: bigint
   swapToLocalAllowance: number
 }
+
+export interface Metadata {
+  image: string
+  name: string
+  description: string
+  attributes?: {
+    key: string
+    trait_type: string
+    value: string
+  }[]
+  external_url?: string
+  token_id?: number
+}

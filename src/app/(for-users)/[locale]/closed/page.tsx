@@ -36,7 +36,7 @@ import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { ringStyle } from '~/app/constants/styles'
-import { localhost } from '~/app/providers'
+import { localhost } from '~/lib/config'
 
 export default function ForClosedPage({
   params: { locale, ...params },
