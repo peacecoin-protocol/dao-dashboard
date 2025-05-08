@@ -86,3 +86,5 @@ export const ALCHEMY_CONFIG = {
   apiKey: process.env.ALCHEMY_API_KEY,
   network: Network.ETH_SEPOLIA,
 }
+
+export const defaultChainId = localhost.id

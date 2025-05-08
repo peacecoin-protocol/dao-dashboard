@@ -51,6 +51,7 @@ import {
   campaignAddress,
   sbtAddress,
   SUBGRAPH_URL,
+  defaultChainId,
 } from '~/app/constants/constants'
 
 import { CAMPAIGN_ABI } from '~/app/ABIs/Campaigns'
@@ -77,6 +78,9 @@ export default function ForCampaignPage({
 
   const [isOpen, setIsOpen] = useState(false)
   const [campaignData, setCampaignData] = useState<CAMPAIGN[]>([])
+  const [tokenURIs, setTokenURIs] = useState<
+    { internal_id: number; uri: string }[]
+  >([])
   const [campaignId, setCampaignId] = useState<number>(-1)
   const [isWinner, setIsWinner] = useState<boolean>(false)
   const [isClaimed, setIsClaimed] = useState<boolean>(false)
@@ -131,46 +135,55 @@ export default function ForCampaignPage({
     args: [],
   })
 
+  const { data: uri_, refetch: refetchUri } = useReadContract({
+    abi: SBT_ABI,
+    address: sbtAddress[chainId || localhost.id] as `0x${string}`,
+    functionName: 'uri_',
+    args: [],
+    chainId: chainId || defaultChainId,
+  })
+
   useEffect(() => {
-    const getSBTNFTs = async () => {
+    const fetchNFTBalances = async () => {
       if (!chainId) {
         return
       }
-
-      if (_campaignId) {
+      if (tokenURIs.length > 0) {
         toast.info('Loading SBT NFTs...')
 
         let _nftBalances: number[] = []
-        for (let i = 0; i < (_campaignId as number); i++) {
+        for (let i = 0; i < (tokenURIs.length as number); i++) {
           const _balance = (await readContract(config, {
             abi: SBT_ABI,
             address: sbtAddress[chainId || localhost.id] as `0x${string}`,
             functionName: 'balanceOf',
-            args: [address, i],
+            args: [address, tokenURIs[i]?.internal_id ?? 0],
           })) as number
-          console.log(_balance)
+
           _nftBalances.push(_balance)
         }
         setNftBalances(_nftBalances)
+      }
+    }
+
+    fetchNFTBalances()
+  }, [chainId, tokenURIs])
+
+  useEffect(() => {
+    const fetchNFTMetadata = async () => {
+      if (tokenURIs.length > 0) {
+        toast.info('Loading Metadata...')
 
         const _nftMetadata: Metadata[] = []
-        for (let i = 0; i < (_campaignId as number); i++) {
-          const _metadata = (await readContract(config, {
-            abi: SBT_ABI,
-            address: sbtAddress[chainId || localhost.id] as `0x${string}`,
-            functionName: 'uri',
-            args: [i],
-          })) as string
-
+        for (let i = 0; i < (tokenURIs.length as number); i++) {
           try {
-            console.log(_metadata)
             const response = await axios.get(`/api/get-nft-metadata`, {
               params: {
-                metadata: _metadata,
+                metadata: uri_ + (tokenURIs[i]?.uri ?? ''),
               },
             })
             const data = response.data
-            console.log(data)
+            data.token_id = tokenURIs[i]?.internal_id ?? 0
             _nftMetadata.push(data)
           } catch (error) {
             console.error('Error fetching NFT metadata:', error)
@@ -185,13 +198,12 @@ export default function ForCampaignPage({
             _nftMetadata.push(metadata)
           }
         }
-        console.log(_nftMetadata)
         setNftMetadata(_nftMetadata)
       }
     }
 
-    getSBTNFTs()
-  }, [_campaignId, isConfirmed, chainId])
+    fetchNFTMetadata()
+  }, [uri_, tokenURIs])
 
   const { data: totalClaimedNFTs, refetch: refetchTotalClaimedNFTs } =
     useReadContract({
@@ -238,7 +250,7 @@ export default function ForCampaignPage({
   }, [locale])
 
   const client = new ApolloClient({
-    uri: SUBGRAPH_URL[chainId || localhost.id] as string,
+    uri: SUBGRAPH_URL[chainId || defaultChainId] as string,
     cache: new InMemoryCache(),
   })
 
@@ -253,7 +265,7 @@ export default function ForCampaignPage({
       try {
         const { data } = await client.query({
           query: gql`
-            query campaignCreateds {
+            query getCampaigns {
               campaignCreateds(
                 first: 10
                 orderDirection: asc
@@ -268,18 +280,27 @@ export default function ForCampaignPage({
                 amount
                 isNFT
               }
+              setTokenURIs(
+                first: 10
+                orderBy: internal_id
+                orderDirection: asc
+              ) {
+                internal_id
+                uri
+              }
             }
           `,
         })
 
         setCampaignData(data.campaignCreateds)
+        setTokenURIs(data.setTokenURIs)
       } catch (error) {
         console.error('Error fetching data', error)
       }
     }
 
     fetchData()
-  }, [isConfirmed])
+  }, [])
 
   function parseGithubUsername(gistUrl: string): string | undefined {
     try {
@@ -557,116 +578,129 @@ export default function ForCampaignPage({
           </Card>
         </div> */}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">NFT Balances</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {nftBalances.length > 0 && nftMetadata.length > 0 && (
-              <div className="flex flex-wrap">
-                {nftBalances.map((balance, index) => (
-                  <div key={index} className="flex flex-col items-center gap-2">
-                    {balance > 0 && (
-                      <div
-                        className="flex flex-col items-center gap-2 px-2"
-                        onClick={() => {
-                          setNftDetailIndex(index)
-                          setIsNFT_DETAIL_Open(true)
-                        }}
-                      >
-                        <div className="relative">
-                          <Image
-                            src={nftMetadata[index]?.image ?? ''}
-                            alt={`NFT #${index}`}
-                            className="rounded-lg h-[140px] w-[100px] object-fill cursor-pointer"
-                            width={100}
-                            height={140}
-                          />
-                          <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
-                            {balance.toString()}
-                          </div>
-                        </div>
-                        <p className="text-muted-foreground"># {index + 1}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="flex flex-col gap-4">
-          <h2 className="text-2xl font-bold tracking-tight mt-6">
-            {campaign.announcement ?? ''}
-          </h2>
-          {campaignData.length > 0 && (
+        {chainId && (
+          <div className="flex flex-col gap-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl font-bold">
-                  {campaignData[0]?.title ?? 'No Title'}
+                  NFT Balances
                 </CardTitle>
               </CardHeader>
-              <CardContent className="text-muted-foreground text-lg">
-                {campaignData[0]?.description ?? 'No Description'}
-              </CardContent>
-              <CardFooter className="flex flex-col gap-2 text-muted-foreground justify-start items-start">
-                <p>
-                  Airdrop Amount:{' '}
-                  {campaignData[0]?.isNFT
-                    ? campaignData[0]?.amount
-                    : formatEther(campaignData[0]?.amount ?? '0')}{' '}
-                  {campaignData[0]?.isNFT ? 'NFT' : 'PCE'}
-                </p>
-                <p>
-                  Start Time:{' '}
-                  {timestampToDate(parseInt(campaignData[0]?.startDate ?? '0'))}
-                </p>
-                <p>
-                  End Time:{' '}
-                  {timestampToDate(parseInt(campaignData[0]?.endDate ?? '0'))}
-                </p>
-
-                <Button onClick={signMessage}>Sign Message</Button>
-                {signature.length > 0 && (
-                  <div
-                    className="flex flex-col gap-2 w-full"
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        JSON.stringify({
-                          Message: _message,
-                          Signature: signature,
-                          'Wallet Address': address,
-                        })
-                      )
-                      toast.success('Signature copied to clipboard')
-                    }}
-                  >
-                    <h5 className="text-muted-foreground break-words whitespace-normal bg-muted rounded-lg p-4 relative">
-                      <div className="absolute top-2 right-2">
-                        <CopyIcon />
+              <CardContent>
+                {nftBalances.length > 0 && nftMetadata.length > 0 && (
+                  <div className="flex flex-wrap">
+                    {nftBalances.map((balance, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-col items-center gap-2"
+                      >
+                        {balance > 0 && (
+                          <div
+                            className="flex flex-col items-center gap-2 px-2"
+                            onClick={() => {
+                              setNftDetailIndex(index)
+                              setIsNFT_DETAIL_Open(true)
+                            }}
+                          >
+                            <div className="relative">
+                              <Image
+                                src={nftMetadata[index]?.image ?? ''}
+                                alt={`NFT #${index}`}
+                                className="rounded-lg h-[140px] w-[100px] object-fill cursor-pointer"
+                                width={100}
+                                height={140}
+                              />
+                              <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                                {balance.toString()}
+                              </div>
+                            </div>
+                            <p className="text-muted-foreground">
+                              # {index + 1}
+                            </p>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <div className="flex gap-2">
-                          <span className="font-semibold">Message:</span>
-                          <span>{_message}</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <span className="font-semibold">Signature:</span>
-                          <span className="break-all">{signature}</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <span className="font-semibold">Wallet Address:</span>
-                          <span className="break-all">{address}</span>
-                        </div>
-                      </div>
-                    </h5>
+                    ))}
                   </div>
                 )}
-              </CardFooter>
+              </CardContent>
             </Card>
-          )}
-        </div>
+            <div className="flex flex-col gap-4">
+              {campaignData.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-2xl font-bold">
+                      {campaignData[0]?.title ?? 'No Title'}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-muted-foreground text-lg">
+                    {campaignData[0]?.description ?? 'No Description'}
+                  </CardContent>
+                  <CardFooter className="flex flex-col gap-2 text-muted-foreground justify-start items-start">
+                    <p>
+                      Airdrop Amount:{' '}
+                      {campaignData[0]?.isNFT
+                        ? campaignData[0]?.amount
+                        : formatEther(campaignData[0]?.amount ?? '0')}{' '}
+                      {campaignData[0]?.isNFT ? 'NFT' : 'PCE'}
+                    </p>
+                    <p>
+                      Start Time:{' '}
+                      {timestampToDate(
+                        parseInt(campaignData[0]?.startDate ?? '0')
+                      )}
+                    </p>
+                    <p>
+                      End Time:{' '}
+                      {timestampToDate(
+                        parseInt(campaignData[0]?.endDate ?? '0')
+                      )}
+                    </p>
+
+                    <Button onClick={signMessage}>Sign Message</Button>
+                    {signature.length > 0 && (
+                      <div
+                        className="flex flex-col gap-2 w-full"
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            JSON.stringify({
+                              Message: _message,
+                              Signature: signature,
+                              'Wallet Address': address,
+                            })
+                          )
+                          toast.success('Signature copied to clipboard')
+                        }}
+                      >
+                        <h5 className="text-muted-foreground break-words whitespace-normal bg-muted rounded-lg p-4 relative">
+                          <div className="absolute top-2 right-2">
+                            <CopyIcon />
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <div className="flex gap-2">
+                              <span className="font-semibold">Message:</span>
+                              <span>{_message}</span>
+                            </div>
+                            <div className="flex gap-2">
+                              <span className="font-semibold">Signature:</span>
+                              <span className="break-all">{signature}</span>
+                            </div>
+                            <div className="flex gap-2">
+                              <span className="font-semibold">
+                                Wallet Address:
+                              </span>
+                              <span className="break-all">{address}</span>
+                            </div>
+                          </div>
+                        </h5>
+                      </div>
+                    )}
+                  </CardFooter>
+                </Card>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-4 mb-6">
           <h2 className="text-2xl font-bold tracking-tight mt-6">Campaigns</h2>
