@@ -220,9 +220,7 @@ export default function ForDAOPage({
 
   useEffect(() => {
     const switchChainAndReload = async () => {
-      toast.info('SS')
       if (chainId && !chains.some((chain) => chain.id === chainId)) {
-        toast.info(chainId)
         switchChain({ chainId: sepolia.id })
       }
     }
