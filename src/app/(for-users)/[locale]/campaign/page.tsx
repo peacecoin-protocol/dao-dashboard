@@ -61,7 +61,6 @@ import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 
-import { localhost } from '~/lib/config'
 import { sepolia } from 'wagmi/chains'
 import Link from '~/components/custom/Link'
 import { toast } from 'react-toastify'
@@ -123,21 +122,21 @@ export default function ForCampaignPage({
 
   const { data: totalClaimed, refetch: refetchTotalClaimed } = useReadContract({
     abi: CAMPAIGN_ABI,
-    address: campaignAddress[chainId || localhost.id] as `0x${string}`,
+    address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
     functionName: 'totalClaimed',
     args: [address],
   })
 
   const { data: _campaignId, refetch: refetchCampaignId } = useReadContract({
     abi: CAMPAIGN_ABI,
-    address: campaignAddress[chainId || localhost.id] as `0x${string}`,
+    address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
     functionName: 'campaignId',
     args: [],
   })
 
   const { data: uri_, refetch: refetchUri } = useReadContract({
     abi: SBT_ABI,
-    address: sbtAddress[chainId || localhost.id] as `0x${string}`,
+    address: sbtAddress[chainId || defaultChainId] as `0x${string}`,
     functionName: 'uri_',
     args: [],
     chainId: chainId || defaultChainId,
@@ -155,7 +154,7 @@ export default function ForCampaignPage({
         for (let i = 0; i < (tokenURIs.length as number); i++) {
           const _balance = (await readContract(config, {
             abi: SBT_ABI,
-            address: sbtAddress[chainId || localhost.id] as `0x${string}`,
+            address: sbtAddress[chainId || defaultChainId] as `0x${string}`,
             functionName: 'balanceOf',
             args: [address, tokenURIs[i]?.internal_id ?? 0],
           })) as number
@@ -167,7 +166,7 @@ export default function ForCampaignPage({
     }
 
     fetchNFTBalances()
-  }, [chainId, tokenURIs])
+  }, [chainId, tokenURIs, isConfirmed])
 
   useEffect(() => {
     const fetchNFTMetadata = async () => {
@@ -188,7 +187,7 @@ export default function ForCampaignPage({
           } catch (error) {
             console.error('Error fetching NFT metadata:', error)
             const metadata: Metadata = {
-              image: '',
+              image: '/images/empty-nft.svg',
               name: '',
               description: '',
               attributes: [],
@@ -208,7 +207,7 @@ export default function ForCampaignPage({
   const { data: totalClaimedNFTs, refetch: refetchTotalClaimedNFTs } =
     useReadContract({
       abi: SBT_ABI,
-      address: sbtAddress[chainId || localhost.id] as `0x${string}`,
+      address: sbtAddress[chainId || defaultChainId] as `0x${string}`,
       functionName: 'totalClaimedNFT',
       args: [address],
     })
@@ -344,7 +343,7 @@ export default function ForCampaignPage({
       writeContract(
         {
           abi: CAMPAIGN_ABI,
-          address: campaignAddress[chainId || localhost.id] as `0x${string}`,
+          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
           functionName: 'claimCampaign',
           args: [campaignId, _gistUsername, _message, _signature],
         },
@@ -362,10 +361,10 @@ export default function ForCampaignPage({
 
   useEffect(() => {
     const getStatus = async () => {
-      if (campaignId >= 0 && address) {
+      if (campaignId > 0 && address) {
         const status = (await readContract(config, {
           abi: CAMPAIGN_ABI,
-          address: campaignAddress[chainId || localhost.id] as `0x${string}`,
+          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
           functionName: 'getStatus',
           args: [campaignId],
         })) as number
@@ -378,7 +377,7 @@ export default function ForCampaignPage({
       if (campaignId >= 0 && address) {
         const winner = (await readContract(config, {
           abi: CAMPAIGN_ABI,
-          address: campaignAddress[chainId || localhost.id] as `0x${string}`,
+          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
           functionName: 'isWinner',
           args: [campaignId, address],
         })) as boolean
@@ -397,7 +396,7 @@ export default function ForCampaignPage({
             claimed = (await readContract(config, {
               abi: CAMPAIGN_ABI,
               address: campaignAddress[
-                chainId || localhost.id
+                chainId || defaultChainId
               ] as `0x${string}`,
               functionName: 'champGistsClaimed',
               args: [campaignId, githubId],
@@ -406,7 +405,9 @@ export default function ForCampaignPage({
         } else {
           claimed = (await readContract(config, {
             abi: CAMPAIGN_ABI,
-            address: campaignAddress[chainId || localhost.id] as `0x${string}`,
+            address: campaignAddress[
+              chainId || defaultChainId
+            ] as `0x${string}`,
             functionName: 'champWinnersClaimed',
             args: [campaignId, address],
           })) as boolean
@@ -604,7 +605,12 @@ export default function ForCampaignPage({
                           >
                             <div className="relative">
                               <Image
-                                src={nftMetadata[index]?.image ?? ''}
+                                src={
+                                  !nftMetadata || nftMetadata.length == 0
+                                    ? '/images/empty-nft.svg'
+                                    : nftMetadata[index]?.image ||
+                                      '/images/empty-nft.svg'
+                                }
                                 alt={`NFT #${index}`}
                                 className="rounded-lg h-[140px] w-[100px] object-fill cursor-pointer"
                                 width={100}
@@ -737,7 +743,10 @@ export default function ForCampaignPage({
                     <TableCell>
                       <Image
                         src={
-                          nftMetadata[index]?.image ?? '/images/empty-nft.svg'
+                          !nftMetadata || nftMetadata.length === 0
+                            ? '/images/empty-nft.svg'
+                            : nftMetadata[index]?.image ||
+                              '/images/empty-nft.svg'
                         }
                         alt={`NFT #${index}`}
                         className="rounded-lg h-[140px] w-[100px] object-fill"
@@ -774,7 +783,11 @@ export default function ForCampaignPage({
       <NFT_DETAIL
         isOpen={isNFT_DETAIL_Open}
         onOpenChange={setIsNFT_DETAIL_Open}
-        imageSrc={nftMetadata[nftDetailIndex]?.image ?? ''}
+        imageSrc={
+          !nftMetadata || nftMetadata.length === 0
+            ? '/images/empty-nft.svg'
+            : nftMetadata[nftDetailIndex]?.image || '/images/empty-nft.svg'
+        }
         imageName={campaignData[nftDetailIndex]?.title ?? ''}
         tokenId={nftDetailIndex + 1}
         description={campaignData[nftDetailIndex]?.description ?? ''}

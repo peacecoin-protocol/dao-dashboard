@@ -57,34 +57,34 @@ const loadComponent = async (key: string) => {
     case 'pip-all':
       Component = (await import('./(for-users)/[locale]/pip/all/page')).default
       break
-    case 'pip-core':
-      Component = (await import('./(for-users)/[locale]/pip/core/page')).default
-      break
-    case 'pip-networking':
-      Component = (await import('./(for-users)/[locale]/pip/networking/page'))
-        .default
-      break
-    case 'pip-interface':
-      Component = (await import('./(for-users)/[locale]/pip/interface/page'))
-        .default
-      break
-    case 'pip-meta':
-      Component = (await import('./(for-users)/[locale]/pip/meta/page')).default
-      break
-    case 'pip-info':
-      Component = (
-        await import('./(for-users)/[locale]/pip/informational/page')
-      ).default
-      break
-    case 'pip-prc':
-      Component = (await import('./(for-users)/[locale]/pip/prc/page')).default
-      break
-    case 'faq':
-      Component = (await import('./(for-users)/[locale]/faq/page')).default
-      break
-    case 'daofaq':
-      Component = (await import('./(for-users)/[locale]/daofaq/page')).default
-      break
+    // case 'pip-core':
+    //   Component = (await import('./(for-users)/[locale]/pip/core/page')).default
+    //   break
+    // case 'pip-networking':
+    //   Component = (await import('./(for-users)/[locale]/pip/networking/page'))
+    //     .default
+    //   break
+    // case 'pip-interface':
+    //   Component = (await import('./(for-users)/[locale]/pip/interface/page'))
+    //     .default
+    //   break
+    // case 'pip-meta':
+    //   Component = (await import('./(for-users)/[locale]/pip/meta/page')).default
+    //   break
+    // case 'pip-info':
+    //   Component = (
+    //     await import('./(for-users)/[locale]/pip/informational/page')
+    //   ).default
+    //   break
+    // case 'pip-prc':
+    //   Component = (await import('./(for-users)/[locale]/pip/prc/page')).default
+    //   break
+    // case 'faq':
+    //   Component = (await import('./(for-users)/[locale]/faq/page')).default
+    //   break
+    // case 'daofaq':
+    //   Component = (await import('./(for-users)/[locale]/daofaq/page')).default
+    //   break
     case 'pce':
       Component = (await import('./(for-users)/[locale]/pce/page')).default
       break
