@@ -104,7 +104,7 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
     React.useEffect(() => {
       const list = tokenLists
       setTokenList([PCE_TOKEN, ...list])
-    }, [])
+    }, [tokenLists])
 
     return (
       <Dialog

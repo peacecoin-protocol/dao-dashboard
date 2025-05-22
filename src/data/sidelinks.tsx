@@ -3,14 +3,9 @@ import {
   IconChecklist,
   IconHexagonNumber1,
   IconHexagonNumber2,
-  IconHexagonNumber3,
-  IconHexagonNumber4,
-  IconHexagonNumber5,
   IconLayoutDashboard,
   IconMessages,
   IconUserShield,
-  IconHexagonNumber7,
-  IconHexagonNumber6,
 } from '@tabler/icons-react'
 
 import { Locale, Dictionary } from '~/i18n/types'
@@ -147,36 +142,36 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
           href: '/pip/all',
           icon: <IconHexagonNumber2 size={18} />,
         },
-        {
-          title: 'Networking',
-          label: '',
-          href: '/pip/networking',
-          icon: <IconHexagonNumber3 size={18} />,
-        },
-        {
-          title: 'Interface',
-          label: '',
-          href: '/pip/interface',
-          icon: <IconHexagonNumber4 size={18} />,
-        },
-        {
-          title: 'PRC',
-          label: '',
-          href: '/pip/prc',
-          icon: <IconHexagonNumber5 size={18} />,
-        },
-        {
-          title: 'Meta',
-          label: '',
-          href: '/pip/meta',
-          icon: <IconHexagonNumber6 size={18} />,
-        },
-        {
-          title: 'Informational',
-          label: '',
-          href: '/pip/informational',
-          icon: <IconHexagonNumber7 size={18} />,
-        },
+        // {
+        //   title: 'Networking',
+        //   label: '',
+        //   href: '/pip/networking',
+        //   icon: <IconHexagonNumber3 size={18} />,
+        // },
+        // {
+        //   title: 'Interface',
+        //   label: '',
+        //   href: '/pip/interface',
+        //   icon: <IconHexagonNumber4 size={18} />,
+        // },
+        // {
+        //   title: 'PRC',
+        //   label: '',
+        //   href: '/pip/prc',
+        //   icon: <IconHexagonNumber5 size={18} />,
+        // },
+        // {
+        //   title: 'Meta',
+        //   label: '',
+        //   href: '/pip/meta',
+        //   icon: <IconHexagonNumber6 size={18} />,
+        // },
+        // {
+        //   title: 'Informational',
+        //   label: '',
+        //   href: '/pip/informational',
+        //   icon: <IconHexagonNumber7 size={18} />,
+        // },
       ],
     },
     {
