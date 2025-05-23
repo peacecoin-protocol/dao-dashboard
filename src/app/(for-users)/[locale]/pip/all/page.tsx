@@ -45,9 +45,10 @@ export default function ForPage({
   const [issue, setIssue] = useState<ISSUE | null>(null)
   const [isLabelFilterOpen, setIsLabelFilterOpen] = useState(false)
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false)
-  const [labels, setLabels] = useState<LABEL[]>([])
-  const [filteredPIP, setFilteredPIP] = useState<string | null>(null)
-  const [filteredStatus, setFilteredStatus] = useState<string | null>(null)
+  const [typeLabels, setTypeLabels] = useState<LABEL[]>([])
+  const [statusLabels, setStatusLabels] = useState<LABEL[]>([])
+  const [filteredType, setFilteredType] = useState<string[]>([])
+  const [filteredStatus, setFilteredStatus] = useState<string[]>([])
 
   const STATUS = ['open', 'closed']
   const octokit = new Octokit({
@@ -77,7 +78,29 @@ export default function ForPage({
         name: label.name,
         color: label.color,
       }))
-      setLabels(parsedLabels)
+
+      const filteredLabels = parsedLabels.filter(
+        (label: any) => label.name !== 'PIP'
+      )
+
+      const _typeLabels = filteredLabels
+        .filter((label: any) => label.name.includes('type_'))
+        .map((label: any) => ({
+          ...label,
+          name: label.name.replace('type_', ''),
+        }))
+
+      const _statusLabels = filteredLabels
+        .filter((label: any) => label.name.includes('status_'))
+        .map((label: any) => ({
+          ...label,
+          name: label.name.replace('status_', ''),
+        }))
+
+      setTypeLabels([..._typeLabels])
+      setStatusLabels([..._statusLabels])
+
+      console.log(_statusLabels)
     }
     fetchLabels()
   }, [])
@@ -90,7 +113,8 @@ export default function ForPage({
         owner: 'peacecoin-protocol',
         repo: 'dao',
         per_page: 100,
-        state: 'all',
+        state: 'open',
+        labels: 'PIP',
       })
 
       for (const issue of issues) {
@@ -100,12 +124,26 @@ export default function ForPage({
           body: issue.body || '',
           created_at: issue.created_at,
           updated_at: issue.updated_at,
-          state: issue.state,
-          labels: issue.labels.map((label: any) => ({
-            name: label.name || '',
-            color: label.color || '',
-            id: label.id || 0,
-          })),
+          status: issue.labels
+            .filter(
+              (label: any) =>
+                label.name !== 'PIP' && label.name.includes('status_')
+            )
+            .map((label: any) => ({
+              name: label.name || '',
+              color: label.color || '',
+              id: label.id || 0,
+            })),
+          types: issue.labels
+            .filter(
+              (label: any) =>
+                label.name !== 'PIP' && label.name.includes('type_')
+            )
+            .map((label: any) => ({
+              name: label.name || '',
+              color: label.color || '',
+              id: label.id || 0,
+            })),
           closed_at: issue.closed_at || '',
           url: issue.url,
           html_url: issue.html_url,
@@ -126,8 +164,12 @@ export default function ForPage({
   return (
     <div className="w-full gap-4 flex flex-col">
       <div className="gap-4 flex flex-col m-8">
-        <h2 className="text-4xl font-bold tracking-tight mt-6">{'ALL'}</h2>
-        <p className="text-muted-foreground">{'Living PIPs'}</p>
+        <h2 className="text-4xl font-bold tracking-tight mt-6">
+          {'ALL Proposals'}
+        </h2>
+        <p className="text-muted-foreground">
+          {'ALL Peacecoin Improvement Proposals'}
+        </p>
 
         <div className="flex flex-row gap-4 justify-end">
           <Popover
@@ -143,36 +185,43 @@ export default function ForPage({
                   filteredStatus && 'text-muted-foreground'
                 )}
               >
-                {filteredStatus
-                  ? STATUS.find((status) => status === filteredStatus)
+                {filteredStatus.length > 0
+                  ? filteredStatus[0] +
+                    (filteredStatus.length > 1
+                      ? ` + ${filteredStatus.length - 1} more`
+                      : '')
                   : 'Select status'}
                 <ChevronsUpDown className="opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
               <Command>
-                <CommandInput placeholder="Search status..." className="h-9" />
+                <CommandInput placeholder="Search type..." className="h-9" />
                 <CommandList>
                   <CommandEmpty>No status found.</CommandEmpty>
                   <CommandGroup>
-                    {STATUS.map((status) => (
+                    {statusLabels.map((label) => (
                       <CommandItem
-                        value={status}
-                        key={status}
+                        value={label.name}
+                        key={label.id}
                         onSelect={() => {
-                          if (status === filteredStatus) {
-                            setFilteredStatus(null)
+                          if (filteredStatus.includes(label.name)) {
+                            setFilteredStatus(
+                              filteredStatus.filter(
+                                (status) => status !== label.name
+                              )
+                            )
                           } else {
-                            setFilteredStatus(status)
+                            setFilteredStatus([...filteredStatus, label.name])
                           }
                           setIsStatusFilterOpen(false)
                         }}
                       >
-                        {status}
+                        {label.name}
                         <Check
                           className={cn(
                             'ml-auto',
-                            status === filteredStatus
+                            filteredStatus.includes(label.name)
                               ? 'opacity-100'
                               : 'opacity-0'
                           )}
@@ -192,39 +241,44 @@ export default function ForPage({
                 role="combobox"
                 className={cn(
                   'w-[200px] justify-between',
-                  filteredPIP && 'text-muted-foreground'
+                  filteredType && 'text-muted-foreground'
                 )}
               >
-                {filteredPIP
-                  ? labels.find((label) => label.name === filteredPIP)?.name
-                  : 'Select label'}
+                {filteredType.length > 0
+                  ? filteredType[0] +
+                    (filteredType.length > 1
+                      ? ` + ${filteredType.length - 1} more`
+                      : '')
+                  : 'Select type'}
                 <ChevronsUpDown className="opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
               <Command>
-                <CommandInput placeholder="Search label..." className="h-9" />
+                <CommandInput placeholder="Search type..." className="h-9" />
                 <CommandList>
-                  <CommandEmpty>No label found.</CommandEmpty>
+                  <CommandEmpty>No type found.</CommandEmpty>
                   <CommandGroup>
-                    {labels.map((label) => (
+                    {typeLabels.map((label) => (
                       <CommandItem
                         value={label.name}
                         key={label.id}
                         onSelect={() => {
-                          if (label.name === filteredPIP) {
-                            setFilteredPIP(null)
+                          if (filteredType.includes(label.name)) {
+                            setFilteredType(
+                              filteredType.filter((type) => type !== label.name)
+                            )
                           } else {
-                            setFilteredPIP(label.name)
+                            setFilteredType([...filteredType, label.name])
                           }
-                          setIsStatusFilterOpen(false)
+                          setIsLabelFilterOpen(false)
                         }}
                       >
                         {label.name}
                         <Check
                           className={cn(
                             'ml-auto',
-                            label.name === filteredPIP
+                            filteredType.includes(label.name)
                               ? 'opacity-100'
                               : 'opacity-0'
                           )}
@@ -253,7 +307,7 @@ export default function ForPage({
                 State
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
-                Labels
+                Types
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
                 Created At
@@ -267,15 +321,17 @@ export default function ForPage({
             {issues
               .filter((issue) => !issue.isPullRequest)
               .filter((issue) => {
-                if (filteredStatus) {
-                  return issue.state === filteredStatus
+                if (filteredStatus && filteredStatus.length > 0) {
+                  return issue.status.some((status) =>
+                    filteredStatus.includes(status.name.replace('status_', ''))
+                  )
                 }
                 return true
               })
               .filter((issue) => {
-                if (filteredPIP) {
-                  return issue.labels.some(
-                    (label) => label.name === filteredPIP
+                if (filteredType && filteredType.length > 0) {
+                  return issue.types.some((type) =>
+                    filteredType.includes(type.name.replace('type_', ''))
                   )
                 }
                 return true
@@ -299,10 +355,14 @@ export default function ForPage({
                     {issue.author}
                   </TableCell>
                   <TableCell className="border-2 border-gray87 border-solid	">
-                    {issue.state}
+                    {issue.status
+                      .map((status) => status.name.replace('status_', ''))
+                      .join(', ')}
                   </TableCell>
                   <TableCell className="border-2 border-gray87 border-solid	">
-                    {issue.labels.map((label) => label.name).join(', ')}
+                    {issue.types
+                      .map((type) => type.name.replace('type_', ''))
+                      .join(', ')}
                   </TableCell>
                   <TableCell className="border-2 border-gray87 border-solid	">
                     {new Date(issue.created_at).toLocaleString()}
@@ -321,7 +381,6 @@ export default function ForPage({
           </TableBody>
         </Table>
         <DialogGithub
-          size="lg"
           open={open}
           issue={issue}
           setOpen={handleOpen}

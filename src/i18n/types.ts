@@ -102,8 +102,8 @@ export interface ISSUE {
   created_at: string
   closed_at: string
   updated_at: string
-  state: string
-  labels: LABEL[]
+  status: LABEL[]
+  types: LABEL[]
   url: string
   html_url: string
   author: string

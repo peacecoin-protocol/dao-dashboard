@@ -131,13 +131,13 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       icon: <IconUserShield size={18} />,
       sub: [
         {
-          title: 'About',
+          title: 'About Proposals',
           label: '',
           href: '/pip/',
           icon: <IconHexagonNumber1 size={18} />,
         },
         {
-          title: 'All',
+          title: 'All Proposals',
           label: '',
           href: '/pip/all',
           icon: <IconHexagonNumber2 size={18} />,

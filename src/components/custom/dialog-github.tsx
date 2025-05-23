@@ -69,10 +69,10 @@ const DialogGithub = React.forwardRef<HTMLInputElement, DialogGithubProps>(
   ) => {
     return (
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[80vh] max-w-[90vw] overflow-hidden">
           <DialogHeader className="flex flex-col gap-2">
             <DialogTitle>{issue?.title || ''}</DialogTitle>
-            <DialogDescription className="flex flex-col gap-2">
+            <DialogDescription className="flex flex-col gap-2 overflow-y-auto overflow-x-auto max-h-[60vh]">
               <div className="flex flex-row gap-2">
                 <Image
                   src={issue?.avatar_url || ''}
@@ -85,7 +85,9 @@ const DialogGithub = React.forwardRef<HTMLInputElement, DialogGithubProps>(
                   <p>{issue?.created_at || ''}</p>
                 </div>
               </div>
-              <ReactMarkdown>{issue?.body || ''}</ReactMarkdown>
+              <div className="overflow-x-auto">
+                <ReactMarkdown>{issue?.body || ''}</ReactMarkdown>
+              </div>
             </DialogDescription>
 
             <Button onClick={() => setOpen(false)}>Close</Button>
