@@ -42,6 +42,10 @@ export const formatString = (str: string) => {
   return parseFloat(parseFloat(str).toFixed(2))
 }
 
+export const formatNumber = (num: number) => {
+  return parseFloat(num.toFixed(2))
+}
+
 export const timestampToDate = (timestamp: number) => {
   return new Date(timestamp * 1000).toLocaleString()
 }

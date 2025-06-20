@@ -6,7 +6,7 @@ import { formatEther } from 'ethers'
 import { useAccount, useReadContract } from 'wagmi'
 import 'react-toastify/dist/ReactToastify.css'
 
-import { Button } from '~/components/ui/button'
+import { Button } from '~/components/custom/button'
 import { Link } from '~/i18n/link'
 import { getDict } from '~/i18n/get-dict'
 

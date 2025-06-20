@@ -9,9 +9,8 @@ import {
 } from '~/components/ui/dialog'
 
 import { type VariantProps, cva } from 'class-variance-authority'
-import { ISSUE } from '~/i18n/types'
+import { PIP } from '~/i18n/types'
 import ReactMarkdown from 'react-markdown'
-import Image from 'next/image'
 
 const dialogInputVariants = cva(
   'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
@@ -48,7 +47,7 @@ export interface DialogGithubProps
   open: boolean
   localDict: any
   asChild?: boolean
-  issue: ISSUE | null
+  pip: PIP | null
   setOpen: (open: boolean) => void
 }
 
@@ -61,7 +60,7 @@ const DialogGithub = React.forwardRef<HTMLInputElement, DialogGithubProps>(
       localDict,
       open,
       asChild = false,
-      issue,
+      pip,
       setOpen,
       ...props
     },
@@ -71,22 +70,22 @@ const DialogGithub = React.forwardRef<HTMLInputElement, DialogGithubProps>(
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[80vh] max-w-[90vw] overflow-hidden">
           <DialogHeader className="flex flex-col gap-2">
-            <DialogTitle>{issue?.title || ''}</DialogTitle>
+            <DialogTitle>{pip?.title || ''}</DialogTitle>
             <DialogDescription className="flex flex-col gap-2 overflow-y-auto overflow-x-auto max-h-[60vh]">
               <div className="flex flex-row gap-2">
-                <Image
-                  src={issue?.avatar_url || ''}
-                  alt={issue?.author || ''}
+                {/* <Image
+                  src={pip?.proposer || ''}
+                  alt={pip?.proposer || ''}
                   width={48}
                   height={48}
-                />
+                /> */}
                 <div className="flex flex-col gap-1">
-                  <p>{issue?.author || ''}</p>
-                  <p>{issue?.created_at || ''}</p>
+                  <p>{pip?.proposer || ''}</p>
+                  <p>{pip?.created || ''}</p>
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <ReactMarkdown>{issue?.body || ''}</ReactMarkdown>
+                <ReactMarkdown>{pip?.content || ''}</ReactMarkdown>
               </div>
             </DialogDescription>
 

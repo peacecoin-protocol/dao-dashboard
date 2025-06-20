@@ -13,7 +13,7 @@ import { Line } from 'rc-progress'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
-import { Button } from '~/components/ui/button'
+import { Button } from '~/components/custom/button'
 import {
   Table,
   TableBody,

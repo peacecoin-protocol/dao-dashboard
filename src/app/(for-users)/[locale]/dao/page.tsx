@@ -20,7 +20,7 @@ import { daoStudioAddress, SUBGRAPH_URL } from '~/app/constants/constants'
 
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { Input } from '~/components/ui/input'
-import { Button } from '~/components/ui/button'
+import { Button } from '~/components/custom/button'
 import {
   DropdownMenu,
   DropdownMenuContent,

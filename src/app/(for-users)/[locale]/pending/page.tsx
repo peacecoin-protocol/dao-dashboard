@@ -28,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import { Button } from '~/components/ui/button'
+import { Button } from '~/components/custom/button'
 import useWindowWidth from '~/components/useWindWidth'
 
 import { shortenAddress, formatString } from '~/components/utils'

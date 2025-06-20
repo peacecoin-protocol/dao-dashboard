@@ -6,7 +6,7 @@ import copy from 'clipboard-copy'
 import { Link } from 'react-router-dom'
 import { useDisconnect, useAccount, useBalance } from 'wagmi'
 import { useConnectModal } from '@rainbow-me/rainbowkit'
-import { Button } from '~/components/ui/button'
+import { Button } from '~/components/custom/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +53,7 @@ function AppBar({ locale }: { locale: Locale }) {
       <div className="standardContainer flex justify-between items-center container">
         <div className="flex gap-4 ml-auto flex-row items-center mr-4">
           <Button
+            variant="default"
             className={`${
               !isConnected ? 'hidden' : 'xl:flex'
             } mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base`}
@@ -62,6 +63,7 @@ function AppBar({ locale }: { locale: Locale }) {
           </Button>
 
           <Button
+            variant="default"
             className={`${
               !isConnected ? 'hidden' : 'xl:flex'
             } mx-auto border-2 border-oil bg-transparent hover:bg-whiteDark text-oil text-base max-md:hidden`}

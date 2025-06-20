@@ -16,11 +16,11 @@ import {
 import { readContract } from '@wagmi/core'
 import { config } from '~/lib/config'
 import { waitForTransactionReceipt } from '@wagmi/core'
-import { Button } from '~/components/ui/button'
+import { Button } from '~/components/custom/button'
 import { AmountInput } from '~/components/custom/amount-input'
 import { formatString } from '~/components/utils'
 
-import { pceAddress, pceGovToken } from '~/app/constants/constants'
+import { pceAddress, WPCE_ADDRESS } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { PCE_GOV_TOKEN_ABI } from '~/app/ABIs/PCEGovToken'
 
@@ -48,7 +48,7 @@ export default function ForDelegatePage({
 
   const { data: pceGovBalance, refetch: refetchPceGovBalance } =
     useReadContract({
-      address: pceGovToken[chainId || localhost.id] as `0x${string}`,
+      address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
       abi: PCE_GOV_TOKEN_ABI,
       functionName: 'balanceOf',
       args: [address],
@@ -80,7 +80,7 @@ export default function ForDelegatePage({
     })
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
-    address: pceGovToken[chainId || localhost.id] as `0x${string}`,
+    address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
     abi: PCE_GOV_TOKEN_ABI,
     functionName: 'getVotes',
     args: [address],
@@ -97,7 +97,7 @@ export default function ForDelegatePage({
   const handleDelegate = async () => {
     writeContract({
       abi: PCE_GOV_TOKEN_ABI,
-      address: pceGovToken[chainId || localhost.id] as `0x${string}`,
+      address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
       functionName: 'delegate',
       args: [delegateAddr],
     })
@@ -108,7 +108,7 @@ export default function ForDelegatePage({
       abi: PCE_ABI,
       address: pceAddress[chainId || localhost.id] as `0x${string}`,
       functionName: 'allowance',
-      args: [address, pceGovToken[chainId || localhost.id] as `0x${string}`],
+      args: [address, WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`],
     })
 
     if (BigInt(allowance as string) < BigInt(parseEther(stakingAmount))) {
@@ -119,7 +119,7 @@ export default function ForDelegatePage({
           address: pceAddress[chainId || localhost.id] as `0x${string}`,
           functionName: 'approve',
           args: [
-            pceGovToken[chainId || localhost.id] as `0x${string}`,
+            WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
             parseEther(stakingAmount),
           ],
         })
@@ -137,7 +137,7 @@ export default function ForDelegatePage({
     try {
       tx = await writeContractAsync({
         abi: PCE_C_GOV_TOKEN_ABI,
-        address: pceGovToken[chainId || localhost.id] as `0x${string}`,
+        address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
         functionName: 'deposit',
         args: [parseEther(stakingAmount)],
       })
@@ -164,7 +164,7 @@ export default function ForDelegatePage({
     try {
       tx = await writeContractAsync({
         abi: CommunityGov_ABI,
-        address: pceGovToken[chainId || localhost.id] as `0x${string}`,
+        address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
         functionName: 'withdraw',
         args: [pceGovBalance],
       })
@@ -221,7 +221,7 @@ export default function ForDelegatePage({
         </h2>
 
         <div className="text-muted-foreground">
-          {localDict.peaceCoin ?? 'Peace Coin'}:
+          {localDict.peaceCoin ?? 'PEACECOIN'}:
           {pceBalance
             ? formatString(formatEther(BigInt(pceBalance as string)))
             : '0'}

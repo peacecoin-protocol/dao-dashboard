@@ -69,7 +69,7 @@ export default function Sidebar({
           <div className={`flex items-center ${!isCollapsed ? 'gap-2' : ''}`}>
             <img
               src="/pce_logo.jpg"
-              alt="Peace Coin Logo"
+              alt="PEACECOIN Logo"
               className={`h-12 w-12 shrink-0 ${isCollapsed ? 'mx-auto' : ''}`}
             />
             <div

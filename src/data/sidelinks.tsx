@@ -107,6 +107,12 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       icon: <IconMessages size={18} />,
     },
     {
+      title: sidebar.votingPower ?? 'Voting Power',
+      label: '',
+      href: '/votingpower',
+      icon: <IconMessages size={18} />,
+    },
+    {
       title: sidebar.token ?? 'Token',
       label: '',
       href: '/token',
