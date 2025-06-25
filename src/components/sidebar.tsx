@@ -84,7 +84,7 @@ export default function Sidebar({
 
           {/* Toggle Button in mobile */}
           <Button
-            variant="ghost"
+            variant="secondary"
             size="icon"
             className="md:hidden"
             aria-label="Toggle Navigation"
@@ -108,10 +108,10 @@ export default function Sidebar({
 
         {/* Scrollbar width toggle button */}
         <Button
+          variant="secondary"
           onClick={() => setIsCollapsed((prev) => !prev)}
           size="icon"
-          variant="outline"
-          className="absolute -right-5 top-1/2 z-50 hidden rounded-full md:inline-flex"
+          className="absolute -right-5 top-1/2 z-50 hidden rounded-full md:inline-flex bg-white border-2 border-gray-200"
         >
           <IconChevronsLeft
             stroke={1.5}

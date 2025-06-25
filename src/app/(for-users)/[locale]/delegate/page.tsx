@@ -247,7 +247,6 @@ export default function ForDelegatePage({
           <AmountInput
             localDict={localDict}
             className="w-60 w-full"
-            variant="outline"
             setStakingAmount={setStakingAmount}
             handleStake={handleStake}
             maxAmount={
@@ -267,7 +266,6 @@ export default function ForDelegatePage({
 
           <DelegateInput
             className="w-60 w-full"
-            variant="outline"
             setDelegateAddr={setDelegateAddr}
             handleDelegate={handleDelegate}
           />

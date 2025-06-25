@@ -110,7 +110,7 @@ function NavLink({
       onClick={closeNav}
       className={cn(
         buttonVariants({
-          variant: checkActiveNav(href) ? 'secondary' : 'ghost',
+          variant: checkActiveNav(href) ? 'secondary' : 'secondary',
           size: 'sm',
         }),
         'h-12 justify-start text-wrap rounded-none px-6',
@@ -147,7 +147,7 @@ function NavLinkDropdown({
     <Collapsible defaultOpen={isChildActive}>
       <CollapsibleTrigger
         className={cn(
-          buttonVariants({ variant: 'ghost', size: 'sm' }),
+          buttonVariants({ variant: 'secondary', size: 'sm' }),
           'group h-12 w-full justify-start rounded-none px-6'
         )}
       >
@@ -193,7 +193,7 @@ function NavLinkIcon({ title, icon, label, href }: NavLinkProps) {
           to={href}
           className={cn(
             buttonVariants({
-              variant: checkActiveNav(href) ? 'secondary' : 'ghost',
+              variant: checkActiveNav(href) ? 'secondary' : 'secondary',
               size: 'icon',
             }),
             'h-12 w-12'

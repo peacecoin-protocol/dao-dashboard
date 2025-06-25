@@ -653,7 +653,6 @@ export default function ForTokenPage({
 
                     <TableCell className="flex flex-col xl:flex-row font-medium gap-2">
                       <ExchangeInput
-                        size="sm"
                         className="w-full"
                         setSwapAmount={setSwapAmount}
                         handleSwap={(fromToken, toToken) => {

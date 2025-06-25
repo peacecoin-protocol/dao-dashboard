@@ -38,32 +38,43 @@ import { getDict } from '~/i18n/get-dict'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { formatEther, parseEther } from 'viem'
 
-import { ethers } from 'ethers'
 import { Env } from '~/env'
-const abi = [
-  'event Transfer(address indexed from, address indexed to, uint256 value)',
-]
 
+// Fetch token holders from Moralis API, paginating until cursor is null
 async function getHolders(chainId: number, tokenAddress: string) {
-  const provider = new ethers.JsonRpcProvider(
-    chainId === sepolia.id
-      ? Env.NEXT_PUBLIC_SEPOLIA_RPC_URL
-      : localhost.rpcUrls.default.http[0]
-  )
-  const contract = new ethers.Contract(tokenAddress, abi, provider)
-  const transferEvents = await contract.queryFilter('Transfer', 0, 'latest')
+  // Moralis API endpoint and key
+  const apiKey = Env.MORALIS_API_KEY // Replace with your Moralis API key if not using PINATA_JWT
+  const chain = chainId === sepolia.id ? 'sepolia' : 'eth' // fallback to eth if not sepolia
+  const baseUrl = `https://deep-index.moralis.io/api/v2.2/erc20/${tokenAddress}/owners`
+  let countHolders = 0
+  let cursor: string | null = null
+  let page = 1
 
-  const balances = new Map<string, bigint>()
+  do {
+    const url = new URL(baseUrl)
+    url.searchParams.set('chain', chain)
+    url.searchParams.set('order', 'DESC')
+    if (cursor) url.searchParams.set('cursor', cursor)
 
-  for (const event of transferEvents) {
-    const { from, to, value } = (event as any).args
-    if (from !== ethers.ZeroAddress) {
-      balances.set(from, (balances.get(from) || BigInt(0)) - value)
+    const res = await fetch(url.toString(), {
+      headers: {
+        accept: 'application/json',
+        'X-API-Key': apiKey,
+      },
+    })
+    if (!res.ok) throw new Error('Failed to fetch token holders')
+    const data = await res.json()
+
+    if (Array.isArray(data.result)) {
+      countHolders += data.result.length
     }
-    balances.set(to, (balances.get(to) || BigInt(0)) + value)
-  }
 
-  return [...balances.entries()].filter(([_, balance]) => balance > 0)
+    cursor = data.cursor
+    page += 1
+  } while (cursor)
+
+  // Filter out holders with zero balance and return as [address, balance] tuples
+  return countHolders
 }
 
 type Dao = {
@@ -156,14 +167,14 @@ const DaoCard = ({
           <div className="font-bold text-xl md:text-2xl w-full flex">
             {dao.name}
           </div>
-          <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-16 items-center justify-center">
+          {/* <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-16 items-center justify-center">
             DAO
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
 
-    <div className="flex flex-row gap-4 w-[40%] items-center">
+    <div className="flex flex-row gap-4 items-center justify-center w-full">
       <StatItem
         label={localeDict.myPower}
         value={dao.votes ? formatString(formatEther(BigInt(dao.votes))) : 0}
@@ -184,9 +195,11 @@ const StatItem = ({
   label: string
   value: string | number
 }) => (
-  <div className="flex flex-col gap-4 w-full justify-center items-center">
-    <div className="text-heavy_white text-sm">{label}</div>
-    <div className="flex bg-dark_blue rounded-xl text-white font-bold py-1 px-2 min-w-16 items-center justify-center text-sm">
+  <div className="flex flex-col gap-4 w-full justify-center items-center w-full">
+    <div className="text-gray-500 text-sm w-full items-center justify-center text-center">
+      {label}
+    </div>
+    <div className="flex rounded-xl text-dark_blue font-bold py-1 px-2 min-w-16 items-center justify-center text-lg w-full">
       {value}
     </div>
   </div>
@@ -390,7 +403,7 @@ export default function ForDAOPage({
               ...dao,
               votes,
               identicon,
-              holders: holders.length,
+              holders: holders,
               imageHash,
             })
           } catch (error) {

@@ -110,7 +110,7 @@ export default function StakingPage({
         const stakedBalance = await readContract(config, {
           abi: STAKING_ABI,
           address: stakingAddress[chainId || localhost.id] as `0x${string}`,
-          functionName: '_convertToWPEACECOIN',
+          functionName: '_convertToPEACECOIN',
           args: [wPCEBalance as string],
         })
         setStakedBalance(stakedBalance as string)
@@ -351,31 +351,6 @@ export default function StakingPage({
       return
     }
 
-    if (BigInt(wPCEAllowance as string) < BigInt(wPCEBalance as string)) {
-      let tx
-      try {
-        tx = await writeContractAsync({
-          abi: PCE_ABI,
-          address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
-          functionName: 'approve',
-          args: [
-            stakingAddress[chainId || localhost.id] as `0x${string}`,
-            BigInt(maxUint256),
-          ],
-        })
-      } catch (error) {
-        console.error('Error withdrawing tokens:', error)
-        return
-      }
-
-      await waitForTransactionReceipt(config, {
-        hash: tx,
-        confirmations: 1,
-      })
-      await refetchAllowance()
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-    }
-
     const tx = await writeContractAsync({
       abi: STAKING_ABI,
       address: stakingAddress[chainId || localhost.id] as `0x${string}`,
@@ -439,8 +414,8 @@ export default function StakingPage({
       totalSBTVotingPower +
       Number(
         formatEther(
-          getTokenVote && typeof getTokenVote === 'bigint'
-            ? getTokenVote
+          stakedBalance && typeof stakedBalance === 'bigint'
+            ? stakedBalance
             : BigInt(0)
         )
       )
@@ -510,7 +485,7 @@ export default function StakingPage({
                   {wPCEBalance
                     ? formatNumber(
                         wPCEBalance
-                          ? parseFloat(formatEther(wPCEBalance as string))
+                          ? parseFloat(formatEther(stakedBalance as string))
                           : 0
                       )
                     : '0'}{' '}
@@ -606,7 +581,7 @@ export default function StakingPage({
                   Delegated Power:{' '}
                   {getTokenVote
                     ? formatNumber(
-                        parseFloat(formatEther(getTokenVote as string))
+                        parseFloat(formatEther(stakedBalance as string))
                       )
                     : '0'}{' '}
                   PCE

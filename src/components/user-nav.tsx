@@ -19,7 +19,7 @@ export function UserNav({ locale }: { locale: Locale }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="ghost"
+          variant="secondary"
           className="relative h-8 w-6 rounded-full bg-gray94 uppercase"
           onClick={() => {}}
         >

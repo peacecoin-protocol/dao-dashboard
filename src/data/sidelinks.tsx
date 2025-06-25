@@ -186,5 +186,11 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       href: '/faq',
       icon: <IconApps size={18} />,
     },
+    {
+      title: 'SBT Builder',
+      label: '',
+      href: '/sbt',
+      icon: <IconApps size={18} />,
+    },
   ]
 }

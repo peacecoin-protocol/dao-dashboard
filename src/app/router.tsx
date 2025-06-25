@@ -96,6 +96,9 @@ const loadComponent = async (key: string) => {
       Component = (await import('./(for-users)/[locale]/votingpower/page'))
         .default
       break
+    case 'sbt':
+      Component = (await import('./(for-users)/[locale]/sbt/page')).default
+      break
     default:
       Component = (await import('~/components/app-shell')).default
       break
@@ -267,6 +270,11 @@ const router = createBrowserRouter([
         path: '/:locale/campaign',
         loader: createLoader('campaign'),
         lazy: createLazy('campaign'),
+      },
+      {
+        path: '/:locale/sbt',
+        loader: createLoader('sbt'),
+        lazy: createLazy('sbt'),
       },
     ],
   },
