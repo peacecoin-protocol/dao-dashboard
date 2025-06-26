@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react'
 import Cropper from 'react-easy-crop'
 import { Dialog, DialogContent, DialogTitle } from '~/components/ui/dialog' // shadcn/ui
-import { Button } from '~/components/ui/button'
+import { Button } from '~/components/custom/button'
 import { getCroppedImg } from '~/lib/cropUtils' // Create this utility function
 
 interface ImageCropModalProps {

@@ -79,18 +79,25 @@ const loadComponent = async (key: string) => {
     // case 'pip-prc':
     //   Component = (await import('./(for-users)/[locale]/pip/prc/page')).default
     //   break
-    // case 'faq':
-    //   Component = (await import('./(for-users)/[locale]/faq/page')).default
-    //   break
-    // case 'daofaq':
-    //   Component = (await import('./(for-users)/[locale]/daofaq/page')).default
-    //   break
+    case 'faq':
+      Component = (await import('./(for-users)/[locale]/faq/page')).default
+      break
+    case 'daofaq':
+      Component = (await import('./(for-users)/[locale]/daofaq/page')).default
+      break
     case 'pce':
       Component = (await import('./(for-users)/[locale]/pce/page')).default
       break
     case 'pce_detail':
       Component = (await import('./(for-users)/[locale]/pce/detail/page'))
         .default
+      break
+    case 'votingpower':
+      Component = (await import('./(for-users)/[locale]/votingpower/page'))
+        .default
+      break
+    case 'sbt':
+      Component = (await import('./(for-users)/[locale]/sbt/page')).default
       break
     default:
       Component = (await import('~/components/app-shell')).default
@@ -148,6 +155,11 @@ const router = createBrowserRouter([
         path: '/:locale/dao',
         loader: createLoader('dao'),
         lazy: createLazy('dao'),
+      },
+      {
+        path: '/:locale/votingpower',
+        loader: createLoader('votingpower'),
+        lazy: createLazy('votingpower'),
       },
       {
         path: '/:locale/daofaq',
@@ -258,6 +270,11 @@ const router = createBrowserRouter([
         path: '/:locale/campaign',
         loader: createLoader('campaign'),
         lazy: createLazy('campaign'),
+      },
+      {
+        path: '/:locale/sbt',
+        loader: createLoader('sbt'),
+        lazy: createLazy('sbt'),
       },
     ],
   },

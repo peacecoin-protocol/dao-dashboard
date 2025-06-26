@@ -1,4 +1,4 @@
-# Peace Coin DAO Dashboard
+# PEACECOIN DAO Dashboard
 
 ## Requirements
 

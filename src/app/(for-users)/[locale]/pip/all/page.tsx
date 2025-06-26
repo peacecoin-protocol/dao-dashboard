@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import { Button } from '~/components/ui/button'
+import { Button } from '~/components/custom/button'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import {
   Command,
@@ -27,29 +27,36 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '~/components/ui/popover'
-import { LABEL } from '~/i18n/types'
 import { DialogGithub } from '~/components/custom/dialog-github'
-import { ToastContainer, toast } from 'react-toastify'
+import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
 import { cn } from '~/lib/utils'
-import { PagePropsWithLocale, Dictionary, ISSUE } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
+import { STATUS, CATEGORY } from '~/app/constants/constants'
+import { PIP } from '~/i18n/types'
 
 export default function ForPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
+  const githubBaseUrl =
+    'https://github.com/peacecoin-protocol/PIPs/blob/pip-draft-initial-governance/'
   const [dict, setDict] = useState<Dictionary | null>(null)
-  const [issues, setIssues] = useState<ISSUE[]>([])
   const [open, setOpen] = useState(false)
-  const [issue, setIssue] = useState<ISSUE | null>(null)
   const [isLabelFilterOpen, setIsLabelFilterOpen] = useState(false)
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false)
-  const [labels, setLabels] = useState<LABEL[]>([])
-  const [filteredPIP, setFilteredPIP] = useState<string | null>(null)
-  const [filteredStatus, setFilteredStatus] = useState<string | null>(null)
 
-  const STATUS = ['open', 'closed']
+  const [filteredStatus, setFilteredStatus] = useState<string[]>([])
+  const [filteredCategory, setFilteredCategory] = useState<string[]>([])
+
+  const [statusLabels, setStatusLabels] = useState<string[]>(STATUS)
+  const [categoryLabels, setCategoryLabels] = useState<string[]>(CATEGORY)
+
+  const [pipContents, setPipContents] = useState<PIP[]>([])
+  const [pip, setPip] = useState<PIP | null>(null)
+
+  // const STATUS = ['open', 'closed']
   const octokit = new Octokit({
     auth: Env.GITHUB_TOKEN,
   })
@@ -67,57 +74,173 @@ export default function ForPage({
   }, [locale])
 
   useEffect(() => {
-    const fetchLabels = async () => {
-      const labels = await octokit.rest.issues.listLabelsForRepo({
-        owner: 'peacecoin-protocol',
-        repo: 'dao',
-      })
-      const parsedLabels = labels.data.map((label: any) => ({
-        id: label.id,
-        name: label.name,
-        color: label.color,
-      }))
-      setLabels(parsedLabels)
-    }
-    fetchLabels()
-  }, [])
-
-  useEffect(() => {
     const fetchPip = async () => {
-      toast.success('Fetching PIPs...')
+      // To fetch all files in a branch in a GitHub repo, you can use the GitHub REST API to get the tree recursively.
+      // Example: fetch all files in the 'main' branch of 'peacecoin-protocol/dao'
+      try {
+        const { data: refData } = await octokit.rest.git.getRef({
+          owner: 'peacecoin-protocol',
+          repo: 'PIPs',
+          ref: 'heads/pip-draft-initial-governance', // change 'main' to your branch name if needed
+        })
 
-      const { data: issues } = await octokit.rest.issues.listForRepo({
-        owner: 'peacecoin-protocol',
-        repo: 'dao',
-        per_page: 100,
-        state: 'all',
-      })
+        console.log(refData, 'X')
 
-      for (const issue of issues) {
-        const issueData: ISSUE = {
-          number: issue.number,
-          title: issue.title,
-          body: issue.body || '',
-          created_at: issue.created_at,
-          updated_at: issue.updated_at,
-          state: issue.state,
-          labels: issue.labels.map((label: any) => ({
-            name: label.name || '',
-            color: label.color || '',
-            id: label.id || 0,
-          })),
-          closed_at: issue.closed_at || '',
-          url: issue.url,
-          html_url: issue.html_url,
-          author: issue.user?.login || '',
-          avatar_url: issue.user?.avatar_url || '',
-          isPullRequest: issue.pull_request != null,
+        const commitSha = refData.object.sha
+
+        const { data: commitData } = await octokit.rest.git.getCommit({
+          owner: 'peacecoin-protocol',
+          repo: 'PIPs',
+          commit_sha: commitSha,
+        })
+
+        const treeSha = commitData.tree.sha
+
+        const { data: treeData } = await octokit.rest.git.getTree({
+          owner: 'peacecoin-protocol',
+          repo: 'PIPs',
+          tree_sha: treeSha,
+          recursive: 'true',
+        })
+
+        // treeData.tree is an array of all files and directories in the branch
+        // Example: filter only files (type === 'blob')
+        const allFiles = treeData.tree.filter(
+          (item: any) => item.type === 'blob'
+        )
+        // Now you have all files in the branch in allFiles
+        // You can use setState or further process as needed
+        console.log('All files in branch:', allFiles)
+        // To read the contents of a file from the GitHub repo, you can use the octokit REST API to get the blob for a file.
+        // Example: Read the contents of the first file in allFiles
+        // Start with the second file in allFiles (index 1)
+        for (let i = 1; i < allFiles.length; i++) {
+          const file = allFiles[i]
+          const fileSha = file?.sha || ''
+          const filePath = file?.path || '' // Get the full path of the file
+          const { data: blobData } = await octokit.rest.git.getBlob({
+            owner: 'peacecoin-protocol',
+            repo: 'PIPs',
+            file_sha: fileSha,
+          })
+          console.log(blobData, 'X3')
+          // The content is base64 encoded
+          const fileContent = atob(blobData.content.replace(/\n/g, ''))
+          console.log('Contents of file:', fileContent)
+          const pipContent = {
+            number: parseContent(fileContent, 'pip'),
+            title: parseContent(fileContent, 'title'),
+            proposer: parseContent(fileContent, 'proposer'),
+            status: parseContent(fileContent, 'status'),
+            type: parseContent(fileContent, 'type'),
+            category: parseContent(fileContent, 'category'),
+            content: fileContent,
+            created: parseContent(fileContent, 'created'),
+            path: githubBaseUrl + filePath,
+          }
+          setPipContents((prevPipContents) => [...prevPipContents, pipContent])
         }
-        setIssues((prevIssues) => [...prevIssues, issueData])
+      } catch (error) {
+        console.error('Error fetching all files in branch:', error)
       }
     }
     fetchPip()
-  }, [locale])
+  }, [])
+
+  function parseContent(content: string, start: string) {
+    const match = content.match(new RegExp(`^${start}:\\s*(.*)$`, 'm'))
+    return match?.[1]?.trim() ?? ''
+  }
+
+  // useEffect(() => {
+  //   const fetchLabels = async () => {
+  //     const labels = await octokit.rest.issues.listLabelsForRepo({
+  //       owner: 'peacecoin-protocol',
+  //       repo: 'dao',
+  //     })
+  //     const parsedLabels = labels.data.map((label: any) => ({
+  //       id: label.id,
+  //       name: label.name,
+  //       color: label.color,
+  //     }))
+
+  //     const filteredLabels = parsedLabels.filter(
+  //       (label: any) => label.name !== 'PIP'
+  //     )
+
+  //     const _typeLabels = filteredLabels
+  //       .filter((label: any) => label.name.includes('type_'))
+  //       .map((label: any) => ({
+  //         ...label,
+  //         name: label.name.replace('type_', ''),
+  //       }))
+
+  //     const _statusLabels = filteredLabels
+  //       .filter((label: any) => label.name.includes('status_'))
+  //       .map((label: any) => ({
+  //         ...label,
+  //         name: label.name.replace('status_', ''),
+  //       }))
+
+  //     setTypeLabels([..._typeLabels])
+  //     setStatusLabels([..._statusLabels])
+
+  //     console.log(_statusLabels)
+  //   }
+  //   fetchLabels()
+  // }, [])
+
+  // useEffect(() => {
+  //   const fetchPip = async () => {
+  //     toast.success('Fetching PIPs...')
+
+  //     const { data: issues } = await octokit.rest.issues.listForRepo({
+  //       owner: 'peacecoin-protocol',
+  //       repo: 'dao',
+  //       per_page: 100,
+  //       state: 'open',
+  //       labels: 'PIP',
+  //     })
+
+  //     for (const issue of issues) {
+  //       const issueData: ISSUE = {
+  //         number: issue.number,
+  //         title: issue.title,
+  //         body: issue.body || '',
+  //         created_at: issue.created_at,
+  //         updated_at: issue.updated_at,
+  //         status: issue.labels
+  //           .filter(
+  //             (label: any) =>
+  //               label.name !== 'PIP' && label.name.includes('status_')
+  //           )
+  //           .map((label: any) => ({
+  //             name: label.name || '',
+  //             color: label.color || '',
+  //             id: label.id || 0,
+  //           })),
+  //         types: issue.labels
+  //           .filter(
+  //             (label: any) =>
+  //               label.name !== 'PIP' && label.name.includes('type_')
+  //           )
+  //           .map((label: any) => ({
+  //             name: label.name || '',
+  //             color: label.color || '',
+  //             id: label.id || 0,
+  //           })),
+  //         closed_at: issue.closed_at || '',
+  //         url: issue.url,
+  //         html_url: issue.html_url,
+  //         author: issue.user?.login || '',
+  //         avatar_url: issue.user?.avatar_url || '',
+  //         isPullRequest: issue.pull_request != null,
+  //       }
+  //       setIssues((prevIssues) => [...prevIssues, issueData])
+  //     }
+  //   }
+  //   fetchPip()
+  // }, [locale])
 
   function handleOpen() {
     setOpen(!open)
@@ -126,8 +249,12 @@ export default function ForPage({
   return (
     <div className="w-full gap-4 flex flex-col">
       <div className="gap-4 flex flex-col m-8">
-        <h2 className="text-4xl font-bold tracking-tight mt-6">{'ALL'}</h2>
-        <p className="text-muted-foreground">{'Living PIPs'}</p>
+        <h2 className="text-4xl font-bold tracking-tight mt-6">
+          {'ALL Proposals'}
+        </h2>
+        <p className="text-muted-foreground">
+          {'ALL Peacecoin Improvement Proposals'}
+        </p>
 
         <div className="flex flex-row gap-4 justify-end">
           <Popover
@@ -143,36 +270,43 @@ export default function ForPage({
                   filteredStatus && 'text-muted-foreground'
                 )}
               >
-                {filteredStatus
-                  ? STATUS.find((status) => status === filteredStatus)
+                {filteredStatus.length > 0
+                  ? filteredStatus[0] +
+                    (filteredStatus.length > 1
+                      ? ` + ${filteredStatus.length - 1} more`
+                      : '')
                   : 'Select status'}
                 <ChevronsUpDown className="opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
               <Command>
-                <CommandInput placeholder="Search status..." className="h-9" />
+                <CommandInput placeholder="Search type..." className="h-9" />
                 <CommandList>
                   <CommandEmpty>No status found.</CommandEmpty>
                   <CommandGroup>
-                    {STATUS.map((status) => (
+                    {statusLabels.map((label, index) => (
                       <CommandItem
-                        value={status}
-                        key={status}
+                        value={label}
+                        key={index}
                         onSelect={() => {
-                          if (status === filteredStatus) {
-                            setFilteredStatus(null)
+                          if (filteredStatus.includes(label)) {
+                            setFilteredStatus(
+                              filteredStatus.filter(
+                                (status) => status !== label
+                              )
+                            )
                           } else {
-                            setFilteredStatus(status)
+                            setFilteredStatus([...filteredStatus, label])
                           }
                           setIsStatusFilterOpen(false)
                         }}
                       >
-                        {status}
+                        {label}
                         <Check
                           className={cn(
                             'ml-auto',
-                            status === filteredStatus
+                            filteredStatus.includes(label)
                               ? 'opacity-100'
                               : 'opacity-0'
                           )}
@@ -192,39 +326,49 @@ export default function ForPage({
                 role="combobox"
                 className={cn(
                   'w-[200px] justify-between',
-                  filteredPIP && 'text-muted-foreground'
+                  filteredCategory && 'text-muted-foreground'
                 )}
               >
-                {filteredPIP
-                  ? labels.find((label) => label.name === filteredPIP)?.name
-                  : 'Select label'}
+                {filteredCategory.length > 0
+                  ? filteredCategory[0] +
+                    (filteredCategory.length > 1
+                      ? ` + ${filteredCategory.length - 1} more`
+                      : '')
+                  : 'Select category'}
                 <ChevronsUpDown className="opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
               <Command>
-                <CommandInput placeholder="Search label..." className="h-9" />
+                <CommandInput
+                  placeholder="Search category..."
+                  className="h-9"
+                />
                 <CommandList>
-                  <CommandEmpty>No label found.</CommandEmpty>
+                  <CommandEmpty>No type found.</CommandEmpty>
                   <CommandGroup>
-                    {labels.map((label) => (
+                    {categoryLabels.map((label, index) => (
                       <CommandItem
-                        value={label.name}
-                        key={label.id}
+                        value={label}
+                        key={index}
                         onSelect={() => {
-                          if (label.name === filteredPIP) {
-                            setFilteredPIP(null)
+                          if (filteredCategory.includes(label)) {
+                            setFilteredCategory(
+                              filteredCategory.filter(
+                                (category) => category !== label
+                              )
+                            )
                           } else {
-                            setFilteredPIP(label.name)
+                            setFilteredCategory([...filteredCategory, label])
                           }
-                          setIsStatusFilterOpen(false)
+                          setIsLabelFilterOpen(false)
                         }}
                       >
-                        {label.name}
+                        {label}
                         <Check
                           className={cn(
                             'ml-auto',
-                            label.name === filteredPIP
+                            filteredCategory.includes(label)
                               ? 'opacity-100'
                               : 'opacity-0'
                           )}
@@ -253,7 +397,10 @@ export default function ForPage({
                 State
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
-                Labels
+                Category
+              </TableHead>
+              <TableHead className="border-2 border-gray87 border-solid	">
+                Types
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
                 Created At
@@ -264,54 +411,54 @@ export default function ForPage({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {issues
-              .filter((issue) => !issue.isPullRequest)
-              .filter((issue) => {
-                if (filteredStatus) {
-                  return issue.state === filteredStatus
-                }
-                return true
+            {pipContents
+              .filter((pip) => {
+                return (
+                  filteredStatus.length === 0 ||
+                  filteredStatus.includes(pip.status)
+                )
               })
-              .filter((issue) => {
-                if (filteredPIP) {
-                  return issue.labels.some(
-                    (label) => label.name === filteredPIP
-                  )
-                }
-                return true
+              .filter((pip) => {
+                return (
+                  filteredCategory.length === 0 ||
+                  filteredCategory.includes(pip.category)
+                )
               })
-              .map((issue) => (
+              .map((pip) => (
                 <TableRow
-                  key={issue.number}
+                  key={pip.number}
                   className="border-2 border-gray87 border-solid cursor-pointer"
                   onClick={() => {
-                    setIssue(issue)
+                    setPip(pip)
                     setOpen(true)
                   }}
                 >
                   <TableCell className="font-medium border-2 border-gray87 border-solid	">
-                    {issue.number}
+                    {pip.number}
                   </TableCell>
                   <TableCell className="border-2 border-gray87 border-solid	">
-                    {issue.title}
+                    {pip.title}
                   </TableCell>
                   <TableCell className="border-2 border-gray87 border-solid	">
-                    {issue.author}
+                    {pip.proposer}
                   </TableCell>
                   <TableCell className="border-2 border-gray87 border-solid	">
-                    {issue.state}
+                    {pip.status}
                   </TableCell>
                   <TableCell className="border-2 border-gray87 border-solid	">
-                    {issue.labels.map((label) => label.name).join(', ')}
+                    {pip.category}
                   </TableCell>
                   <TableCell className="border-2 border-gray87 border-solid	">
-                    {new Date(issue.created_at).toLocaleString()}
+                    {pip.type}
+                  </TableCell>
+                  <TableCell className="border-2 border-gray87 border-solid	">
+                    {new Date(pip.created).toLocaleString()}
                   </TableCell>
                   <TableCell
                     className="border-2 border-gray87 border-solid text-blue-800"
                     onClick={(e) => {
                       e.stopPropagation()
-                      window.open(issue.html_url, '_blank')
+                      window.open(pip.path, '_blank')
                     }}
                   >
                     View on GitHub
@@ -321,9 +468,8 @@ export default function ForPage({
           </TableBody>
         </Table>
         <DialogGithub
-          size="lg"
           open={open}
-          issue={issue}
+          pip={pip}
           setOpen={handleOpen}
           localDict={dict}
         />

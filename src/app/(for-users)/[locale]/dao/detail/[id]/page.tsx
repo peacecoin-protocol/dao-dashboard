@@ -13,7 +13,7 @@ import { Line } from 'rc-progress'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
-import { Button } from '~/components/ui/button'
+import { Button } from '~/components/custom/button'
 import {
   Table,
   TableBody,
@@ -83,6 +83,7 @@ import {
 import { timestampToDate } from '~/components/utils'
 import { ALCHEMY_CONFIG } from '~/app/constants/constants'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
+import { Env } from '~/env'
 
 type Dao = {
   id: string
@@ -164,20 +165,32 @@ export default function ForSubmitPage({
 
   const alchemy = new Alchemy(ALCHEMY_CONFIG)
 
-  const getTokenMetadata = async (address: string) => {
-    const metadata = await alchemy.core.getTokenMetadata(address)
-    return metadata
-  }
-
   const getTreasuryBalances = async (address: string) => {
-    const balances = (await alchemy.core.getTokenBalances(address))
-      .tokenBalances
+    // Fetch ERC20 token balances for the given address using Moralis API
+    const url = `https://deep-index.moralis.io/api/v2.2/${address}/erc20?chain=eth`
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'X-API-Key': Env.MORALIS_API_KEY,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ERC20 balances: ${response.statusText}`)
+    }
+
+    const balances = await response.json()
 
     const formatedBalances = (await Promise.all(
-      balances.map(async (balance) => ({
-        tokenBalance: Number(balance.tokenBalance),
-        contractAddress: balance.contractAddress,
-        ...(await getTokenMetadata(balance.contractAddress)),
+      balances.map(async (balance: any) => ({
+        tokenBalance: Number(balance.balance) / 10 ** balance.decimals,
+        contractAddress: balance.token_address,
+        name: balance.name,
+        symbol: balance.symbol,
+        decimals: balance.decimals,
+        logo: balance.logo,
       }))
     )) as TokenBalance[]
 
@@ -1554,19 +1567,29 @@ export default function ForSubmitPage({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {treasuryBalances?.map((token, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-bold">
-                            {token.name === '' ? 'PCE TEST' : token.name}
-                          </TableCell>
-                          <TableCell className="font-bold">
-                            {formatString(
-                              formatEther(BigInt(token.tokenBalance).toString())
-                            )}{' '}
-                            {token.symbol === '' ? 'PCE TEST' : token.symbol}
+                      {treasuryBalances.length > 0 ? (
+                        treasuryBalances.map((token, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-bold">
+                              {token.name === '' ? 'PCE TEST' : token.name}
+                            </TableCell>
+                            <TableCell className="font-bold">
+                              {formatString(
+                                formatEther(
+                                  BigInt(token.tokenBalance).toString()
+                                )
+                              )}{' '}
+                              {token.symbol === '' ? 'PCE TEST' : token.symbol}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-center">
+                            No tokens found
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -1695,25 +1718,7 @@ export default function ForSubmitPage({
                     <h1 className="flex flex-row text-2xl font-bold gap-4">
                       {localDict.votingPowerBreakdown ??
                         'Voting Power Breakdown'}
-                      {/* <div className="flex bg-dark_blue rounded-xl text-white font-bold items-center justify-center text-xs px-4">
-                        0
-                      </div> */}
                     </h1>
-
-                    {/* <div className="flex flex-row gap-6">
-                      <div className="flex flex-row gap-2 items-center">
-                        <Checkbox />
-                        <h1>DAO Holders</h1>
-                      </div>
-                      <div className="flex flex-row gap-2 items-center">
-                        <Checkbox />
-                        <h1>Global Experts</h1>
-                      </div>
-                      <div className="flex flex-row gap-2 items-center">
-                        <Checkbox />
-                        <h1>Local Experts</h1>
-                      </div>
-                    </div> */}
                   </div>
                 </div>
                 <div className="flex flex-row gap-4">

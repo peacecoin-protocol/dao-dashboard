@@ -65,7 +65,7 @@ export default function SidebarNav({
               key={item.href}
               to={item.href}
               className={cn(
-                buttonVariants({ variant: 'ghost' }),
+                buttonVariants({ variant: 'secondary' }),
                 pathname === item.href
                   ? 'bg-muted hover:bg-muted'
                   : 'hover:bg-transparent hover:underline',

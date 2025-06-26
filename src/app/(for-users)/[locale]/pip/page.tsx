@@ -142,11 +142,7 @@ export default function ForPendingPage({
           Standard PIPs can be broken down into the following categories.
         </p>
 
-        <h4 className="text-2xl">
-          <Link href="/pip/core" className="font-bold">
-            Core
-          </Link>
-        </h4>
+        <h4 className="text-2xl">Core</h4>
         <p>
           Improvements requiring a consensus fork (e.g.{' '}
           <Link href="./PIPs/pip-5">PIP-5</Link>
@@ -157,11 +153,7 @@ export default function ForPendingPage({
           <Link href="./PIPs/pip-225">PIP-225</Link>).
         </p>
 
-        <h4 className="text-2xl">
-          <Link className="font-bold" href="/pip/networking">
-            Networking
-          </Link>
-        </h4>
+        <h4 className="text-2xl">Networking</h4>
         <p>
           Includes improvements around devp2p (
           <Link className="font-bold" href="./PIPs/pip-8">
@@ -171,11 +163,7 @@ export default function ForPendingPage({
           to network protocol specifications of whisper and swarm.
         </p>
 
-        <h4 className="text-2xl">
-          <Link className="font-bold" href="/interface">
-            Interface
-          </Link>
-        </h4>
+        <h4 className="text-2xl">Interface</h4>
         <p>
           Includes improvements around client API/RPC specifications and
           standards, and also certain language-level standards like method names
@@ -185,11 +173,7 @@ export default function ForPendingPage({
           PIPs repository.
         </p>
 
-        <h4 className="text-2xl">
-          <Link href="/pip/prc" className="font-bold">
-            PRC
-          </Link>
-        </h4>
+        <h4 className="text-2xl">PRC</h4>
         <p>
           Application-level standards and conventions, including contract
           standards such as token standards (
@@ -200,11 +184,7 @@ export default function ForPendingPage({
           abstraction (<Link href="./PIPs/pip-4337">PIP-4337</Link>).
         </p>
 
-        <h4 className="text-2xl">
-          <Link href="/pip/meta" className="font-bold">
-            Meta
-          </Link>
-        </h4>
+        <h4 className="text-2xl">Meta</h4>
         <p>
           Describes a process surrounding PEACE COIN or proposes a change to (or
           an event in) a process. Process PIPs are like Standards Track PIPs but
@@ -218,11 +198,7 @@ export default function ForPendingPage({
           PIP.
         </p>
 
-        <h4 className="text-2xl">
-          <Link href="/pip/informational" className="font-bold">
-            Informational
-          </Link>
-        </h4>
+        <h4 className="text-2xl">Informational</h4>
         <p>
           Describes a PEACE COIN design issue, or provides general guidelines or
           information to the PEACE COIN community, but does not propose a new

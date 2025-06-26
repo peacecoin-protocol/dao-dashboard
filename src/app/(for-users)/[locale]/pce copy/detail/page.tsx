@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { formatEther } from 'ethers'
 
 import { getDict } from '~/i18n/get-dict'
-import { formatEther } from 'viem'
 
 export default function ForPCEDetailPage({
   params: { locale },

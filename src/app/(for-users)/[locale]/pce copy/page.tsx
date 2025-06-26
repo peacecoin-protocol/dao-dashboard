@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
-import axios from 'axios'
 
 import { useNavigate } from 'react-router-dom'
 
@@ -17,7 +16,6 @@ import { generateIdenteapot } from '@teapotlabs/identeapots'
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
 import { Button } from '~/components/custom/button'
-
 import {
   Table,
   TableBody,
@@ -56,9 +54,10 @@ import {
   SelectValue,
 } from '~/components/ui/select'
 
+import { AmountInput } from '~/components/custom/amount-input'
 import { getDict } from '~/i18n/get-dict'
 
-import { PagePropsWithLocale, Dictionary, Metadata } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 
 import { formatString, shortenAddress } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
@@ -67,21 +66,22 @@ import { Textarea } from '~/components/ui/textarea'
 import { config } from '~/lib/config'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 import { TooltipComponent } from '~/components/custom/TooltipComponent'
+import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { localhost } from '~/lib/config'
+import { waitForTransactionReceipt } from '@wagmi/core'
 import { useBlock } from 'wagmi'
 import {
   governorAddress,
   pceAddress,
+  WPCE_ADDRESS,
   timelockAddress,
   factoryAddress,
-  PCE_SBT_ADDRESS,
-  sbtAddress,
 } from '~/app/constants/constants'
+import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 
 import { createdAt, WEB, LINKEDIN, TWITTER } from '~/app/constants/constants'
 import { Env } from '~/env'
 import { timestampToDate } from '~/components/utils'
-import { SBT_ABI } from '~/app/ABIs/SBT'
 
 type Dao = {
   id: string
@@ -144,17 +144,15 @@ export default function PCEPage({
 
   const [category, setCategory] = useState('')
 
+  const [stakingAmount, setStakingAmount] = useState('')
+
   const [isDelegateDialogOpened, setIsDelegateDialogOpened] = useState(false)
   const [isDepositDialogOpened, setIsDepositDialogOpened] = useState(false)
   const [isCreateProposalDialogOpened, setIsCreateProposalDialogOpened] =
     useState(false)
-
   const [identicon, setIdenticon] = useState('')
-
-  const [nftBalances, setNftBalances] = useState<number[]>([])
-  const [nftMetadata, setNftMetadata] = useState<Metadata[]>([])
-  const [votingPower, setVotingPower] = useState<number[]>([])
-
+  const [file, setFile] = useState<File>()
+  const [imageHash, setImageHash] = useState('')
   const [tabContent, setTabContent] = useState('about')
 
   const [treasuryBalances, setTreasuryBalances] = useState<TokenBalance[]>([])
@@ -253,6 +251,7 @@ export default function PCEPage({
     address: governorAddress[chainId || localhost.id] as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'votingDelay',
+    chainId: localhost.id,
   })
 
   const { data: pceBalance, refetch: refetchPCEBalance } = useReadContract({
@@ -264,11 +263,17 @@ export default function PCEPage({
 
   const { data: governanceTokenBalance, refetch: refetchGovTokenBalance } =
     useReadContract({
-      address: sbtAddress[chainId || localhost.id] as `0x${string}`,
+      address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
       abi: PCE_ABI,
       functionName: 'balanceOf',
       args: [address],
     })
+
+  const { data: totalSupply, refetch: refetchTotalSupply } = useReadContract({
+    address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
+    abi: PCE_ABI,
+    functionName: 'totalSupply',
+  })
 
   const { data: proposalThreshold, refetch: refetchProposalThreshold } =
     useReadContract({
@@ -283,21 +288,6 @@ export default function PCEPage({
     functionName: 'votingPeriod',
   })
 
-  const { data: currentTokenId, refetch: refetchCurrentTokenId } =
-    useReadContract({
-      address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
-      abi: SBT_ABI,
-      functionName: 'currentTokenId',
-    })
-
-  const { data: uri_, refetch: refetchUri } = useReadContract({
-    abi: SBT_ABI,
-    address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
-    functionName: 'uri_',
-    args: [],
-    chainId: chainId || localhost.id,
-  })
-
   const { data: timelockDelay, refetch: refetchTimelockDelay } =
     useReadContract({
       address: timelockAddress[chainId || localhost.id] as `0x${string}`,
@@ -308,103 +298,6 @@ export default function PCEPage({
   const getCurrentTimestamp = () => {
     return Number(block?.timestamp)
   }
-
-  useEffect(() => {
-    const fetchNFTBalances = async () => {
-      if (!chainId) {
-        return
-      }
-      if (currentTokenId && Number(currentTokenId) > 0) {
-        toast.info('Loading SBT NFTs...')
-
-        let _nftBalances: number[] = []
-        for (let i = 1; i <= (currentTokenId as number); i++) {
-          const _balance = (await readContract(config, {
-            abi: SBT_ABI,
-            address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
-            functionName: 'balanceOf',
-            args: [address, i],
-          })) as number
-
-          _nftBalances.push(_balance)
-        }
-        setNftBalances(_nftBalances)
-      }
-    }
-
-    fetchNFTBalances()
-  }, [chainId, currentTokenId, isConfirmed])
-
-  useEffect(() => {
-    const fetchVotingPower = async () => {
-      if (!chainId) {
-        return
-      }
-      if (currentTokenId && Number(currentTokenId) > 0) {
-        toast.info('Loading Voting Power...')
-
-        let _votingPower: number[] = []
-        for (let i = 1; i <= (currentTokenId as number); i++) {
-          const votingPowerPerId = (await readContract(config, {
-            abi: SBT_ABI,
-            address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
-            functionName: 'votingPowerPerId',
-            args: [i],
-          })) as number
-
-          _votingPower.push(votingPowerPerId)
-        }
-        setVotingPower(_votingPower)
-      }
-    }
-
-    fetchVotingPower()
-  }, [chainId, currentTokenId, isConfirmed])
-
-  useEffect(() => {
-    const fetchNFTMetadata = async () => {
-      if (currentTokenId && Number(currentTokenId) > 0) {
-        toast.info('Loading Metadata...')
-
-        const _nftMetadata: Metadata[] = []
-        for (let i = 1; i <= (currentTokenId as number); i++) {
-          try {
-            const _uri = await readContract(config, {
-              abi: SBT_ABI,
-              address: PCE_SBT_ADDRESS[
-                chainId || localhost.id
-              ] as `0x${string}`,
-              functionName: 'tokenURIs',
-              args: [i],
-            })
-
-            const response = await axios.get(`/api/get-nft-metadata`, {
-              params: {
-                metadata: uri_ + (_uri as string),
-              },
-            })
-            const data = response.data
-            data.token_id = i
-            _nftMetadata.push(data)
-          } catch (error) {
-            console.error('Error fetching NFT metadata:', error)
-            const metadata: Metadata = {
-              image: '/images/empty-nft.svg',
-              name: '',
-              description: '',
-              attributes: [],
-              external_url: '',
-              token_id: 0,
-            }
-            _nftMetadata.push(metadata)
-          }
-        }
-        setNftMetadata(_nftMetadata)
-      }
-    }
-
-    fetchNFTMetadata()
-  }, [uri_, currentTokenId, chainId])
 
   const ProposalCard = ({
     proposal,
@@ -462,7 +355,8 @@ export default function PCEPage({
             percent={
               Number(proposal[5] || 0) > 0 &&
               Number(BigInt(quorum?.toString() || '0')) > 0
-                ? (Number(proposal[5]) / Number(quorum?.toString() || '0')) *
+                ? (Number(formatEther(proposal[5])) /
+                    Number(formatEther(quorum?.toString() || '0'))) *
                   100
                 : 0
             }
@@ -477,13 +371,14 @@ export default function PCEPage({
           <div className="flex flex-row justify-between">
             <h1>{localDict.voteAgainst ?? 'Vote Against'}</h1>
             <h1>
-              {Number(proposal[6] || 0).toLocaleString()} (
+              {Number(formatEther(proposal[6] || 0)).toLocaleString()} (
               {proposal[5] && proposal[6] !== undefined
                 ? proposal[5] === 0 && proposal[6] > 0
                   ? 100
                   : (
-                      (Number(proposal[6]) /
-                        (Number(proposal[5]) + Number(proposal[6]))) *
+                      (Number(formatEther(proposal[6])) /
+                        (Number(formatEther(proposal[5])) +
+                          Number(formatEther(proposal[6])))) *
                       100
                     ).toFixed(2)
                 : '0'}
@@ -495,7 +390,8 @@ export default function PCEPage({
             percent={
               Number(proposal[6] || 0) > 0 &&
               Number(BigInt(quorum?.toString() || '0')) > 0
-                ? (Number(proposal[6]) / Number(quorum?.toString() || '0')) *
+                ? (Number(formatEther(proposal[6])) /
+                    Number(formatEther(quorum?.toString() || '0'))) *
                   100
                 : 0
             }
@@ -636,7 +532,8 @@ export default function PCEPage({
           <Button
             className="w-full bg-dark_blue"
             disabled={
-              getCurrentTimestamp() < Number(proposal[2]) || status !== 'Queued'
+              Math.floor(Date.now() / 1000) < Number(proposal[2]) ||
+              status !== 'Queued'
             }
             onClick={async () => {
               await writeContract({
@@ -698,8 +595,8 @@ export default function PCEPage({
   }
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
-    address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
-    abi: SBT_ABI,
+    address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
+    abi: PCE_C_GOV_TOKEN_ABI,
     functionName: 'getVotes',
     args: [address],
   })
@@ -864,20 +761,117 @@ export default function PCEPage({
     await refetchProposalCount()
   }
 
-  const handleDelegate = async () => {
-    setIsDelegateDialogOpened(false)
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    abi: PCE_ABI,
+    address: pceAddress[chainId || localhost.id] as `0x${string}`,
+    functionName: 'allowance',
+    args: [address, WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`],
+  })
+
+  const handleStake = async () => {
+    if (stakingAmount === '' || stakingAmount === '0') {
+      toast.error('Please enter a valid amount')
+      return
+    }
+
+    const allowance = await readContract(config, {
+      abi: PCE_ABI,
+      address: pceAddress[chainId || localhost.id] as `0x${string}`,
+      functionName: 'allowance',
+      args: [address, WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`],
+    })
+
+    if (
+      (BigInt(allowance as string) as bigint) <
+      BigInt(parseEther(stakingAmount))
+    ) {
+      let tx
+      try {
+        tx = await writeContractAsync({
+          abi: PCE_ABI,
+          address: pceAddress[chainId || localhost.id] as `0x${string}`,
+          functionName: 'approve',
+          args: [
+            WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
+            parseEther(stakingAmount),
+          ],
+        })
+      } catch (error) {
+        console.error('Error approving tokens:', error)
+        return
+      }
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
+    }
 
     let tx
     try {
       tx = await writeContractAsync({
-        abi: SBT_ABI,
-        address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
-        functionName: 'delegate',
-        args: [delegateAddr],
+        abi: PCE_C_GOV_TOKEN_ABI,
+        address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
+        functionName: 'deposit',
+        args: [parseEther(stakingAmount)],
+      })
+
+      setStakingAmount('')
+
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
       })
     } catch (error) {
-      console.error('Error delegating tokens:', error)
+      console.error('Error depositing tokens:', error)
       return
+    }
+
+    await refetchGovTokenBalance()
+    await refetchPCEBalance()
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+  }
+
+  const handleWithdraw = async () => {
+    if (BigInt(governanceTokenBalance as string) > 0) {
+      let tx
+      try {
+        tx = await writeContractAsync({
+          abi: PCE_C_GOV_TOKEN_ABI,
+          address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
+          functionName: 'withdraw',
+          args: [governanceTokenBalance],
+        })
+      } catch (error) {
+        console.error('Error withdrawing tokens:', error)
+        return
+      }
+
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
+      await refetchGovTokenBalance()
+      await refetchPCEBalance()
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+    }
+  }
+
+  const handleDelegate = async () => {
+    setIsDelegateDialogOpened(false)
+
+    if (BigInt(governanceTokenBalance as string) > 0) {
+      let tx
+      try {
+        tx = await writeContractAsync({
+          abi: CommunityGov_ABI,
+          address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
+          functionName: 'delegate',
+          args: [delegateAddr],
+        })
+      } catch (error) {
+        console.error('Error delegating tokens:', error)
+        return
+      }
     }
   }
 
@@ -944,14 +938,17 @@ export default function PCEPage({
             <TabsTrigger value="all" onClick={() => setTabContent('all')}>
               {localDict.allProposals}
             </TabsTrigger>
-            <TabsTrigger value="holds" onClick={() => setTabContent('holds')}>
-              Holds
+            <TabsTrigger
+              value="balance"
+              onClick={() => setTabContent('balance')}
+            >
+              {localDict.balance}
             </TabsTrigger>
             <TabsTrigger
-              value="balances"
-              onClick={() => setTabContent('balances')}
+              value="holders"
+              onClick={() => setTabContent('holders')}
             >
-              Balances
+              {localDict.holders}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="about" className="">
@@ -1005,10 +1002,10 @@ export default function PCEPage({
                       chainId={chainId}
                       type="address"
                       address={
-                        sbtAddress[chainId || localhost.id] as `0x${string}`
+                        WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`
                       }
                       message={shortenAddress(
-                        sbtAddress[chainId || localhost.id] as `0x${string}`
+                        WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`
                       )}
                     ></CustomLink.default>
                   </div>
@@ -1121,7 +1118,7 @@ export default function PCEPage({
                     />
                     <div className="text-dark_blue">
                       {quorum
-                        ? formatString(formatEther(quorum as string))
+                        ? formatString(formatEther(BigInt(quorum as string)))
                         : '0'}
                     </div>
                   </div>
@@ -1139,11 +1136,9 @@ export default function PCEPage({
                     className="font-bold rounded-xl flex"
                   />
                   <div className="text-dark_blue">
-                    {/* {votes
+                    {votes
                       ? formatString(formatEther(BigInt(votes as string)))
-                      : '0'} */}
-
-                    {votes ? votes.toString() : '0'}
+                      : '0'}
                   </div>
                 </div>
 
@@ -1328,7 +1323,7 @@ export default function PCEPage({
               </Tabs>
             </div>
           </TabsContent>
-          <TabsContent value="holds">
+          <TabsContent value="balance">
             <div className="flex flex-col sm:flex-row mt-4 gap-4 ">
               <div className="flex flex-col w-full">
                 <h1 className="text-2xl font-bold">
@@ -1511,15 +1506,14 @@ export default function PCEPage({
               </div>
             </div>
           </TabsContent>
-          <TabsContent value="balances">
+          <TabsContent value="holders">
             <div className="flex flex-row mt-4 gap-4">
               <div className="flex flex-col w-full gap-4">
                 <div className="flex flex-col sm:flex-row w-full gap-4 items-center justify-between">
                   <div className="flex flex-col gap-4">
                     <h1 className="flex flex-row text-2xl font-bold gap-4">
                       {localDict.votingPowerBreakdown ??
-                        'Voting Power Breakdown'}{' '}
-                      - ({votingPower.length} NFTs)
+                        'Voting Power Breakdown'}
                       {/* <div className="flex bg-dark_blue rounded-xl text-white font-bold items-center justify-center text-xs px-4">
                         0
                       </div> */}
@@ -1542,6 +1536,24 @@ export default function PCEPage({
                   </div>
                 </div>
                 <div className="flex flex-row gap-4">
+                  <AmountInput
+                    className="w-60 bg-dark_blue"
+                    setStakingAmount={setStakingAmount}
+                    localDict={localDict}
+                    handleStake={handleStake}
+                    maxAmount={
+                      pceBalance
+                        ? Number(formatEther(BigInt(pceBalance as string)))
+                        : 0
+                    }
+                  />
+                  <Button
+                    className="w-60 bg-dark_blue"
+                    onClick={handleWithdraw}
+                  >
+                    {localDict.withdraw ?? 'Withdraw'}
+                  </Button>
+
                   <Button
                     className="w-60 bg-dark_blue"
                     onClick={async () => {
@@ -1555,56 +1567,58 @@ export default function PCEPage({
                   <Table className="w-full">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="font-bold">
-                          {localDict.id ?? 'Id'}
+                        <TableHead>
+                          <div className="flex flex-row gap-4">
+                            {localDict.address ?? 'Address'}
+                          </div>
                         </TableHead>
-                        <TableHead className="font-bold">
-                          {localDict.image ?? 'Image'}
+                        <TableHead>
+                          {localDict.pceTokenAmount ?? 'PCE Token Amount'}
                         </TableHead>
-                        <TableHead className="font-bold">
-                          {localDict.amount ?? 'Amount'}
+                        <TableHead>
+                          {localDict.governanceTokenAmount ??
+                            'Governance Token Amount'}
                         </TableHead>
-                        <TableHead className="font-bold">
-                          {localDict.votingPower ?? 'Voting Power'}
+                        <TableHead>
+                          {localDict.delegatedAmount ?? 'Delegated Amount'}
                         </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {nftBalances.map((balance, index) => (
-                        <TableRow key={index}>
-                          {/* Id */}
-                          <TableCell>
-                            <div className="flex flex-row gap-2 items-center">
-                              <h1 className="text-md text-dark_blue font-bold">
-                                {index + 1}
-                              </h1>
-                            </div>
-                          </TableCell>
-                          {/* Image */}
-                          <TableCell>
-                            <img
-                              src={
-                                !nftMetadata || nftMetadata.length === 0
-                                  ? '/images/empty-nft.svg'
-                                  : nftMetadata[index]?.image ||
-                                    '/images/empty-nft.svg'
-                              }
-                              alt={`NFT #${index}`}
-                              className="rounded-lg h-[140px] w-[100px] object-fill"
-                              width={100}
-                              height={140}
-                            />
-                          </TableCell>
-                          <TableCell className="font-bold font-md text-dark_blue">
-                            {balance ? formatString(balance.toString()) : '0'}
-                          </TableCell>
-                          <TableCell className="font-bold font-md text-dark_blue">
-                            {votingPower[index]
-                              ? formatString(votingPower[index].toString())
-                              : '0'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      <TableRow>
+                        <TableCell>
+                          <div className="flex flex-row gap-2 items-center">
+                            <h1 className="text-md text-dark_blue font-bold">
+                              {pceAddress[chainId || localhost.id]
+                                ? pceAddress[chainId || localhost.id]
+                                : '-'}
+                            </h1>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-bold font-md text-dark_blue">
+                          {pceBalance
+                            ? formatString(
+                                formatEther(BigInt(pceBalance as string))
+                              )
+                            : '0'}{' '}
+                          PCE
+                        </TableCell>
+                        <TableCell className="font-bold font-md text-dark_blue">
+                          {governanceTokenBalance
+                            ? formatString(
+                                formatEther(
+                                  BigInt(governanceTokenBalance as string)
+                                )
+                              )
+                            : '0'}{' '}
+                          PCE
+                        </TableCell>
+                        <TableCell className="font-bold font-md text-dark_blue">
+                          {votes
+                            ? formatString(formatEther(BigInt(votes as string)))
+                            : '0'}{' '}
+                        </TableCell>
+                      </TableRow>
                     </TableBody>
                   </Table>
                 </div>

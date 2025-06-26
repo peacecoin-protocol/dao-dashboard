@@ -44,15 +44,15 @@
     "closed": "Cerrado",
     "submit": "Enviar",
     "delegate": "Delegar",
-    "pce": "DAO del Protocolo Peace Coin",
-    "pceCoin": "Peace Coin",
+    "pce": "DAO del Protocolo PEACECOIN",
+    "pceCoin": "PEACECOIN",
     "daoStudio": "Estudio DAO",
     "studio": "Estudio",
     "faq": "Preguntas Frecuentes"
   },
   "home": {
-    "title": "Panel DAO de Peace Coin",
-    "description": "Panel DAO de Peace Coin"
+    "title": "Panel DAO de PEACECOIN",
+    "description": "Panel DAO de PEACECOIN"
   },
   "submit": {
     "title": "Enviar una Propuesta",
@@ -143,7 +143,7 @@
     "address": "Dirección",
     "delegate": "Delegar",
     "votingPower": "Poder de Voto",
-    "peaceCoin": "Peace Coin"
+    "peaceCoin": "PEACECOIN"
   },
   "faq": {
     "title": "Preguntas Frecuentes",
@@ -265,7 +265,7 @@
     "proposalDetails": "Detalles de la Propuesta",
     "proposalDescription": "Descripción de la Propuesta",
     "proposalId": "ID de la Propuesta",
-    "title": "DAO Peace Coin",
+    "title": "DAO PEACECOIN",
     "pceTokenAmount": "Cantidad de Tokens PCE",
     "governanceTokenAmount": "Cantidad de Tokens de Gobernanza",
     "enterTheAmountOfTokensYouWantToStake": "Ingresa la cantidad de tokens que deseas hacer stake",

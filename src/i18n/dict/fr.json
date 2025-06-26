@@ -44,15 +44,15 @@
     "closed": "Fermé",
     "submit": "Soumettre",
     "delegate": "Déléguer",
-    "pce": "DAO du Protocole Peace Coin",
-    "pceCoin": "Peace Coin",
+    "pce": "DAO du Protocole PEACECOIN",
+    "pceCoin": "PEACECOIN",
     "daoStudio": "Studio DAO",
     "studio": "Studio",
     "faq": "FAQ"
   },
   "home": {
-    "title": "Tableau de Bord DAO Peace Coin",
-    "description": "Tableau de Bord DAO Peace Coin"
+    "title": "Tableau de Bord DAO PEACECOIN",
+    "description": "Tableau de Bord DAO PEACECOIN"
   },
   "submit": {
     "title": "Soumettre une Proposition",
@@ -143,7 +143,7 @@
     "address": "Adresse",
     "delegate": "Déléguer",
     "votingPower": "Pouvoir de Vote",
-    "peaceCoin": "Peace Coin"
+    "peaceCoin": "PEACECOIN"
   },
   "faq": {
     "title": "FAQ",
@@ -265,7 +265,7 @@
     "proposalDetails": "Détails de la Proposition",
     "proposalDescription": "Description de la Proposition",
     "proposalId": "ID de la Proposition",
-    "title": "DAO Peace Coin",
+    "title": "DAO PEACECOIN",
     "pceTokenAmount": "Montant de Jetons PCE",
     "governanceTokenAmount": "Montant de Jetons de Gouvernance",
     "enterTheAmountOfTokensYouWantToStake": "Entrez le montant de jetons que vous souhaitez staker",

@@ -34,7 +34,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '~/components/ui/dialog'
-import { Button } from '~/components/ui/button'
+import { Button } from '~/components/custom/button'
 import { formatString } from '~/components/utils'
 import useWindowWidth from '~/components/useWindWidth'
 
@@ -653,7 +653,6 @@ export default function ForTokenPage({
 
                     <TableCell className="flex flex-col xl:flex-row font-medium gap-2">
                       <ExchangeInput
-                        size="sm"
                         className="w-full"
                         setSwapAmount={setSwapAmount}
                         handleSwap={(fromToken, toToken) => {

@@ -19,7 +19,7 @@ import { readContract } from '@wagmi/core'
 import { CAMPAIGN, Metadata } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
-import { Button } from '~/components/ui/button'
+import { Button } from '~/components/custom/button'
 import {
   Table,
   TableBody,
@@ -141,6 +141,10 @@ export default function ForCampaignPage({
     args: [],
     chainId: chainId || defaultChainId,
   })
+
+  useEffect(() => {
+    console.log('XX', uri_)
+  }, [uri_])
 
   useEffect(() => {
     const fetchNFTBalances = async () => {

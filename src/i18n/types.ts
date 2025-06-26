@@ -89,24 +89,14 @@ export interface Metadata {
   token_id?: number
 }
 
-export interface LABEL {
-  name: string
-  color: string
-  id: number
-}
-
-export interface ISSUE {
-  number: number
+export interface PIP {
+  number: string
   title: string
-  body: string
-  created_at: string
-  closed_at: string
-  updated_at: string
-  state: string
-  labels: LABEL[]
-  url: string
-  html_url: string
-  author: string
-  avatar_url: string
-  isPullRequest: boolean
+  proposer: string
+  content: string
+  created: string
+  status: string
+  category: string
+  type: string
+  path: string
 }

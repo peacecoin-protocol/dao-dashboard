@@ -1,14 +1,5 @@
 export const SBT_ABI = [
   {
-    type: 'constructor',
-    inputs: [
-      { name: '_name', type: 'string', internalType: 'string' },
-      { name: '_symbol', type: 'string', internalType: 'string' },
-      { name: '_uri', type: 'string', internalType: 'string' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
     type: 'function',
     name: 'balanceOf',
     inputs: [
@@ -30,6 +21,66 @@ export const SBT_ABI = [
   },
   {
     type: 'function',
+    name: 'burn',
+    inputs: [
+      { name: 'from', type: 'address', internalType: 'address' },
+      { name: 'id', type: 'uint256', internalType: 'uint256' },
+      { name: 'amount', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'currentTokenId',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'delegate',
+    inputs: [{ name: 'to', type: 'address', internalType: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'delegateOf',
+    inputs: [{ name: 'who', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getPastVotes',
+    inputs: [
+      { name: 'who', type: 'address', internalType: 'address' },
+      { name: 'blockNumber', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getVotes',
+    inputs: [{ name: 'who', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'initialize',
+    inputs: [
+      { name: '_uri', type: 'string', internalType: 'string' },
+      { name: '_name', type: 'string', internalType: 'string' },
+      { name: '_symbol', type: 'string', internalType: 'string' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'isApprovedForAll',
     inputs: [
       { name: 'account', type: 'address', internalType: 'address' },
@@ -44,16 +95,10 @@ export const SBT_ABI = [
     inputs: [
       { name: 'to', type: 'address', internalType: 'address' },
       { name: 'id', type: 'uint256', internalType: 'uint256' },
+      { name: 'amount', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'minters',
-    inputs: [{ name: '', type: 'address', internalType: 'address' }],
-    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -93,14 +138,14 @@ export const SBT_ABI = [
     type: 'function',
     name: 'safeTransferFrom',
     inputs: [
-      { name: '', type: 'address', internalType: 'address' },
-      { name: '', type: 'address', internalType: 'address' },
-      { name: '', type: 'uint256', internalType: 'uint256' },
-      { name: '', type: 'uint256', internalType: 'uint256' },
-      { name: '', type: 'bytes', internalType: 'bytes' },
+      { name: 'from', type: 'address', internalType: 'address' },
+      { name: 'to', type: 'address', internalType: 'address' },
+      { name: 'id', type: 'uint256', internalType: 'uint256' },
+      { name: 'value', type: 'uint256', internalType: 'uint256' },
+      { name: 'data', type: 'bytes', internalType: 'bytes' },
     ],
     outputs: [],
-    stateMutability: 'pure',
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -114,17 +159,11 @@ export const SBT_ABI = [
   },
   {
     type: 'function',
-    name: 'setMinter',
-    inputs: [{ name: 'minter', type: 'address', internalType: 'address' }],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     name: 'setTokenURI',
     inputs: [
-      { name: '_id', type: 'uint256', internalType: 'uint256' },
+      { name: 'id', type: 'uint256', internalType: 'uint256' },
       { name: '_tokenURI', type: 'string', internalType: 'string' },
+      { name: 'weight', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -172,6 +211,13 @@ export const SBT_ABI = [
     stateMutability: 'view',
   },
   {
+    type: 'function',
+    name: 'votingPowerPerId',
+    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
     type: 'event',
     name: 'ApprovalForAll',
     inputs: [
@@ -188,6 +234,19 @@ export const SBT_ABI = [
         internalType: 'address',
       },
       { name: 'approved', type: 'bool', indexed: false, internalType: 'bool' },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'Initialized',
+    inputs: [
+      {
+        name: 'version',
+        type: 'uint64',
+        indexed: false,
+        internalType: 'uint64',
+      },
     ],
     anonymous: false,
   },
@@ -268,6 +327,7 @@ export const SBT_ABI = [
     ],
     anonymous: false,
   },
+  { type: 'error', name: 'CheckpointUnorderedInsertion', inputs: [] },
   {
     type: 'error',
     name: 'ERC1155InsufficientBalance',
@@ -314,6 +374,8 @@ export const SBT_ABI = [
       { name: 'owner', type: 'address', internalType: 'address' },
     ],
   },
+  { type: 'error', name: 'InvalidInitialization', inputs: [] },
+  { type: 'error', name: 'NotInitializing', inputs: [] },
   {
     type: 'error',
     name: 'OwnableInvalidOwner',

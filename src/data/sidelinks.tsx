@@ -107,6 +107,12 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       icon: <IconMessages size={18} />,
     },
     {
+      title: sidebar.votingPower ?? 'Voting Power',
+      label: '',
+      href: '/votingpower',
+      icon: <IconMessages size={18} />,
+    },
+    {
       title: sidebar.token ?? 'Token',
       label: '',
       href: '/token',
@@ -131,13 +137,13 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       icon: <IconUserShield size={18} />,
       sub: [
         {
-          title: 'About',
+          title: 'About Proposals',
           label: '',
           href: '/pip/',
           icon: <IconHexagonNumber1 size={18} />,
         },
         {
-          title: 'All',
+          title: 'All Proposals',
           label: '',
           href: '/pip/all',
           icon: <IconHexagonNumber2 size={18} />,
@@ -178,6 +184,12 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       title: faqTitle,
       label: '',
       href: '/faq',
+      icon: <IconApps size={18} />,
+    },
+    {
+      title: 'SBT Builder',
+      label: '',
+      href: '/sbt',
       icon: <IconApps size={18} />,
     },
   ]
