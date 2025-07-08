@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from '~/components/custom/Link'
 
 import { formatEther } from 'ethers'
 import {
@@ -14,8 +13,8 @@ import {
   type BaseError,
 } from 'wagmi'
 import { readContract } from '@wagmi/core'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import { useToast } from '~/components/ui/use-toast'
+
 import RingLoader from 'react-spinners/RingLoader'
 
 import { governorAddress } from '~/app/constants/constants'
@@ -48,6 +47,7 @@ export default function ForPendingPage({
   const width = useWindowWidth()
   const colSpan = width < 1280
 
+  const { toast } = useToast()
   let [loading, setLoading] = useState(true)
 
   const { address, chainId } = useAccount()
@@ -101,20 +101,13 @@ export default function ForPendingPage({
   useEffect(() => {
     const notify = async () => {
       if (isConfirmed) {
-        toast.success(
-          <Link
-            chainId={chainId}
-            type="txHash"
-            hash={hash}
-            message="Transaction Succeed!"
-          ></Link>
-        )
+        toast({
+          title: 'Transaction Succeed!',
+        })
       } else if (isConfirming) {
-        toast.info(
-          <div className="disabled">TX is Pending, Please Wait...</div>
-        )
+        toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {
-        toast.error((error as BaseError).shortMessage)
+        toast({ title: (error as BaseError).shortMessage })
       }
     }
 
@@ -318,7 +311,6 @@ export default function ForPendingPage({
               </TableFooter>
             </Table>
           </div>
-          <ToastContainer position="bottom-right" draggable></ToastContainer>
 
           <RingLoader
             color={'#000000'}

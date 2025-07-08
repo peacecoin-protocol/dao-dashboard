@@ -11,8 +11,7 @@ import {
   useWaitForTransactionReceipt,
   type BaseError,
 } from 'wagmi'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import { useToast } from '~/components/ui/use-toast'
 import RingLoader from 'react-spinners/RingLoader'
 
 import {
@@ -25,7 +24,6 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { shortenAddress, formatString } from '~/components/utils'
-import Link from '~/components/custom/Link'
 
 import useWindowWidth from '~/components/useWindWidth'
 
@@ -45,6 +43,7 @@ export default function ForClosedPage({
   const width = useWindowWidth()
   const colSpan = width < 1280
   let [loading, setLoading] = useState(true)
+  const { toast } = useToast()
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -78,18 +77,13 @@ export default function ForClosedPage({
 
   useEffect(() => {
     if (isConfirmed) {
-      toast.success(
-        <Link
-          chainId={chainId}
-          type="txHash"
-          hash={hash}
-          message="Transaction Succeed!"
-        ></Link>
-      )
+      toast({
+        title: 'Transaction Succeed!',
+      })
     } else if (isConfirming) {
-      toast.info(<div className="disabled">TX is Pending, Please Wait...</div>)
+      toast({ title: 'TX is Pending, Please Wait...' })
     } else if (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
     }
   }, [isConfirmed, isConfirming, error, hash])
 
@@ -198,7 +192,6 @@ export default function ForClosedPage({
             </TableFooter>
           </Table>
         </div>
-        <ToastContainer position="bottom-right" draggable></ToastContainer>
 
         <RingLoader
           color={'#000000'}

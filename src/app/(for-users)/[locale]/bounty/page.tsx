@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import { useToast } from '~/components/ui/use-toast'
 import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
 import { formatEther } from 'ethers'
 import { createClient, http, parseEther } from 'viem'
@@ -53,12 +52,11 @@ import { getDict } from '~/i18n/get-dict'
 import { localhost } from '~/lib/config'
 import { polygon, sepolia } from 'wagmi/chains'
 
-import Link from '~/components/custom/Link'
-
 export default function ForBountyPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
   const [dict, setDict] = useState<Dictionary | null>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -231,7 +229,7 @@ export default function ForBountyPage({
 
       await provider.waitForTransaction(claimProposalBountyTX)
     } catch (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
     }
   }
 
@@ -248,7 +246,7 @@ export default function ForBountyPage({
 
       await refetchData()
     } catch (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
     }
   }
 
@@ -300,7 +298,7 @@ export default function ForBountyPage({
 
       await refetchData()
     } catch (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
     }
   }
 
@@ -352,32 +350,25 @@ export default function ForBountyPage({
 
       await refetchData()
     } catch (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
     }
   }
 
   useEffect(() => {
     const notify = async () => {
       if (isConfirmed) {
-        toast.success(
-          <Link
-            chainId={chainId}
-            type="txHash"
-            hash={hash}
-            message="Transaction Succeed!"
-          ></Link>
-        )
+        toast({
+          title: 'Transaction Succeed!',
+        })
 
         setBountyAmount('')
         setContributorAddr('')
 
         await refetchData()
       } else if (isConfirming) {
-        toast.info(
-          <div className="disabled">TX is Pending, Please Wait...</div>
-        )
+        toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {
-        toast.error((error as BaseError).shortMessage)
+        toast({ title: (error as BaseError).shortMessage })
       }
     }
 
@@ -687,8 +678,6 @@ export default function ForBountyPage({
             </div>
           </TabsContent>
         </Tabs>
-
-        <ToastContainer position="bottom-right" draggable></ToastContainer>
       </div>
     </div>
   )

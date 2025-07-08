@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from '~/components/custom/Link'
 
 import { formatEther, parseEther } from 'ethers'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import { useToast } from '~/components/ui/use-toast'
 import {
   useAccount,
   useReadContract,
@@ -34,6 +32,8 @@ import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 export default function ForDelegatePage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
+  const { toast } = useToast()
+
   const [dict, setDict] = useState<Dictionary | null>(null)
   const { address, chainId } = useAccount()
   const [stakingAmount, setStakingAmount] = useState('')
@@ -188,23 +188,16 @@ export default function ForDelegatePage({
   useEffect(() => {
     const notify = async () => {
       if (isConfirmed) {
-        toast.success(
-          <Link
-            chainId={chainId}
-            type="txHash"
-            hash={hash}
-            message="Transaction Succeed!"
-          ></Link>
-        )
+        toast({
+          title: 'Transaction Succeed!',
+        })
 
         setDelegateAddr('')
         await refetchVotes()
       } else if (isConfirming) {
-        toast.info(
-          <div className="disabled">TX is Pending, Please Wait...</div>
-        )
+        toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {
-        toast.error((error as BaseError).shortMessage)
+        toast({ title: (error as BaseError).shortMessage })
       }
     }
 
@@ -270,8 +263,6 @@ export default function ForDelegatePage({
             handleDelegate={handleDelegate}
           />
         </div>
-
-        <ToastContainer position="bottom-right" draggable></ToastContainer>
       </div>
     </div>
   )

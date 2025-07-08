@@ -1,10 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-
 import { formatEther } from 'ethers'
 import { useAccount, useReadContract } from 'wagmi'
-import 'react-toastify/dist/ReactToastify.css'
 
 import { Button } from '~/components/custom/button'
 import { Link } from '~/i18n/link'

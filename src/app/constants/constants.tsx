@@ -4,7 +4,7 @@ import { localhost } from '~/lib/config'
 
 export const pceAddress = {
   [sepolia.id]: '0x8253f538d2C5a011ee32098a539903992f61Dce9',
-  [localhost.id]: '0xc6e7DF5E7b4f2A278906862b61205850344D4e7d',
+  [localhost.id]: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x1F9FcC5f8DF936b8E3c9617565FfAd7fF6222b14',
 } as Record<number, `0x${string}`>
@@ -18,63 +18,63 @@ export const pceCommunity = {
 
 export const PCE_SBT_ADDRESS = {
   [sepolia.id]: '0xd23b6Aa7eaeFd52D061b4f8097e0f451805c770F',
-  [localhost.id]: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+  [localhost.id]: '0x8ac87219a0F5639BC01b470F87BA2b26356CB2B9',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xBa9E16D096262023c50A3cCCC4f08af4b321fB21',
 } as Record<number, `0x${string}`>
 
 export const sbtAddress = {
   [sepolia.id]: '0xd23b6Aa7eaeFd52D061b4f8097e0f451805c770F',
-  [localhost.id]: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+  [localhost.id]: '0x8ac87219a0F5639BC01b470F87BA2b26356CB2B9',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xBa9E16D096262023c50A3cCCC4f08af4b321fB21',
 } as Record<number, `0x${string}`>
 
 export const WPCE_ADDRESS = {
   [sepolia.id]: '0x6ecc7DCCf1fb3bEAe1cde6026F55b837aBA9cB90',
-  [localhost.id]: '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1',
+  [localhost.id]: '0x4c5859f0F772848b2D91F1D83E2Fe57935348029',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xFf6eF3e8CA9dEfb0A6E42d10fBAA3261981B93D1',
 } as Record<number, `0x${string}`>
 
 export const timelockAddress = {
   [sepolia.id]: '0x967428b45Bff4053713Fae2d5647B9aA7910F202',
-  [localhost.id]: '0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690',
+  [localhost.id]: '0x0E801D84Fa97b50751Dbf25036d067dCf18858bF',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x0F4E3eEEA64268926454aF8C38D62938637fd18e',
 } as Record<number, `0x${string}`>
 
 export const governorAddress = {
   [sepolia.id]: '0x8BcfbeAc0247ec5d211990933Bc8514be22299a2',
-  [localhost.id]: '0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E',
+  [localhost.id]: '0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x4a1EBA4B4895b6562B8d67510FF07c95F90049d8',
 } as Record<number, `0x${string}`>
 
 export const bountyAddress = {
   [sepolia.id]: '0xD6eFBB14ae77D4F1e5f0CC6CFdD8AEF9D2379744',
-  [localhost.id]: '0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e',
+  [localhost.id]: '0x9d4454B023096f34B160D6B654540c56A1F81688',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xEb0978C48aced59209242d677A404bBB2126413c',
 } as Record<number, `0x${string}`>
 
 export const factoryAddress = {
   [sepolia.id]: '0xBa124A2764d51D1d806071646d00CB7ea69ec65C',
-  [localhost.id]: '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82',
+  [localhost.id]: '0x36C02dA8a0983159322a80FFE9F24b1acfF8B570',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xe004A0f37B2Be66e7225119F7EFF2d49C7F93629',
 } as Record<number, `0x${string}`>
 
 export const daoStudioAddress = {
   [sepolia.id]: '0x8078D4a34913a2e25d4967BEfC9D5cfe46916306',
-  [localhost.id]: '0x9A676e781A523b5d0C0e43731313A708CB607508',
+  [localhost.id]: '0x809d550fca64d94Bd9F66E60752A544199cfAC3D',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
 export const campaignAddress = {
   [sepolia.id]: '0xEd6772aF6B32604c5e8517fe031123F56329B185',
-  [localhost.id]: '0x70e0bA845a1A0F2DA3359C97E0285013525FFC49',
+  [localhost.id]: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',
 } as Record<number, `0x${string}`>

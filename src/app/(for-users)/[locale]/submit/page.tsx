@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from '~/components/custom/Link'
+import { useToast } from '~/components/ui/use-toast'
 
 import { ethers, parseEther } from 'ethers'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
 import {
   useAccount,
   useWriteContract,
@@ -40,6 +38,8 @@ import { localhost } from '~/lib/config'
 export default function ForSubmitPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
+  const { toast } = useToast()
+
   const [dict, setDict] = useState<Dictionary | null>(null)
   const { address, chainId } = useAccount()
   const { data: hash, error, writeContract } = useWriteContract()
@@ -93,23 +93,18 @@ export default function ForSubmitPage({
 
   useEffect(() => {
     if (isConfirmed) {
-      toast.success(
-        <Link
-          chainId={chainId}
-          type="txHash"
-          hash={hash}
-          message="Transaction Succeed!"
-        ></Link>
-      )
+      toast({
+        title: 'Transaction Succeed!',
+      })
       setDescription('')
       setValues('')
       setVariable1('')
       setVariable2('')
       setVariable3('')
     } else if (isConfirming) {
-      toast.info(<div className="disabled">TX is Pending, Please Wait...</div>)
+      toast({ title: 'TX is Pending, Please Wait...' })
     } else if (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
     }
   }, [isConfirmed, isConfirming, error, hash])
 
@@ -204,7 +199,7 @@ export default function ForSubmitPage({
             variant="outline"
             onClick={() => {
               if (category.length == 0) {
-                toast.error('Please Select Category')
+                toast({ title: 'Please Select Category' })
                 return
               }
 
@@ -265,8 +260,6 @@ export default function ForSubmitPage({
           >
             {submit.propose ?? ''}
           </Button>
-
-          <ToastContainer position="bottom-right" draggable></ToastContainer>
         </div>
       </div>
     </div>

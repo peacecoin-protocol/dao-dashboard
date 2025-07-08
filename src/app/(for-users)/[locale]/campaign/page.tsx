@@ -35,8 +35,7 @@ import {
   CardContent,
   CardFooter,
 } from '~/components/ui/card'
-import { ToastContainer } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import { useToast } from '~/components/ui/use-toast'
 
 import {
   Dialog,
@@ -62,8 +61,6 @@ import { getDict } from '~/i18n/get-dict'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 
 import { sepolia } from 'wagmi/chains'
-import Link from '~/components/custom/Link'
-import { toast } from 'react-toastify'
 import CopyIcon from '../../../../../public/svg/copy'
 import Image from 'next/image'
 import { NFT_DETAIL } from '~/components/custom/nft-detail'
@@ -96,6 +93,8 @@ export default function ForCampaignPage({
   const { data: hash, error, writeContract } = useWriteContract()
   const [signature, setSignature] = useState<string>('')
   const _message = 'Claim Bounty for dApp.xyz'
+
+  const { toast } = useToast()
 
   const signMessage = async () => {
     if (chainId) {
@@ -143,16 +142,12 @@ export default function ForCampaignPage({
   })
 
   useEffect(() => {
-    console.log('XX', uri_)
-  }, [uri_])
-
-  useEffect(() => {
     const fetchNFTBalances = async () => {
       if (!chainId) {
         return
       }
       if (tokenURIs.length > 0) {
-        toast.info('Loading SBT NFTs...')
+        toast({ title: 'Loading SBT NFTs...' })
 
         let _nftBalances: number[] = []
         for (let i = 0; i < (tokenURIs.length as number); i++) {
@@ -175,7 +170,7 @@ export default function ForCampaignPage({
   useEffect(() => {
     const fetchNFTMetadata = async () => {
       if (tokenURIs.length > 0) {
-        toast.info('Loading Metadata...')
+        toast({ title: 'Loading Metadata...' })
 
         const _nftMetadata: Metadata[] = []
         for (let i = 0; i < (tokenURIs.length as number); i++) {
@@ -219,21 +214,14 @@ export default function ForCampaignPage({
   useEffect(() => {
     const notify = async () => {
       if (isConfirmed) {
-        toast.success(
-          <Link
-            chainId={chainId}
-            type="txHash"
-            hash={hash}
-            message="Transaction Succeed!"
-          ></Link>
-        )
+        toast({
+          title: 'Transaction Succeed!',
+        })
         await refetchTotalClaimed()
       } else if (isConfirming) {
-        toast.info(
-          <div className="disabled">TX is Pending, Please Wait...</div>
-        )
+        toast({ title: 'Tx is Pending, Please Wait...' })
       } else if (error) {
-        toast.error((error as BaseError).shortMessage)
+        toast({ title: (error as BaseError).shortMessage })
       }
     }
 
@@ -326,7 +314,7 @@ export default function ForCampaignPage({
         gistUsername = parseGithubUsername(gistUrl)
 
         if (gistUsername == undefined) {
-          toast.error('Invalid Github Gist URL')
+          toast({ title: 'Invalid Github Gist URL' })
           return
         }
 
@@ -679,7 +667,7 @@ export default function ForCampaignPage({
                               'Wallet Address': address,
                             })
                           )
-                          toast.success('Signature copied to clipboard')
+                          toast({ title: 'Signature copied to clipboard' })
                         }}
                       >
                         <h5 className="text-muted-foreground break-words whitespace-normal bg-muted rounded-lg p-4 relative">
@@ -735,7 +723,7 @@ export default function ForCampaignPage({
                     key={index}
                     onClick={() => {
                       if (!chainId) {
-                        toast.info('Please connect to your wallet')
+                        toast({ title: 'Please connect to your wallet' })
                         return
                       }
 
@@ -797,7 +785,6 @@ export default function ForCampaignPage({
         description={campaignData[nftDetailIndex]?.description ?? ''}
         metadata={JSON.stringify(nftMetadata[nftDetailIndex])}
       />
-      <ToastContainer position="bottom-right" draggable></ToastContainer>
     </div>
   )
 }

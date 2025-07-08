@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import 'react-toastify/dist/ReactToastify.css'
-import { ToastContainer, toast } from 'react-toastify'
+import { useToast } from '~/components/ui/use-toast'
 import {
   useAccount,
   useWriteContract,
@@ -27,7 +26,6 @@ import {
   DropdownMenuItem,
 } from '~/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogTitle } from '~/components/ui/dialog'
-import Link from '~/components/custom/Link'
 
 import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
 
@@ -121,10 +119,6 @@ import { localhost } from '~/lib/config'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { pinata } from '~/lib/config'
 
-const showConnectWalletAlert = () => {
-  toast.error('Please connect wallet')
-}
-
 const DaoCard = ({
   dao,
   locale,
@@ -137,56 +131,64 @@ const DaoCard = ({
   localeDict: any
   navigate: any
   chainId: number
-}) => (
-  <div
-    key={dao.id}
-    className="flex flex-col xl:flex-row bg-gray-100 rounded-xl md:px-10 items-start xl:items-center cursor-pointer my-4 gap-4 w-full py-6"
-    onClick={() => {
-      if (chainId === 0) {
-        showConnectWalletAlert()
-        return
-      }
-      navigate(`/${locale}/dao/detail/${dao.id}`)
-    }}
-  >
-    <div className="flex flex-row w-full items-center ">
-      <div className="flex flex-row gap-4 md:gap-8 items-center border-none mx-8 md:mx-4">
-        <div className="w-24 min-w-24 h-24">
-          {dao.imageHash ? (
-            <img
-              src={`https://orange-elegant-takin-78.mypinata.cloud/ipfs/${dao.imageHash}`}
-              alt=""
-              className="w-full h-full"
-            />
-          ) : (
-            <img src={dao.identicon} alt="" className="w-full h-full " />
-          )}
-        </div>
+}) => {
+  const { toast } = useToast()
 
-        <div className="flex flex-col gap-4 w-full">
-          <div className="font-bold text-xl md:text-2xl w-full flex">
-            {dao.name}
+  const showConnectWalletAlert = () => {
+    toast({ title: 'Please connect wallet' })
+  }
+
+  return (
+    <div
+      key={dao.id}
+      className="flex flex-col xl:flex-row bg-gray-100 rounded-xl md:px-10 items-start xl:items-center cursor-pointer my-4 gap-4 w-full py-6"
+      onClick={() => {
+        if (chainId === 0) {
+          showConnectWalletAlert()
+          return
+        }
+        navigate(`/${locale}/dao/detail/${dao.id}`)
+      }}
+    >
+      <div className="flex flex-row w-full items-center ">
+        <div className="flex flex-row gap-4 md:gap-8 items-center border-none mx-8 md:mx-4">
+          <div className="w-24 min-w-24 h-24">
+            {dao.imageHash ? (
+              <img
+                src={`https://orange-elegant-takin-78.mypinata.cloud/ipfs/${dao.imageHash}?pinataGatewayToken=7uMh9158Kl1jPcpgtNigRgAa_Y_t9CHZLpSRRiimEd9_fX6DzoGSOgmdOii1wiqg`}
+                alt=""
+                className="w-full h-full"
+              />
+            ) : (
+              <img src={dao.identicon} alt="" className="w-full h-full " />
+            )}
           </div>
-          {/* <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-16 items-center justify-center">
+
+          <div className="flex flex-col gap-4 w-full">
+            <div className="font-bold text-xl md:text-2xl w-full flex">
+              {dao.name}
+            </div>
+            {/* <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-16 items-center justify-center">
             DAO
           </div> */}
+          </div>
         </div>
       </div>
-    </div>
 
-    <div className="flex flex-row gap-4 items-center justify-center w-full">
-      <StatItem
-        label={localeDict.myPower}
-        value={dao.votes ? formatString(formatEther(BigInt(dao.votes))) : 0}
-      />
-      {/* <StatItem label="TVL" value="$0" /> */}
-      <StatItem
-        label={localeDict.members}
-        value={dao.holders ? dao.holders + 1 : 1}
-      />
+      <div className="flex flex-row gap-4 items-center justify-center w-full">
+        <StatItem
+          label={localeDict.myPower}
+          value={dao.votes ? formatString(formatEther(BigInt(dao.votes))) : 0}
+        />
+        {/* <StatItem label="TVL" value="$0" /> */}
+        <StatItem
+          label={localeDict.members}
+          value={dao.holders ? dao.holders + 1 : 1}
+        />
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 const StatItem = ({
   label,
@@ -221,6 +223,12 @@ export default function ForDAOPage({
     uri: SUBGRAPH_URL[chainId || sepolia.id] as string,
     cache: new InMemoryCache(),
   })
+
+  const { toast } = useToast()
+
+  const showConnectWalletAlert = () => {
+    toast({ title: 'Please connect wallet' })
+  }
 
   const { data: hash, error, writeContract } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -299,20 +307,13 @@ export default function ForDAOPage({
   useEffect(() => {
     const notify = async () => {
       if (isConfirmed) {
-        toast.success(
-          <Link
-            chainId={chainId}
-            type="txHash"
-            hash={hash}
-            message="Transaction Succeed!"
-          ></Link>
-        )
+        toast({
+          title: 'Transaction Succeed!',
+        })
       } else if (isConfirming) {
-        toast.info(
-          <div className="disabled">TX is Pending, Please Wait...</div>
-        )
+        toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {
-        toast.error((error as BaseError).shortMessage)
+        toast({ title: (error as BaseError).shortMessage })
       }
     }
 
@@ -409,8 +410,6 @@ export default function ForDAOPage({
           } catch (error) {
             const identicon = await generateIdenteapot(dao.governor, '')
             updatedDaos.push({ ...dao, votes: 0, identicon, imageHash: '' })
-
-            console.log('error', error)
           }
         }
 
@@ -631,8 +630,6 @@ export default function ForDAOPage({
           </TabsContent>
         </Tabs>
       </div>
-
-      <ToastContainer position="bottom-right" draggable></ToastContainer>
 
       <RingLoader
         style={{

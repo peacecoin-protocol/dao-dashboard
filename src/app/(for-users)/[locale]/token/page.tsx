@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import { formatEther, parseEther, ZeroAddress } from 'ethers'
 import { readContract } from '@wagmi/core'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import { useToast } from '~/components/ui/use-toast'
 import {
   useAccount,
   useReadContract,
@@ -12,7 +11,6 @@ import {
   useWaitForTransactionReceipt,
   type BaseError,
 } from 'wagmi'
-import Link from '~/components/custom/Link'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { ExchangeInput } from '~/components/custom/exchange-input'
 import { TransferInput } from '~/components/custom/transfer-input'
@@ -52,6 +50,7 @@ import { TOKEN } from '~/i18n/types'
 export default function ForTokenPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
+  const { toast } = useToast()
   const [dict, setDict] = useState<Dictionary | null>(null)
   const width = useWindowWidth()
   const colSpan = width < 1280
@@ -307,20 +306,15 @@ export default function ForTokenPage({
 
   useEffect(() => {
     if (isConfirmed) {
-      toast.success(
-        <Link
-          chainId={chainId}
-          type="txHash"
-          hash={hash}
-          message="Transaction Succeed!"
-        ></Link>
-      )
+      toast({
+        title: 'Transaction Succeed!',
+      })
       refetchBalance()
       refetchTokens()
     } else if (isConfirming) {
-      toast.info(<div className="disabled">TX is Pending, Please Wait...</div>)
+      toast({ title: 'TX is Pending, Please Wait...' })
     } else if (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
     }
   }, [isConfirmed, isConfirming, error, hash, refetchBalance])
 
@@ -347,7 +341,7 @@ export default function ForTokenPage({
         })
       }
     } catch (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
       return
     }
 
@@ -367,7 +361,7 @@ export default function ForTokenPage({
       await getCommunityTokenInfo(toToken.address as `0x${string}`)
       await getCommunityTokenInfo(fromToken.address as `0x${string}`)
     } catch (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
       return
     }
   }
@@ -400,7 +394,7 @@ export default function ForTokenPage({
         })
       }
     } catch (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
       return
     }
 
@@ -419,7 +413,7 @@ export default function ForTokenPage({
 
       await getCommunityTokenInfo(token)
     } catch (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
       return
     }
   }
@@ -441,7 +435,7 @@ export default function ForTokenPage({
 
       await getCommunityTokenInfo(token)
     } catch (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
       return
     }
   }
@@ -456,7 +450,7 @@ export default function ForTokenPage({
         args: [tokenAddress, parseEther(swapAmount)],
       })
     } catch (error) {
-      toast.error((error as BaseError).shortMessage)
+      toast({ title: (error as BaseError).shortMessage })
       return
     }
 
@@ -701,7 +695,6 @@ export default function ForTokenPage({
             </TableFooter>
           </Table>
         </div>
-        <ToastContainer position="bottom-right" draggable></ToastContainer>
       </div>
     </div>
   )

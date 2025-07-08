@@ -28,9 +28,7 @@ import {
   PopoverTrigger,
 } from '~/components/ui/popover'
 import { DialogGithub } from '~/components/custom/dialog-github'
-import { ToastContainer } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
-
+import { useToast } from '~/components/ui/use-toast'
 import { cn } from '~/lib/utils'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
@@ -55,6 +53,8 @@ export default function ForPage({
 
   const [pipContents, setPipContents] = useState<PIP[]>([])
   const [pip, setPip] = useState<PIP | null>(null)
+
+  const { toast } = useToast()
 
   // const STATUS = ['open', 'closed']
   const octokit = new Octokit({
@@ -83,8 +83,6 @@ export default function ForPage({
           repo: 'PIPs',
           ref: 'heads/pip-draft-initial-governance', // change 'main' to your branch name if needed
         })
-
-        console.log(refData, 'X')
 
         const commitSha = refData.object.sha
 
@@ -123,7 +121,6 @@ export default function ForPage({
             repo: 'PIPs',
             file_sha: fileSha,
           })
-          console.log(blobData, 'X3')
           // The content is base64 encoded
           const fileContent = atob(blobData.content.replace(/\n/g, ''))
           console.log('Contents of file:', fileContent)
@@ -185,14 +182,13 @@ export default function ForPage({
   //     setTypeLabels([..._typeLabels])
   //     setStatusLabels([..._statusLabels])
 
-  //     console.log(_statusLabels)
   //   }
   //   fetchLabels()
   // }, [])
 
   // useEffect(() => {
   //   const fetchPip = async () => {
-  //     toast.success('Fetching PIPs...')
+  //     toast({ title: 'Fetching PIPs...' })
 
   //     const { data: issues } = await octokit.rest.issues.listForRepo({
   //       owner: 'peacecoin-protocol',
@@ -474,7 +470,6 @@ export default function ForPage({
           localDict={dict}
         />
       </div>
-      <ToastContainer position="bottom-right" draggable></ToastContainer>
     </div>
   )
 }
