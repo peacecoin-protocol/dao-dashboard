@@ -17,35 +17,35 @@ export const pceCommunity = {
 } as Record<number, `0x${string}`>
 
 export const PCE_SBT_ADDRESS = {
-  [sepolia.id]: '0xd23b6Aa7eaeFd52D061b4f8097e0f451805c770F',
+  [sepolia.id]: '0xfEF540b4C7603B81DaBA61ff46334B2535D875AD',
   [localhost.id]: '0x8ac87219a0F5639BC01b470F87BA2b26356CB2B9',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xBa9E16D096262023c50A3cCCC4f08af4b321fB21',
 } as Record<number, `0x${string}`>
 
 export const sbtAddress = {
-  [sepolia.id]: '0xd23b6Aa7eaeFd52D061b4f8097e0f451805c770F',
+  [sepolia.id]: '0xfEF540b4C7603B81DaBA61ff46334B2535D875AD',
   [localhost.id]: '0x8ac87219a0F5639BC01b470F87BA2b26356CB2B9',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xBa9E16D096262023c50A3cCCC4f08af4b321fB21',
 } as Record<number, `0x${string}`>
 
 export const WPCE_ADDRESS = {
-  [sepolia.id]: '0x6ecc7DCCf1fb3bEAe1cde6026F55b837aBA9cB90',
+  [sepolia.id]: '0xC759dfFe1BB086caa2c9c50488C1f075aDEC9cBf',
   [localhost.id]: '0x4c5859f0F772848b2D91F1D83E2Fe57935348029',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xFf6eF3e8CA9dEfb0A6E42d10fBAA3261981B93D1',
 } as Record<number, `0x${string}`>
 
 export const timelockAddress = {
-  [sepolia.id]: '0x967428b45Bff4053713Fae2d5647B9aA7910F202',
+  [sepolia.id]: '0x5b4928D8eDA65698dA1bA786cd4c6B4163c17d3c',
   [localhost.id]: '0x0E801D84Fa97b50751Dbf25036d067dCf18858bF',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x0F4E3eEEA64268926454aF8C38D62938637fd18e',
 } as Record<number, `0x${string}`>
 
 export const governorAddress = {
-  [sepolia.id]: '0x8BcfbeAc0247ec5d211990933Bc8514be22299a2',
+  [sepolia.id]: '0xb4313C93BD1a3182CdF815f5AffDa5ce2D1Fe303',
   [localhost.id]: '0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x4a1EBA4B4895b6562B8d67510FF07c95F90049d8',
@@ -80,7 +80,7 @@ export const campaignAddress = {
 } as Record<number, `0x${string}`>
 
 export const stakingAddress = {
-  [sepolia.id]: '0x829B358FA0B13dB77172BC1Ce600FB2E863d42A1',
+  [sepolia.id]: '0xa01905e6587daf8ebC70D25C04e7Bbb2F43D6545',
   [localhost.id]: '0x3Aa5ebB10DC797CAC828524e59A333d0A371443c',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xafe9F87C70cA6b033Dab2E5a17b7C90Cd2c55C45',

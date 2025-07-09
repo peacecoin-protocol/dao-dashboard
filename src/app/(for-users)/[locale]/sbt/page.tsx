@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import RingLoader from 'react-spinners/RingLoader'
-import { ringStyle } from '~/app/constants/styles'
 import { v4 as uuidv4 } from 'uuid'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import { PCE_SBT_ADDRESS } from '~/app/constants/constants'
@@ -38,8 +36,24 @@ import {
   useWaitForTransactionReceipt,
   type BaseError,
 } from 'wagmi'
-import { readContract } from '@wagmi/core'
+import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { config, localhost } from '~/lib/config'
+import { Spinner } from '~/components/ui/Spinner'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '~/components/ui/popover'
+import { cn } from '~/lib/utils'
+import { ChevronsUpDown } from 'lucide-react'
+
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from '~/components/ui/command'
+
 type SBTFormState = {
   name: string
   description: string
@@ -60,6 +74,7 @@ export default function SBTBuilderPage({
   const [croppedImage, setCroppedImage] = useState<string | null>(null)
   const [isCropModalOpen, setIsCropModalOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   const [sbtFiles, setSBTs] = useState<any[]>([])
   const [allSBTs, setAllSBTs] = useState<any[]>([])
@@ -148,6 +163,7 @@ export default function SBTBuilderPage({
   }, [])
 
   const fetchAllSBTData = async () => {
+    setLoading(true)
     const allSBTs = []
     for (let i = 1; i < Number(currentTokenId as string); i++) {
       const tokenURI = await getTokenURI(i)
@@ -169,6 +185,7 @@ export default function SBTBuilderPage({
     }
 
     setAllSBTs(allSBTs)
+    setLoading(false)
   }
 
   useEffect(() => {
@@ -180,6 +197,7 @@ export default function SBTBuilderPage({
 
   const uploadImage = async () => {
     setIsCreateModalOpen(false)
+    setLoading(true)
 
     if (!croppedImage) return
     try {
@@ -209,20 +227,38 @@ export default function SBTBuilderPage({
       })
       const _uploadJSON = await addFilesToGroupPublic(jsonFile, JSON_GROUP_ID)
 
-      await writeContractAsync({
+      toast({
+        title: 'Image uploaded successfully',
+      })
+
+      const _mintTx = await writeContractAsync({
         abi: SBT_ABI,
         address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
         functionName: 'mint',
         args: [address, 0, 1],
       })
 
-      if (_uploadJSON && _uploadJSON.cid) {
-        await writeContractAsync({
+      await waitForTransactionReceipt(config, {
+        hash: _mintTx,
+        confirmations: 1,
+      })
+
+      if (_uploadJSON && _uploadJSON.cid && _mintTx) {
+        const _setTokenURITx = await writeContractAsync({
           abi: SBT_ABI,
           address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
           functionName: 'setTokenURI',
           args: [currentTokenId, `${_uploadJSON.cid}`, sbtForm.votingPower],
         })
+
+        await waitForTransactionReceipt(config, {
+          hash: _setTokenURITx,
+          confirmations: 1,
+        })
+
+        await refetchCurrentTokenId()
+        await fetchAllSBTData()
+        setLoading(false)
       }
 
       setCroppedImage(null)
@@ -232,15 +268,8 @@ export default function SBTBuilderPage({
         description: '',
         votingPower: '',
       })
-
-      toast({
-        title: 'Image updated successfully',
-      })
-
-      await refetchCurrentTokenId()
-
-      await fetchAllSBTData()
     } catch (error) {
+      setLoading(false)
       toast({ title: 'Image updated failed' })
     }
   }
@@ -264,24 +293,37 @@ export default function SBTBuilderPage({
   }
 
   const handleRevokeSBT = async (tokenId: string, isRevoked: boolean) => {
+    setLoading(true)
     toast({
       title:
         localDict.revokingSBT ??
         `${isRevoked ? 'Unrevoking' : 'Revoking'} SBT...`,
     })
-    await writeContractAsync({
-      abi: SBT_ABI,
-      address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
-      functionName: 'revoke',
-      args: [tokenId, !isRevoked],
-    })
-    toast({
-      title:
-        localDict.sbtRevokedSuccessfully ??
-        `${isRevoked ? 'Unrevoked' : 'Revoked'} SBT successfully`,
-    })
+    try {
+      const _revokeTx = await writeContractAsync({
+        abi: SBT_ABI,
+        address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
+        functionName: 'revoke',
+        args: [tokenId, !isRevoked],
+      })
 
-    await fetchAllSBTData()
+      await waitForTransactionReceipt(config, {
+        hash: _revokeTx,
+        confirmations: 1,
+      })
+
+      toast({
+        title:
+          localDict.sbtRevokedSuccessfully ??
+          `${isRevoked ? 'Unrevoked' : 'Revoked'} SBT successfully`,
+      })
+
+      await fetchAllSBTData()
+    } catch (error) {
+      toast({ title: 'SBT revoked failed' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   function handleImageSelect() {
@@ -297,6 +339,12 @@ export default function SBTBuilderPage({
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-50 px-4 py-8 md:px-20 md:py-16">
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-white/60">
+          <Spinner show={true} size="large" />
+        </div>
+      )}
+
       <div className="w-full">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
@@ -331,6 +379,38 @@ export default function SBTBuilderPage({
               {localDict.createSBT ?? 'Create SBT'}
             </span>
           </Button>
+        </div>
+
+        <div className="flex flex-row mb-4 justify-end w-full">
+          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                className={cn('w-[200px] justify-between')}
+              >
+                {localDict.filter ?? 'Filter'}
+                <ChevronsUpDown className="opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0">
+              <Command>
+                <CommandList>
+                  <CommandGroup>
+                    <CommandItem value="all" key={0} onSelect={() => {}}>
+                      {localDict.all ?? 'All'}
+                    </CommandItem>
+                    <CommandItem value="revoked" key={1} onSelect={() => {}}>
+                      {localDict.revoked ?? 'Revoked'}
+                    </CommandItem>
+                    <CommandItem value="unrevoked" key={2} onSelect={() => {}}>
+                      {localDict.unrevoked ?? 'Unrevoked'}
+                    </CommandItem>
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Table */}
@@ -614,20 +694,6 @@ export default function SBTBuilderPage({
           </DialogContent>
         </Dialog>
       </div>
-
-      <RingLoader
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 9999,
-        }}
-        color={'#000000'}
-        loading={loading}
-        cssOverride={ringStyle}
-        size={50}
-      />
     </div>
   )
 }
