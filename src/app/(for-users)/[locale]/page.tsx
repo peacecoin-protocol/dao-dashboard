@@ -31,12 +31,10 @@ import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
-
 import { useEffect, useState } from 'react'
 import { formatEther } from 'ethers'
 import { readContract } from '@wagmi/core'
-import { ToastContainer } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+
 import { useAccount, useReadContract } from 'wagmi'
 
 import { config } from '~/lib/config'
@@ -300,8 +298,6 @@ export default function ForUsersIndexPage({
             </Card>
           </div>
         </div>
-        <ToastContainer position="bottom-right" draggable></ToastContainer>
-
         <RingLoader
           color={'#000000'}
           loading={loading}

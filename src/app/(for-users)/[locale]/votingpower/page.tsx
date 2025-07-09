@@ -1,11 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import * as CustomLink from '~/components/custom/Link'
 
 import { useNavigate } from 'react-router-dom'
-
-import 'react-toastify/dist/ReactToastify.css'
 
 import { Button } from '~/components/custom/button'
 import {
@@ -21,7 +18,7 @@ import { readContract } from '@wagmi/core'
 
 import { formatEther, parseEther } from 'ethers'
 import { maxUint256 } from 'viem'
-import { ToastContainer, toast } from 'react-toastify'
+import { useToast } from '~/components/ui/use-toast'
 import {
   useAccount,
   useReadContract,
@@ -60,7 +57,7 @@ export default function StakingPage({
 }: PagePropsWithLocale<{}>) {
   const navigate = useNavigate()
   const [dict, setDict] = useState<Dictionary | null>(null)
-
+  const { toast } = useToast()
   const localDict = dict?.daoInfo ?? {}
 
   const { data: blockNumber } = useBlockNumber()
@@ -173,7 +170,7 @@ export default function StakingPage({
         return
       }
       if (currentTokenId && Number(currentTokenId) > 0) {
-        toast.info('Loading SBT NFTs...')
+        toast({ title: 'Loading SBT NFTs...' })
 
         let _nftBalances: number[] = []
         for (let i = 1; i <= (currentTokenId as number); i++) {
@@ -200,7 +197,7 @@ export default function StakingPage({
         return
       }
       if (currentTokenId && Number(currentTokenId) > 0) {
-        toast.info('Loading Voting Power...')
+        toast({ title: 'Loading Voting Power...' })
 
         let _votingSBTPower: number[] = []
         for (let i = 1; i <= (currentTokenId as number); i++) {
@@ -233,7 +230,7 @@ export default function StakingPage({
   useEffect(() => {
     const fetchNFTMetadata = async () => {
       if (currentTokenId && Number(currentTokenId) > 0) {
-        toast.info('Loading Metadata...')
+        toast({ title: 'Loading Metadata...' })
 
         const _nftMetadata: Metadata[] = []
         for (let i = 1; i <= (currentTokenId as number); i++) {
@@ -277,16 +274,14 @@ export default function StakingPage({
 
   const handleStake = async () => {
     if (stakingAmount === '' || stakingAmount === '0') {
-      toast.error('Please enter a valid amount')
+      toast({ title: 'Please enter a valid amount' })
       return
     }
 
     if (BigInt(pceBalance as string) < BigInt(parseEther(stakingAmount))) {
-      toast.error('Insufficient balance')
+      toast({ title: 'Insufficient balance' })
       return
     }
-
-    console.log(BigInt(allowance as string), BigInt(parseEther(stakingAmount)))
 
     if (
       (BigInt(allowance as string) as bigint) <
@@ -347,7 +342,7 @@ export default function StakingPage({
 
   const handleWithdraw = async () => {
     if ((wPCEBalance as string) == '0') {
-      toast.error('No staked amount')
+      toast({ title: 'No staked amount' })
       return
     }
 
@@ -372,30 +367,28 @@ export default function StakingPage({
   useEffect(() => {
     const notify = async () => {
       if (isConfirmed) {
-        toast.success(
-          <div onClick={(e) => e.stopPropagation()}>
-            <CustomLink.default
-              chainId={chainId}
-              type="txHash"
-              hash={hash}
-              message="Transaction Succeed!"
-            ></CustomLink.default>
-          </div>
-        )
+        toast({
+          title: 'Transaction Succeed!',
+        })
 
         await refetchWPCEBalance()
         await refetchPCEBalance()
       } else if (isConfirming) {
-        toast.info(
-          <div className="disabled">TX is Pending, Please Wait...</div>
-        )
+        toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {
-        toast.error((error as BaseError).shortMessage)
+        toast({ title: (error as BaseError).shortMessage })
       }
     }
 
     notify()
-  }, [isConfirmed, isConfirming, error, hash])
+  }, [
+    isConfirmed,
+    error,
+    hash,
+    refetchWPCEBalance,
+    refetchPCEBalance,
+    refetchGetTokenVote,
+  ])
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -420,7 +413,7 @@ export default function StakingPage({
         )
       )
     )
-  }, [totalSBTVotingPower, getTokenVote])
+  }, [totalSBTVotingPower, stakedBalance])
 
   const handleDelegate = async () => {
     await writeContractAsync({
@@ -671,7 +664,6 @@ export default function StakingPage({
           </div>
         </div>
       </div>
-      <ToastContainer position="bottom-right" draggable></ToastContainer>
     </div>
   )
 }

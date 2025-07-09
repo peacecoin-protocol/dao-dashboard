@@ -53,6 +53,20 @@ export const SBT_ABI = [
   },
   {
     type: 'function',
+    name: 'getAllTokenIds',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256[]', internalType: 'uint256[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getAllTokenLength',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'getPastVotes',
     inputs: [
       { name: 'who', type: 'address', internalType: 'address' },
@@ -91,6 +105,13 @@ export const SBT_ABI = [
   },
   {
     type: 'function',
+    name: 'isRevoked',
+    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'mint',
     inputs: [
       { name: 'to', type: 'address', internalType: 'address' },
@@ -99,6 +120,13 @@ export const SBT_ABI = [
     ],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'minters',
+    inputs: [{ name: '', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -118,6 +146,16 @@ export const SBT_ABI = [
     type: 'function',
     name: 'renounceOwnership',
     inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'revoke',
+    inputs: [
+      { name: 'id', type: 'uint256', internalType: 'uint256' },
+      { name: 'isRevoked_', type: 'bool', internalType: 'bool' },
+    ],
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -154,6 +192,13 @@ export const SBT_ABI = [
       { name: 'operator', type: 'address', internalType: 'address' },
       { name: 'approved', type: 'bool', internalType: 'bool' },
     ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setMinter',
+    inputs: [{ name: 'minter', type: 'address', internalType: 'address' }],
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -266,6 +311,24 @@ export const SBT_ABI = [
         indexed: true,
         internalType: 'address',
       },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'Revoked',
+    inputs: [
+      { name: 'id', type: 'uint256', indexed: true, internalType: 'uint256' },
+      { name: 'isRevoked', type: 'bool', indexed: false, internalType: 'bool' },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'SetTokenURI',
+    inputs: [
+      { name: 'id', type: 'uint256', indexed: true, internalType: 'uint256' },
+      { name: 'uri', type: 'string', indexed: false, internalType: 'string' },
     ],
     anonymous: false,
   },

@@ -9,7 +9,6 @@ import { useNavigate } from 'react-router-dom'
 
 import { Alchemy, Network } from 'alchemy-sdk'
 
-import 'react-toastify/dist/ReactToastify.css'
 import RingLoader from 'react-spinners/RingLoader'
 import { ringStyle } from '~/app/constants/styles'
 import { Line } from 'rc-progress'
@@ -30,7 +29,7 @@ import { Input } from '~/components/ui/input'
 import { readContract } from '@wagmi/core'
 
 import { ethers, formatEther, parseEther } from 'ethers'
-import { ToastContainer, toast } from 'react-toastify'
+import { useToast } from '~/components/ui/use-toast'
 import {
   useAccount,
   useReadContract,
@@ -160,6 +159,7 @@ export default function PCEPage({
   const [treasuryBalances, setTreasuryBalances] = useState<TokenBalance[]>([])
 
   const { address, chainId } = useAccount()
+  const { toast } = useToast()
 
   const alchemyConfig = {
     apiKey: Env.ALCHEMY_API_KEY,
@@ -315,7 +315,7 @@ export default function PCEPage({
         return
       }
       if (currentTokenId && Number(currentTokenId) > 0) {
-        toast.info('Loading SBT NFTs...')
+        toast({ title: 'Loading SBT NFTs...' })
 
         let _nftBalances: number[] = []
         for (let i = 1; i <= (currentTokenId as number); i++) {
@@ -341,7 +341,7 @@ export default function PCEPage({
         return
       }
       if (currentTokenId && Number(currentTokenId) > 0) {
-        toast.info('Loading Voting Power...')
+        toast({ title: 'Loading Voting Power...' })
 
         let _votingPower: number[] = []
         for (let i = 1; i <= (currentTokenId as number); i++) {
@@ -364,7 +364,7 @@ export default function PCEPage({
   useEffect(() => {
     const fetchNFTMetadata = async () => {
       if (currentTokenId && Number(currentTokenId) > 0) {
-        toast.info('Loading Metadata...')
+        toast({ title: 'Loading Metadata...' })
 
         const _nftMetadata: Metadata[] = []
         for (let i = 1; i <= (currentTokenId as number); i++) {
@@ -807,12 +807,12 @@ export default function PCEPage({
     setIsCreateProposalDialogOpened(false)
 
     if (category.length == 0) {
-      toast.error('Please Select Category')
+      toast({ title: 'Please Select Category' })
       return
     }
 
     if (tokenAddress.length == 0) {
-      toast.error('Please enter a valid token address')
+      toast({ title: 'Please enter a valid token address' })
       return
     }
 
@@ -884,16 +884,9 @@ export default function PCEPage({
   useEffect(() => {
     const notify = async () => {
       if (isConfirmed) {
-        toast.success(
-          <div onClick={(e) => e.stopPropagation()}>
-            <CustomLink.default
-              chainId={chainId}
-              type="txHash"
-              hash={hash}
-              message="Transaction Succeed!"
-            ></CustomLink.default>
-          </div>
-        )
+        toast({
+          title: 'Transaction Succeed!',
+        })
 
         setDelegateAddr('')
         await refetchVotes()
@@ -902,11 +895,9 @@ export default function PCEPage({
         )
         await refetchProposalCount()
       } else if (isConfirming) {
-        toast.info(
-          <div className="disabled">TX is Pending, Please Wait...</div>
-        )
+        toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {
-        toast.error((error as BaseError).shortMessage)
+        toast({ title: (error as BaseError).shortMessage })
       }
     }
 
@@ -1725,7 +1716,6 @@ export default function PCEPage({
         </DialogContent>
       </Dialog>
 
-      <ToastContainer position="bottom-right" draggable></ToastContainer>
       <RingLoader
         style={{
           position: 'fixed',

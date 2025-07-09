@@ -6,7 +6,6 @@ import * as CustomLink from '~/components/custom/Link'
 
 import { Alchemy } from 'alchemy-sdk'
 
-import 'react-toastify/dist/ReactToastify.css'
 import RingLoader from 'react-spinners/RingLoader'
 import { ringStyle } from '~/app/constants/styles'
 import { Line } from 'rc-progress'
@@ -26,7 +25,7 @@ import { Input } from '~/components/ui/input'
 import { readContract } from '@wagmi/core'
 
 import { ethers, formatEther, parseEther } from 'ethers'
-import { ToastContainer, toast } from 'react-toastify'
+import { useToast } from '~/components/ui/use-toast'
 import {
   useAccount,
   useReadContract,
@@ -157,6 +156,7 @@ export default function ForSubmitPage({
   const pathname = useParams()
   const id = pathname.id
 
+  const { toast } = useToast()
   const { address, chainId } = useAccount()
   const { data: blockNumber } = useBlockNumber()
   const { data: block } = useBlock({
@@ -217,11 +217,12 @@ export default function ForSubmitPage({
 
   useEffect(() => {
     if (daoInfo?.id && localDict) {
-      toast.info(localDict.fetchingImage ?? 'Fetching image...')
+      toast({ title: localDict.fetchingImage ?? 'Fetching image...' })
       fetchImage(daoInfo?.id)
-      toast.success(
-        localDict.imageFetchedSuccessfully ?? 'Image fetched successfully'
-      )
+      toast({
+        title:
+          localDict.imageFetchedSuccessfully ?? 'Image fetched successfully',
+      })
     }
   }, [daoInfo, localDict])
 
@@ -756,7 +757,7 @@ export default function ForSubmitPage({
 
   const handleStake = async () => {
     if (stakingAmount === '' || stakingAmount === '0') {
-      toast.error('Please enter a valid amount')
+      toast({ title: 'Please enter a valid amount' })
       return
     }
 
@@ -864,27 +865,18 @@ export default function ForSubmitPage({
   useEffect(() => {
     const notify = async () => {
       if (isConfirmed) {
-        toast.success(
-          <div onClick={(e) => e.stopPropagation()}>
-            <CustomLink.default
-              chainId={chainId}
-              type="txHash"
-              hash={hash}
-              message="Transaction Succeed!"
-            ></CustomLink.default>
-          </div>
-        )
+        toast({
+          title: 'Transaction Succeed!',
+        })
 
         setDelegateAddr('')
         await refetchVotes()
         await getTreasuryBalances(daoInfo?.timelock as `0x${string}`)
         await refetchProposalCount()
       } else if (isConfirming) {
-        toast.info(
-          <div className="disabled">TX is Pending, Please Wait...</div>
-        )
+        toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {
-        toast.error((error as BaseError).shortMessage)
+        toast({ title: (error as BaseError).shortMessage })
       }
     }
 
@@ -951,7 +943,7 @@ export default function ForSubmitPage({
       try {
         if (!daoInfo?.id) return
 
-        toast.info(localDict.updatingImage ?? 'Updating image...')
+        toast({ title: localDict.updatingImage ?? 'Updating image...' })
         const prevImages = await fetchImage(daoInfo?.id)
         if (prevImages) {
           const res = await pinata.files.public.delete(
@@ -970,12 +962,11 @@ export default function ForSubmitPage({
           },
         })
         setImageHash(upload.cid)
-        toast.success(
-          localDict.imageUpdatedSuccessfully ?? 'Image updated successfully'
-        )
-      } catch (error) {
-        console.log(error)
-      }
+        toast({
+          title:
+            localDict.imageUpdatedSuccessfully ?? 'Image updated successfully',
+        })
+      } catch (error) {}
     }
 
     updateImage()
@@ -985,7 +976,7 @@ export default function ForSubmitPage({
     try {
       if (!daoInfo?.id) return
 
-      toast.info('Deleting image...')
+      toast({ title: 'Deleting image...' })
       const prevImages = await fetchImage(daoInfo?.id)
       if (prevImages) {
         const res = await pinata.files.public.delete(
@@ -993,10 +984,9 @@ export default function ForSubmitPage({
         )
       }
       setImageHash('')
-      toast.success('Image deleted successfully')
-    } catch (error) {
-      console.log(error)
-    }
+
+      toast({ title: 'Image deleted successfully' })
+    } catch (error) {}
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1020,7 +1010,7 @@ export default function ForSubmitPage({
           <img
             src={
               imageHash
-                ? `https://orange-elegant-takin-78.mypinata.cloud/ipfs/${imageHash}`
+                ? `https://orange-elegant-takin-78.mypinata.cloud/ipfs/${imageHash}?pinataGatewayToken=7uMh9158Kl1jPcpgtNigRgAa_Y_t9CHZLpSRRiimEd9_fX6DzoGSOgmdOii1wiqg`
                 : identicon
             }
             alt=""
@@ -1031,7 +1021,7 @@ export default function ForSubmitPage({
               className="p-2 text-white hover:text-gray-200"
               onClick={() => {
                 if (address != (_owner as `0x${string}`)) {
-                  toast.error('You are not the owner of this DAO')
+                  toast({ title: 'You are not the owner of this DAO' })
                   return
                 }
                 const fileInput = document.createElement('input')
@@ -1063,7 +1053,7 @@ export default function ForSubmitPage({
               className="p-2 text-white hover:text-gray-200"
               onClick={async () => {
                 if (address != (_owner as `0x${string}`)) {
-                  toast.error('You are not the owner of this DAO')
+                  toast({ title: 'You are not the owner of this DAO' })
                   return
                 }
 
@@ -1128,7 +1118,7 @@ export default function ForSubmitPage({
                 <DropdownMenuItem
                   onClick={async () => {
                     if (address != (_owner as `0x${string}`)) {
-                      toast.error('You are not the owner of this DAO')
+                      toast({ title: 'You are not the owner of this DAO' })
                       return
                     }
                     await deleteImage()
@@ -1145,13 +1135,17 @@ export default function ForSubmitPage({
           {daoInfo?.name}{' '}
         </div>
       </div>
-      {selectedImage && isCropModalOpen && (
-        <ImageCropModal
-          localDict={localDict}
-          imageSrc={selectedImage}
-          onClose={() => setIsCropModalOpen(false)}
-          onCropComplete={(cropped) => setCroppedImage(cropped)}
-        />
+      {selectedImage && (
+        <Dialog open={!!selectedImage}>
+          <DialogContent>
+            <ImageCropModal
+              localDict={localDict}
+              imageSrc={selectedImage}
+              onClose={() => setSelectedImage(null)}
+              onCropComplete={(cropped) => setCroppedImage(cropped)}
+            />
+          </DialogContent>
+        </Dialog>
       )}
       <div className="flex flex-row w-full items-center">
         <Tabs defaultValue="about" className="w-full" value={tabContent}>
@@ -1883,7 +1877,6 @@ export default function ForSubmitPage({
           </DialogDescription>
         </DialogContent>
       </Dialog>
-      <ToastContainer position="bottom-right" draggable></ToastContainer>
       <RingLoader
         style={{
           position: 'fixed',

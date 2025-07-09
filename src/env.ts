@@ -15,4 +15,5 @@ export const Env = {
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6ImUzZTUzMTg0LWRlYTctNGNjZS1iYmUyLTA5YzVlNTAxNTg4MiIsIm9yZ0lkIjoiMzk1MzE2IiwidXNlcklkIjoiNDA2MjE2IiwidHlwZUlkIjoiYTdiZTM0YzEtZjdmOS00ZWM3LTlmNmQtMjQyNzEyZTk1MzRhIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3MTc2ODM3NjksImV4cCI6NDg3MzQ0Mzc2OX0.DY1svaKLFchcxzHR1_HNXA-vDS4NbVHzn9o3cjro8W0',
   NEXT_PUBLIC_GATEWAY_URL: 'orange-elegant-takin-78.mypinata.cloud',
   GITHUB_TOKEN: '',
+  PINATA_GATEWAY_URL: 'https://orange-elegant-takin-78.mypinata.cloud',
 }
