@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
-import { ethers, formatEther } from 'ethers'
+import { ethers, formatEther, parseEther } from 'ethers'
 import axios from 'axios'
+import { toast } from 'sonner'
 
 import {
   useAccount,
@@ -15,27 +15,13 @@ import {
   useSwitchChain,
   type BaseError,
 } from 'wagmi'
-import { readContract } from '@wagmi/core'
+import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { CAMPAIGN, Metadata } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/custom/button'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '~/components/ui/table'
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from '~/components/ui/card'
-import { useToast } from '~/components/ui/use-toast'
+
+import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/card'
 
 import {
   Dialog,
@@ -59,81 +45,314 @@ import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { SBT_ABI } from '~/app/ABIs/SBT'
-
-import { sepolia } from 'wagmi/chains'
 import CopyIcon from '../../../../../public/svg/copy'
 import Image from 'next/image'
 import { NFT_DETAIL } from '~/components/custom/nft-detail'
+import { Spinner } from '~/components/ui/Spinner'
+import { CreateCampaignModal } from './modal/createCampaignModal'
+import { AddWhitelistModal } from './modal/addWhitelistModal'
+import { CampaignsTable } from './modal/campaignTable'
+// Constants
+const CLAIM_MESSAGE = 'Claim Bounty for dApp.xyz'
+const DEFAULT_CAMPAIGN_ID = -1
+const DEFAULT_NFT_DETAIL_INDEX = -1
+const EMPTY_NFT_IMAGE = '/images/empty-nft.svg'
 
+// Types
+interface CampaignState {
+  data: CAMPAIGN[]
+  tokenURIs: { internal_id: number; uri: string }[]
+}
+
+interface NFTState {
+  balances: number[]
+  metadata: Metadata[]
+  detailIndex: number
+  isDetailOpen: boolean
+}
+
+interface DialogState {
+  isOpen: boolean
+  isCreateOpen: boolean
+  isAddWinnersOpen: boolean
+  campaignId: number
+}
+
+interface CampaignStatus {
+  isWinner: boolean
+  isClaimed: boolean
+  status: number
+}
+
+const useNFTData = (
+  chainId: number | undefined,
+  address: string | undefined,
+  tokenURIs: { internal_id: number; uri: string }[],
+  uri_: string | undefined,
+  isConfirmed: boolean
+) => {
+  const [state, setState] = useState<NFTState>({
+    balances: [],
+    metadata: [],
+    detailIndex: DEFAULT_NFT_DETAIL_INDEX,
+    isDetailOpen: false,
+  })
+
+  const fetchNFTBalances = useCallback(async () => {
+    if (!chainId || !address || tokenURIs.length === 0) return
+
+    try {
+      const balances = await Promise.all(
+        tokenURIs.map(async (tokenURI) => {
+          return (await readContract(config, {
+            abi: SBT_ABI,
+            address: sbtAddress[chainId || defaultChainId] as `0x${string}`,
+            functionName: 'balanceOf',
+            args: [address, tokenURI.internal_id],
+          })) as number
+        })
+      )
+      setState((prev) => ({ ...prev, balances }))
+    } catch (error) {}
+  }, [chainId, address, tokenURIs, isConfirmed])
+
+  const fetchNFTMetadata = useCallback(async () => {
+    if (tokenURIs.length === 0 || !uri_) return
+
+    try {
+      const metadata = await Promise.all(
+        tokenURIs.map(async (tokenURI) => {
+          const tokenUri = uri_ + tokenURI.uri
+
+          let tokenData
+          let tokenDataJson
+          try {
+            tokenData = await fetch(tokenUri)
+            tokenDataJson = await tokenData.json()
+          } catch (error) {}
+          return {
+            image: tokenDataJson.image,
+            name: tokenDataJson.name,
+            description: tokenDataJson.description,
+            attributes: [],
+            external_url: '',
+            token_id: tokenURI.internal_id,
+          }
+        })
+      )
+      setState((prev) => ({ ...prev, metadata }))
+    } catch (error) {
+      const fallbackMetadata = tokenURIs.map((_, index) => ({
+        image: EMPTY_NFT_IMAGE,
+        name: '',
+        description: '',
+        attributes: [],
+        external_url: '',
+        token_id: index,
+      }))
+      setState((prev) => ({ ...prev, metadata: fallbackMetadata }))
+    }
+  }, [uri_, tokenURIs])
+
+  useEffect(() => {
+    fetchNFTBalances()
+  }, [fetchNFTBalances])
+
+  useEffect(() => {
+    fetchNFTMetadata()
+  }, [fetchNFTMetadata])
+
+  return {
+    ...state,
+    setDetailIndex: (index: number) =>
+      setState((prev) => ({ ...prev, detailIndex: index })),
+    setIsDetailOpen: (open: boolean) =>
+      setState((prev) => ({ ...prev, isDetailOpen: open })),
+  }
+}
+
+// Components
+
+const NFTBalancesCard = ({
+  balances,
+  metadata,
+  onNFTClick,
+}: {
+  balances: number[]
+  metadata: Metadata[]
+  onNFTClick: (index: number) => void
+}) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold">SBT Balances</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap">
+          {balances.length == 0 || balances.every((b) => b == 0) ? (
+            <div className="w-full flex justify-center items-center py-8 text-muted-foreground">
+              No SBTs
+            </div>
+          ) : (
+            balances.map((balance, index) => (
+              <div key={index} className="flex flex-col items-center gap-2">
+                {balance > 0 && (
+                  <div
+                    className="flex flex-col items-center gap-2 px-2 cursor-pointer"
+                    onClick={() => onNFTClick(index)}
+                  >
+                    <div className="relative">
+                      <Image
+                        src={metadata[index]?.image || EMPTY_NFT_IMAGE}
+                        alt={`NFT #${index} (shown as original image)`}
+                        className="rounded-lg object-fill"
+                        width={120}
+                        height={120}
+                      />
+                      <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                        {balance.toString()}
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground"># {index + 1}</p>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+const CampaignDialog = ({
+  isOpen,
+  onOpenChange,
+  campaign,
+  status,
+  onClaim,
+}: {
+  isOpen: boolean
+  onOpenChange: (open: boolean) => void
+  campaign: CAMPAIGN | undefined
+  status: CampaignStatus
+  onClaim: (gistUrl: string) => void
+}) => {
+  const [gistUrl, setGistUrl] = useState('')
+
+  const isActive = useMemo(() => {
+    if (!campaign) return false
+    const now = new Date()
+    const endDate = new Date(Number(campaign.endDate) * 1000)
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000)
+    return oneHourFromNow <= endDate
+  }, [campaign])
+
+  const handleClaim = () => {
+    onClaim(gistUrl)
+    setGistUrl('')
+  }
+
+  if (!campaign) return null
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="gap-4 m-4">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold my-4">
+            {campaign.title}
+          </DialogTitle>
+          <DialogDescription>{campaign.description}</DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 text-muted-foreground">
+          <p>
+            Reward:{' '}
+            {campaign.isNFT
+              ? `${campaign.amount} Contributor NFT`
+              : `${formatEther(campaign.amount ?? '0')} PCE`}
+          </p>
+          {isActive && (
+            <>
+              <p>
+                Start Time:{' '}
+                {timestampToDate(parseInt(campaign.startDate ?? '0'))}
+              </p>
+              <p>
+                End Time: {timestampToDate(parseInt(campaign.endDate ?? '0'))}
+              </p>
+            </>
+          )}
+          {!campaign.validateSignatures && (
+            <p>
+              {status.isWinner
+                ? 'You are whitelisted as a winner'
+                : 'You are not whitelisted as a winner'}
+            </p>
+          )}
+          {status.isClaimed && <p>You have already claimed this campaign</p>}
+          {campaign.validateSignatures &&
+            !status.isClaimed &&
+            status.status != 2 && (
+              <Input
+                type="text"
+                placeholder="Enter Github Gist URL"
+                value={gistUrl}
+                onChange={(e) => setGistUrl(e.target.value)}
+              />
+            )}
+          <Button
+            onClick={handleClaim}
+            disabled={
+              status.isClaimed ||
+              status.status == 2 ||
+              (!status.isWinner && !campaign.validateSignatures)
+            }
+          >
+            Claim
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Main component
 export default function ForCampaignPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
   const [dict, setDict] = useState<Dictionary | null>(null)
   const campaign = dict?.campaign ?? {}
-  const dashboard = dict?.dashboard ?? {}
 
-  const [isOpen, setIsOpen] = useState(false)
-  const [campaignData, setCampaignData] = useState<CAMPAIGN[]>([])
-  const [tokenURIs, setTokenURIs] = useState<
-    { internal_id: number; uri: string }[]
-  >([])
-  const [campaignId, setCampaignId] = useState<number>(-1)
-  const [isWinner, setIsWinner] = useState<boolean>(false)
-  const [isClaimed, setIsClaimed] = useState<boolean>(false)
-  const [status, setStatus] = useState<number>(0)
-  const [githubId, setGithubId] = useState<string>('')
   const { address, chainId } = useAccount()
   const { signMessageAsync } = useSignMessage()
   const { chains, switchChain } = useSwitchChain()
-  const [nftBalances, setNftBalances] = useState<number[]>([])
-  const [nftMetadata, setNftMetadata] = useState<Metadata[]>([])
-  const [isNFT_DETAIL_Open, setIsNFT_DETAIL_Open] = useState<boolean>(false)
-  const [nftDetailIndex, setNftDetailIndex] = useState<number>(-1)
 
-  const { data: hash, error, writeContract } = useWriteContract()
+  // State
+  const [dialogState, setDialogState] = useState<DialogState>({
+    isOpen: false,
+    isCreateOpen: false,
+    isAddWinnersOpen: false,
+    campaignId: DEFAULT_CAMPAIGN_ID,
+  })
+
   const [signature, setSignature] = useState<string>('')
-  const _message = 'Claim Bounty for dApp.xyz'
+  const [loading, setLoading] = useState<boolean>(false)
 
-  const { toast } = useToast()
-
-  const signMessage = async () => {
-    if (chainId) {
-      const message = await signMessageAsync({
-        message: _message,
-      })
-      setSignature(message)
-    }
-  }
-
-  useEffect(() => {
-    const switchChainAndReload = async () => {
-      if (!chainId || !chains.some((chain) => chain.id === chainId)) {
-        switchChain({ chainId: sepolia.id })
-      }
-    }
-    switchChainAndReload()
-  }, [chainId])
+  // Contract hooks
+  const {
+    data: hash,
+    error,
+    writeContract,
+    writeContractAsync,
+  } = useWriteContract()
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
+      confirmations: 1,
     })
 
-  const { data: totalClaimed, refetch: refetchTotalClaimed } = useReadContract({
-    abi: CAMPAIGN_ABI,
-    address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
-    functionName: 'totalClaimed',
-    args: [address],
-  })
-
-  const { data: _campaignId, refetch: refetchCampaignId } = useReadContract({
-    abi: CAMPAIGN_ABI,
-    address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
-    functionName: 'campaignId',
-    args: [],
-  })
-
-  const { data: uri_, refetch: refetchUri } = useReadContract({
+  const { data: uri_ } = useReadContract({
     abi: SBT_ABI,
     address: sbtAddress[chainId || defaultChainId] as `0x${string}`,
     functionName: 'uri_',
@@ -141,648 +360,468 @@ export default function ForCampaignPage({
     chainId: chainId || defaultChainId,
   })
 
-  useEffect(() => {
-    const fetchNFTBalances = async () => {
-      if (!chainId) {
-        return
-      }
-      if (tokenURIs.length > 0) {
-        toast({ title: 'Loading SBT NFTs...' })
-
-        let _nftBalances: number[] = []
-        for (let i = 0; i < (tokenURIs.length as number); i++) {
-          const _balance = (await readContract(config, {
-            abi: SBT_ABI,
-            address: sbtAddress[chainId || defaultChainId] as `0x${string}`,
-            functionName: 'balanceOf',
-            args: [address, tokenURIs[i]?.internal_id ?? 0],
-          })) as number
-
-          _nftBalances.push(_balance)
-        }
-        setNftBalances(_nftBalances)
-      }
-    }
-
-    fetchNFTBalances()
-  }, [chainId, tokenURIs, isConfirmed])
-
-  useEffect(() => {
-    const fetchNFTMetadata = async () => {
-      if (tokenURIs.length > 0) {
-        toast({ title: 'Loading Metadata...' })
-
-        const _nftMetadata: Metadata[] = []
-        for (let i = 0; i < (tokenURIs.length as number); i++) {
-          try {
-            const response = await axios.get(`/api/get-nft-metadata`, {
-              params: {
-                metadata: uri_ + (tokenURIs[i]?.uri ?? ''),
-              },
-            })
-            const data = response.data
-            data.token_id = tokenURIs[i]?.internal_id ?? 0
-            _nftMetadata.push(data)
-          } catch (error) {
-            console.error('Error fetching NFT metadata:', error)
-            const metadata: Metadata = {
-              image: '/images/empty-nft.svg',
-              name: '',
-              description: '',
-              attributes: [],
-              external_url: '',
-              token_id: 0,
-            }
-            _nftMetadata.push(metadata)
-          }
-        }
-        setNftMetadata(_nftMetadata)
-      }
-    }
-
-    fetchNFTMetadata()
-  }, [uri_, tokenURIs])
-
-  const { data: totalClaimedNFTs, refetch: refetchTotalClaimedNFTs } =
+  const { data: currentTokenId, refetch: refetchCurrentTokenId } =
     useReadContract({
-      abi: SBT_ABI,
       address: sbtAddress[chainId || defaultChainId] as `0x${string}`,
-      functionName: 'totalClaimedNFT',
-      args: [address],
+      abi: SBT_ABI,
+      functionName: 'currentTokenId',
+      args: [],
+      chainId: chainId || defaultChainId,
     })
 
-  useEffect(() => {
-    const notify = async () => {
-      if (isConfirmed) {
-        toast({
-          title: 'Transaction Succeed!',
-        })
-        await refetchTotalClaimed()
-      } else if (isConfirming) {
-        toast({ title: 'Tx is Pending, Please Wait...' })
-      } else if (error) {
-        toast({ title: (error as BaseError).shortMessage })
-      }
-    }
-
-    notify()
-  }, [isConfirmed, isConfirming, error, hash])
-
-  useEffect(() => {
-    const fetchDict = async () => {
-      try {
-        const fetchedDict = await getDict(locale)
-        setDict(fetchedDict)
-      } catch (error) {
-        console.error('Error fetching dictionary:', error)
-      }
-    }
-    fetchDict()
-  }, [locale])
+  const [campaignData, setCampaignData] = useState<CampaignState>({
+    data: [],
+    tokenURIs: [],
+  })
 
   const client = new ApolloClient({
     uri: SUBGRAPH_URL[chainId || defaultChainId] as string,
     cache: new InMemoryCache(),
   })
 
-  useEffect(() => {
-    if (!isOpen) {
-      setCampaignId(-1)
-    }
-  }, [isOpen])
+  const {
+    balances: nftBalances,
+    metadata: nftMetadata,
+    detailIndex: nftDetailIndex,
+    isDetailOpen: isNFTDetailOpen,
+    setDetailIndex: setNftDetailIndex,
+    setIsDetailOpen: setIsNFTDetailOpen,
+  } = useNFTData(
+    chainId,
+    address,
+    campaignData.tokenURIs,
+    uri_ as string,
+    isConfirmed
+  )
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data } = await client.query({
-          query: gql`
-            query getCampaigns {
-              campaignCreateds(
-                first: 10
-                orderDirection: asc
-                orderBy: campaignId
-              ) {
-                campaignId
-                title
-                description
-                endDate
-                startDate
-                validateSignatures
-                amount
-                isNFT
-              }
-              setTokenURIs(
-                first: 10
-                orderBy: internal_id
-                orderDirection: asc
-              ) {
-                internal_id
-                uri
-              }
+  const fetchCampaignData = async () => {
+    setLoading(true)
+    try {
+      const { data } = await client.query({
+        query: gql`
+          query getCampaigns {
+            campaignCreateds(
+              first: 5
+              orderDirection: desc
+              orderBy: campaignId
+            ) {
+              campaignId
+              sbtId
+              title
+              description
+              endDate
+              startDate
+              validateSignatures
+              amount
+              isNFT
             }
-          `,
-        })
+            setTokenURIs(first: 10, orderBy: internal_id, orderDirection: asc) {
+              internal_id
+              uri
+            }
+          }
+        `,
+      })
 
-        setCampaignData(data.campaignCreateds)
-        setTokenURIs(data.setTokenURIs)
-      } catch (error) {
-        console.error('Error fetching data', error)
-      }
-    }
-
-    fetchData()
-  }, [])
-
-  function parseGithubUsername(gistUrl: string): string | undefined {
-    try {
-      const url = new URL(gistUrl)
-      const parts = url.pathname.split('/')
-      return parts.length >= 2 ? parts[1] : undefined
-    } catch (err) {
-      return undefined
-    }
-  }
-
-  const claimCampaign = async (campaignId: number, gistUrl: string) => {
-    setIsOpen(false)
-
-    let _signature = '0x'
-    let _message = '_'
-    let gistUsername
-    if (campaignData[campaignId]?.validateSignatures) {
-      try {
-        gistUsername = parseGithubUsername(gistUrl)
-
-        if (gistUsername == undefined) {
-          toast({ title: 'Invalid Github Gist URL' })
-          return
-        }
-
-        const result = await axios.get(gistUrl)
-        const gistData = result.data
-        _signature = gistData.Signature
-        _message = gistData.Message
-      } catch (error) {
-        console.error('Error fetching gist:', error)
-      }
-    }
-
-    let _gistUsername = ethers.keccak256(
-      ethers.toUtf8Bytes(gistUsername ? gistUsername : '0x')
-    )
-
-    try {
-      writeContract(
-        {
-          abi: CAMPAIGN_ABI,
-          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
-          functionName: 'claimCampaign',
-          args: [campaignId, _gistUsername, _message, _signature],
-        },
-        {
-          onSuccess: (data) => {},
-          onError: (error) => {
-            console.error('Transaction error:', error)
-          },
-        }
-      )
+      setCampaignData({
+        data: data.campaignCreateds,
+        tokenURIs: data.setTokenURIs,
+      })
     } catch (error) {
-      console.error('Error claiming campaign', error)
+    } finally {
+      setLoading(false)
     }
   }
+
+  // Campaign status
+  const [campaignStatus, setCampaignStatus] = useState<CampaignStatus>({
+    isWinner: false,
+    isClaimed: false,
+    status: 0,
+  })
+
+  // Effects
+  useEffect(() => {
+    const switchChainAndReload = async () => {
+      if (!chainId || !chains.some((chain) => chain.id === chainId)) {
+        switchChain({ chainId: defaultChainId })
+      }
+    }
+    switchChainAndReload()
+  }, [chainId, chains, switchChain])
 
   useEffect(() => {
-    const getStatus = async () => {
-      if (campaignId > 0 && address) {
-        const status = (await readContract(config, {
-          abi: CAMPAIGN_ABI,
-          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
-          functionName: 'getStatus',
-          args: [campaignId],
-        })) as number
-
-        setStatus(status)
-      }
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {}
     }
+    fetchDict()
+  }, [locale])
 
-    const checkWinner = async () => {
-      if (campaignId >= 0 && address) {
-        const winner = (await readContract(config, {
-          abi: CAMPAIGN_ABI,
-          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
-          functionName: 'isWinner',
-          args: [campaignId, address],
-        })) as boolean
+  useEffect(() => {
+    fetchCampaignData()
+  }, [chainId])
 
-        setIsWinner(winner)
-      }
+  useEffect(() => {
+    if (!dialogState.isOpen) {
+      setDialogState((prev) => ({ ...prev, campaignId: DEFAULT_CAMPAIGN_ID }))
     }
+  }, [dialogState.isOpen])
 
-    const checkClaimed = async () => {
-      await getStatus()
-      await checkWinner()
-      if (campaignId >= 0 && address) {
-        let claimed = false
-        if (campaignData[campaignId]?.isNFT) {
-          if (githubId) {
-            claimed = (await readContract(config, {
-              abi: CAMPAIGN_ABI,
-              address: campaignAddress[
-                chainId || defaultChainId
-              ] as `0x${string}`,
-              functionName: 'champGistsClaimed',
-              args: [campaignId, githubId],
-            })) as boolean
-          }
-        } else {
-          claimed = (await readContract(config, {
+  useEffect(() => {
+    const checkCampaignStatus = async () => {
+      if (dialogState.campaignId < 0 || !address || !chainId) return
+
+      try {
+        const [status, isWinner, isClaimed] = await Promise.all([
+          readContract(config, {
+            abi: CAMPAIGN_ABI,
+            address: campaignAddress[
+              chainId || defaultChainId
+            ] as `0x${string}`,
+            functionName: 'getStatus',
+            args: [dialogState.campaignId],
+          }),
+          readContract(config, {
+            abi: CAMPAIGN_ABI,
+            address: campaignAddress[
+              chainId || defaultChainId
+            ] as `0x${string}`,
+            functionName: 'isWinner',
+            args: [dialogState.campaignId, address],
+          }),
+          readContract(config, {
             abi: CAMPAIGN_ABI,
             address: campaignAddress[
               chainId || defaultChainId
             ] as `0x${string}`,
             functionName: 'champWinnersClaimed',
-            args: [campaignId, address],
-          })) as boolean
-        }
+            args: [dialogState.campaignId, address],
+          }),
+        ])
 
-        setIsClaimed(claimed)
-
-        setIsOpen(true)
-      }
+        setCampaignStatus({
+          status: status as number,
+          isWinner: isWinner as boolean,
+          isClaimed: isClaimed as boolean,
+        })
+      } catch (error) {}
     }
 
-    checkClaimed()
-  }, [campaignId, address, chainId])
+    checkCampaignStatus()
+  }, [dialogState.campaignId, address, chainId])
 
-  const isActive = (campaign: CAMPAIGN | undefined) => {
-    if (!campaign) return false
-    const now = new Date()
-    const startDate = new Date(Number(campaign.startDate) * 1000)
-    const endDate = new Date(Number(campaign.endDate) * 1000)
-    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000)
+  useEffect(() => {
+    const fetchData = async () => {
+      if (isConfirmed) {
+        toast('Transaction Succeeded! Data refreshed.')
+      } else if (error) {
+        toast((error as BaseError).shortMessage)
+      }
+    }
+    fetchData()
+  }, [isConfirmed, error])
 
-    return oneHourFromNow <= endDate
+  // Handlers
+  const signMessage = useCallback(async () => {
+    if (!chainId) return
+
+    try {
+      const message = await signMessageAsync({ message: CLAIM_MESSAGE })
+      setSignature(message)
+    } catch (error) {}
+  }, [chainId, signMessageAsync])
+
+  const handleAddWhitelist = async (formData: any) => {
+    setLoading(true)
+    const encodedGists = formData.data.map(
+      (item: { address: string; git: string }, index: number) =>
+        ethers.keccak256(ethers.toUtf8Bytes(item.git.trim()))
+    )
+    const gistUsernameHash = ethers.keccak256(ethers.toUtf8Bytes('pwollemi'))
+    const addresses = formData.data.map(
+      (item: { address: string }) => item.address
+    )
+
+    const isVerifySignature = campaignData.data.find(
+      (campaign) => campaign.campaignId === formData.id
+    )?.validateSignatures
+
+    try {
+      const tx = await writeContractAsync({
+        abi: CAMPAIGN_ABI,
+        address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'addCampWinners',
+        args: [formData.id, addresses, encodedGists],
+      })
+
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
+    } catch (error) {
+      toast('Error adding whitelist')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const CampaignDialog = ({
-    isOpen,
-    onOpenChange,
-  }: {
-    isOpen: boolean
-    onOpenChange: (open: boolean) => void
-  }) => (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-4 m-4">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold my-4">
-            {campaignData[campaignId]?.title}
-          </DialogTitle>
-          <DialogDescription>
-            {campaignData[campaignId]?.description}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col gap-4 text-muted-foreground">
-          {campaignData[campaignId]?.isNFT ? (
-            <p>Reward: {campaignData[campaignId]?.amount} Contributor NFT</p>
-          ) : (
-            <p>
-              Reward: {formatEther(campaignData[campaignId]?.amount ?? '0')} PCE
-            </p>
-          )}
-          {isActive(campaignData[campaignId]) && (
-            <>
-              <p>
-                Start Time:{' '}
-                {timestampToDate(
-                  parseInt(campaignData[campaignId]?.startDate ?? '0')
-                )}
-              </p>
-              <p>
-                End Time:{' '}
-                {timestampToDate(
-                  parseInt(campaignData[campaignId]?.endDate ?? '0')
-                )}
-              </p>
-            </>
-          )}
-          {campaignData.length > 0 &&
-          !campaignData[campaignId]?.validateSignatures ? (
-            <>
-              {isWinner ? (
-                <>
-                  <p>You are whitelisted as a winner</p>
-                </>
-              ) : (
-                <>
-                  <p>You are not whitelisted as a winner</p>
-                </>
-              )}
-            </>
-          ) : (
-            <></>
-          )}
-          {isClaimed ? <p>You have already claimed this campaign</p> : null}
-          {campaignData.length > 0 && (
-            <>
-              {campaignData[campaignId]?.validateSignatures &&
-                !isClaimed &&
-                status == 2 && (
-                  <Input type="text" placeholder="Enter Github Gist URL" />
-                )}
-              <Button
-                onClick={async () => {
-                  const gistUrlInput = document.querySelector(
-                    'input[placeholder="Enter Github Gist URL"]'
-                  ) as HTMLInputElement
-                  const gistUrlValue = gistUrlInput?.value
-                  await claimCampaign(campaignId, gistUrlValue)
-                }}
-                disabled={
-                  isClaimed ||
-                  status != 2 ||
-                  (!isWinner && !campaignData[campaignId]?.validateSignatures)
-                }
-              >
-                Claim
-              </Button>
-            </>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+  const handleCreateCampaign = async (formData: any) => {
+    setDialogState((prev) => ({
+      ...prev,
+      isCreateOpen: false,
+      isAddWinnersOpen: false,
+    }))
+    setLoading(true)
+
+    try {
+      const campaign = {
+        sbtId: formData.sbtId,
+        title: formData.title,
+        description: formData.description,
+        amount: formData.isSBT ? formData.amount : parseEther(formData.amount),
+        startDate: new Date(formData.startDate).getTime() / 1000,
+        endDate: new Date(formData.endDate).getTime() / 1000,
+        validateSignatures: formData.isVerifySignature,
+        isNFT: formData.isSBT,
+      }
+
+      const tx = await writeContractAsync({
+        abi: CAMPAIGN_ABI,
+        address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'createCampaign',
+        args: [campaign],
+      })
+
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 2,
+      })
+
+      await fetchCampaignData()
+    } catch (error) {
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const parseGithubUsername = useCallback(
+    (gistUrl: string): string | undefined => {
+      try {
+        const url = new URL(gistUrl)
+        const parts = url.pathname.split('/')
+        return parts.length >= 2 ? parts[1] : undefined
+      } catch {
+        return undefined
+      }
+    },
+    []
+  )
+
+  const claimCampaign = useCallback(
+    async (campaignId: number, gistUrl: string) => {
+      setLoading(true)
+      setDialogState((prev) => ({ ...prev, isOpen: false }))
+
+      let signature = '0x'
+      let message = '_'
+      let gistUsername
+
+      const campaign = campaignData.data.find(
+        (campaign) => campaign.campaignId === campaignId
+      )
+      if (campaign?.validateSignatures) {
+        try {
+          gistUsername = parseGithubUsername(gistUrl)
+          if (!gistUsername) {
+            toast('Invalid Github Gist URL')
+            return
+          }
+
+          const result = await axios.get(gistUrl)
+
+          const gistData = result.data
+          signature = gistData.Signature
+          message = gistData.Message
+        } catch (error) {
+          return
+        }
+      }
+
+      const gistUsernameHash = ethers.keccak256(
+        ethers.toUtf8Bytes(gistUsername || '0x')
+      )
+
+      try {
+        writeContract({
+          abi: CAMPAIGN_ABI,
+          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
+          functionName: 'claimCampaign',
+          args: [campaignId, gistUsernameHash, message, signature],
+        })
+      } catch (error) {
+      } finally {
+        await fetchCampaignData()
+        setLoading(false)
+      }
+    },
+    [campaignData, parseGithubUsername, chainId, writeContract, toast]
+  )
+
+  const handleNFTClick = useCallback(
+    (index: number) => {
+      setNftDetailIndex(index)
+      setIsNFTDetailOpen(true)
+    },
+    [setNftDetailIndex, setIsNFTDetailOpen]
+  )
+
+  const handleCopySignature = useCallback(() => {
+    navigator.clipboard.writeText(
+      JSON.stringify({
+        Message: CLAIM_MESSAGE,
+        Signature: signature,
+        'Wallet Address': address,
+      })
+    )
+    toast('Signature copied to clipboard')
+  }, [signature, address, toast])
+
+  const currentCampaign = useMemo(
+    () =>
+      campaignData.data.find(
+        (campaign) => campaign.campaignId == dialogState.campaignId
+      ),
+    [campaignData, dialogState.campaignId]
   )
 
   return (
     <div className="w-full">
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-white/60">
+          <Spinner show={true} size="large" />
+        </div>
+      )}
       <div className="flex flex-col gap-4 mx-8">
         <h2 className="text-2xl font-bold tracking-tight mt-6">
           {campaign.title ?? ''}
         </h2>
         <p className="text-muted-foreground">{campaign.description ?? ''}</p>
 
-        {/* <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {dashboard.totalrevenue ?? ''}
-              </CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {totalClaimed ? formatEther(totalClaimed as bigint) : '0'} PCE
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Contributor NFTs
-              </CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {nftBalance ? nftBalance.toString() : '0'} NFTs
-              </div>
-            </CardContent>
-          </Card>
-        </div> */}
+        <CreateCampaignModal
+          isOpen={dialogState.isCreateOpen}
+          onClose={() =>
+            setDialogState((prev) => ({ ...prev, isCreateOpen: false }))
+          }
+          nftMetadata={nftMetadata}
+          onSubmit={handleCreateCampaign}
+        />
+
+        <AddWhitelistModal
+          isOpen={dialogState.isAddWinnersOpen}
+          onClose={() =>
+            setDialogState((prev) => ({ ...prev, isAddWinnersOpen: false }))
+          }
+          onSubmit={handleAddWhitelist}
+        />
 
         {chainId && (
           <div className="flex flex-col gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold">
-                  NFT Balances
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {nftBalances.length > 0 && nftMetadata.length > 0 && (
-                  <div className="flex flex-wrap">
-                    {nftBalances.map((balance, index) => (
-                      <div
-                        key={index}
-                        className="flex flex-col items-center gap-2"
-                      >
-                        {balance > 0 && (
-                          <div
-                            className="flex flex-col items-center gap-2 px-2"
-                            onClick={() => {
-                              setNftDetailIndex(index)
-                              setIsNFT_DETAIL_Open(true)
-                            }}
-                          >
-                            <div className="relative">
-                              <Image
-                                src={
-                                  !nftMetadata || nftMetadata.length == 0
-                                    ? '/images/empty-nft.svg'
-                                    : nftMetadata[index]?.image ||
-                                      '/images/empty-nft.svg'
-                                }
-                                alt={`NFT #${index}`}
-                                className="rounded-lg h-[140px] w-[100px] object-fill cursor-pointer"
-                                width={100}
-                                height={140}
-                              />
-                              <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
-                                {balance.toString()}
-                              </div>
-                            </div>
-                            <p className="text-muted-foreground">
-                              # {index + 1}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            <div className="flex flex-col gap-4">
-              {campaignData.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-2xl font-bold">
-                      {campaignData[0]?.title ?? 'No Title'}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-muted-foreground text-lg">
-                    {campaignData[0]?.description ?? 'No Description'}
-                  </CardContent>
-                  <CardFooter className="flex flex-col gap-2 text-muted-foreground justify-start items-start">
-                    <p>
-                      Airdrop Amount:{' '}
-                      {campaignData[0]?.isNFT
-                        ? campaignData[0]?.amount
-                        : formatEther(campaignData[0]?.amount ?? '0')}{' '}
-                      {campaignData[0]?.isNFT ? 'NFT' : 'PCE'}
-                    </p>
-                    <p>
-                      Start Time:{' '}
-                      {timestampToDate(
-                        parseInt(campaignData[0]?.startDate ?? '0')
-                      )}
-                    </p>
-                    <p>
-                      End Time:{' '}
-                      {timestampToDate(
-                        parseInt(campaignData[0]?.endDate ?? '0')
-                      )}
-                    </p>
+            <div className="flex flex-row gap-2">
+              <Button
+                onClick={() =>
+                  setDialogState((prev) => ({
+                    ...prev,
+                    isCreateOpen: true,
+                  }))
+                }
+              >
+                Create Campaign
+              </Button>
 
-                    <Button onClick={signMessage}>Sign Message</Button>
-                    {signature.length > 0 && (
-                      <div
-                        className="flex flex-col gap-2 w-full"
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            JSON.stringify({
-                              Message: _message,
-                              Signature: signature,
-                              'Wallet Address': address,
-                            })
-                          )
-                          toast({ title: 'Signature copied to clipboard' })
-                        }}
-                      >
-                        <h5 className="text-muted-foreground break-words whitespace-normal bg-muted rounded-lg p-4 relative">
-                          <div className="absolute top-2 right-2">
-                            <CopyIcon />
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <div className="flex gap-2">
-                              <span className="font-semibold">Message:</span>
-                              <span>{_message}</span>
-                            </div>
-                            <div className="flex gap-2">
-                              <span className="font-semibold">Signature:</span>
-                              <span className="break-all">{signature}</span>
-                            </div>
-                            <div className="flex gap-2">
-                              <span className="font-semibold">
-                                Wallet Address:
-                              </span>
-                              <span className="break-all">{address}</span>
-                            </div>
-                          </div>
-                        </h5>
-                      </div>
-                    )}
-                  </CardFooter>
-                </Card>
-              )}
+              <Button
+                onClick={() =>
+                  setDialogState((prev) => ({
+                    ...prev,
+                    isAddWinnersOpen: true,
+                  }))
+                }
+              >
+                Add Winners
+              </Button>
+              <Button onClick={signMessage}>Sign Message</Button>
             </div>
+            {signature.length > 0 && (
+              <div
+                className="flex flex-col gap-2 w-full cursor-pointer"
+                onClick={handleCopySignature}
+              >
+                <h5 className="text-muted-foreground break-words whitespace-normal bg-muted rounded-lg p-4 relative">
+                  <div className="absolute top-2 right-2">
+                    <CopyIcon />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <span className="font-semibold">Message:</span>
+                      <span>{CLAIM_MESSAGE}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="font-semibold">Signature:</span>
+                      <span className="break-all">{signature}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="font-semibold">Wallet Address:</span>
+                      <span className="break-all">{address}</span>
+                    </div>
+                  </div>
+                </h5>
+              </div>
+            )}
+            <NFTBalancesCard
+              balances={nftBalances}
+              metadata={nftMetadata}
+              onNFTClick={handleNFTClick}
+            />
           </div>
         )}
 
         <div className="flex flex-col gap-4 mb-6">
           <h2 className="text-2xl font-bold tracking-tight mt-6">Campaigns</h2>
-
-          <Card>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>No.</TableHead>
-                  <TableHead>SBT</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Start Time</TableHead>
-                  <TableHead>End Time</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {campaignData.map((campaign, index) => (
-                  <TableRow
-                    key={index}
-                    onClick={() => {
-                      if (!chainId) {
-                        toast({ title: 'Please connect to your wallet' })
-                        return
-                      }
-
-                      setCampaignId(index)
-                    }}
-                    className="cursor-pointer hover:bg-muted/50"
-                  >
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>
-                      <Image
-                        src={
-                          !nftMetadata || nftMetadata.length === 0
-                            ? '/images/empty-nft.svg'
-                            : nftMetadata[index]?.image ||
-                              '/images/empty-nft.svg'
-                        }
-                        alt={`NFT #${index}`}
-                        className="rounded-lg h-[140px] w-[100px] object-fill"
-                        width={100}
-                        height={140}
-                      />
-                    </TableCell>
-                    <TableCell>{campaign.title}</TableCell>
-                    <TableCell>
-                      {campaign.validateSignatures
-                        ? 'Verify Signature'
-                        : 'Whitelist'}
-                    </TableCell>
-                    <TableCell>
-                      {campaign.isNFT
-                        ? campaign.amount
-                        : formatEther(campaign.amount ?? '0')}
-                    </TableCell>
-                    <TableCell>{campaign.isNFT ? 'NFT' : 'PCE'}</TableCell>
-                    <TableCell>
-                      {timestampToDate(parseInt(campaign.startDate))}
-                    </TableCell>
-                    <TableCell>
-                      {timestampToDate(parseInt(campaign.endDate))}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
+          <CampaignsTable
+            campaigns={campaignData.data}
+            metadata={nftMetadata}
+            onCampaignClick={(index) => {
+              setDialogState((prev) => ({
+                ...prev,
+                campaignId: campaignData.data[index]?.campaignId ?? 0,
+                isOpen: true,
+              }))
+            }}
+          />
         </div>
       </div>
-      <CampaignDialog isOpen={isOpen} onOpenChange={setIsOpen} />
+      <CampaignDialog
+        isOpen={dialogState.isOpen}
+        onOpenChange={(open) => {
+          setDialogState((prev) => ({
+            ...prev,
+            isOpen: open,
+            campaignId: prev.campaignId,
+          }))
+        }}
+        campaign={currentCampaign}
+        status={campaignStatus}
+        onClaim={(gistUrl) => claimCampaign(dialogState.campaignId, gistUrl)}
+      />
       <NFT_DETAIL
-        isOpen={isNFT_DETAIL_Open}
-        onOpenChange={setIsNFT_DETAIL_Open}
-        imageSrc={
-          !nftMetadata || nftMetadata.length === 0
-            ? '/images/empty-nft.svg'
-            : nftMetadata[nftDetailIndex]?.image || '/images/empty-nft.svg'
-        }
-        imageName={campaignData[nftDetailIndex]?.title ?? ''}
+        isOpen={isNFTDetailOpen}
+        onOpenChange={setIsNFTDetailOpen}
+        imageSrc={nftMetadata[nftDetailIndex]?.image || EMPTY_NFT_IMAGE}
+        imageName={campaignData.data[nftDetailIndex]?.title ?? ''}
         tokenId={nftDetailIndex + 1}
-        description={campaignData[nftDetailIndex]?.description ?? ''}
+        description={campaignData.data[nftDetailIndex]?.description ?? ''}
         metadata={JSON.stringify(nftMetadata[nftDetailIndex])}
       />
     </div>

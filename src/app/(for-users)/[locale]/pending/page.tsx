@@ -38,7 +38,7 @@ import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
-import { localhost } from '~/lib/config'
+import { defaultChainId } from '~/app/constants/constants'
 
 export default function ForPendingPage({
   params: { locale, ...params },
@@ -84,7 +84,7 @@ export default function ForPendingPage({
   }, [locale])
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
-    address: governorAddress[chainId || localhost.id] as `0x${string}`,
+    address: governorAddress[chainId || defaultChainId] as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'getVotes',
     args: [address],
@@ -92,7 +92,7 @@ export default function ForPendingPage({
 
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
-      address: governorAddress[chainId || localhost.id] as `0x${string}`,
+      address: governorAddress[chainId || defaultChainId] as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
       args: [],
@@ -115,7 +115,7 @@ export default function ForPendingPage({
   }, [isConfirmed, isConfirming, error, hash])
 
   const { data: votingDelay, refetch: refetchVotingDelay } = useReadContract({
-    address: governorAddress[chainId || localhost.id] as `0x${string}`,
+    address: governorAddress[chainId || defaultChainId] as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'votingDelay',
   })
@@ -126,14 +126,14 @@ export default function ForPendingPage({
     let _status = []
     for (let i = 1; i <= count; i++) {
       const proposal = await readContract(config, {
-        address: governorAddress[chainId || localhost.id] as `0x${string}`,
+        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
         abi: GOVERNOR_ABI,
         functionName: 'proposals',
         args: [i],
       })
 
       const status = await readContract(config, {
-        address: governorAddress[chainId || localhost.id] as `0x${string}`,
+        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
         abi: GOVERNOR_ABI,
         functionName: 'state',
         args: [i],
@@ -234,7 +234,7 @@ export default function ForPendingPage({
                             writeContract({
                               abi: GOVERNOR_ABI,
                               address: governorAddress[
-                                chainId || localhost.id
+                                chainId || defaultChainId
                               ] as `0x${string}`,
                               functionName: 'castVote',
                               args: [proposal[0], true],
@@ -250,7 +250,7 @@ export default function ForPendingPage({
                             writeContract({
                               abi: GOVERNOR_ABI,
                               address: governorAddress[
-                                chainId || localhost.id
+                                chainId || defaultChainId
                               ] as `0x${string}`,
                               functionName: 'castVote',
                               args: [proposal[0], false],
@@ -270,7 +270,7 @@ export default function ForPendingPage({
                             writeContract({
                               abi: GOVERNOR_ABI,
                               address: governorAddress[
-                                chainId || localhost.id
+                                chainId || defaultChainId
                               ] as `0x${string}`,
                               functionName: 'execute',
                               args: [proposal[0]],
@@ -288,7 +288,7 @@ export default function ForPendingPage({
                             writeContract({
                               abi: GOVERNOR_ABI,
                               address: governorAddress[
-                                chainId || localhost.id
+                                chainId || defaultChainId
                               ] as `0x${string}`,
                               functionName: 'queue',
                               args: [proposal[0]],

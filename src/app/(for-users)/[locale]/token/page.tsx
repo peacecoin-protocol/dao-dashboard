@@ -43,7 +43,7 @@ import { getDict } from '~/i18n/get-dict'
 import { COMMUNITY_TOKEN_ABI } from '~/app/ABIs/CommunityToken'
 
 import { config } from '~/lib/config'
-import { localhost } from '~/lib/config'
+import { defaultChainId } from '~/app/constants/constants'
 
 import { TOKEN } from '~/i18n/types'
 
@@ -87,14 +87,14 @@ export default function ForTokenPage({
   }, [locale])
 
   const { data: balance, refetch: refetchBalance } = useReadContract({
-    address: pceAddress[chainId || localhost.id] as `0x${string}`,
+    address: pceAddress[chainId || defaultChainId] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'balanceOf',
     args: [address],
   })
 
   const { data: _tokens, refetch: refetchTokens } = useReadContract({
-    address: pceAddress[chainId || localhost.id] as `0x${string}`,
+    address: pceAddress[chainId || defaultChainId] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'getTokens',
     args: [],
@@ -102,14 +102,14 @@ export default function ForTokenPage({
 
   const { data: lastModifiedFactor, refetch: refetchLastModifiedFactor } =
     useReadContract({
-      address: pceAddress[chainId || localhost.id] as `0x${string}`,
+      address: pceAddress[chainId || defaultChainId] as `0x${string}`,
       abi: PCE_ABI,
       functionName: 'lastModifiedFactor',
       args: [],
     })
 
   const { data: factor } = useReadContract({
-    address: pceAddress[chainId || localhost.id] as `0x${string}`,
+    address: pceAddress[chainId || defaultChainId] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'getCurrentFactor',
     args: [],
@@ -117,7 +117,7 @@ export default function ForTokenPage({
 
   const { data: INITIAL_FACTOR, refetch: refetchINITIAL_FACTOR } =
     useReadContract({
-      address: pceAddress[chainId || localhost.id] as `0x${string}`,
+      address: pceAddress[chainId || defaultChainId] as `0x${string}`,
       abi: PCE_ABI,
       functionName: 'INITIAL_FACTOR',
       args: [],
@@ -127,7 +127,7 @@ export default function ForTokenPage({
     data: swapableToPCEIndividualRate,
     refetch: refetchSwapableToPCEIndividualRate,
   } = useReadContract({
-    address: pceAddress[chainId || localhost.id] as `0x${string}`,
+    address: pceAddress[chainId || defaultChainId] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'swapableToPCEIndividualRate',
     args: [],
@@ -135,7 +135,7 @@ export default function ForTokenPage({
 
   const fetchExchangeRate = async (_tokens: string[]) => {
     if (!_tokens || _tokens.length == 0) return
-    if (!pceAddress[chainId || localhost.id]) return
+    if (!pceAddress[chainId || defaultChainId]) return
 
     const _exchangeRates: Record<string, bigint> = {}
 
@@ -145,7 +145,7 @@ export default function ForTokenPage({
         if (!tokenAddress) continue // Skip if undefined
 
         const exchangeRate = await readContract(config, {
-          address: pceAddress[chainId || localhost.id] as `0x${string}`,
+          address: pceAddress[chainId || defaultChainId] as `0x${string}`,
           abi: PCE_ABI,
           functionName: 'getExchangeRate',
           args: [tokenAddress],
@@ -373,7 +373,7 @@ export default function ForTokenPage({
       abi: COMMUNITY_TOKEN_ABI,
       address: token,
       functionName: 'allowance',
-      args: [address, pceAddress[chainId || localhost.id] as `0x${string}`],
+      args: [address, pceAddress[chainId || defaultChainId] as `0x${string}`],
     })) as bigint
 
     try {
@@ -383,7 +383,7 @@ export default function ForTokenPage({
           address: token,
           functionName: 'approve',
           args: [
-            pceAddress[chainId || localhost.id] as `0x${string}`,
+            pceAddress[chainId || defaultChainId] as `0x${string}`,
             parseEther(swapAmount),
           ],
         })
@@ -401,7 +401,7 @@ export default function ForTokenPage({
     try {
       const hash = await writeContractAsync({
         abi: PCE_ABI,
-        address: pceAddress[chainId || localhost.id] as `0x${string}`,
+        address: pceAddress[chainId || defaultChainId] as `0x${string}`,
         functionName: 'swapFromLocalToken',
         args: [token, parseEther(swapAmount)],
       })
@@ -445,7 +445,7 @@ export default function ForTokenPage({
     try {
       hash = await writeContractAsync({
         abi: PCE_ABI,
-        address: pceAddress[chainId || localhost.id] as `0x${string}`,
+        address: pceAddress[chainId || defaultChainId] as `0x${string}`,
         functionName: 'swapToLocalToken',
         args: [tokenAddress, parseEther(swapAmount)],
       })
@@ -467,7 +467,7 @@ export default function ForTokenPage({
 
     writeContract({
       abi: PCE_ABI,
-      address: pceAddress[chainId || localhost.id] as `0x${string}`,
+      address: pceAddress[chainId || defaultChainId] as `0x${string}`,
       functionName: 'createToken',
       args: [
         tokenInfo.name,

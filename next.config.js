@@ -5,8 +5,8 @@ const nextConfig = {
       'nftmedia.parallelnft.com',
       'avatars.githubusercontent.com',
       'api.github.com',
-      'https://orange-elegant-takin-78.mypinata.cloud/',
-      'orange-elegant-takin-78.mypinata.cloud/',
+      'https://orange-elegant-takin-78.mypinata.cloud',
+      'orange-elegant-takin-78.mypinata.cloud',
     ],
   },
 }
