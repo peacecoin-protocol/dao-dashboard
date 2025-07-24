@@ -22,7 +22,8 @@ export const CreateCampaignModal = ({
     sbtId: '',
     title: '',
     description: '',
-    amount: '',
+    totalAmount: '',
+    claimAmount: '',
     startDate: '',
     endDate: '',
     isVerifySignature: true,
@@ -31,7 +32,7 @@ export const CreateCampaignModal = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    if (name === 'sbtId' && value == '0') {
+    if (name === 'sbtId' && value == '0' && form.isSBT) {
       toast.error('SBT ID must be greater than 0')
       return
     }
@@ -40,10 +41,11 @@ export const CreateCampaignModal = ({
 
   const handleSubmit = () => {
     if (
-      form.sbtId === '' ||
+      (form.isSBT && (form.sbtId === '' || form.sbtId === '0')) ||
       form.title === '' ||
       form.description === '' ||
-      form.amount === '' ||
+      form.totalAmount === '' ||
+      form.claimAmount === '' ||
       form.startDate === '' ||
       form.endDate === ''
     ) {
@@ -51,8 +53,13 @@ export const CreateCampaignModal = ({
       return
     }
 
-    if (Number(form.amount) == 0) {
-      toast.error('Amount must be greater than 0')
+    if (Number(form.totalAmount) == 0) {
+      toast.error('Total Amount must be greater than 0')
+      return
+    }
+
+    if (Number(form.claimAmount) == 0) {
+      toast.error('Claim Amount must be greater than 0')
       return
     }
 
@@ -61,17 +68,13 @@ export const CreateCampaignModal = ({
       return
     }
 
-    if (new Date(form.startDate) < new Date()) {
-      toast.error('Start date must be in the future')
-      return
-    }
-
     onSubmit(form)
     setForm({
       sbtId: '',
       title: '',
       description: '',
-      amount: '',
+      totalAmount: '',
+      claimAmount: '',
       startDate: '',
       endDate: '',
       isVerifySignature: true,
@@ -85,14 +88,33 @@ export const CreateCampaignModal = ({
         <h2 className="text-2xl font-bold tracking-tight mt-6">
           Create Campaign
         </h2>
+
+        <select
+          name="isSBT"
+          value={form.isSBT ? 'SBT' : 'Token'}
+          onChange={(e) =>
+            setForm((prev) => ({
+              ...prev,
+              isSBT: e.target.value === 'SBT',
+            }))
+          }
+          className="border rounded p-2 text-gray-500"
+        >
+          <option value="SBT">SBT</option>
+          <option value="Token">Token</option>
+        </select>
+
         <Input
           type="text"
           name="sbtId"
           placeholder="SBT ID"
           value={form.sbtId}
           onChange={handleChange}
+          style={{ display: form.isSBT ? undefined : 'none' }}
         />
-        <div className="flex items-center justify-center w-full">
+        <div
+          className={`flex items-center justify-center w-full${!form.isSBT ? ' hidden' : ''}`}
+        >
           <Image
             src={
               form.sbtId != '0' && form.sbtId != ''
@@ -121,9 +143,16 @@ export const CreateCampaignModal = ({
         />
         <Input
           type="text"
-          name="amount"
-          placeholder="Amount"
-          value={form.amount}
+          name="totalAmount"
+          placeholder="Total Amount"
+          value={form.totalAmount}
+          onChange={handleChange}
+        />
+        <Input
+          type="text"
+          name="claimAmount"
+          placeholder="Claim Amount"
+          value={form.claimAmount}
           onChange={handleChange}
         />
         <select
@@ -137,24 +166,10 @@ export const CreateCampaignModal = ({
           }
           className="border rounded p-2 text-gray-500"
         >
-          <option value="verifySignature">Verify Signature</option>
+          <option value="verifySignature">Whitelist + Verify Signature</option>
           <option value="whitelist">Whitelist</option>
         </select>
 
-        <select
-          name="isSBT"
-          value={form.isSBT ? 'SBT' : 'Token'}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              isSBT: e.target.value === 'SBT',
-            }))
-          }
-          className="border rounded p-2 text-gray-500"
-        >
-          <option value="SBT">SBT</option>
-          <option value="Token">Token</option>
-        </select>
         <Input
           type="datetime-local"
           name="startDate"

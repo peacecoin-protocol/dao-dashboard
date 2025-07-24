@@ -4,9 +4,11 @@ import { Button } from './button'
 export default function AddDynamicInputFields({
   inputs,
   setInputs,
+  isVerifySignature,
 }: {
   inputs: { address: string; git: string }[]
   setInputs: (inputs: { address: string; git: string }[]) => void
+  isVerifySignature: boolean
 }) {
   const handleAddInput = () => {
     setInputs([...inputs, { address: '', git: '' }])
@@ -35,20 +37,28 @@ export default function AddDynamicInputFields({
       {inputs.map((item, index) => (
         <div className="flex flex-col gap-2" key={index}>
           <div className="flex flex-row gap-2">
-            <Input
-              name="address"
-              placeholder="WalletAddress"
-              type="text"
-              value={item.address}
-              onChange={(event) => handleChange(event, index)}
-            />
-            <Input
-              name="git"
-              placeholder="Gist Username"
-              type="text"
-              value={item.git}
-              onChange={(event) => handleChange(event, index)}
-            />
+            <div className="flex flex-col gap-2 w-full">
+              {!isVerifySignature && (
+                <Input
+                  name="address"
+                  placeholder="WalletAddress"
+                  type="text"
+                  className="w-full"
+                  value={item.address}
+                  onChange={(event) => handleChange(event, index)}
+                />
+              )}
+              {isVerifySignature && (
+                <Input
+                  name="git"
+                  placeholder="Gist Username"
+                  type="text"
+                  className="w-full"
+                  value={item.git}
+                  onChange={(event) => handleChange(event, index)}
+                />
+              )}
+            </div>
             {inputs.length > 1 && (
               <Button
                 variant="outline"

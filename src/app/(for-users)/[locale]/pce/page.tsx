@@ -74,7 +74,6 @@ import {
   timelockAddress,
   factoryAddress,
   PCE_SBT_ADDRESS,
-  sbtAddress,
 } from '~/app/constants/constants'
 
 import { createdAt, WEB, LINKEDIN, TWITTER } from '~/app/constants/constants'
@@ -264,7 +263,7 @@ export default function PCEPage({
 
   const { data: governanceTokenBalance, refetch: refetchGovTokenBalance } =
     useReadContract({
-      address: sbtAddress[chainId || defaultChainId] as `0x${string}`,
+      address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
       abi: PCE_ABI,
       functionName: 'balanceOf',
       args: [address],
@@ -1000,10 +999,14 @@ export default function PCEPage({
                       chainId={chainId}
                       type="address"
                       address={
-                        sbtAddress[chainId || defaultChainId] as `0x${string}`
+                        PCE_SBT_ADDRESS[
+                          chainId || defaultChainId
+                        ] as `0x${string}`
                       }
                       message={shortenAddress(
-                        sbtAddress[chainId || defaultChainId] as `0x${string}`
+                        PCE_SBT_ADDRESS[
+                          chainId || defaultChainId
+                        ] as `0x${string}`
                       )}
                     ></CustomLink.default>
                   </div>

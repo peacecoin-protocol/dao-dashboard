@@ -33,8 +33,8 @@ import {
 import { timestampToDate } from '~/components/utils'
 
 import {
+  PCE_SBT_ADDRESS,
   campaignAddress,
-  sbtAddress,
   SUBGRAPH_URL,
   defaultChainId,
 } from '~/app/constants/constants'
@@ -52,6 +52,7 @@ import { Spinner } from '~/components/ui/Spinner'
 import { CreateCampaignModal } from './modal/createCampaignModal'
 import { AddWhitelistModal } from './modal/addWhitelistModal'
 import { CampaignsTable } from './modal/campaignTable'
+import { displayError } from '~/components/custom/displayError'
 // Constants
 const CLAIM_MESSAGE = 'Claim Bounty for dApp.xyz'
 const DEFAULT_CAMPAIGN_ID = -1
@@ -84,6 +85,11 @@ interface CampaignStatus {
   status: number
 }
 
+interface TotalClaimed {
+  campaignId: number
+  totalClaimed: string
+}
+
 const useNFTData = (
   chainId: number | undefined,
   address: string | undefined,
@@ -106,7 +112,9 @@ const useNFTData = (
         tokenURIs.map(async (tokenURI) => {
           return (await readContract(config, {
             abi: SBT_ABI,
-            address: sbtAddress[chainId || defaultChainId] as `0x${string}`,
+            address: PCE_SBT_ADDRESS[
+              chainId || defaultChainId
+            ] as `0x${string}`,
             functionName: 'balanceOf',
             args: [address, tokenURI.internal_id],
           })) as number
@@ -231,12 +239,14 @@ const CampaignDialog = ({
   campaign,
   status,
   onClaim,
+  isConnected,
 }: {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   campaign: CAMPAIGN | undefined
   status: CampaignStatus
   onClaim: (gistUrl: string) => void
+  isConnected: boolean
 }) => {
   const [gistUrl, setGistUrl] = useState('')
 
@@ -268,8 +278,8 @@ const CampaignDialog = ({
           <p>
             Reward:{' '}
             {campaign.isNFT
-              ? `${campaign.amount} Contributor NFT`
-              : `${formatEther(campaign.amount ?? '0')} PCE`}
+              ? `${campaign.totalAmount} Contributor NFT`
+              : `${formatEther(campaign.totalAmount ?? '0')} PCE`}
           </p>
           {isActive && (
             <>
@@ -305,7 +315,8 @@ const CampaignDialog = ({
             disabled={
               status.isClaimed ||
               status.status == 2 ||
-              (!status.isWinner && !campaign.validateSignatures)
+              (!status.isWinner && !campaign.validateSignatures) ||
+              !isConnected
             }
           >
             Claim
@@ -337,6 +348,7 @@ export default function ForCampaignPage({
 
   const [signature, setSignature] = useState<string>('')
   const [loading, setLoading] = useState<boolean>(false)
+  const [totalClaimed, setTotalClaimed] = useState<TotalClaimed[]>([])
 
   // Contract hooks
   const {
@@ -354,7 +366,7 @@ export default function ForCampaignPage({
 
   const { data: uri_ } = useReadContract({
     abi: SBT_ABI,
-    address: sbtAddress[chainId || defaultChainId] as `0x${string}`,
+    address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
     functionName: 'uri_',
     args: [],
     chainId: chainId || defaultChainId,
@@ -362,7 +374,7 @@ export default function ForCampaignPage({
 
   const { data: currentTokenId, refetch: refetchCurrentTokenId } =
     useReadContract({
-      address: sbtAddress[chainId || defaultChainId] as `0x${string}`,
+      address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
       abi: SBT_ABI,
       functionName: 'currentTokenId',
       args: [],
@@ -412,7 +424,8 @@ export default function ForCampaignPage({
               endDate
               startDate
               validateSignatures
-              amount
+              totalAmount
+              claimAmount
               isNFT
             }
             setTokenURIs(first: 10, orderBy: internal_id, orderDirection: asc) {
@@ -472,11 +485,11 @@ export default function ForCampaignPage({
 
   useEffect(() => {
     const checkCampaignStatus = async () => {
-      if (dialogState.campaignId < 0 || !address || !chainId) return
+      if (dialogState.campaignId <= 0 || !address || !chainId) return
 
       try {
         const [status, isWinner, isClaimed] = await Promise.all([
-          readContract(config, {
+          await readContract(config, {
             abi: CAMPAIGN_ABI,
             address: campaignAddress[
               chainId || defaultChainId
@@ -484,7 +497,7 @@ export default function ForCampaignPage({
             functionName: 'getStatus',
             args: [dialogState.campaignId],
           }),
-          readContract(config, {
+          await readContract(config, {
             abi: CAMPAIGN_ABI,
             address: campaignAddress[
               chainId || defaultChainId
@@ -492,7 +505,7 @@ export default function ForCampaignPage({
             functionName: 'isWinner',
             args: [dialogState.campaignId, address],
           }),
-          readContract(config, {
+          await readContract(config, {
             abi: CAMPAIGN_ABI,
             address: campaignAddress[
               chainId || defaultChainId
@@ -507,11 +520,33 @@ export default function ForCampaignPage({
           isWinner: isWinner as boolean,
           isClaimed: isClaimed as boolean,
         })
-      } catch (error) {}
+      } catch (error) {
+        console.log(error, 'error')
+      }
     }
 
     checkCampaignStatus()
   }, [dialogState.campaignId, address, chainId])
+
+  useEffect(() => {
+    const totalClaimed = [{ campaignId: 0, totalClaimed: '0' }]
+
+    Promise.all(
+      campaignData.data.map(async (campaign) => {
+        const _claimed = (await readContract(config, {
+          abi: CAMPAIGN_ABI,
+          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
+          functionName: 'totalClaimed',
+          args: [campaign.campaignId],
+        })) as unknown as string
+        totalClaimed.push({
+          campaignId: campaign.campaignId,
+          totalClaimed: _claimed,
+        })
+      })
+    )
+    setTotalClaimed(totalClaimed)
+  }, [campaignData, chainId, defaultChainId, readContract, config, isConfirmed])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -562,7 +597,7 @@ export default function ForCampaignPage({
         confirmations: 1,
       })
     } catch (error) {
-      toast('Error adding whitelist')
+      displayError(error as Error)
     } finally {
       setLoading(false)
     }
@@ -581,7 +616,12 @@ export default function ForCampaignPage({
         sbtId: formData.sbtId,
         title: formData.title,
         description: formData.description,
-        amount: formData.isSBT ? formData.amount : parseEther(formData.amount),
+        totalAmount: formData.isSBT
+          ? formData.totalAmount
+          : parseEther(formData.totalAmount),
+        claimAmount: formData.isSBT
+          ? formData.claimAmount
+          : parseEther(formData.claimAmount),
         startDate: new Date(formData.startDate).getTime() / 1000,
         endDate: new Date(formData.endDate).getTime() / 1000,
         validateSignatures: formData.isVerifySignature,
@@ -602,6 +642,7 @@ export default function ForCampaignPage({
 
       await fetchCampaignData()
     } catch (error) {
+      displayError(error as Error)
     } finally {
       setLoading(false)
     }
@@ -622,8 +663,8 @@ export default function ForCampaignPage({
 
   const claimCampaign = useCallback(
     async (campaignId: number, gistUrl: string) => {
-      setLoading(true)
       setDialogState((prev) => ({ ...prev, isOpen: false }))
+      setLoading(true)
 
       let signature = '0x'
       let message = '_'
@@ -655,13 +696,14 @@ export default function ForCampaignPage({
       )
 
       try {
-        writeContract({
+        await writeContractAsync({
           abi: CAMPAIGN_ABI,
           address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
           functionName: 'claimCampaign',
           args: [campaignId, gistUsernameHash, message, signature],
         })
       } catch (error) {
+        displayError(error as Error)
       } finally {
         await fetchCampaignData()
         setLoading(false)
@@ -724,6 +766,7 @@ export default function ForCampaignPage({
           onClose={() =>
             setDialogState((prev) => ({ ...prev, isAddWinnersOpen: false }))
           }
+          campaignData={campaignData.data}
           onSubmit={handleAddWhitelist}
         />
 
@@ -799,6 +842,7 @@ export default function ForCampaignPage({
                 isOpen: true,
               }))
             }}
+            totalClaimed={totalClaimed}
           />
         </div>
       </div>
@@ -808,12 +852,15 @@ export default function ForCampaignPage({
           setDialogState((prev) => ({
             ...prev,
             isOpen: open,
-            campaignId: prev.campaignId,
+            campaignId: currentCampaign?.campaignId ?? 0,
           }))
         }}
         campaign={currentCampaign}
         status={campaignStatus}
-        onClaim={(gistUrl) => claimCampaign(dialogState.campaignId, gistUrl)}
+        onClaim={(gistUrl) =>
+          claimCampaign(currentCampaign?.campaignId ?? 0, gistUrl)
+        }
+        isConnected={!!address}
       />
       <NFT_DETAIL
         isOpen={isNFTDetailOpen}

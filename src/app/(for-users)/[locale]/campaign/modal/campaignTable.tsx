@@ -18,10 +18,12 @@ export const CampaignsTable = ({
   campaigns,
   metadata,
   onCampaignClick,
+  totalClaimed,
 }: {
   campaigns: CAMPAIGN[]
   metadata: Metadata[]
   onCampaignClick: (index: number) => void
+  totalClaimed: { campaignId: number; totalClaimed: string }[]
 }) => (
   <Card>
     <CardContent>
@@ -31,15 +33,18 @@ export const CampaignsTable = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Campaign ID</TableHead>
-            <TableHead>Image</TableHead>
-            <TableHead>SBT ID</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Start Time</TableHead>
-            <TableHead>End Time</TableHead>
+            <TableHead className="text-center">Campaign ID</TableHead>
+            <TableHead className="text-center">Image</TableHead>
+            <TableHead className="text-center">SBT ID</TableHead>
+            <TableHead className="text-center">Title</TableHead>
+            <TableHead className="text-center">Type</TableHead>
+            <TableHead className="text-center">
+              Total Claimed Amount / Total Amount
+            </TableHead>
+            <TableHead className="text-center">Claim Amount</TableHead>
+            <TableHead className="text-center">Type</TableHead>
+            <TableHead className="text-center">Start Time</TableHead>
+            <TableHead className="text-center">End Time</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -59,11 +64,13 @@ export const CampaignsTable = ({
                 onClick={() => onCampaignClick(index)}
                 className="cursor-pointer hover:bg-muted/50"
               >
-                <TableCell>{campaign.campaignId}</TableCell>
-                <TableCell>
+                <TableCell className="text-center">
+                  {campaign.campaignId}
+                </TableCell>
+                <TableCell className="items-center justify-center flex">
                   <Image
                     src={
-                      metadata.find((m) => m.token_id == campaign.campaignId)
+                      metadata.find((m) => m.token_id == campaign.sbtId)
                         ?.image || EMPTY_NFT_IMAGE
                     }
                     alt={`NFT #${index}`}
@@ -72,23 +79,28 @@ export const CampaignsTable = ({
                     height={120}
                   />
                 </TableCell>
-                <TableCell>{campaign.sbtId}</TableCell>
-                <TableCell>{campaign.title}</TableCell>
-                <TableCell>
+                <TableCell className="text-center">{campaign.sbtId}</TableCell>
+                <TableCell className="text-center">{campaign.title}</TableCell>
+                <TableCell className="text-center">
                   {campaign.validateSignatures
-                    ? 'Verify Signature'
+                    ? 'Whitelist + Verify Signature'
                     : 'Whitelist'}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   {campaign.isNFT
-                    ? campaign.amount
-                    : formatEther(campaign.amount ?? '0')}
+                    ? `${totalClaimed.find((t) => t.campaignId === campaign.campaignId)?.totalClaimed ?? '0'} / ${campaign.totalAmount}`
+                    : `${formatEther(totalClaimed.find((t) => t.campaignId === campaign.campaignId)?.totalClaimed ?? '0') ?? '0'} / ${formatEther(campaign.totalAmount ?? '0')}`}
                 </TableCell>
-                <TableCell>{campaign.isNFT ? 'SBT' : 'PCE'}</TableCell>
-                <TableCell>
+                <TableCell className="text-center">
+                  {campaign.claimAmount}
+                </TableCell>
+                <TableCell className="text-center">
+                  {campaign.isNFT ? 'SBT' : 'PCE'}
+                </TableCell>
+                <TableCell className="text-center">
                   {timestampToDate(parseInt(campaign.startDate))}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   {timestampToDate(parseInt(campaign.endDate))}
                 </TableCell>
               </TableRow>

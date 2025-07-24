@@ -697,7 +697,8 @@ export default function SBTBuilderPage({
                   !croppedImage ||
                   !sbtForm.name ||
                   !sbtForm.description ||
-                  !sbtForm.votingPower
+                  !sbtForm.votingPower ||
+                  !address
                 }
                 onClick={uploadImage}
               >

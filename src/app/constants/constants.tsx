@@ -17,14 +17,7 @@ export const pceCommunity = {
 } as Record<number, `0x${string}`>
 
 export const PCE_SBT_ADDRESS = {
-  [sepolia.id]: '0x4bA06aeCa4F951312F9F922eA16625B2F36278aC',
-  [localhost.id]: '0x3d3a47670cebC45B405268BE07371F97AB408f81',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
-  [hoodi.id]: '0xBa9E16D096262023c50A3cCCC4f08af4b321fB21',
-} as Record<number, `0x${string}`>
-
-export const sbtAddress = {
-  [sepolia.id]: '0x4bA06aeCa4F951312F9F922eA16625B2F36278aC',
+  [sepolia.id]: '0x6109FebdCC8627350EBCD456a47fE0bb2D277D82',
   [localhost.id]: '0x3d3a47670cebC45B405268BE07371F97AB408f81',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xBa9E16D096262023c50A3cCCC4f08af4b321fB21',
@@ -73,7 +66,7 @@ export const daoStudioAddress = {
 } as Record<number, `0x${string}`>
 
 export const campaignAddress = {
-  [sepolia.id]: '0x033821E7287C43A47F24563719cC615bFBA4b58B',
+  [sepolia.id]: '0xc573929C09Cc1737023B0cd884D3E3c8aBF99B1E',
   [localhost.id]: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',

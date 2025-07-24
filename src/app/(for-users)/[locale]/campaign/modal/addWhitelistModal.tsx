@@ -1,23 +1,28 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Modal from '~/components/custom/Modal'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/custom/button'
 import { ethers } from 'ethers'
 import AddDynamicInputFields from '~/components/custom/AddDynamicInputFields'
+import { CAMPAIGN } from '~/i18n/types'
+import { displayError } from '~/components/custom/displayError'
 
 export const AddWhitelistModal = ({
   isOpen,
   onClose,
   onSubmit,
+  campaignData,
 }: {
   isOpen: boolean
   onClose: () => void
   onSubmit: (formData: any) => void
+  campaignData: CAMPAIGN[]
 }) => {
   const [form, setForm] = useState({
     id: '',
     data: [{ address: '', git: '' }],
   })
+  const [isVerifySignature, setIsVerifySignature] = useState(false)
 
   // web3 keccak value
   // Example: encode all gists as keccak256 hashes
@@ -26,19 +31,25 @@ export const AddWhitelistModal = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    if (name === 'addresses' || name === 'gists') {
-      setForm((prev) => ({
-        ...prev,
-        [name]: value.includes(',')
-          ? value.split(',').map((item) => item.trim())
-          : [value],
-      }))
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }))
+    if (name === 'id') {
+      const campaign = campaignData.find(
+        (campaign) => campaign.campaignId == Number(value)
+      )
+      if (campaign) {
+        setIsVerifySignature(campaign.validateSignatures)
+      } else {
+        displayError(new Error('Campaign not found'))
+      }
     }
+
+    setForm((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = () => {
+    if (form.id.length == 0) {
+      displayError(new Error('Campaign ID is required'))
+      return
+    }
     onSubmit(form)
     setForm({
       id: '',
@@ -46,10 +57,6 @@ export const AddWhitelistModal = ({
     })
     onClose()
   }
-
-  useEffect(() => {
-    console.log(form)
-  }, [form])
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -66,6 +73,7 @@ export const AddWhitelistModal = ({
         <AddDynamicInputFields
           inputs={form.data}
           setInputs={(data) => setForm({ ...form, data })}
+          isVerifySignature={isVerifySignature}
         />
         <Button onClick={handleSubmit}>Add Winners</Button>
       </div>
