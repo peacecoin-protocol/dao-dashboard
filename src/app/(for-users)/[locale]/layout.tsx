@@ -4,7 +4,6 @@ import AppBar from '~/components/common/app-bar'
 import { cn } from '~/components/utils'
 import { PagePropsWithLocale } from '~/i18n/types'
 import './for-users-any-locale.css'
-
 const inter = Inter({ subsets: ['latin'] })
 
 export default function ForUsersAnyLocaleIndexLayout({

@@ -115,7 +115,7 @@ import RingLoader from 'react-spinners/RingLoader'
 
 import { config } from '~/lib/config'
 import { sepolia } from 'wagmi/chains'
-import { localhost } from '~/lib/config'
+import { defaultChainId } from '~/app/constants/constants'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { pinata } from '~/lib/config'
 
@@ -278,7 +278,7 @@ export default function ForDAOPage({
 
     writeContract({
       abi: DAO_STUDIO_ABI,
-      address: daoStudioAddress[chainId || localhost.id] as `0x${string}`,
+      address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
       functionName: 'createDAO',
       args: [
         daoForm.name,
@@ -394,7 +394,7 @@ export default function ForDAOPage({
             }
 
             const holders = await getHolders(
-              chainId === localhost.id ? localhost.id : sepolia.id,
+              chainId == undefined ? defaultChainId : chainId,
               dao.governanceToken as string
             )
             const identicon = await generateIdenteapot(dao.governor, '')

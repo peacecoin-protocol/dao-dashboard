@@ -34,7 +34,7 @@ import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { ringStyle } from '~/app/constants/styles'
-import { localhost } from '~/lib/config'
+import { defaultChainId } from '~/app/constants/constants'
 
 export default function ForClosedPage({
   params: { locale, ...params },
@@ -69,7 +69,7 @@ export default function ForClosedPage({
 
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
-      address: governorAddress[chainId || localhost.id] as `0x${string}`,
+      address: governorAddress[chainId || defaultChainId] as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
       args: [],
@@ -96,13 +96,13 @@ export default function ForClosedPage({
 
     for (let i = 1; i <= count; i++) {
       const proposal = await readContract(config, {
-        address: governorAddress[chainId || localhost.id] as `0x${string}`,
+        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
         abi: GOVERNOR_ABI,
         functionName: 'proposals',
         args: [i],
       })
       const status = await readContract(config, {
-        address: governorAddress[chainId || localhost.id] as `0x${string}`,
+        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
         abi: GOVERNOR_ABI,
         functionName: 'state',
         args: [i],

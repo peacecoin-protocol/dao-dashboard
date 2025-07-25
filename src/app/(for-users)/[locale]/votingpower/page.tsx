@@ -31,13 +31,13 @@ import {
 import { getDict } from '~/i18n/get-dict'
 
 import { PagePropsWithLocale, Dictionary, Metadata } from '~/i18n/types'
+import { defaultChainId } from '~/app/constants/constants'
 
 import { formatNumber, formatString } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
 import { config } from '~/lib/config'
 
-import { localhost } from '~/lib/config'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { useBlock } from 'wagmi'
 import {
@@ -88,14 +88,14 @@ export default function StakingPage({
     })
 
   const { data: pceBalance, refetch: refetchPCEBalance } = useReadContract({
-    address: pceAddress[chainId || localhost.id] as `0x${string}`,
+    address: pceAddress[chainId || defaultChainId] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'balanceOf',
     args: [address],
   })
 
   const { data: wPCEBalance, refetch: refetchWPCEBalance } = useReadContract({
-    address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
+    address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'balanceOf',
     args: [address],
@@ -106,7 +106,7 @@ export default function StakingPage({
       if (wPCEBalance) {
         const stakedBalance = await readContract(config, {
           abi: STAKING_ABI,
-          address: stakingAddress[chainId || localhost.id] as `0x${string}`,
+          address: stakingAddress[chainId || defaultChainId] as `0x${string}`,
           functionName: '_convertToPEACECOIN',
           args: [wPCEBalance as string],
         })
@@ -120,7 +120,7 @@ export default function StakingPage({
 
   const { data: rewardBalance, refetch: refetchRewardBalance } =
     useReadContract({
-      address: stakingAddress[chainId || localhost.id] as `0x${string}`,
+      address: stakingAddress[chainId || defaultChainId] as `0x${string}`,
       abi: STAKING_ABI,
       functionName: 'rewards',
       args: [address],
@@ -128,40 +128,41 @@ export default function StakingPage({
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     abi: PCE_ABI,
-    address: pceAddress[chainId || localhost.id] as `0x${string}`,
+    address: pceAddress[chainId || defaultChainId] as `0x${string}`,
     functionName: 'allowance',
-    args: [address, stakingAddress[chainId || localhost.id] as `0x${string}`],
+    args: [address, stakingAddress[chainId || defaultChainId] as `0x${string}`],
   })
 
   const { data: wPCEAllowance, refetch: refetchWPCEAllowance } =
     useReadContract({
       abi: PCE_ABI,
-      address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
+      address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
       functionName: 'allowance',
-      args: [address, stakingAddress[chainId || localhost.id] as `0x${string}`],
+      args: [
+        address,
+        stakingAddress[chainId || defaultChainId] as `0x${string}`,
+      ],
     })
 
   const { data: currentTokenId, refetch: refetchCurrentTokenId } =
     useReadContract({
-      address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
+      address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
       abi: SBT_ABI,
       functionName: 'currentTokenId',
     })
 
   const { data: uri_, refetch: refetchUri } = useReadContract({
     abi: SBT_ABI,
-    address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
+    address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
     functionName: 'uri_',
     args: [],
-    chainId: chainId || localhost.id,
   })
 
   const { data: getTokenVote, refetch: refetchGetTokenVote } = useReadContract({
     abi: PCE_GOV_TOKEN_ABI,
-    address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
+    address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
     functionName: 'getVotes',
     args: [address],
-    chainId: chainId || localhost.id,
   })
 
   useEffect(() => {
@@ -176,7 +177,9 @@ export default function StakingPage({
         for (let i = 1; i <= (currentTokenId as number); i++) {
           const _balance = (await readContract(config, {
             abi: SBT_ABI,
-            address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
+            address: PCE_SBT_ADDRESS[
+              chainId || defaultChainId
+            ] as `0x${string}`,
             functionName: 'balanceOf',
             args: [address, i],
           })) as number
@@ -203,7 +206,9 @@ export default function StakingPage({
         for (let i = 1; i <= (currentTokenId as number); i++) {
           const _balance = (await readContract(config, {
             abi: SBT_ABI,
-            address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
+            address: PCE_SBT_ADDRESS[
+              chainId || defaultChainId
+            ] as `0x${string}`,
             functionName: 'votingPowerPerId',
             args: [i],
           })) as number
@@ -238,7 +243,7 @@ export default function StakingPage({
             const _uri = await readContract(config, {
               abi: SBT_ABI,
               address: PCE_SBT_ADDRESS[
-                chainId || localhost.id
+                chainId || defaultChainId
               ] as `0x${string}`,
               functionName: 'tokenURIs',
               args: [i],
@@ -291,10 +296,10 @@ export default function StakingPage({
       try {
         tx = await writeContractAsync({
           abi: PCE_ABI,
-          address: pceAddress[chainId || localhost.id] as `0x${string}`,
+          address: pceAddress[chainId || defaultChainId] as `0x${string}`,
           functionName: 'approve',
           args: [
-            stakingAddress[chainId || localhost.id] as `0x${string}`,
+            stakingAddress[chainId || defaultChainId] as `0x${string}`,
             BigInt(maxUint256),
           ],
         })
@@ -319,7 +324,7 @@ export default function StakingPage({
     try {
       tx = await writeContractAsync({
         abi: STAKING_ABI,
-        address: stakingAddress[chainId || localhost.id] as `0x${string}`,
+        address: stakingAddress[chainId || defaultChainId] as `0x${string}`,
         functionName: 'stake',
         args: [BigInt(parseEther(stakingAmount))],
       })
@@ -348,7 +353,7 @@ export default function StakingPage({
 
     const tx = await writeContractAsync({
       abi: STAKING_ABI,
-      address: stakingAddress[chainId || localhost.id] as `0x${string}`,
+      address: stakingAddress[chainId || defaultChainId] as `0x${string}`,
       functionName: 'withdraw',
       args: [wPCEBalance as string],
     })
@@ -418,7 +423,7 @@ export default function StakingPage({
   const handleDelegate = async () => {
     await writeContractAsync({
       abi: PCE_GOV_TOKEN_ABI,
-      address: WPCE_ADDRESS[chainId || localhost.id] as `0x${string}`,
+      address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
       functionName: 'delegate',
       args: [address],
     })

@@ -22,6 +22,7 @@ import {
   pceAddress,
   governorAddress,
   bountyAddress,
+  defaultChainId,
 } from '~/app/constants/constants'
 import { ringStyle } from '~/app/constants/styles'
 
@@ -40,7 +41,7 @@ import { useAccount, useReadContract } from 'wagmi'
 import { config } from '~/lib/config'
 
 import RingLoader from 'react-spinners/RingLoader'
-import { localhost } from '~/lib/config'
+
 export default function ForUsersIndexPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
@@ -74,7 +75,7 @@ export default function ForUsersIndexPage({
   }
 
   const { data: pceBalance, refetch: refetchBalance } = useReadContract({
-    address: pceAddress[chainId || localhost.id] as `0x${string}`,
+    address: pceAddress[chainId || defaultChainId] as `0x${string}`,
     abi: PCE_ABI,
     functionName: 'balanceOf',
     args: [address],
@@ -82,7 +83,7 @@ export default function ForUsersIndexPage({
 
   const { data: contributorBounties, refetch: refetchContributorBounties } =
     useReadContract({
-      address: bountyAddress[chainId || localhost.id] as `0x${string}`,
+      address: bountyAddress[chainId || defaultChainId] as `0x${string}`,
       abi: BOUNTY_ABI,
       functionName: 'contributorBounties',
       args: [address],
@@ -90,7 +91,7 @@ export default function ForUsersIndexPage({
 
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
-      address: governorAddress[chainId || localhost.id] as `0x${string}`,
+      address: governorAddress[chainId || defaultChainId] as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
       args: [],
@@ -109,14 +110,14 @@ export default function ForUsersIndexPage({
       let status = null
       try {
         proposal = await readContract(config, {
-          address: governorAddress[chainId || localhost.id] as `0x${string}`,
+          address: governorAddress[chainId || defaultChainId] as `0x${string}`,
           abi: GOVERNOR_ABI,
           functionName: 'proposals',
           args: [i],
         })
 
         status = await readContract(config, {
-          address: governorAddress[chainId || localhost.id] as `0x${string}`,
+          address: governorAddress[chainId || defaultChainId] as `0x${string}`,
           abi: GOVERNOR_ABI,
           functionName: 'state',
           args: [i],

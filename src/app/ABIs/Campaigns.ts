@@ -42,9 +42,11 @@ export const CAMPAIGN_ABI = [
     name: 'campaigns',
     inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     outputs: [
+      { name: 'sbtId', type: 'uint256', internalType: 'uint256' },
       { name: 'title', type: 'string', internalType: 'string' },
       { name: 'description', type: 'string', internalType: 'string' },
-      { name: 'amount', type: 'uint256', internalType: 'uint256' },
+      { name: 'claimAmount', type: 'uint256', internalType: 'uint256' },
+      { name: 'totalAmount', type: 'uint256', internalType: 'uint256' },
       { name: 'startDate', type: 'uint256', internalType: 'uint256' },
       { name: 'endDate', type: 'uint256', internalType: 'uint256' },
       { name: 'validateSignatures', type: 'bool', internalType: 'bool' },
@@ -93,9 +95,11 @@ export const CAMPAIGN_ABI = [
         type: 'tuple',
         internalType: 'struct Campaigns.Campaign',
         components: [
+          { name: 'sbtId', type: 'uint256', internalType: 'uint256' },
           { name: 'title', type: 'string', internalType: 'string' },
           { name: 'description', type: 'string', internalType: 'string' },
-          { name: 'amount', type: 'uint256', internalType: 'uint256' },
+          { name: 'claimAmount', type: 'uint256', internalType: 'uint256' },
+          { name: 'totalAmount', type: 'uint256', internalType: 'uint256' },
           { name: 'startDate', type: 'uint256', internalType: 'uint256' },
           { name: 'endDate', type: 'uint256', internalType: 'uint256' },
           { name: 'validateSignatures', type: 'bool', internalType: 'bool' },
@@ -124,7 +128,11 @@ export const CAMPAIGN_ABI = [
         type: 'address',
         internalType: 'contract ERC20Upgradeable',
       },
-      { name: '_nft', type: 'address', internalType: 'contract SBT' },
+      {
+        name: '_nft',
+        type: 'address',
+        internalType: 'contract PEACECOINDAO_SBT',
+      },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -143,8 +151,36 @@ export const CAMPAIGN_ABI = [
     type: 'function',
     name: 'nft',
     inputs: [],
-    outputs: [{ name: '', type: 'address', internalType: 'contract SBT' }],
+    outputs: [
+      { name: '', type: 'address', internalType: 'contract PEACECOINDAO_SBT' },
+    ],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'onERC1155BatchReceived',
+    inputs: [
+      { name: '', type: 'address', internalType: 'address' },
+      { name: '', type: 'address', internalType: 'address' },
+      { name: '', type: 'uint256[]', internalType: 'uint256[]' },
+      { name: '', type: 'uint256[]', internalType: 'uint256[]' },
+      { name: '', type: 'bytes', internalType: 'bytes' },
+    ],
+    outputs: [{ name: '', type: 'bytes4', internalType: 'bytes4' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'onERC1155Received',
+    inputs: [
+      { name: '', type: 'address', internalType: 'address' },
+      { name: '', type: 'address', internalType: 'address' },
+      { name: '', type: 'uint256', internalType: 'uint256' },
+      { name: '', type: 'uint256', internalType: 'uint256' },
+      { name: '', type: 'bytes', internalType: 'bytes' },
+    ],
+    outputs: [{ name: '', type: 'bytes4', internalType: 'bytes4' }],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -158,7 +194,7 @@ export const CAMPAIGN_ABI = [
     name: 'recoverERC20',
     inputs: [
       {
-        name: 'token',
+        name: '_token',
         type: 'address',
         internalType: 'contract ERC20Upgradeable',
       },
@@ -175,6 +211,13 @@ export const CAMPAIGN_ABI = [
   },
   {
     type: 'function',
+    name: 'supportsInterface',
+    inputs: [{ name: 'interfaceId', type: 'bytes4', internalType: 'bytes4' }],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'token',
     inputs: [],
     outputs: [
@@ -185,14 +228,7 @@ export const CAMPAIGN_ABI = [
   {
     type: 'function',
     name: 'totalClaimed',
-    inputs: [{ name: '', type: 'address', internalType: 'address' }],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'totalClaimedNFT',
-    inputs: [{ name: '', type: 'address', internalType: 'address' }],
+    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
@@ -262,6 +298,12 @@ export const CAMPAIGN_ABI = [
         indexed: true,
         internalType: 'uint256',
       },
+      {
+        name: 'sbtId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
       { name: 'title', type: 'string', indexed: false, internalType: 'string' },
       {
         name: 'description',
@@ -270,7 +312,13 @@ export const CAMPAIGN_ABI = [
         internalType: 'string',
       },
       {
-        name: 'amount',
+        name: 'claimAmount',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+      {
+        name: 'totalAmount',
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',

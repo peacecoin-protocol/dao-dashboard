@@ -20,8 +20,11 @@ export interface BOUNTY_CONTRIBUTOR {
 }
 
 export interface CAMPAIGN {
-  campaignId: string
-  amount: BigNumberish
+  sbtId: number
+  campaignId: number
+  totalAmount: BigNumberish
+  claimAmount: BigNumberish
+  claimedAmount: BigNumberish
   title: string
   description: string
   startDate: string

@@ -33,7 +33,7 @@ import {
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { localhost } from '~/lib/config'
+import { defaultChainId } from '~/app/constants/constants'
 
 export default function ForSubmitPage({
   params: { locale, ...params },
@@ -206,7 +206,7 @@ export default function ForSubmitPage({
               let _signature = 'approve(address,uint256)'
               let _value = '0'
               let _calldata = ''
-              let _address = pceAddress[chainId || localhost.id]
+              let _address = pceAddress[chainId || defaultChainId]
               if (category === '2') {
                 _calldata = new ethers.AbiCoder().encode(
                   ['address', 'uint256'],
@@ -216,16 +216,16 @@ export default function ForSubmitPage({
               } else if (category === '4') {
                 _signature = 'deploy(bytes)'
                 _calldata = new ethers.AbiCoder().encode(['bytes'], [bytescode])
-                _address = factoryAddress[chainId || localhost.id]
+                _address = factoryAddress[chainId || defaultChainId]
               } else if (category === '5') {
-                _address = timelockAddress[chainId || localhost.id]
+                _address = timelockAddress[chainId || defaultChainId]
                 _signature = 'updateVariables(uint256,uint256,uint256)'
                 _calldata = new ethers.AbiCoder().encode(
                   ['uint256', 'uint256', 'uint256'],
                   [variable1, variable2, variable3]
                 )
               } else if (category === '6') {
-                _address = governorAddress[chainId || localhost.id]
+                _address = governorAddress[chainId || defaultChainId]
                 _signature = 'updateVariables(uint256,uint256,uint256)'
                 _calldata = new ethers.AbiCoder().encode(
                   ['uint256', 'uint256', 'uint256'],
@@ -245,7 +245,7 @@ export default function ForSubmitPage({
               writeContract({
                 abi: GOVERNOR_ABI,
                 address: governorAddress[
-                  chainId || localhost.id
+                  chainId || defaultChainId
                 ] as `0x${string}`,
                 functionName: 'propose',
                 args: [

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { v4 as uuidv4 } from 'uuid'
 import { SBT_ABI } from '~/app/ABIs/SBT'
-import { PCE_SBT_ADDRESS } from '~/app/constants/constants'
+import { PCE_SBT_ADDRESS, defaultChainId } from '~/app/constants/constants'
 import { Button } from '~/components/custom/button'
 import {
   Table,
@@ -37,7 +37,8 @@ import {
   type BaseError,
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
-import { config, localhost } from '~/lib/config'
+import { config } from '~/lib/config'
+
 import { Spinner } from '~/components/ui/Spinner'
 import {
   Popover,
@@ -46,6 +47,7 @@ import {
 } from '~/components/ui/popover'
 import { cn } from '~/lib/utils'
 import { ChevronsUpDown } from 'lucide-react'
+import Image from 'next/image'
 
 import {
   Command,
@@ -75,6 +77,7 @@ export default function SBTBuilderPage({
   const [isCropModalOpen, setIsCropModalOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [filter, setFilter] = useState('unrevoked')
 
   const [sbtFiles, setSBTs] = useState<any[]>([])
   const [allSBTs, setAllSBTs] = useState<any[]>([])
@@ -98,14 +101,14 @@ export default function SBTBuilderPage({
 
   const { data: currentTokenId, refetch: refetchCurrentTokenId } =
     useReadContract({
-      address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
+      address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
       abi: SBT_ABI,
       functionName: 'currentTokenId',
       args: [],
     })
 
   const { data: baseURI, refetch: refetchBaseURI } = useReadContract({
-    address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
+    address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
     abi: SBT_ABI,
     functionName: 'uri_',
     args: [],
@@ -113,7 +116,7 @@ export default function SBTBuilderPage({
 
   const { data: allTokenLength, refetch: refetchAllTokenLength } =
     useReadContract({
-      address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
+      address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
       abi: SBT_ABI,
       functionName: 'getAllTokenLength',
       args: [],
@@ -138,7 +141,7 @@ export default function SBTBuilderPage({
   const getTokenURI = useCallback(async (tokenId: number) => {
     const _tokenURI = (await readContract(config, {
       abi: SBT_ABI,
-      address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
+      address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
       functionName: 'uri',
       args: [tokenId],
     })) as string
@@ -150,7 +153,7 @@ export default function SBTBuilderPage({
     try {
       const _isRevoked = (await readContract(config, {
         abi: SBT_ABI,
-        address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
+        address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
         functionName: 'isRevoked',
         args: [tokenId],
       })) as boolean
@@ -165,9 +168,8 @@ export default function SBTBuilderPage({
   const fetchAllSBTData = async () => {
     setLoading(true)
     const allSBTs = []
-    for (let i = 1; i < Number(currentTokenId as string); i++) {
+    for (let i = 1; i <= Number(currentTokenId as string); i++) {
       const tokenURI = await getTokenURI(i)
-
       const isTokenRevoked = await isRevoked(i)
       let tokenData
       let tokenDataJson
@@ -189,11 +191,8 @@ export default function SBTBuilderPage({
   }
 
   useEffect(() => {
-    const fetchData = async () => {
-      await fetchAllSBTData()
-    }
-    fetchData()
-  }, [currentTokenId])
+    fetchAllSBTData()
+  }, [currentTokenId, chainId])
 
   const uploadImage = async () => {
     setIsCreateModalOpen(false)
@@ -231,24 +230,28 @@ export default function SBTBuilderPage({
         title: 'Image uploaded successfully',
       })
 
-      const _mintTx = await writeContractAsync({
-        abi: SBT_ABI,
-        address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
-        functionName: 'mint',
-        args: [address, 0, 1],
-      })
+      // const _mintTx = await writeContractAsync({
+      //   abi: SBT_ABI,
+      //   address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
+      //   functionName: 'mint',
+      //   args: [address, 0, 1],
+      // })
 
-      await waitForTransactionReceipt(config, {
-        hash: _mintTx,
-        confirmations: 1,
-      })
+      // await waitForTransactionReceipt(config, {
+      //   hash: _mintTx,
+      //   confirmations: 1,
+      // })
 
-      if (_uploadJSON && _uploadJSON.cid && _mintTx) {
+      if (_uploadJSON && _uploadJSON.cid) {
         const _setTokenURITx = await writeContractAsync({
           abi: SBT_ABI,
-          address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
+          address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
           functionName: 'setTokenURI',
-          args: [currentTokenId, `${_uploadJSON.cid}`, sbtForm.votingPower],
+          args: [
+            Number(currentTokenId) + 1,
+            `${_uploadJSON.cid}`,
+            sbtForm.votingPower,
+          ],
         })
 
         await waitForTransactionReceipt(config, {
@@ -302,7 +305,7 @@ export default function SBTBuilderPage({
     try {
       const _revokeTx = await writeContractAsync({
         abi: SBT_ABI,
-        address: PCE_SBT_ADDRESS[chainId || localhost.id] as `0x${string}`,
+        address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
         functionName: 'revoke',
         args: [tokenId, !isRevoked],
       })
@@ -387,9 +390,9 @@ export default function SBTBuilderPage({
               <Button
                 variant="outline"
                 role="combobox"
-                className={cn('w-[200px] justify-between')}
+                className={cn('w-[200px] justify-between bg-white')}
               >
-                {localDict.filter ?? 'Filter'}
+                {filter.charAt(0).toUpperCase() + filter.slice(1)}
                 <ChevronsUpDown className="opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -397,13 +400,34 @@ export default function SBTBuilderPage({
               <Command>
                 <CommandList>
                   <CommandGroup>
-                    <CommandItem value="all" key={0} onSelect={() => {}}>
+                    <CommandItem
+                      value="all"
+                      key={0}
+                      onSelect={() => {
+                        setFilter('all')
+                        setIsFilterOpen(false)
+                      }}
+                    >
                       {localDict.all ?? 'All'}
                     </CommandItem>
-                    <CommandItem value="revoked" key={1} onSelect={() => {}}>
+                    <CommandItem
+                      value="revoked"
+                      key={1}
+                      onSelect={() => {
+                        setFilter('revoked')
+                        setIsFilterOpen(false)
+                      }}
+                    >
                       {localDict.revoked ?? 'Revoked'}
                     </CommandItem>
-                    <CommandItem value="unrevoked" key={2} onSelect={() => {}}>
+                    <CommandItem
+                      value="unrevoked"
+                      key={2}
+                      onSelect={() => {
+                        setFilter('unrevoked')
+                        setIsFilterOpen(false)
+                      }}
+                    >
                       {localDict.unrevoked ?? 'Unrevoked'}
                     </CommandItem>
                   </CommandGroup>
@@ -437,108 +461,117 @@ export default function SBTBuilderPage({
             </TableHeader>
             <TableBody>
               {allSBTs && allSBTs.length > 0 ? (
-                allSBTs.map((sbt: any, index: number) => (
-                  <TableRow
-                    key={sbt.id}
-                    className="hover:bg-gray-50 transition md:table-row flex flex-col md:flex-row md:items-center border-b last:border-b-0"
-                  >
-                    {/* Mobile Card Header */}
-                    <TableCell className="md:hidden flex flex-row items-center gap-2 py-2 bg-gray-100 rounded-t-lg text-center justify-center">
-                      <span className="font-bold text-gray-500 text-center">
-                        #{index + 1}
-                      </span>
-                      <span className="font-bold">{sbt.name || '-'}</span>
-                    </TableCell>
-                    {/* Desktop Index */}
-                    <TableCell className="hidden md:table-cell text-gray-700 font-medium text-center">
-                      {index + 1}
-                    </TableCell>
+                allSBTs
+                  .filter((sbt: any) => {
+                    if (filter === 'all') return true
+                    if (filter === 'revoked') return sbt.isRevoked
+                    if (filter === 'unrevoked') return !sbt.isRevoked
+                    return false
+                  })
+                  .map((sbt: any, index: number) => (
+                    <TableRow
+                      key={sbt.id}
+                      className="hover:bg-gray-50 transition md:table-row flex flex-col md:flex-row md:items-center border-b last:border-b-0"
+                    >
+                      {/* Mobile Card Header */}
+                      <TableCell className="md:hidden flex flex-row items-center gap-2 py-2 bg-gray-100 rounded-t-lg text-center justify-center">
+                        <span className="font-bold text-gray-500 text-center">
+                          #{index + 1}
+                        </span>
+                        <span className="font-bold">{sbt.name || '-'}</span>
+                      </TableCell>
+                      {/* Desktop Index */}
+                      <TableCell className="hidden md:table-cell text-gray-700 font-medium text-center">
+                        {index + 1}
+                      </TableCell>
 
-                    {/* Name */}
-                    <TableCell className="hidden md:table-cell flex-1 md:flex-none break-words text-gray-900 text-center">
-                      <span className="md:hidden font-semibold text-gray-500 text-center">
-                        {localDict.name ?? 'Name'}:{' '}
-                      </span>
-                      {sbt.name || '-'}
-                    </TableCell>
+                      {/* Name */}
+                      <TableCell className="hidden md:table-cell flex-1 md:flex-none break-words text-gray-900 text-center">
+                        <span className="md:hidden font-semibold text-gray-500 text-center">
+                          {localDict.name ?? 'Name'}:{' '}
+                        </span>
+                        {sbt.name || '-'}
+                      </TableCell>
 
-                    {/* Image */}
-                    <TableCell className="md:table-cell flex-1 md:flex-none text-center">
-                      <div className="flex items-center justify-center">
-                        <img
-                          src={sbt.image}
-                          className="w-24 h-24 object-cover rounded-lg border border-gray-200 shadow-sm"
-                          alt={sbt.name}
-                          onError={(e) =>
-                            (e.currentTarget.src = '/placeholder-image.png')
+                      {/* Image */}
+                      <TableCell className="md:table-cell flex-1 md:flex-none text-center">
+                        <div className="flex items-center justify-center">
+                          <Image
+                            src={sbt.image}
+                            className="w-24 h-24 object-cover rounded-lg border border-gray-200 shadow-sm"
+                            alt={sbt.name}
+                            onError={(e) =>
+                              (e.currentTarget.src = '/placeholder-image.png')
+                            }
+                            width={100}
+                            height={100}
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* Created At */}
+                      <TableCell className="md:table-cell flex-1 md:flex-none text-gray-700 text-center">
+                        <span className="md:hidden font-semibold text-gray-500">
+                          {localDict.createdAt ?? 'Created At'}:{' '}
+                        </span>
+                        {sbt.timestamp
+                          ? new Date(sbt.timestamp).toLocaleString()
+                          : '-'}
+                      </TableCell>
+                      {/* Actions */}
+                      <TableCell className="md:table-cell gap-4 flex flex-row items-center justify-center text-center">
+                        <Button
+                          variant="outline"
+                          className="w-full md:w-auto"
+                          onClick={() => {
+                            window.open(sbt.metadata, '_blank')
+                          }}
+                        >
+                          <span className="flex items-center gap-1">
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              className="inline-block"
+                            >
+                              <path
+                                d="M8 3v10M3 8h10"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                            {localDict.view ?? 'View Metadata'}
+                          </span>
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          className="w-full ml-2 md:w-auto bg-red-600 hover:bg-red-700 text-white"
+                          onClick={() =>
+                            handleRevokeSBT(sbt.tokenId, sbt.isRevoked)
                           }
-                        />
-                      </div>
-                    </TableCell>
-
-                    {/* Created At */}
-                    <TableCell className="md:table-cell flex-1 md:flex-none text-gray-700 text-center">
-                      <span className="md:hidden font-semibold text-gray-500">
-                        {localDict.createdAt ?? 'Created At'}:{' '}
-                      </span>
-                      {sbt.timestamp
-                        ? new Date(sbt.timestamp).toLocaleString()
-                        : '-'}
-                    </TableCell>
-                    {/* Actions */}
-                    <TableCell className="md:table-cell gap-4 flex flex-row items-center justify-center text-center">
-                      <Button
-                        variant="outline"
-                        className="w-full md:w-auto"
-                        onClick={() => {
-                          window.open(sbt.metadata, '_blank')
-                        }}
-                      >
-                        <span className="flex items-center gap-1">
-                          <svg
-                            width="16"
-                            height="16"
-                            fill="none"
-                            className="inline-block"
-                          >
-                            <path
-                              d="M8 3v10M3 8h10"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                          {localDict.view ?? 'View Metadata'}
-                        </span>
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        className="w-full ml-2 md:w-auto bg-red-600 hover:bg-red-700 text-white"
-                        onClick={() =>
-                          handleRevokeSBT(sbt.tokenId, sbt.isRevoked)
-                        }
-                      >
-                        <span className="flex items-center gap-1">
-                          <svg
-                            width="16"
-                            height="16"
-                            fill="none"
-                            className="inline-block"
-                            viewBox="0 0 16 16"
-                          >
-                            <path
-                              d="M4 4l8 8M12 4l-8 8"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                          {sbt.isRevoked ? 'Unrevoke' : 'Revoke'}
-                        </span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                        >
+                          <span className="flex items-center gap-1">
+                            <svg
+                              width="16"
+                              height="16"
+                              fill="none"
+                              className="inline-block"
+                              viewBox="0 0 16 16"
+                            >
+                              <path
+                                d="M4 4l8 8M12 4l-8 8"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                            {sbt.isRevoked ? 'Unrevoke' : 'Revoke'}
+                          </span>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
               ) : (
                 <TableRow>
                   <TableCell
@@ -615,10 +648,12 @@ export default function SBTBuilderPage({
                 <span className="text-sm text-gray-500">
                   {localDict.preview ?? 'Preview'}
                 </span>
-                <img
+                <Image
                   src={croppedImage}
                   className="contain rounded-lg border border-gray-200 max-h-48"
                   alt="Selected"
+                  width={100}
+                  height={100}
                 />
               </div>
             )}
@@ -662,7 +697,8 @@ export default function SBTBuilderPage({
                   !croppedImage ||
                   !sbtForm.name ||
                   !sbtForm.description ||
-                  !sbtForm.votingPower
+                  !sbtForm.votingPower ||
+                  !address
                 }
                 onClick={uploadImage}
               >

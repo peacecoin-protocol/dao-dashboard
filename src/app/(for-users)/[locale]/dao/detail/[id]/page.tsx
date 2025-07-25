@@ -67,7 +67,7 @@ import { config } from '~/lib/config'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 import { TooltipComponent } from '~/components/custom/TooltipComponent'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
-import { localhost } from '~/lib/config'
+import { defaultChainId } from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { governorAddress, SUBGRAPH_URL } from '~/app/constants/constants'
 import { useBlockNumber, useBlock } from 'wagmi'
@@ -262,7 +262,7 @@ export default function ForSubmitPage({
   )
 
   const client = new ApolloClient({
-    uri: SUBGRAPH_URL[chainId || localhost.id] as string,
+    uri: SUBGRAPH_URL[chainId || defaultChainId] as string,
     cache: new InMemoryCache(),
   })
 
@@ -528,7 +528,7 @@ export default function ForSubmitPage({
               await writeContract({
                 abi: GOVERNOR_ABI,
                 address: governorAddress[
-                  chainId || localhost.id
+                  chainId || defaultChainId
                 ] as `0x${string}`,
                 functionName: 'castVote',
                 args: [proposal[0], true],
@@ -544,7 +544,7 @@ export default function ForSubmitPage({
               await writeContract({
                 abi: GOVERNOR_ABI,
                 address: governorAddress[
-                  chainId || localhost.id
+                  chainId || defaultChainId
                 ] as `0x${string}`,
                 functionName: 'castVote',
                 args: [proposal[0], false],
@@ -560,7 +560,7 @@ export default function ForSubmitPage({
               await writeContract({
                 abi: GOVERNOR_ABI,
                 address: governorAddress[
-                  chainId || localhost.id
+                  chainId || defaultChainId
                 ] as `0x${string}`,
                 functionName: 'queue',
                 args: [proposal[0]],
@@ -579,7 +579,7 @@ export default function ForSubmitPage({
               await writeContract({
                 abi: GOVERNOR_ABI,
                 address: governorAddress[
-                  chainId || localhost.id
+                  chainId || defaultChainId
                 ] as `0x${string}`,
                 functionName: 'execute',
                 args: [proposal[0]],
