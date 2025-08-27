@@ -20,10 +20,17 @@ export function UserNav({ locale }: { locale: Locale }) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="secondary"
-          className="relative h-8 w-6 rounded-full bg-gray94 uppercase"
+          className="relative rounded-full bg-gray94 uppercase p-4"
           onClick={() => {}}
         >
-          {locale}
+          {{
+            cn: '中文',
+            en: 'English',
+            es: 'Español',
+            fr: 'Français',
+            ja: '日本語',
+            pt: 'Português',
+          }[locale] || locale}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-24" align="end" forceMount>
@@ -33,7 +40,7 @@ export function UserNav({ locale }: { locale: Locale }) {
             to={fullPath.replace(`/${locale}`, '/cn')}
             reloadDocument={true}
           >
-            Chinese
+            中文
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
@@ -51,7 +58,7 @@ export function UserNav({ locale }: { locale: Locale }) {
             to={fullPath.replace(`/${locale}`, '/es')}
             reloadDocument={true}
           >
-            Spanish
+            Español
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
@@ -60,7 +67,7 @@ export function UserNav({ locale }: { locale: Locale }) {
             to={fullPath.replace(`/${locale}`, '/fr')}
             reloadDocument={true}
           >
-            French
+            Français
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
@@ -69,7 +76,7 @@ export function UserNav({ locale }: { locale: Locale }) {
             to={fullPath.replace(`/${locale}`, '/ja')}
             reloadDocument={true}
           >
-            Japanese
+            日本語
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
@@ -78,7 +85,7 @@ export function UserNav({ locale }: { locale: Locale }) {
             to={fullPath.replace(`/${locale}`, '/pt')}
             reloadDocument={true}
           >
-            Portuguese
+            Português
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

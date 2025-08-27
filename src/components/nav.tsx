@@ -103,7 +103,7 @@ function NavLink({
   locale,
 }: NavLinkProps) {
   const { checkActiveNav } = useCheckActiveNav()
-  const _href: string = '/' + locale + href
+  const _href: string = href === '/' ? `/${locale}` : `/${locale}${href}`
   return (
     <Link
       to={_href}
@@ -184,13 +184,22 @@ function NavLinkDropdown({
   )
 }
 
-function NavLinkIcon({ title, icon, label, href }: NavLinkProps) {
+function NavLinkIcon({
+  title,
+  icon,
+  label,
+  href,
+  closeNav,
+  locale,
+}: NavLinkProps) {
   const { checkActiveNav } = useCheckActiveNav()
+  const _href: string = href === '/' ? `/${locale}` : `/${locale}${href}`
   return (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
         <Link
-          to={href}
+          to={_href}
+          onClick={closeNav}
           className={cn(
             buttonVariants({
               variant: checkActiveNav(href) ? 'secondary' : 'secondary',
@@ -218,6 +227,7 @@ function NavLinkIconDropdown({
   icon,
   label,
   sub,
+  closeNav,
   locale,
 }: NavLinkProps) {
   const { checkActiveNav } = useCheckActiveNav()
@@ -259,7 +269,8 @@ function NavLinkIconDropdown({
         {sub!.map(({ title, icon, label, href }) => (
           <DropdownMenuItem key={`${title}-${href}`} asChild>
             <Link
-              to={href}
+              to={href === '/' ? `/${locale}` : `/${locale}${href}`}
+              onClick={closeNav}
               className={`${checkActiveNav(href) ? 'bg-secondary' : ''}`}
             >
               {icon} <span className="ml-2 max-w-52 text-wrap">{title}</span>

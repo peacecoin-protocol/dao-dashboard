@@ -1,11 +1,15 @@
 import {
-  IconApps,
-  IconChecklist,
+  IconBuilding,
+  IconFileText,
+  IconGauge,
   IconHexagonNumber1,
   IconHexagonNumber2,
   IconLayoutDashboard,
-  IconMessages,
+  IconStar,
   IconUserShield,
+  IconUsers,
+  IconWallet,
+  IconWorld,
 } from '@tabler/icons-react'
 
 import { Locale, Dictionary } from '~/i18n/types'
@@ -24,7 +28,7 @@ export interface SideLink extends NavLink {
   sub?: NavLink[]
 }
 
-export const useSideLinks = (locale: Locale): SideLink[] => {
+export const useSideLinks = (locale: Locale, isOwner: boolean): SideLink[] => {
   const [dict, setDict] = useState<Dictionary | null>(null)
   const sidebar = dict?.sidebar ?? {}
   const faqTitle = dict?.faq.title ?? 'FAQ'
@@ -41,7 +45,7 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
     fetchDict()
   }, [locale])
 
-  return [
+  const sideLinks: SideLink[] = [
     {
       title: sidebar.dashboard ?? 'Dashboard',
       label: '',
@@ -52,20 +56,20 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       title: sidebar.daoStudio ?? 'DAO Studio',
       label: '',
       href: '/dao',
-      icon: <IconChecklist size={18} />,
+      icon: <IconBuilding size={18} />,
       sub: [
         {
           title: sidebar.studio ?? 'Studio',
           label: '',
           href: '/dao',
-          icon: <IconHexagonNumber1 size={18} />,
+          icon: <IconUsers size={18} />,
         },
-        {
-          title: sidebar.faq ?? 'FAQ',
-          label: '',
-          href: '/daofaq',
-          icon: <IconHexagonNumber2 size={18} />,
-        },
+        // {
+        //   title: sidebar.faq ?? 'FAQ',
+        //   label: '',
+        //   href: '/daofaq',
+        //   icon: <IconQuestionMark size={18} />,
+        // },
       ],
     },
     // {
@@ -104,19 +108,19 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       title: sidebar.pce ?? 'PeaceCoin Protocol DAO',
       label: '',
       href: '/pce',
-      icon: <IconMessages size={18} />,
+      icon: <IconWorld size={18} />,
     },
     {
       title: sidebar.votingPower ?? 'Voting Power',
       label: '',
       href: '/votingpower',
-      icon: <IconMessages size={18} />,
+      icon: <IconGauge size={18} />,
     },
     {
       title: sidebar.token ?? 'Token',
       label: '',
       href: '/token',
-      icon: <IconMessages size={18} />,
+      icon: <IconWallet size={18} />,
     },
     // {
     //   title: sidebar.bounty ?? 'Bounty',
@@ -128,25 +132,25 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
       title: sidebar.campaign ?? 'Campaign',
       label: '',
       href: '/campaign',
-      icon: <IconApps size={18} />,
+      icon: <IconStar size={18} />,
     },
     {
       title: sidebar.pip ?? 'PIP',
       label: '',
       href: '/pip',
-      icon: <IconUserShield size={18} />,
+      icon: <IconFileText size={18} />,
       sub: [
+        // {
+        //   title: 'About Proposals',
+        //   label: '',
+        //   href: '/pip/',
+        //   icon: <IconHexagonNumber1 size={18} />,
+        // },
         {
-          title: 'About Proposals',
-          label: '',
-          href: '/pip/',
-          icon: <IconHexagonNumber1 size={18} />,
-        },
-        {
-          title: 'All Proposals',
+          title: sidebar.allProposals ?? 'All Proposals',
           label: '',
           href: '/pip/all',
-          icon: <IconHexagonNumber2 size={18} />,
+          icon: <IconHexagonNumber1 size={18} />,
         },
         // {
         //   title: 'Networking',
@@ -180,17 +184,36 @@ export const useSideLinks = (locale: Locale): SideLink[] => {
         // },
       ],
     },
-    {
-      title: faqTitle,
-      label: '',
-      href: '/faq',
-      icon: <IconApps size={18} />,
-    },
-    {
-      title: 'SBT Builder',
-      label: '',
-      href: '/sbt',
-      icon: <IconApps size={18} />,
-    },
+    // {
+    //   title: faqTitle,
+    //   label: '',
+    //   href: '/faq',
+    //   icon: <IconQuestionMark size={18} />,
+    // },
   ]
+
+  if (isOwner) {
+    sideLinks.push({
+      title: sidebar.admin ?? 'Admin',
+      label: '',
+      href: '/',
+      icon: <IconUserShield size={18} />,
+      sub: [
+        {
+          title: sidebar.createCampaign ?? 'Create Campaign',
+          label: '',
+          href: '/admin/createcampaign/',
+          icon: <IconHexagonNumber1 size={18} />,
+        },
+        {
+          title: sidebar.createSBT_NFT ?? 'Create SBT/NFT',
+          label: '',
+          href: '/admin/createsbt/',
+          icon: <IconHexagonNumber2 size={18} />,
+        },
+      ],
+    })
+  }
+
+  return sideLinks
 }

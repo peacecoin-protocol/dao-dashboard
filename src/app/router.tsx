@@ -96,8 +96,14 @@ const loadComponent = async (key: string) => {
       Component = (await import('./(for-users)/[locale]/votingpower/page'))
         .default
       break
-    case 'sbt':
-      Component = (await import('./(for-users)/[locale]/sbt/page')).default
+    case 'createsbt':
+      Component = (await import('./(for-users)/[locale]/admin/sbt/page'))
+        .default
+      break
+    case 'admin-create-campaign':
+      Component = (
+        await import('./(for-users)/[locale]/admin/createcampaign/page')
+      ).default
       break
     default:
       Component = (await import('~/components/app-shell')).default
@@ -122,9 +128,11 @@ const createLoader =
 const createLazy = (key: string) => async () => {
   const PageComponent = await loadComponent(key)
   return {
-    Component: (props: any) => (
-      <PageComponent {...props} params={{ locale: _locale }} />
-    ),
+    Component: (props: any) => {
+      // Ensure we have the locale from props or use a default
+      const locale = props.params?.locale || _locale || 'en'
+      return <PageComponent {...props} params={{ locale }} />
+    },
   }
 }
 
@@ -144,7 +152,7 @@ const router = createBrowserRouter([
     path: '/:locale',
     loader: createLoader('app-shell'),
     lazy: createLazy('app-shell'),
-    errorElement: <div></div>,
+    errorElement: <div>Error loading page</div>,
     children: [
       {
         index: true,
@@ -152,129 +160,129 @@ const router = createBrowserRouter([
         lazy: createLazy('dashboard'),
       },
       {
-        path: '/:locale/dao',
+        path: 'dao',
         loader: createLoader('dao'),
         lazy: createLazy('dao'),
       },
       {
-        path: '/:locale/votingpower',
+        path: 'votingpower',
         loader: createLoader('votingpower'),
         lazy: createLazy('votingpower'),
       },
       {
-        path: '/:locale/daofaq',
+        path: 'daofaq',
         loader: createLoader('daofaq'),
         lazy: createLazy('daofaq'),
       },
       {
-        path: '/:locale/dao/detail/:id',
+        path: 'dao/detail/:id',
         loader: createLoader('dao_detail'),
         lazy: createLazy('dao_detail'),
       },
       {
-        path: '/:locale/proposals',
+        path: 'proposals',
         loader: createLoader('proposals'),
         lazy: createLazy('proposals'),
       },
       {
-        path: '/:locale/token',
+        path: 'token',
         loader: createLoader('token'),
         lazy: createLazy('token'),
       },
       {
-        path: '/:locale/bounty',
+        path: 'bounty',
         loader: createLoader('bounty'),
         lazy: createLazy('bounty'),
       },
       {
-        path: '/:locale/pip',
+        path: 'pip',
         loader: createLoader('pip'),
         lazy: createLazy('pip'),
       },
       {
-        path: '/:locale/pending',
+        path: 'pending',
         loader: createLoader('pending'),
         lazy: createLazy('pending'),
       },
       {
-        path: '/:locale/closed',
+        path: 'closed',
         loader: createLoader('closed'),
         lazy: createLazy('closed'),
       },
       {
-        path: '/:locale/submit',
+        path: 'submit',
         loader: createLoader('submit'),
         lazy: createLazy('submit'),
       },
       {
-        path: '/:locale/delegate',
+        path: 'delegate',
         loader: createLoader('delegate'),
         lazy: createLazy('delegate'),
       },
       {
-        path: '/:locale/pip/all',
+        path: 'pip/all',
         loader: createLoader('pip-all'),
         lazy: createLazy('pip-all'),
       },
       {
-        path: '/:locale/pip/core',
+        path: 'pip/core',
         loader: createLoader('pip-core'),
         lazy: createLazy('pip-core'),
       },
       {
-        path: '/:locale/pip/informational',
+        path: 'pip/informational',
         loader: createLoader('pip-info'),
         lazy: createLazy('pip-info'),
       },
       {
-        path: '/:locale/pip/meta',
+        path: 'pip/meta',
         loader: createLoader('pip-meta'),
         lazy: createLazy('pip-meta'),
       },
       {
-        path: '/:locale/pip/networking',
+        path: 'pip/networking',
         loader: createLoader('pip-networking'),
         lazy: createLazy('pip-networking'),
       },
       {
-        path: '/:locale/pip/prc',
+        path: 'pip/prc',
         loader: createLoader('pip-prc'),
         lazy: createLazy('pip-prc'),
       },
       {
-        path: '/:locale/pip/interface',
+        path: 'pip/interface',
         loader: createLoader('pip-interface'),
         lazy: createLazy('pip-interface'),
       },
       {
-        path: '/:locale/faq',
-        loader: createLoader('fqa'),
+        path: 'faq',
+        loader: createLoader('faq'),
         lazy: createLazy('faq'),
       },
       {
-        path: '/:locale/daofaq',
-        loader: createLoader('daofaq'),
-        lazy: createLazy('daofaq'),
-      },
-      {
-        path: '/:locale/pce',
+        path: 'pce',
         loader: createLoader('pce'),
         lazy: createLazy('pce'),
       },
       {
-        path: '/:locale/pce/detail',
+        path: 'pce/detail',
         loader: createLoader('pce_detail'),
         lazy: createLazy('pce_detail'),
       },
       {
-        path: '/:locale/campaign',
+        path: 'campaign',
         loader: createLoader('campaign'),
         lazy: createLazy('campaign'),
       },
       {
-        path: '/:locale/sbt',
-        loader: createLoader('sbt'),
-        lazy: createLazy('sbt'),
+        path: 'admin/createsbt',
+        loader: createLoader('createsbt'),
+        lazy: createLazy('createsbt'),
+      },
+      {
+        path: 'admin/createcampaign',
+        loader: createLoader('admin-create-campaign'),
+        lazy: createLazy('admin-create-campaign'),
       },
     ],
   },

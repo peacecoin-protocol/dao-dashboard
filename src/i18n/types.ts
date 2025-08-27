@@ -30,7 +30,7 @@ export interface CAMPAIGN {
   startDate: string
   endDate: string
   validateSignatures: boolean
-  isNFT: boolean
+  tokenType: number
 }
 
 export interface BOUNTY_PROPOSAL {
@@ -69,6 +69,9 @@ export interface Dictionary {
   daoInfo: Section
   pceDetail: Section
   campaign: Section
+  pipAll: Section
+  votingPower: Section
+  sbt: Section
 }
 
 export interface TOKEN {
@@ -89,7 +92,7 @@ export interface Metadata {
     value: string
   }[]
   external_url?: string
-  token_id?: number
+  token_id: number
 }
 
 export interface PIP {

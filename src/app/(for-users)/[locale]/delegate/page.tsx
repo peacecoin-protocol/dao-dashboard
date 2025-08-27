@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 
 import { formatEther, parseEther } from 'ethers'
-import { useToast } from '~/components/ui/use-toast'
+
+import { useToast } from '~/hooks/use-toast'
 import {
   useAccount,
   useReadContract,

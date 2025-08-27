@@ -28,7 +28,7 @@ import {
   PopoverTrigger,
 } from '~/components/ui/popover'
 import { DialogGithub } from '~/components/custom/dialog-github'
-import { useToast } from '~/components/ui/use-toast'
+import { useToast } from '~/hooks/use-toast'
 import { cn } from '~/lib/utils'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
@@ -38,8 +38,7 @@ import { PIP } from '~/i18n/types'
 export default function ForPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const githubBaseUrl =
-    'https://github.com/peacecoin-protocol/PIPs/blob/pip-draft-initial-governance/'
+  const githubBaseUrl = 'https://github.com/peacecoin-protocol/PIPs/pulls/'
   const [dict, setDict] = useState<Dictionary | null>(null)
   const [open, setOpen] = useState(false)
   const [isLabelFilterOpen, setIsLabelFilterOpen] = useState(false)
@@ -78,64 +77,51 @@ export default function ForPage({
       // To fetch all files in a branch in a GitHub repo, you can use the GitHub REST API to get the tree recursively.
       // Example: fetch all files in the 'main' branch of 'peacecoin-protocol/dao'
       try {
-        const { data: refData } = await octokit.rest.git.getRef({
+        // To get pull requests, use the listPullRequests endpoint:
+        const { data: pullRequests } = await octokit.rest.pulls.list({
           owner: 'peacecoin-protocol',
           repo: 'PIPs',
-          ref: 'heads/pip-draft-initial-governance', // change 'main' to your branch name if needed
+          state: 'all', // or 'open', 'closed'
+          per_page: 100, // adjust as needed
         })
 
-        const commitSha = refData.object.sha
+        for (const pullRequest of pullRequests) {
+          // Get files changed in the pull request
+          const { data: pullRequestFiles } = await octokit.rest.pulls.listFiles(
+            {
+              owner: 'peacecoin-protocol',
+              repo: 'PIPs',
+              pull_number: pullRequest.number,
+            }
+          )
 
-        const { data: commitData } = await octokit.rest.git.getCommit({
-          owner: 'peacecoin-protocol',
-          repo: 'PIPs',
-          commit_sha: commitSha,
-        })
+          for (let i = 0; i < pullRequestFiles.length; i++) {
+            const file = pullRequestFiles[i]
+            const fileSha = file?.sha || ''
+            const { data: blobData } = await octokit.rest.git.getBlob({
+              owner: 'peacecoin-protocol',
+              repo: 'PIPs',
+              file_sha: fileSha,
+            })
+            // The content is base64 encoded
+            const fileContent = atob(blobData.content.replace(/\n/g, ''))
 
-        const treeSha = commitData.tree.sha
-
-        const { data: treeData } = await octokit.rest.git.getTree({
-          owner: 'peacecoin-protocol',
-          repo: 'PIPs',
-          tree_sha: treeSha,
-          recursive: 'true',
-        })
-
-        // treeData.tree is an array of all files and directories in the branch
-        // Example: filter only files (type === 'blob')
-        const allFiles = treeData.tree.filter(
-          (item: any) => item.type === 'blob'
-        )
-        // Now you have all files in the branch in allFiles
-        // You can use setState or further process as needed
-        console.log('All files in branch:', allFiles)
-        // To read the contents of a file from the GitHub repo, you can use the octokit REST API to get the blob for a file.
-        // Example: Read the contents of the first file in allFiles
-        // Start with the second file in allFiles (index 1)
-        for (let i = 1; i < allFiles.length; i++) {
-          const file = allFiles[i]
-          const fileSha = file?.sha || ''
-          const filePath = file?.path || '' // Get the full path of the file
-          const { data: blobData } = await octokit.rest.git.getBlob({
-            owner: 'peacecoin-protocol',
-            repo: 'PIPs',
-            file_sha: fileSha,
-          })
-          // The content is base64 encoded
-          const fileContent = atob(blobData.content.replace(/\n/g, ''))
-          console.log('Contents of file:', fileContent)
-          const pipContent = {
-            number: parseContent(fileContent, 'pip'),
-            title: parseContent(fileContent, 'title'),
-            proposer: parseContent(fileContent, 'proposer'),
-            status: parseContent(fileContent, 'status'),
-            type: parseContent(fileContent, 'type'),
-            category: parseContent(fileContent, 'category'),
-            content: fileContent,
-            created: parseContent(fileContent, 'created'),
-            path: githubBaseUrl + filePath,
+            const pipContent = {
+              number: parseContent(fileContent, 'pip'),
+              title: parseContent(fileContent, 'title'),
+              proposer: parseContent(fileContent, 'proposer'),
+              status: parseContent(fileContent, 'status'),
+              type: parseContent(fileContent, 'type'),
+              category: parseContent(fileContent, 'category'),
+              content: fileContent,
+              created: parseContent(fileContent, 'created'),
+              path: pullRequest.html_url,
+            }
+            setPipContents((prevPipContents) => [
+              ...prevPipContents,
+              pipContent,
+            ])
           }
-          setPipContents((prevPipContents) => [...prevPipContents, pipContent])
         }
       } catch (error) {
         console.error('Error fetching all files in branch:', error)
@@ -246,10 +232,10 @@ export default function ForPage({
     <div className="w-full gap-4 flex flex-col">
       <div className="gap-4 flex flex-col m-8">
         <h2 className="text-4xl font-bold tracking-tight mt-6">
-          {'ALL Proposals'}
+          {dict?.pipAll?.title || 'ALL Proposals'}
         </h2>
         <p className="text-muted-foreground">
-          {'ALL Peacecoin Improvement Proposals'}
+          {dict?.pipAll?.description || 'ALL Peacecoin Improvement Proposals'}
         </p>
 
         <div className="flex flex-row gap-4 justify-end">
@@ -271,15 +257,20 @@ export default function ForPage({
                     (filteredStatus.length > 1
                       ? ` + ${filteredStatus.length - 1} more`
                       : '')
-                  : 'Select status'}
+                  : dict?.pipAll?.selectStatus || 'Select status'}
                 <ChevronsUpDown className="opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
               <Command>
-                <CommandInput placeholder="Search type..." className="h-9" />
+                <CommandInput
+                  placeholder={dict?.pipAll?.searchStatus || 'Search status...'}
+                  className="h-9"
+                />
                 <CommandList>
-                  <CommandEmpty>No status found.</CommandEmpty>
+                  <CommandEmpty>
+                    {dict?.pipAll?.noStatusFound || 'No status found.'}
+                  </CommandEmpty>
                   <CommandGroup>
                     {statusLabels.map((label, index) => (
                       <CommandItem
@@ -330,18 +321,22 @@ export default function ForPage({
                     (filteredCategory.length > 1
                       ? ` + ${filteredCategory.length - 1} more`
                       : '')
-                  : 'Select category'}
+                  : dict?.pipAll?.selectCategory || 'Select category'}
                 <ChevronsUpDown className="opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
               <Command>
                 <CommandInput
-                  placeholder="Search category..."
+                  placeholder={
+                    dict?.pipAll?.searchCategory || 'Search category...'
+                  }
                   className="h-9"
                 />
                 <CommandList>
-                  <CommandEmpty>No type found.</CommandEmpty>
+                  <CommandEmpty>
+                    {dict?.pipAll?.noCategoryFound || 'No category found.'}
+                  </CommandEmpty>
                   <CommandGroup>
                     {categoryLabels.map((label, index) => (
                       <CommandItem
@@ -381,28 +376,28 @@ export default function ForPage({
           <TableHeader>
             <TableRow className="bg-gray94 border-2 border-gray87 border-solid">
               <TableHead className="w-[100px] border-2 border-gray87 border-solid	">
-                Number
+                {dict?.pipAll?.number || 'Number'}
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
-                Title
+                {dict?.pipAll?.tableTitle || 'Title'}
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
-                Author
+                {dict?.pipAll?.author || 'Author'}
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
-                State
+                {dict?.pipAll?.state || 'State'}
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
-                Category
+                {dict?.pipAll?.category || 'Category'}
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
-                Types
+                {dict?.pipAll?.types || 'Types'}
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
-                Created At
+                {dict?.pipAll?.createdAt || 'Created At'}
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
-                GitHub
+                {dict?.pipAll?.github || 'GitHub'}
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -457,7 +452,7 @@ export default function ForPage({
                       window.open(pip.path, '_blank')
                     }}
                   >
-                    View on GitHub
+                    {dict?.pipAll?.viewOnGitHub || 'View on GitHub'}
                   </TableCell>
                 </TableRow>
               ))}

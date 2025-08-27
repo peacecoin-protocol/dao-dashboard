@@ -33,15 +33,15 @@ export default function AddDynamicInputFields({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="space-y-4">
       {inputs.map((item, index) => (
-        <div className="flex flex-col gap-2" key={index}>
-          <div className="flex flex-row gap-2">
-            <div className="flex flex-col gap-2 w-full">
+        <div key={index} className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
               {!isVerifySignature && (
                 <Input
                   name="address"
-                  placeholder="WalletAddress"
+                  placeholder="Wallet Address"
                   type="text"
                   className="w-full"
                   value={item.address}
@@ -62,7 +62,7 @@ export default function AddDynamicInputFields({
             {inputs.length > 1 && (
               <Button
                 variant="outline"
-                className="bg-red-500 text-white rounded-md"
+                className="bg-red-500 hover:bg-red-600 text-white border-red-500 hover:border-red-600 rounded-md px-3 py-2 text-sm"
                 onClick={() => handleDeleteInput(index)}
               >
                 Delete
@@ -72,10 +72,10 @@ export default function AddDynamicInputFields({
           {index === inputs.length - 1 && (
             <Button
               variant="outline"
-              className="bg-green-500 text-white rounded-md"
+              className="bg-green-500 hover:bg-green-600 text-white border-green-500 hover:border-green-600 rounded-md px-3 py-2 text-sm w-full sm:w-auto"
               onClick={() => handleAddInput()}
             >
-              Add
+              Add Another
             </Button>
           )}
         </div>

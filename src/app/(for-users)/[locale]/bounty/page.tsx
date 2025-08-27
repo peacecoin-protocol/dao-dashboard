@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useToast } from '~/components/ui/use-toast'
+
+import { useToast } from '~/hooks/use-toast'
 import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
 import { formatEther } from 'ethers'
 import { createClient, http, parseEther } from 'viem'

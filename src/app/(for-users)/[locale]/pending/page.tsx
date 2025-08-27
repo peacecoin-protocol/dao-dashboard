@@ -13,7 +13,7 @@ import {
   type BaseError,
 } from 'wagmi'
 import { readContract } from '@wagmi/core'
-import { useToast } from '~/components/ui/use-toast'
+import { useToast } from '~/hooks/use-toast'
 
 import RingLoader from 'react-spinners/RingLoader'
 
