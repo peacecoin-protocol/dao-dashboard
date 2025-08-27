@@ -10,7 +10,9 @@ interface ModalProps {
 const Modal: FC<ModalProps> = ({ children, isOpen, onClose }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>{children}</DialogContent>
+      <DialogContent className="max-w-md sm:max-w-lg md:max-w-xl mx-auto">
+        {children}
+      </DialogContent>
     </Dialog>
   )
 }

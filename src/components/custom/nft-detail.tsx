@@ -30,39 +30,67 @@ const NFT_DETAIL = React.forwardRef<HTMLInputElement, NFT_DETAIL_Props>(
   ) => {
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[1500px]">
-          <div className="flex flex-row gap-4">
-            <Image
-              src={imageSrc}
-              alt={imageName}
-              width={300}
-              height={300}
-              className="rounded-lg"
-            />
-            <div className="flex flex-col gap-2">
-              <div className="text-2xl font-bold mb-4">{imageName}</div>
-              <div className="text-lg text-muted-foreground mb-6">
-                {description}
-              </div>
-              <div className="text-lg font-semibold mb-2">
-                Token ID: {tokenId}
-              </div>
+        <DialogContent className="w-[90vw] max-w-[600px] h-auto mx-auto p-3 sm:p-4 lg:p-6 flex flex-col">
+          <section className="flex flex-col gap-3 sm:gap-4 lg:gap-6">
+            {/* Image Section */}
+            <figure className="flex justify-center">
+              <section className="relative w-full max-w-[180px] sm:max-w-[220px] lg:max-w-[250px] h-[120px] sm:h-[150px] lg:h-[180px]">
+                <Image
+                  src={imageSrc}
+                  alt={imageName}
+                  fill
+                  className="rounded-lg object-contain"
+                  sizes="(max-width: 640px) 180px, (max-width: 1024px) 220px, 250px"
+                />
+              </section>
+            </figure>
+
+            {/* Content Section - Below the image */}
+            <article className="flex-1">
+              <header className="space-y-2 sm:space-y-3">
+                <h2 className="text-base sm:text-lg lg:text-xl font-bold break-words leading-tight">
+                  {imageName}
+                </h2>
+
+                <p className="text-xs sm:text-sm lg:text-base text-muted-foreground leading-relaxed">
+                  {description}
+                </p>
+
+                <p className="text-xs sm:text-sm lg:text-base font-semibold">
+                  Token ID: {tokenId}
+                </p>
+              </header>
+
+              {/* Metadata Section */}
               {metadata && (
-                <>
-                  <div className="text-lg font-semibold mb-2">Metadata:</div>
-                  <p className="bg-muted p-4 rounded-lg overflow-auto max-h-[200px] text-sm whitespace-pre-wrap">
-                    Name: {JSON.stringify(JSON.parse(metadata).name, null, 2)}
-                    <br />
-                    Description:{' '}
-                    {JSON.stringify(JSON.parse(metadata).description, null, 2)}
-                    <br />
-                    Image: {JSON.stringify(JSON.parse(metadata).image, null, 2)}
-                    <br />
-                  </p>
-                </>
+                <section className="space-y-2 mt-3 sm:mt-4">
+                  <h3 className="text-xs sm:text-sm lg:text-base font-semibold">
+                    Metadata:
+                  </h3>
+                  <section className="bg-muted p-2 sm:p-3 rounded-lg text-xs sm:text-sm whitespace-pre-wrap">
+                    <article className="space-y-2">
+                      <p className="break-words">
+                        <span className="font-medium">Name:</span>{' '}
+                        {JSON.stringify(JSON.parse(metadata).name, null, 2)}
+                      </p>
+                      <p className="break-words">
+                        <span className="font-medium">Description:</span>{' '}
+                        {JSON.stringify(
+                          JSON.parse(metadata).description,
+                          null,
+                          2
+                        )}
+                      </p>
+                      <p className="break-words">
+                        <span className="font-medium">Image:</span>{' '}
+                        {JSON.stringify(JSON.parse(metadata).image, null, 2)}
+                      </p>
+                    </article>
+                  </section>
+                </section>
               )}
-            </div>
-          </div>
+            </article>
+          </section>
         </DialogContent>
       </Dialog>
     )

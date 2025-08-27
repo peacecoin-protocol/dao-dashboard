@@ -4,9 +4,6 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
 import { ethers, formatEther, parseEther, ZeroAddress } from 'ethers'
 import axios from 'axios'
-import { useToast } from '~/hooks/use-toast'
-import { CopyIcon } from 'lucide-react'
-
 import {
   useAccount,
   useReadContract,
@@ -21,6 +18,7 @@ import { CAMPAIGN, Metadata } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/custom/button'
+import { toast } from 'sonner'
 
 import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/card'
 
@@ -148,6 +146,10 @@ const useNFTData = (
       setState((prev) => ({ ...prev, sbtBalances: balances }))
     } catch (error) {}
   }, [chainId, address, tokenURIs, isConfirmed])
+
+  useEffect(() => {
+    toast('test')
+  }, [])
 
   const fetchSBTMetadata = useCallback(async () => {
     if (tokenURIs.length === 0 || !uri_) return
@@ -454,7 +456,6 @@ export default function ForCampaignPage({
   const { address, chainId } = useAccount()
   const { signMessageAsync } = useSignMessage()
   const { chains, switchChain } = useSwitchChain()
-  const { toast } = useToast()
 
   // State
   const [dialogState, setDialogState] = useState<DialogState>({
@@ -652,11 +653,7 @@ export default function ForCampaignPage({
           isClaimed: isClaimed as boolean,
         })
       } catch (error) {
-        console.error('Error checking campaign status:', error)
-        toast({
-          title: 'Failed to check campaign status',
-          description: 'Please try again later',
-        })
+        toast('Failed to check campaign status')
       }
     }
 
@@ -707,13 +704,9 @@ export default function ForCampaignPage({
   useEffect(() => {
     const fetchData = async () => {
       if (isConfirmed) {
-        toast({
-          title: 'Transaction Succeeded! Data refreshed.',
-        })
+        toast('Transaction Succeeded! Data refreshed.')
       } else if (error) {
-        toast({
-          title: (error as BaseError).shortMessage,
-        })
+        toast((error as BaseError).shortMessage)
       }
     }
     fetchData()
@@ -722,9 +715,7 @@ export default function ForCampaignPage({
   // Handlers
   const signMessage = useCallback(async () => {
     if (!chainId) {
-      toast({
-        title: 'Please connect your wallet first',
-      })
+      toast('Please connect your wallet first')
       return
     }
 
@@ -732,14 +723,10 @@ export default function ForCampaignPage({
       setLoading(true)
       const message = await signMessageAsync({ message: CLAIM_MESSAGE })
       setSignature(message)
-      toast({
-        title: 'Message signed successfully',
-      })
+      toast('Message signed successfully')
     } catch (error) {
       console.error('Error signing message:', error)
-      toast({
-        title: 'Failed to sign message',
-      })
+      toast('Failed to sign message')
     } finally {
       setLoading(false)
     }
@@ -776,14 +763,10 @@ export default function ForCampaignPage({
         confirmations: 1,
       })
 
-      toast({
-        title: 'Winners added successfully',
-      })
+      toast('Winners added successfully')
     } catch (error) {
       console.error('Error adding whitelist:', error)
-      toast({
-        title: 'Failed to add whitelist',
-      })
+      toast('Failed to add whitelist')
     } finally {
       setLoading(false)
     }
@@ -829,14 +812,10 @@ export default function ForCampaignPage({
       })
 
       await fetchCampaignData()
-      toast({
-        title: 'Campaign created successfully',
-      })
+      toast('Campaign created successfully')
     } catch (error) {
       console.error('Error creating campaign:', error)
-      toast({
-        title: 'Failed to create campaign',
-      })
+      toast('Failed to create campaign')
     } finally {
       setLoading(false)
     }
@@ -871,9 +850,7 @@ export default function ForCampaignPage({
         try {
           gistUsername = parseGithubUsername(gistUrl)
           if (!gistUsername) {
-            toast({
-              title: 'Invalid Github Gist URL',
-            })
+            toast('Invalid Github Gist URL')
             return
           }
 
@@ -884,9 +861,7 @@ export default function ForCampaignPage({
           message = gistData.Message
         } catch (error) {
           console.error('Error fetching gist data:', error)
-          toast({
-            title: 'Failed to fetch gist data',
-          })
+          toast('Failed to fetch gist data')
           return
         }
       }
@@ -903,14 +878,10 @@ export default function ForCampaignPage({
           args: [campaignId, gistUsernameHash, message, signature],
         })
 
-        toast({
-          title: 'Campaign claimed successfully',
-        })
+        toast('Campaign claimed successfully')
       } catch (error) {
         console.error('Error claiming campaign:', error)
-        toast({
-          title: 'Failed to claim campaign',
-        })
+        toast('Failed to claim campaign')
       } finally {
         await fetchCampaignData()
         setLoading(false)
@@ -936,14 +907,10 @@ export default function ForCampaignPage({
           'Wallet Address': address,
         })
       )
-      toast({
-        title: 'Signature copied to clipboard',
-      })
+      toast('Signature copied to clipboard')
     } catch (error) {
       console.error('Error copying signature:', error)
-      toast({
-        title: 'Failed to copy signature',
-      })
+      toast('Failed to copy signature')
     }
   }, [signature, address])
 
@@ -999,7 +966,7 @@ export default function ForCampaignPage({
         {/* Wallet Connected Section */}
         {chainId && (
           <div className="space-y-4 sm:space-y-6">
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            {/* <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Button
                 className="w-full sm:w-auto sm:min-w-[200px] text-sm sm:text-base"
                 onClick={signMessage}
@@ -1044,7 +1011,7 @@ export default function ForCampaignPage({
                   </div>
                 </CardContent>
               </Card>
-            )}
+            )} */}
 
             {/* <NFTBalancesCard
               balances={nftBalances}
@@ -1066,7 +1033,7 @@ export default function ForCampaignPage({
 
         {/* Campaigns Section */}
         <div className="space-y-4 sm:space-y-6">
-          {/* <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Button
                 onClick={() =>
@@ -1089,7 +1056,7 @@ export default function ForCampaignPage({
                 {campaign.addWinners ?? 'Add Winners'}
               </Button>
             </div>
-          </div> */}
+          </div>
 
           <CampaignsTable
             campaigns={campaignData.data}

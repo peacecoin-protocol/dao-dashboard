@@ -11,7 +11,7 @@ import {
   useWaitForTransactionReceipt,
   type BaseError,
 } from 'wagmi'
-import { useToast } from '~/components/ui/use-toast'
+import { useToast } from '~/hooks/use-toast'
 import RingLoader from 'react-spinners/RingLoader'
 
 import {

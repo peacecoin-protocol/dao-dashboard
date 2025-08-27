@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { formatEther, parseEther, ZeroAddress } from 'ethers'
 import { readContract } from '@wagmi/core'
-import { useToast } from '~/components/ui/use-toast'
+import { useToast } from '~/hooks/use-toast'
 import {
   useAccount,
   useReadContract,

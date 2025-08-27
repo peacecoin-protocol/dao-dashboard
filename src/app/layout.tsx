@@ -3,14 +3,16 @@ import './globals.css'
 
 import '@rainbow-me/rainbowkit/styles.css'
 import { Providers } from './providers'
-import { Toaster as SonnerToaster } from 'sonner'
+import { Toaster } from '~/components/ui/sonner'
 
 function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
-        <SonnerToaster position="bottom-right" duration={2000} />
+        <Providers>
+          {children}
+          <Toaster />
+        </Providers>
       </body>
     </html>
   )

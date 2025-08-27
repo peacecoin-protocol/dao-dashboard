@@ -8,6 +8,8 @@ import { Locale } from '~/i18n/types'
 import { useSideLinks } from '~/data/sidelinks'
 import { getDict } from '~/i18n/get-dict'
 import { Dictionary } from '~/i18n/types'
+import { OWNER_ADDRESSES } from '~/app/constants/constants'
+import { useAccount } from 'wagmi'
 interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   isCollapsed: boolean
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
@@ -21,11 +23,13 @@ export default function Sidebar({
   locale,
 }: SidebarProps) {
   const [dict, setDict] = useState<Dictionary | null>(null)
-
+  const { address } = useAccount()
   const [navOpened, setNavOpened] = useState(false)
-  const sideLinks = useSideLinks(locale)
-  const localDict = dict?.sidebar ?? {}
 
+  const localDict = dict?.sidebar ?? {}
+  const isOwner = OWNER_ADDRESSES.includes(address as `0x${string}`)
+
+  const sideLinks = useSideLinks(locale, isOwner)
   useEffect(() => {
     const fetchDict = async () => {
       try {

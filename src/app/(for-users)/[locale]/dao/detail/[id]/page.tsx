@@ -10,22 +10,20 @@ import RingLoader from 'react-spinners/RingLoader'
 import { ringStyle } from '~/app/constants/styles'
 import { Line } from 'rc-progress'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
-
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
 import { Button } from '~/components/custom/button'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '~/components/ui/table'
+// import {
+//   Table,
+//   TableBody,
+//   TableCell,
+//   TableHead,
+//   TableHeader,
+//   TableRow,
+// } from '~/components/ui/table'
 import { Input } from '~/components/ui/input'
 import { readContract } from '@wagmi/core'
 
 import { ethers, formatEther, parseEther } from 'ethers'
-import { useToast } from '~/components/ui/use-toast'
 import {
   useAccount,
   useReadContract,
@@ -40,36 +38,39 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  // DialogTrigger,
 } from '~/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '~/components/ui/select'
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from '~/components/ui/select'
 
-import { AmountInput } from '~/components/custom/amount-input'
+// import { AmountInput } from '~/components/custom/amount-input'
 
 import { ApolloClient, InMemoryCache, gql } from '@apollo/client'
 
 import { getDict } from '~/i18n/get-dict'
 
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { Dictionary, Locale } from '~/i18n/types'
 
-import { useParams } from 'react-router-dom'
 import { formatString, shortenAddress } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
-import { Textarea } from '~/components/ui/textarea'
+// import { Textarea } from '~/components/ui/textarea'
 import { config } from '~/lib/config'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 import { TooltipComponent } from '~/components/custom/TooltipComponent'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { defaultChainId } from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
-import { governorAddress, SUBGRAPH_URL } from '~/app/constants/constants'
+import {
+  factoryAddress,
+  governorAddress,
+  SUBGRAPH_URL,
+} from '~/app/constants/constants'
 import { useBlockNumber, useBlock } from 'wagmi'
 import { pinata } from '~/lib/config'
 import ImageCropModal from '~/components/ui/ImageCropModal'
@@ -83,6 +84,8 @@ import { timestampToDate } from '~/components/utils'
 import { ALCHEMY_CONFIG } from '~/app/constants/constants'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { Env } from '~/env'
+import { useToast } from '~/hooks/use-toast'
+import { DAO_FACTORY_ABI } from '~/app/ABIs/DAOFactory'
 
 type Dao = {
   id: string
@@ -116,8 +119,19 @@ type TokenBalance = {
 }
 
 export default function ForSubmitPage({
-  params: { locale },
-}: PagePropsWithLocale<{}>) {
+  params,
+}: {
+  params: { locale: Locale }
+}) {
+  const { locale } = params
+  const { toast } = useToast()
+
+  // To get the full path of the current file in a Next.js app, you can use the `window.location.pathname` in the browser.
+  // For server-side or Node.js, you can use __filename, but in a Next.js page component, you typically want the route path.
+  // Example for client-side full path:
+  const fullPath = typeof window !== 'undefined' ? window.location.pathname : ''
+  const id = fullPath.split('/').pop()
+
   const [dict, setDict] = useState<Dictionary | null>(null)
   const localDict = dict?.daoInfo ?? {}
 
@@ -152,11 +166,18 @@ export default function ForSubmitPage({
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [croppedImage, setCroppedImage] = useState<string | null>(null)
   const [isCropModalOpen, setIsCropModalOpen] = useState(false)
+  const [isImageLoading, setIsImageLoading] = useState(false)
 
-  const pathname = useParams()
-  const id = pathname.id
+  // Social editing state variables
+  const [isEditingSocials, setIsEditingSocials] = useState(false)
+  const [isUpdatingSocials, setIsUpdatingSocials] = useState(false)
+  const [editingSocials, setEditingSocials] = useState({
+    website: '',
+    linkedin: '',
+    twitter: '',
+    telegram: '',
+  })
 
-  const { toast } = useToast()
   const { address, chainId } = useAccount()
   const { data: blockNumber } = useBlockNumber()
   const { data: block } = useBlock({
@@ -204,26 +225,47 @@ export default function ForSubmitPage({
   }, [daoInfo])
 
   const fetchImage = async (name: string) => {
-    const file = await pinata.files.public.list().then((files) => {
+    try {
+      const files = await pinata.files.public.list()
       const pceFiles = files.files.filter((file) => file.name == name)
 
       if (pceFiles.length > 0) {
-        setImageHash(pceFiles[0]?.cid as string)
+        return pceFiles[0]?.cid as string
       }
-      return pceFiles
-    })
-    return file
+      return ''
+    } catch (error) {
+      console.error('Error fetching image from Pinata:', error)
+      return ''
+    }
   }
 
   useEffect(() => {
-    if (daoInfo?.id && localDict) {
-      toast({ title: localDict.fetchingImage ?? 'Fetching image...' })
-      fetchImage(daoInfo?.id)
-      toast({
-        title:
-          localDict.imageFetchedSuccessfully ?? 'Image fetched successfully',
-      })
+    const loadImage = async () => {
+      if (daoInfo?.id && localDict) {
+        try {
+          setIsImageLoading(true)
+          toast({
+            title: localDict.fetchingImage ?? 'Fetching image...',
+          })
+          const fetchedImageHash = await fetchImage(daoInfo?.id)
+          setImageHash(fetchedImageHash)
+          toast({
+            title:
+              localDict.imageFetchedSuccessfully ??
+              'Image fetched successfully',
+          })
+        } catch (error) {
+          console.error('Error loading image:', error)
+          toast({
+            title: 'Failed to load image',
+          })
+        } finally {
+          setIsImageLoading(false)
+        }
+      }
     }
+
+    loadImage()
   }, [daoInfo, localDict])
 
   const DelegateDialog = ({
@@ -260,6 +302,76 @@ export default function ForSubmitPage({
       </DialogContent>
     </Dialog>
   )
+
+  // Handle updating DAO social links
+  const handleUpdateSocials = async () => {
+    setIsEditingSocials(false)
+
+    if (!daoInfo?.id) {
+      toast({
+        title: 'Error',
+        description: 'DAO ID not found. Please refresh the page and try again.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (!chainId || !factoryAddress[chainId]) {
+      toast({
+        title: 'Error',
+        description:
+          'Unsupported network. Please switch to a supported network.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      setIsUpdatingSocials(true)
+
+      const socialConfig = {
+        description: '',
+        website: editingSocials.website || '',
+        linkedin: editingSocials.linkedin || '',
+        twitter: editingSocials.twitter || '',
+        telegram: editingSocials.telegram || '',
+      }
+
+      // Use writeContractAsync for better error handling
+      const contractConfig = {
+        abi: DAO_FACTORY_ABI,
+        address: factoryAddress[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'updateDAOSocialConfig',
+        args: [daoInfo.daoId, socialConfig],
+      }
+
+      const hash = await writeContractAsync(contractConfig)
+
+      // Show pending message
+      toast({
+        title: 'Transaction Submitted',
+        description:
+          'Your transaction is being processed. Please wait for confirmation.',
+      })
+
+      // Wait for transaction confirmation
+    } catch (error) {
+      console.error('Error updating social links:', error)
+
+      let errorMessage = 'Failed to update social links. Please try again.'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      }
+
+      toast({
+        title: localDict.errorUpdatingSocials ?? 'Error updating social links',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    } finally {
+      setIsUpdatingSocials(false)
+    }
+  }
 
   const client = new ApolloClient({
     uri: SUBGRAPH_URL[chainId || defaultChainId] as string,
@@ -636,6 +748,13 @@ export default function ForSubmitPage({
       functionName: 'proposalCount',
     })
 
+  const { data: daoData, refetch: refetchDaoData } = useReadContract({
+    address: factoryAddress[chainId || defaultChainId] as `0x${string}`,
+    abi: DAO_FACTORY_ABI,
+    functionName: 'daos',
+    args: [daoInfo?.daoId],
+  }) as any
+
   const fetchData = async (count: any) => {
     setLoading(true)
     if (!count || !daoInfo?.governor || count === 0) {
@@ -712,17 +831,20 @@ export default function ForSubmitPage({
     setLoading(false)
   }
   useEffect(() => {
-    fetchData(proposalCount)
+    if (daoInfo && daoInfo?.governor) {
+      fetchData(proposalCount)
+    }
   }, [proposalCount, isConfirmed, daoInfo])
 
   useEffect(() => {
     const fetchIdenticon = async () => {
-      if (daoInfo?.governor) {
+      if (daoInfo && daoInfo?.governor) {
         setIdenticon(await generateIdenteapot(daoInfo?.governor, ''))
       }
     }
     fetchIdenticon()
   }, [daoInfo])
+
   const handleCreateProposal = async () => {
     setIsCreateProposalDialogOpened(false)
 
@@ -757,7 +879,9 @@ export default function ForSubmitPage({
 
   const handleStake = async () => {
     if (stakingAmount === '' || stakingAmount === '0') {
-      toast({ title: 'Please enter a valid amount' })
+      toast({
+        title: 'Please enter a valid amount',
+      })
       return
     }
 
@@ -874,9 +998,13 @@ export default function ForSubmitPage({
         await getTreasuryBalances(daoInfo?.timelock as `0x${string}`)
         await refetchProposalCount()
       } else if (isConfirming) {
-        toast({ title: 'TX is Pending, Please Wait...' })
+        toast({
+          title: 'TX is Pending, Please Wait...',
+        })
       } else if (error) {
-        toast({ title: (error as BaseError).shortMessage })
+        toast({
+          title: (error as BaseError).shortMessage,
+        })
       }
     }
 
@@ -897,7 +1025,10 @@ export default function ForSubmitPage({
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!id) return
       try {
+        setLoading(true)
+
         const { data } = await client.query({
           query: gql`
             query GetDao {
@@ -920,35 +1051,61 @@ export default function ForSubmitPage({
           `,
         })
 
+        let _daoInfo = data.daocreateds[0]
+
+        if (_daoInfo.website && _daoInfo.website === 'https://') {
+          _daoInfo = { ..._daoInfo, website: 'https://website.com' }
+        }
+
+        if (_daoInfo.linkedin && _daoInfo.linkedin === 'https://') {
+          _daoInfo = { ..._daoInfo, linkedin: 'https://www.linkedin.com/' }
+        }
+
+        if (_daoInfo.twitter && _daoInfo.twitter === 'https://') {
+          _daoInfo = { ..._daoInfo, twitter: 'https://twitter.com' }
+        }
+
         const symbol = await readContract(config, {
           abi: PCE_ABI,
-          address: data.daocreateds[0]?.communityToken as `0x${string}`,
+          address: _daoInfo.communityToken as `0x${string}`,
           functionName: 'symbol',
         })
 
-        setDaoInfo({
-          ...data.daocreateds[0],
-          communityTokenSymbol: symbol as string,
-        })
+        if (_daoInfo) {
+          setDaoInfo({
+            ..._daoInfo,
+            communityTokenSymbol: symbol as string,
+          })
+        } else {
+          toast({
+            title: 'DAO not found',
+          })
+          console.error('DAO not found for ID:', id)
+        }
       } catch (error) {
         console.error('Error fetching data', error)
+        toast({
+          title: 'Failed to fetch DAO data',
+        })
+      } finally {
+        setLoading(false)
       }
     }
 
     fetchData()
-  }, [id])
+  }, [id, chainId])
 
   useEffect(() => {
     const updateImage = async () => {
       try {
         if (!daoInfo?.id) return
 
-        toast({ title: localDict.updatingImage ?? 'Updating image...' })
+        toast({
+          title: localDict.updatingImage ?? 'Updating image...',
+        })
         const prevImages = await fetchImage(daoInfo?.id)
         if (prevImages) {
-          const res = await pinata.files.public.delete(
-            prevImages.map((file: any) => file.id)
-          )
+          const res = await pinata.files.public.delete([prevImages])
         }
 
         const response = await fetch(croppedImage as string)
@@ -966,7 +1123,12 @@ export default function ForSubmitPage({
           title:
             localDict.imageUpdatedSuccessfully ?? 'Image updated successfully',
         })
-      } catch (error) {}
+      } catch (error) {
+        console.error('Error updating image:', error)
+        toast({
+          title: 'Failed to update image',
+        })
+      }
     }
 
     updateImage()
@@ -976,17 +1138,24 @@ export default function ForSubmitPage({
     try {
       if (!daoInfo?.id) return
 
-      toast({ title: 'Deleting image...' })
+      toast({
+        title: 'Deleting image...',
+      })
       const prevImages = await fetchImage(daoInfo?.id)
       if (prevImages) {
-        const res = await pinata.files.public.delete(
-          prevImages.map((file: any) => file.id)
-        )
+        await pinata.files.public.delete([prevImages])
       }
       setImageHash('')
 
-      toast({ title: 'Image deleted successfully' })
-    } catch (error) {}
+      toast({
+        title: 'Image deleted successfully',
+      })
+    } catch (error) {
+      console.error('Error deleting image:', error)
+      toast({
+        title: 'Failed to delete image',
+      })
+    }
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1007,21 +1176,25 @@ export default function ForSubmitPage({
     <div className="items-center justify-center flex flex-col mx-4 md:mx-20 gap-4">
       <div className="flex flex-row w-full items-center gap-4 mt-8">
         <div className="relative group">
-          <img
-            src={
-              imageHash
-                ? `https://orange-elegant-takin-78.mypinata.cloud/ipfs/${imageHash}?pinataGatewayToken=7uMh9158Kl1jPcpgtNigRgAa_Y_t9CHZLpSRRiimEd9_fX6DzoGSOgmdOii1wiqg`
-                : identicon
-            }
-            alt=""
-            className="w-24 h-24"
-          />
+          {isImageLoading ? (
+            <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-dark_blue"></div>
+            </div>
+          ) : imageHash ? (
+            <img
+              src={`https://orange-elegant-takin-78.mypinata.cloud/ipfs/${imageHash}?pinataGatewayToken=7uMh9158Kl1jPcpgtNigRgAa_Y_t9CHZLpSRRiimEd9_fX6DzoGSOgmdOii1wiqg`}
+              alt=""
+              className="w-24 h-24"
+            />
+          ) : (
+            <img src={identicon} alt="" className="w-24 h-24 " />
+          )}
           <div className="absolute inset-0 flex items-end justify-start opacity-0 group-hover:opacity-80 transition-opacity bg-black/50">
             {/* <button
               className="p-2 text-white hover:text-gray-200"
               onClick={() => {
                 if (address != (_owner as `0x${string}`)) {
-                  toast({ title: 'You are not the owner of this DAO' })
+                  toast.error('You are not the owner of this DAO')
                   return
                 }
                 const fileInput = document.createElement('input')
@@ -1053,7 +1226,7 @@ export default function ForSubmitPage({
               className="p-2 text-white hover:text-gray-200"
               onClick={async () => {
                 if (address != (_owner as `0x${string}`)) {
-                  toast({ title: 'You are not the owner of this DAO' })
+                  toast.error('You are not the owner of this DAO')
                   return
                 }
 
@@ -1117,10 +1290,10 @@ export default function ForSubmitPage({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
-                    if (address != (_owner as `0x${string}`)) {
-                      toast({ title: 'You are not the owner of this DAO' })
-                      return
-                    }
+                    // if (address != (_owner as `0x${string}`)) {
+                    //   toast.error('You are not the owner of this DAO')
+                    //   return
+                    // }
                     await deleteImage()
                   }}
                 >
@@ -1264,7 +1437,6 @@ export default function ForSubmitPage({
                       {votingDelay ? formatString(votingDelay as string) : '0'}
                     </div>
                   </div>
-
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
                       title={localDict.votingPeriod ?? 'Voting Period'}
@@ -1277,7 +1449,6 @@ export default function ForSubmitPage({
                         : '0'}
                     </div>
                   </div>
-
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
                       title={localDict.timelockDelay ?? 'Timelock Delay'}
@@ -1291,7 +1462,6 @@ export default function ForSubmitPage({
                         : '0'}
                     </div>
                   </div>
-
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
                       title={
@@ -1340,7 +1510,7 @@ export default function ForSubmitPage({
                   </div>
                 </div>
 
-                {/* <div className="flex bg-gray-100 rounded-xl items-center justify-between cursor-pointer">
+                <div className="flex bg-gray-100 rounded-xl items-center justify-between cursor-pointer">
                   <div className="flex flex-row gap-4 w-full items-center p-4 justify-center">
                     <div className="flex flex-col gap-2 w-full justify-center">
                       <div className="text-heavy_white text-sm flex justify-center items-center">
@@ -1361,7 +1531,7 @@ export default function ForSubmitPage({
                       </div>
                     </div>
                   </div>
-                </div> */}
+                </div>
 
                 <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
                   <h1 className="font-bold rounded-xl  flex">
@@ -1371,452 +1541,185 @@ export default function ForSubmitPage({
                     ).toLocaleString()}
                   </h1>
                 </div>
-                <div className="flex flex-col  border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
-                  <div className="flex flex-row justify-between items-center">
-                    <h1 className="font-bold rounded-xl flex">
-                      <Link
-                        href={
-                          daoInfo?.website
-                            ? daoInfo?.website
-                            : 'https://website.com'
-                        }
-                        className="text-dark_blue"
-                      >
-                        DAO Site
-                      </Link>
-                    </h1>
-                  </div>
-                  <div className="flex flex-row justify-between items-center">
-                    <h1 className="font-bold rounded-xl flex">
-                      <Link
-                        href={
-                          daoInfo?.linkedin
-                            ? daoInfo?.linkedin
-                            : 'https://www.linkedin.com/'
-                        }
-                        className="text-dark_blue"
-                      >
-                        Linkedin
-                      </Link>
-                    </h1>
-                  </div>
-                  <div className="flex flex-row justify-between items-center">
-                    <h1 className="font-bold rounded-xl flex">
-                      <Link
-                        href={
-                          daoInfo?.twitter
-                            ? daoInfo?.twitter
-                            : 'https://twitter.com'
-                        }
-                        className="text-dark_blue"
-                      >
-                        Twitter
-                      </Link>
-                    </h1>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="all">
-            <div className="flex flex-row w-full items-center">
-              <Tabs defaultValue="all" className="gap-0 w-full">
-                <TabsList>
-                  <TabsTrigger className="w-20" value="all">
-                    {localDict.all}
-                  </TabsTrigger>
-                  <TabsTrigger className="w-20" value="active">
-                    {localDict.active}
-                  </TabsTrigger>
-                  <TabsTrigger className="w-20" value="executed">
-                    {localDict.executed}
-                  </TabsTrigger>
-                  <TabsTrigger className="w-20" value="defeated">
-                    {localDict.defeated}
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent
-                  value="all"
-                  className="flex w-full flex-col gap-4 mt-4"
-                >
-                  {proposals.length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      return (
-                        <ProposalCard
-                          key={index}
-                          proposal={proposal}
-                          status={proposalStatus[index]}
-                          index={index}
-                        />
-                      )
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ?? 'No proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-                <TabsContent
-                  value="active"
-                  className="flex w-full flex-col mt-0"
-                >
-                  {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Active'
-                  ).length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Active') {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
-                      }
-                      return null
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ??
-                        'No active proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent
-                  value="executed"
-                  className="flex w-full flex-col mt-0"
-                >
-                  {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Executed'
-                  ).length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Executed') {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
-                      }
-                      return null
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ??
-                        'No succeeded proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent
-                  value="defeated"
-                  className="flex w-full flex-col gap-4 mt-0"
-                >
-                  {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Defeated'
-                  ).length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Defeated') {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
-                      }
-                      return null
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ??
-                        'No defeated proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-            </div>
-          </TabsContent>
-          <TabsContent value="balance">
-            <div className="flex flex-col md:flex-row mt-4 gap-4 ">
-              <div className="flex flex-col w-full">
-                <h1 className="text-2xl font-bold">
-                  {localDict.treasury ?? 'Treasury'}
-                </h1>
-                <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="font-bold">
-                          {localDict.token ?? 'Token'}
-                        </TableHead>
-                        <TableHead className="font-bold">
-                          {localDict.amount ?? 'Amount'}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {treasuryBalances.length > 0 ? (
-                        treasuryBalances.map((token, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-bold">
-                              {token.name === '' ? 'PCE TEST' : token.name}
-                            </TableCell>
-                            <TableCell className="font-bold">
-                              {formatString(
-                                formatEther(
-                                  BigInt(token.tokenBalance).toString()
-                                )
-                              )}{' '}
-                              {token.symbol === '' ? 'PCE TEST' : token.symbol}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={2} className="text-center">
-                            No tokens found
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-              <div className="flex flex-col w-full md:w-[40%]">
-                <h1 className="text-2xl font-bold">
-                  {localDict.daoBalance ?? 'DAO Balance'}
-                </h1>
-
-                <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
-                  <h1 className="font-bold rounded-xl flex">
-                    {localDict.daoTreasury ?? 'DAO Treasury'}
-                  </h1>
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      {localDict.totalValue ?? 'Total Value'}
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
+                <div className="flex flex-col border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
+                  <div className="flex flex-row justify-between items-center mb-2">
+                    <h1 className="font-bold">DAO Socials</h1>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditingSocials(!isEditingSocials)}
+                    >
+                      {isEditingSocials ? 'Cancel' : 'Edit'}
+                    </Button>
                   </div>
 
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      {localDict.numberOfTokens ?? 'Number of Tokens'}
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">
-                      {treasuryBalances.length}
-                    </h1>
-                  </div>
-
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      {localDict.numberOfNfts ?? 'Number of NFTs'}
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-
-                  <Dialog
-                    open={isDepositDialogOpened}
-                    onOpenChange={() => {
-                      setIsDepositDialogOpened(!isDepositDialogOpened)
-                    }}
-                  >
-                    <DialogTrigger>
-                      <Button className="w-full bg-dark_blue">
-                        {localDict.depositToDaoTreasury ??
-                          'Deposit to DAO Treasury'}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader className="flex flex-col gap-2">
-                        <DialogTitle>Address</DialogTitle>
-                        <DialogDescription>
-                          {localDict.tokenAddressToDeposit ??
-                            'Token address to deposit'}
-                        </DialogDescription>
+                  {isEditingSocials ? (
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium">
+                          DAO Website
+                        </label>
                         <Input
-                          onChange={(e) => setTokenAddress(e.target.value)}
-                          placeholder={localDict.address ?? 'Address'}
+                          value={editingSocials.website}
+                          onChange={(e) =>
+                            setEditingSocials((prev) => ({
+                              ...prev,
+                              website: e.target.value,
+                            }))
+                          }
+                          placeholder="https://website.com"
                         />
-                        <DialogTitle>
-                          {localDict.amount ?? 'Amount'}
-                        </DialogTitle>
-                        <DialogDescription>
-                          {localDict.amountToDeposit ?? 'Amount to deposit'}
-                        </DialogDescription>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium">LinkedIn</label>
                         <Input
-                          onChange={(e) => setTransferAmount(e.target.value)}
-                          placeholder={localDict.amount ?? 'Amount'}
+                          value={editingSocials.linkedin}
+                          onChange={(e) =>
+                            setEditingSocials((prev) => ({
+                              ...prev,
+                              linkedin: e.target.value,
+                            }))
+                          }
+                          placeholder="https://www.linkedin.com/"
                         />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium">Twitter</label>
+                        <Input
+                          value={editingSocials.twitter}
+                          onChange={(e) =>
+                            setEditingSocials((prev) => ({
+                              ...prev,
+                              twitter: e.target.value,
+                            }))
+                          }
+                          placeholder="https://twitter.com"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium">Telegram</label>
+                        <Input
+                          value={editingSocials.telegram}
+                          onChange={(e) =>
+                            setEditingSocials((prev) => ({
+                              ...prev,
+                              telegram: e.target.value,
+                            }))
+                          }
+                          placeholder="https://t.me/"
+                        />
+                      </div>
+
+                      <div className="flex flex-row gap-2 mt-2">
                         <Button
-                          className="w-full bg-dark_blue"
-                          onClick={async () => {
-                            await writeContract({
-                              abi: PCE_ABI,
-                              address: tokenAddress as `0x${string}`,
-                              functionName: 'transfer',
-                              args: [
-                                daoInfo?.timelock,
-                                parseEther(transferAmount),
-                              ],
-                            })
-
-                            setTokenAddress('')
-                            setTransferAmount('')
-                            setIsDepositDialogOpened(!isDepositDialogOpened)
-                          }}
+                          onClick={handleUpdateSocials}
+                          className="flex-1"
+                          disabled={isUpdatingSocials}
                         >
-                          {localDict.deposit ?? 'Deposit'}
+                          {isUpdatingSocials ? 'Saving...' : 'Save Changes'}
                         </Button>
-                      </DialogHeader>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setIsEditingSocials(false)
+                            setEditingSocials({
+                              website: daoInfo?.website || '',
+                              linkedin: daoInfo?.linkedin || '',
+                              twitter: daoInfo?.twitter || '',
+                              telegram: daoInfo?.telegram || '',
+                            })
+                          }}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-row justify-between items-center">
+                        <span className="font-medium">DAO Site:</span>
+                        <Link
+                          href={
+                            daoData && daoData[9]
+                              ? daoData[9].website
+                              : 'https://website.com'
+                          }
+                          className="text-dark_blue hover:underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {daoData && daoData[9]?.website
+                            ? daoData[9].website
+                            : 'Not set'}
+                        </Link>
+                      </div>
 
-                {/* <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
-                  <h1 className="font-bold rounded-xl flex">DAO Delegated</h1>
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      DAO Delegated to
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
+                      <div className="flex flex-row justify-between items-center">
+                        <span className="font-medium">LinkedIn:</span>
+                        <Link
+                          href={
+                            daoData && daoData[9]
+                              ? daoData[9].linkedin
+                              : 'https://www.linkedin.com/'
+                          }
+                          className="text-dark_blue hover:underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {daoData && daoData[9]?.linkedin
+                            ? daoData[9].linkedin
+                            : 'Not set'}
+                        </Link>
+                      </div>
 
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      Historical Rewards Earned
-                    </h1>
-                    <h1 className="font-bold rounded-xl flex">$0</h1>
-                  </div>
+                      <div className="flex flex-row justify-between items-center">
+                        <span className="font-medium">Twitter:</span>
+                        <Link
+                          href={
+                            daoData && daoData[9]
+                              ? daoData[9].twitter
+                              : 'https://twitter.com'
+                          }
+                          className="text-dark_blue hover:underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {daoData && daoData[9]?.twitter
+                            ? daoData[9].twitter
+                            : 'Not set'}
+                        </Link>
+                      </div>
 
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl flex">
-                      Available to claim
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-                </div> */}
-              </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="holders">
-            <div className="flex flex-row mt-4 gap-4">
-              <div className="flex flex-col w-full gap-4">
-                <div className="flex flex-col md:flex-row w-full gap-4 items-center justify-between">
-                  <div className="flex flex-col gap-4">
-                    <h1 className="flex flex-row text-2xl font-bold gap-4">
-                      {localDict.votingPowerBreakdown ??
-                        'Voting Power Breakdown'}
-                    </h1>
-                  </div>
-                </div>
-                <div className="flex flex-row gap-4">
-                  <AmountInput
-                    localDict={localDict}
-                    className="w-60 bg-dark_blue"
-                    setStakingAmount={setStakingAmount}
-                    handleStake={handleStake}
-                    maxAmount={
-                      communityTokenBalance
-                        ? Number(
-                            formatEther(BigInt(communityTokenBalance as string))
-                          )
-                        : 0
-                    }
-                  />
-                  <Button
-                    className="w-60 bg-dark_blue"
-                    onClick={handleWithdraw}
-                  >
-                    {localDict.withdraw ?? 'Withdraw'}
-                  </Button>
-
-                  <Button
-                    className="w-60 bg-dark_blue"
-                    onClick={async () => {
-                      setIsDelegateDialogOpened(true)
-                    }}
-                  >
-                    {localDict.delegate ?? 'Delegate'}
-                  </Button>
-                </div>
-                <div className="rounded-xl flex border mt-4 flex-row w-full gap-4">
-                  <Table className="w-full">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>
-                          <div className="flex flex-row gap-4">
-                            {localDict.address ?? 'Address'}
-                          </div>
-                        </TableHead>
-                        <TableHead>
-                          {localDict.communityToken ?? 'Community Token'}
-                        </TableHead>
-                        <TableHead>
-                          {localDict.governanceToken ?? 'Governance Token'}
-                        </TableHead>
-                        <TableHead>
-                          {localDict.delegatedAmount ?? 'Delegated Amount'}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <div className="flex flex-row gap-2 items-center">
-                            <h1 className="text-md text-dark_blue font-bold">
-                              {daoInfo ? daoInfo.communityToken : '-'}
-                            </h1>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-bold font-md text-dark_blue">
-                          {communityTokenBalance
-                            ? formatString(
-                                formatEther(
-                                  BigInt(communityTokenBalance as string)
-                                )
-                              )
-                            : '0'}{' '}
-                          {daoInfo?.communityTokenSymbol}
-                        </TableCell>
-                        <TableCell className="font-bold font-md text-dark_blue">
-                          {governanceTokenBalance
-                            ? formatString(
-                                formatEther(
-                                  BigInt(governanceTokenBalance as string)
-                                )
-                              )
-                            : '0'}{' '}
-                          {daoInfo?.communityTokenSymbol}
-                        </TableCell>
-                        <TableCell className="font-bold font-md text-dark_blue">
-                          {votes
-                            ? formatString(formatEther(BigInt(votes as string)))
-                            : '0'}{' '}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                      <div className="flex flex-row justify-between items-center">
+                        <span className="font-medium">Telegram:</span>
+                        <Link
+                          href={
+                            daoData && daoData[9]
+                              ? daoData[9].telegram
+                              : 'https://t.me/'
+                          }
+                          className="text-dark_blue hover:underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {daoData && daoData[9]?.telegram
+                            ? daoData[9].telegram
+                            : 'Not set'}
+                        </Link>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-
-            <DelegateDialog
-              isOpen={isDelegateDialogOpened}
-              onOpenChange={setIsDelegateDialogOpened}
-              delegateAddr={delegateAddr}
-              localDict={localDict}
-              handleDelegate={handleDelegate}
-            />
           </TabsContent>
         </Tabs>
       </div>
-      <Dialog
+      {/* <Dialog
         open={isCreateProposalDialogOpened}
         onOpenChange={setIsCreateProposalDialogOpened}
       >
@@ -1876,7 +1779,7 @@ export default function ForSubmitPage({
             </Button>
           </DialogDescription>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
       <RingLoader
         style={{
           position: 'fixed',

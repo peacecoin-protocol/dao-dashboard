@@ -29,7 +29,8 @@ import { Input } from '~/components/ui/input'
 import { readContract } from '@wagmi/core'
 
 import { ethers, formatEther, parseEther } from 'ethers'
-import { useToast } from '~/components/ui/use-toast'
+
+import { useToast } from '~/hooks/use-toast'
 import {
   useAccount,
   useReadContract,
@@ -76,7 +77,7 @@ import {
   PCE_SBT_ADDRESS,
 } from '~/app/constants/constants'
 
-import { createdAt, WEB, LINKEDIN, TWITTER } from '~/app/constants/constants'
+import { createdAt } from '~/app/constants/constants'
 import { Env } from '~/env'
 import { timestampToDate } from '~/components/utils'
 import { SBT_ABI } from '~/app/ABIs/SBT'
@@ -156,6 +157,18 @@ export default function PCEPage({
   const [tabContent, setTabContent] = useState('about')
 
   const [treasuryBalances, setTreasuryBalances] = useState<TokenBalance[]>([])
+
+  // Social editing state variables
+  const [isEditingSocials, setIsEditingSocials] = useState(false)
+  const [isUpdatingSocials, setIsUpdatingSocials] = useState(false)
+  const [socials, setSocials] = useState({
+    website: '',
+    linkedin: '',
+    twitter: '',
+    telegram: '',
+  })
+
+  const [editingSocials, setEditingSocials] = useState(socials)
 
   const { address, chainId } = useAccount()
   const { toast } = useToast()
@@ -288,6 +301,27 @@ export default function PCEPage({
       abi: SBT_ABI,
       functionName: 'currentTokenId',
     })
+
+  const { data: socialConfig, refetch: refetchSocialConfig } = useReadContract({
+    address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'socialConfig',
+  })
+
+  useEffect(() => {
+    if (
+      socialConfig &&
+      Array.isArray(socialConfig) &&
+      socialConfig.length > 0
+    ) {
+      setSocials({
+        website: socialConfig[1] as string,
+        linkedin: socialConfig[2] as string,
+        twitter: socialConfig[3] as string,
+        telegram: socialConfig[4] as string,
+      })
+    }
+  }, [socialConfig])
 
   const { data: uri_, refetch: refetchUri } = useReadContract({
     abi: SBT_ABI,
@@ -884,6 +918,39 @@ export default function PCEPage({
     }
   }
 
+  const handleUpdateSocials = async () => {
+    setIsUpdatingSocials(true)
+    try {
+      // Update the social links with the new values
+      // In a real implementation, you might want to save to a database or smart contract
+
+      await writeContract({
+        abi: GOVERNOR_ABI,
+        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'updateSocialConfig',
+        args: [
+          '',
+          editingSocials.website,
+          editingSocials.linkedin,
+          editingSocials.twitter,
+          editingSocials.telegram,
+        ],
+      })
+
+      toast({ title: 'Social links updated successfully!' })
+      setIsEditingSocials(false)
+
+      // Update the constants to reflect the new values
+      // Note: In a real app, you'd typically update a database or smart contract
+      // For now, we'll just show the updated values in the UI
+    } catch (error) {
+      console.error('Error updating social links:', error)
+      toast({ title: 'Failed to update social links' })
+    } finally {
+      setIsUpdatingSocials(false)
+    }
+  }
+
   useEffect(() => {
     const notify = async () => {
       if (isConfirmed) {
@@ -940,12 +1007,6 @@ export default function PCEPage({
             </TabsTrigger>
             <TabsTrigger value="holds" onClick={() => setTabContent('holds')}>
               Holds
-            </TabsTrigger>
-            <TabsTrigger
-              value="balances"
-              onClick={() => setTabContent('balances')}
-            >
-              Balances
             </TabsTrigger>
           </TabsList>
           <TabsContent value="about" className="">
@@ -1177,27 +1238,153 @@ export default function PCEPage({
                   </h1>
                 </div>
                 <div className="flex flex-col  border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
-                  <div className="flex flex-row justify-between items-center">
-                    <h1 className="font-bold rounded-xl flex">
-                      <Link href={WEB || '#'} className="text-dark_blue">
-                        {localDict.daoSite ?? 'DAO Site'}
-                      </Link>
-                    </h1>
+                  <div className="flex flex-row justify-between items-center mb-2">
+                    <h1 className="font-bold">PCE Socials</h1>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditingSocials(!isEditingSocials)}
+                    >
+                      {isEditingSocials ? 'Cancel' : 'Edit'}
+                    </Button>
                   </div>
-                  <div className="flex flex-row justify-between items-center">
-                    <h1 className="font-bold rounded-xl flex">
-                      <Link href={LINKEDIN || '#'} className="text-dark_blue">
-                        {localDict.linkedin ?? 'Linkedin'}
-                      </Link>
-                    </h1>
-                  </div>
-                  <div className="flex flex-row justify-between items-center">
-                    <h1 className="font-bold rounded-xl flex">
-                      <Link href={TWITTER || '#'} className="text-dark_blue">
-                        {localDict.twitter ?? 'Twitter'}
-                      </Link>
-                    </h1>
-                  </div>
+
+                  {isEditingSocials ? (
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium">
+                          PCE Website
+                        </label>
+                        <Input
+                          value={editingSocials.website}
+                          onChange={(e) =>
+                            setEditingSocials((prev) => ({
+                              ...prev,
+                              website: e.target.value,
+                            }))
+                          }
+                          placeholder="https://website.com"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium">LinkedIn</label>
+                        <Input
+                          value={editingSocials.linkedin}
+                          onChange={(e) =>
+                            setEditingSocials((prev) => ({
+                              ...prev,
+                              linkedin: e.target.value,
+                            }))
+                          }
+                          placeholder="https://www.linkedin.com/"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium">Twitter</label>
+                        <Input
+                          value={editingSocials.twitter}
+                          onChange={(e) =>
+                            setEditingSocials((prev) => ({
+                              ...prev,
+                              twitter: e.target.value,
+                            }))
+                          }
+                          placeholder="https://twitter.com"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium">Telegram</label>
+                        <Input
+                          value={editingSocials.telegram}
+                          onChange={(e) =>
+                            setEditingSocials((prev) => ({
+                              ...prev,
+                              telegram: e.target.value,
+                            }))
+                          }
+                          placeholder="https://t.me/"
+                        />
+                      </div>
+
+                      <div className="flex flex-row gap-2 mt-2">
+                        <Button
+                          onClick={handleUpdateSocials}
+                          className="flex-1"
+                          disabled={isUpdatingSocials}
+                        >
+                          {isUpdatingSocials ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setIsEditingSocials(false)
+                            setSocials({
+                              website: socials.website,
+                              linkedin: socials.linkedin,
+                              twitter: socials.twitter,
+                              telegram: socials.telegram,
+                            })
+                          }}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-row justify-between items-center">
+                        <span className="font-medium">PCE Site:</span>
+                        <Link
+                          href={socials.website}
+                          className="text-dark_blue hover:underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {socials.website}
+                        </Link>
+                      </div>
+
+                      <div className="flex flex-row justify-between items-center">
+                        <span className="font-medium">LinkedIn:</span>
+                        <Link
+                          href={socials.linkedin}
+                          className="text-dark_blue hover:underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {socials.linkedin}
+                        </Link>
+                      </div>
+
+                      <div className="flex flex-row justify-between items-center">
+                        <span className="font-medium">Twitter:</span>
+                        <Link
+                          href={socials.twitter}
+                          className="text-dark_blue hover:underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {socials.twitter}
+                        </Link>
+                      </div>
+
+                      <div className="flex flex-row justify-between items-center">
+                        <span className="font-medium">Telegram:</span>
+                        <Link
+                          href={socials.telegram}
+                          className="text-dark_blue hover:underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {socials.telegram}
+                        </Link>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1508,114 +1695,6 @@ export default function PCEPage({
                 </div> */}
               </div>
             </div>
-          </TabsContent>
-          <TabsContent value="balances">
-            <div className="flex flex-row mt-4 gap-4">
-              <div className="flex flex-col w-full gap-4">
-                <div className="flex flex-col sm:flex-row w-full gap-4 items-center justify-between">
-                  <div className="flex flex-col gap-4">
-                    <h1 className="flex flex-row text-2xl font-bold gap-4">
-                      {localDict.votingPowerBreakdown ??
-                        'Voting Power Breakdown'}{' '}
-                      - ({votingPower.length} NFTs)
-                      {/* <div className="flex bg-dark_blue rounded-xl text-white font-bold items-center justify-center text-xs px-4">
-                        0
-                      </div> */}
-                    </h1>
-
-                    {/* <div className="flex flex-row gap-6">
-                      <div className="flex flex-row gap-2 items-center">
-                        <Checkbox />
-                        <h1>DAO Holders</h1>
-                      </div>
-                      <div className="flex flex-row gap-2 items-center">
-                        <Checkbox />
-                        <h1>Global Experts</h1>
-                      </div>
-                      <div className="flex flex-row gap-2 items-center">
-                        <Checkbox />
-                        <h1>Local Experts</h1>
-                      </div>
-                    </div> */}
-                  </div>
-                </div>
-                <div className="flex flex-row gap-4">
-                  <Button
-                    className="w-60 bg-dark_blue"
-                    onClick={async () => {
-                      setIsDelegateDialogOpened(true)
-                    }}
-                  >
-                    {localDict.delegate ?? 'Delegate'}
-                  </Button>
-                </div>
-                <div className="rounded-xl flex border mt-4 flex-row w-full gap-4">
-                  <Table className="w-full">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="font-bold">
-                          {localDict.id ?? 'Id'}
-                        </TableHead>
-                        <TableHead className="font-bold">
-                          {localDict.image ?? 'Image'}
-                        </TableHead>
-                        <TableHead className="font-bold">
-                          {localDict.amount ?? 'Amount'}
-                        </TableHead>
-                        <TableHead className="font-bold">
-                          {localDict.votingPower ?? 'Voting Power'}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {nftBalances.map((balance, index) => (
-                        <TableRow key={index}>
-                          {/* Id */}
-                          <TableCell>
-                            <div className="flex flex-row gap-2 items-center">
-                              <h1 className="text-md text-dark_blue font-bold">
-                                {index + 1}
-                              </h1>
-                            </div>
-                          </TableCell>
-                          {/* Image */}
-                          <TableCell>
-                            <img
-                              src={
-                                !nftMetadata || nftMetadata.length === 0
-                                  ? '/images/empty-nft.svg'
-                                  : nftMetadata[index]?.image ||
-                                    '/images/empty-nft.svg'
-                              }
-                              alt={`NFT #${index}`}
-                              className="rounded-lg h-[140px] w-[100px] object-fill"
-                              width={100}
-                              height={140}
-                            />
-                          </TableCell>
-                          <TableCell className="font-bold font-md text-dark_blue">
-                            {balance ? formatString(balance.toString()) : '0'}
-                          </TableCell>
-                          <TableCell className="font-bold font-md text-dark_blue">
-                            {votingPower[index]
-                              ? formatString(votingPower[index].toString())
-                              : '0'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
-
-            <DelegateDialog
-              isOpen={isDelegateDialogOpened}
-              onOpenChange={setIsDelegateDialogOpened}
-              delegateAddr={delegateAddr}
-              handleDelegate={handleDelegate}
-              localDict={localDict}
-            />
           </TabsContent>
         </Tabs>
       </div>

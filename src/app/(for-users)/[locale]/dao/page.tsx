@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useToast } from '~/components/ui/use-toast'
+
+import { useToast } from '~/hooks/use-toast'
+
 import {
   useAccount,
   useWriteContract,
@@ -333,17 +335,18 @@ export default function ForDAOPage({
   }, [locale])
 
   const fetchImage = async (name: string) => {
-    let imageHash = ''
-
-    const file = await pinata.files.public.list().then((files) => {
+    try {
+      const files = await pinata.files.public.list()
       const pceFiles = files.files.filter((file) => file.name == name)
 
       if (pceFiles.length > 0) {
-        imageHash = pceFiles[0]?.cid as string
+        return pceFiles[0]?.cid as string
       }
-    })
-
-    return imageHash
+      return ''
+    } catch (error) {
+      console.error('Error fetching image from Pinata:', error)
+      return ''
+    }
   }
 
   useEffect(() => {
@@ -377,6 +380,7 @@ export default function ForDAOPage({
             }
           `,
         })
+
         let updatedDaos = []
         for (let i = 0; i < data.daocreateds.length; i++) {
           const dao = data.daocreateds[i]
@@ -430,7 +434,7 @@ export default function ForDAOPage({
         <h1 className="text-2xl font-bold text-dark_bg">{localeDict.title}</h1>
 
         <Button
-          className="bg-dark_blue text-white"
+          className="w-full sm:w-auto sm:min-w-[200px] text-sm sm:text-base"
           onClick={() => {
             if (chainId === 0 || chainId === undefined) {
               showConnectWalletAlert()
@@ -566,7 +570,7 @@ export default function ForDAOPage({
               {localeDict.allActivities}
             </TabsTrigger>
           </TabsList>
-          <div className="flex flex-row gap-4 h-8 w-full mt-4">
+          <div className="flex flex-row gap-4 w-full mt-4">
             <Input
               placeholder={localeDict.search}
               className="w-full"
@@ -607,27 +611,37 @@ export default function ForDAOPage({
               ))}
           </TabsContent>
 
-          <TabsContent
+          {/* <TabsContent
             value="my"
             className="flex flex-col w-full items-center justify-center"
           >
-            {daos
-              .filter(
-                (dao) =>
-                  dao.votes > 0 &&
-                  dao.name.toLowerCase().includes(search.toLowerCase())
-              )
-              .map((dao) => (
-                <DaoCard
-                  key={dao.id}
-                  dao={dao}
-                  locale={locale}
-                  localeDict={localeDict}
-                  navigate={navigate}
-                  chainId={chainId || 0}
-                />
-              ))}
-          </TabsContent>
+            {daos.filter(
+              (dao) =>
+                dao.votes > 0 &&
+                dao.name.toLowerCase().includes(search.toLowerCase())
+            ).length === 0 ? (
+              <div className="text-gray-500 py-8">
+                {localeDict.noDaosToDisplay ?? 'No Daos to display'}
+              </div>
+            ) : (
+              daos
+                .filter(
+                  (dao) =>
+                    dao.votes > 0 &&
+                    dao.name.toLowerCase().includes(search.toLowerCase())
+                )
+                .map((dao) => (
+                  <DaoCard
+                    key={dao.id}
+                    dao={dao}
+                    locale={locale}
+                    localeDict={localeDict}
+                    navigate={navigate}
+                    chainId={chainId || 0}
+                  />
+                ))
+            )}
+          </TabsContent> */}
         </Tabs>
       </div>
 
