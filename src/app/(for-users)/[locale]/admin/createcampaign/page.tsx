@@ -20,8 +20,6 @@ import { Input } from '~/components/ui/input'
 import { Button } from '~/components/custom/button'
 import { toast } from 'sonner'
 
-import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/card'
-
 import {
   Dialog,
   DialogContent,
@@ -45,7 +43,6 @@ import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { SBT_ABI } from '~/app/ABIs/SBT'
-import Image from 'next/image'
 import { NFT_DETAIL } from '~/components/custom/nft-detail'
 import { Spinner } from '~/components/ui/Spinner'
 import { CreateCampaignModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/createCampaignModal'
@@ -244,90 +241,6 @@ const useNFTData = (
 }
 
 // Components
-
-const NFTBalancesCard = ({
-  balances,
-  metadata,
-  onNFTClick,
-  campaign,
-  isNFT,
-}: {
-  balances: number[]
-  metadata: Metadata[]
-  onNFTClick: (index: number) => void
-  campaign: any
-  isNFT: boolean
-}) => {
-  const hasBalances = balances.length > 0 && balances.some((b) => b > 0)
-
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-xl md:text-2xl font-bold">
-          {isNFT
-            ? (campaign.noNFTs ?? 'No NFTs')
-            : (campaign.sbtBalances ?? 'SBT Balances')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {!hasBalances ? (
-          <div className="flex justify-center items-center py-8 text-muted-foreground">
-            {isNFT
-              ? (campaign.noNFTs ?? 'No NFTs')
-              : (campaign.noSBTs ?? 'No SBTs')}
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-3 sm:gap-4 md:gap-6">
-            {(() => {
-              // Count how many balances > 0
-              const positiveBalances = balances.filter((b) => b > 0)
-              const numPositive = positiveBalances.length
-
-              // Determine number of columns: for every 3 positive balances, add 1 column (minimum 1)
-              const numColumns = Math.max(1, Math.ceil(numPositive / 3))
-
-              // Build grid style
-              const gridStyle = {
-                gridTemplateColumns: `repeat(${numColumns}, minmax(0, 1fr))`,
-              }
-
-              return (
-                <div className="flex flex-row flex-wrap gap-3 sm:gap-4 md:gap-6 w-full">
-                  {balances.map((balance, index) =>
-                    balance > 0 ? (
-                      <div key={index} className="flex-shrink-0">
-                        <div
-                          className="flex flex-col items-center gap-2 p-2 sm:p-3 cursor-pointer hover:scale-105 transition-transform duration-200 rounded-lg hover:bg-muted/50"
-                          onClick={() => onNFTClick(index)}
-                        >
-                          <div className="relative">
-                            <Image
-                              src={metadata[index]?.image || EMPTY_NFT_IMAGE}
-                              alt={`NFT #${index} (shown as original image)`}
-                              className="rounded-lg object-cover w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24"
-                              width={96}
-                              height={96}
-                            />
-                            <div className="absolute -top-1 -right-1 bg-primary text-white rounded-full w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex items-center justify-center text-xs font-bold">
-                              {balance.toString()}
-                            </div>
-                          </div>
-                          <p className="text-xs sm:text-sm text-muted-foreground text-center font-medium">
-                            #{index + 1}
-                          </p>
-                        </div>
-                      </div>
-                    ) : null
-                  )}
-                </div>
-              )
-            })()}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
 
 const CampaignDialog = ({
   isOpen,

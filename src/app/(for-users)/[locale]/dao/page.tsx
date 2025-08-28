@@ -157,7 +157,7 @@ const DaoCard = ({
           <div className="w-24 min-w-24 h-24">
             {dao.imageHash ? (
               <img
-                src={`https://orange-elegant-takin-78.mypinata.cloud/ipfs/${dao.imageHash}?pinataGatewayToken=7uMh9158Kl1jPcpgtNigRgAa_Y_t9CHZLpSRRiimEd9_fX6DzoGSOgmdOii1wiqg`}
+                src={`${Env.PINATA_GATEWAY_URL}/ipfs/${dao.imageHash}`}
                 alt=""
                 className="w-full h-full"
               />

@@ -6,6 +6,7 @@ const nextConfig = {
       'avatars.githubusercontent.com',
       'api.github.com',
       'orange-elegant-takin-78.mypinata.cloud',
+      'peacecoin-dao.mypinata.cloud',
     ],
   },
 }

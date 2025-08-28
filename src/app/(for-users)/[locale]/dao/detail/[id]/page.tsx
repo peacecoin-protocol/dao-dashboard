@@ -12,6 +12,14 @@ import { Line } from 'rc-progress'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
 import { Button } from '~/components/custom/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select'
+import { Textarea } from '~/components/ui/textarea'
 // import {
 //   Table,
 //   TableBody,
@@ -230,7 +238,7 @@ export default function ForSubmitPage({
       const pceFiles = files.files.filter((file) => file.name == name)
 
       if (pceFiles.length > 0) {
-        return pceFiles[0]?.cid as string
+        return pceFiles[0]
       }
       return ''
     } catch (error) {
@@ -247,8 +255,8 @@ export default function ForSubmitPage({
           toast({
             title: localDict.fetchingImage ?? 'Fetching image...',
           })
-          const fetchedImageHash = await fetchImage(daoInfo?.id)
-          setImageHash(fetchedImageHash)
+          const _image = await fetchImage(daoInfo?.id)
+          setImageHash(_image ? (_image?.cid as string) : '')
           toast({
             title:
               localDict.imageFetchedSuccessfully ??
@@ -1105,7 +1113,7 @@ export default function ForSubmitPage({
         })
         const prevImages = await fetchImage(daoInfo?.id)
         if (prevImages) {
-          const res = await pinata.files.public.delete([prevImages])
+          const res = await pinata.files.public.delete([prevImages.id])
         }
 
         const response = await fetch(croppedImage as string)
@@ -1143,13 +1151,19 @@ export default function ForSubmitPage({
       })
       const prevImages = await fetchImage(daoInfo?.id)
       if (prevImages) {
-        await pinata.files.public.delete([prevImages])
-      }
-      setImageHash('')
+        try {
+          const deleted = await pinata.files.public.delete([prevImages.id])
+        } catch (deleteError) {
+          console.error('Error deleting from Pinata:', deleteError)
+          // Continue with setting imageHash to empty even if delete fails
+        }
 
-      toast({
-        title: 'Image deleted successfully',
-      })
+        setImageHash('')
+
+        toast({
+          title: 'Image deleted successfully',
+        })
+      }
     } catch (error) {
       console.error('Error deleting image:', error)
       toast({
@@ -1182,7 +1196,7 @@ export default function ForSubmitPage({
             </div>
           ) : imageHash ? (
             <img
-              src={`https://orange-elegant-takin-78.mypinata.cloud/ipfs/${imageHash}?pinataGatewayToken=7uMh9158Kl1jPcpgtNigRgAa_Y_t9CHZLpSRRiimEd9_fX6DzoGSOgmdOii1wiqg`}
+              src={`${Env.PINATA_GATEWAY_URL}/ipfs/${imageHash}`}
               alt=""
               className="w-24 h-24"
             />
@@ -1719,7 +1733,7 @@ export default function ForSubmitPage({
           </TabsContent>
         </Tabs>
       </div>
-      {/* <Dialog
+      <Dialog
         open={isCreateProposalDialogOpened}
         onOpenChange={setIsCreateProposalDialogOpened}
       >
@@ -1779,7 +1793,7 @@ export default function ForSubmitPage({
             </Button>
           </DialogDescription>
         </DialogContent>
-      </Dialog> */}
+      </Dialog>
       <RingLoader
         style={{
           position: 'fixed',
