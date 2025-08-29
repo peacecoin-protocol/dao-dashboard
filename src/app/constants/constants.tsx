@@ -66,7 +66,7 @@ export const NFTAddress = {
 } as Record<number, `0x${string}`>
 
 export const daoStudioAddress = {
-  [sepolia.id]: '0x35Cc384EC6828ee07f70b5298f952aD48c133B9A',
+  [sepolia.id]: '0xd2AfC59605183Ac3B395CB5db6a224C23059BabE',
   [localhost.id]: '0x809d550fca64d94Bd9F66E60752A544199cfAC3D',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x0000000000000000000000000000000000000000',

@@ -178,8 +178,14 @@ export default function ForSubmitPage({
 
   // Social editing state variables
   const [isEditingSocials, setIsEditingSocials] = useState(false)
-  const [isUpdatingSocials, setIsUpdatingSocials] = useState(false)
   const [editingSocials, setEditingSocials] = useState({
+    website: '',
+    linkedin: '',
+    twitter: '',
+    telegram: '',
+  })
+
+  const [socials, setSocials] = useState({
     website: '',
     linkedin: '',
     twitter: '',
@@ -335,34 +341,26 @@ export default function ForSubmitPage({
     }
 
     try {
-      setIsUpdatingSocials(true)
-
-      const socialConfig = {
-        description: '',
-        website: editingSocials.website || '',
-        linkedin: editingSocials.linkedin || '',
-        twitter: editingSocials.twitter || '',
-        telegram: editingSocials.telegram || '',
-      }
-
-      // Use writeContractAsync for better error handling
       const contractConfig = {
-        abi: DAO_FACTORY_ABI,
-        address: factoryAddress[chainId || defaultChainId] as `0x${string}`,
-        functionName: 'updateDAOSocialConfig',
-        args: [daoInfo.daoId, socialConfig],
+        abi: GOVERNOR_ABI,
+        address: daoInfo?.governor as `0x${string}`,
+        functionName: 'updateSocialConfig',
+        args: [
+          '',
+          editingSocials.website,
+          editingSocials.linkedin,
+          editingSocials.twitter,
+          editingSocials.telegram,
+        ],
       }
 
       const hash = await writeContractAsync(contractConfig)
 
-      // Show pending message
       toast({
         title: 'Transaction Submitted',
         description:
           'Your transaction is being processed. Please wait for confirmation.',
       })
-
-      // Wait for transaction confirmation
     } catch (error) {
       console.error('Error updating social links:', error)
 
@@ -376,8 +374,6 @@ export default function ForSubmitPage({
         description: errorMessage,
         variant: 'destructive',
       })
-    } finally {
-      setIsUpdatingSocials(false)
     }
   }
 
@@ -877,6 +873,27 @@ export default function ForSubmitPage({
 
     await refetchProposalCount()
   }
+
+  const { data: socialConfig, refetch: refetchSocialConfig } = useReadContract({
+    address: daoInfo?.governor as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'socialConfig',
+  })
+
+  useEffect(() => {
+    if (
+      socialConfig &&
+      Array.isArray(socialConfig) &&
+      socialConfig.length > 0
+    ) {
+      setSocials({
+        website: socialConfig[1] as string,
+        linkedin: socialConfig[2] as string,
+        twitter: socialConfig[3] as string,
+        telegram: socialConfig[4] as string,
+      })
+    }
+  }, [socialConfig])
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     abi: PCE_ABI,
@@ -1561,7 +1578,10 @@ export default function ForSubmitPage({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setIsEditingSocials(!isEditingSocials)}
+                      onClick={() => {
+                        setIsEditingSocials(!isEditingSocials)
+                        setEditingSocials(socials)
+                      }}
                     >
                       {isEditingSocials ? 'Cancel' : 'Edit'}
                     </Button>
@@ -1631,19 +1651,18 @@ export default function ForSubmitPage({
                         <Button
                           onClick={handleUpdateSocials}
                           className="flex-1"
-                          disabled={isUpdatingSocials}
                         >
-                          {isUpdatingSocials ? 'Saving...' : 'Save Changes'}
+                          {isEditingSocials ? 'Saving...' : 'Save Changes'}
                         </Button>
                         <Button
                           variant="outline"
                           onClick={() => {
                             setIsEditingSocials(false)
                             setEditingSocials({
-                              website: daoInfo?.website || '',
-                              linkedin: daoInfo?.linkedin || '',
-                              twitter: daoInfo?.twitter || '',
-                              telegram: daoInfo?.telegram || '',
+                              website: socials.website,
+                              linkedin: socials.linkedin,
+                              twitter: socials.twitter,
+                              telegram: socials.telegram,
                             })
                           }}
                           className="flex-1"
@@ -1658,17 +1677,15 @@ export default function ForSubmitPage({
                         <span className="font-medium">DAO Site:</span>
                         <Link
                           href={
-                            daoData && daoData[9]
-                              ? daoData[9].website
+                            socials.website
+                              ? socials.website
                               : 'https://website.com'
                           }
                           className="text-dark_blue hover:underline"
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {daoData && daoData[9]?.website
-                            ? daoData[9].website
-                            : 'Not set'}
+                          {socials.website ? socials.website : 'Not set'}
                         </Link>
                       </div>
 
@@ -1676,17 +1693,15 @@ export default function ForSubmitPage({
                         <span className="font-medium">LinkedIn:</span>
                         <Link
                           href={
-                            daoData && daoData[9]
-                              ? daoData[9].linkedin
+                            socials.linkedin
+                              ? socials.linkedin
                               : 'https://www.linkedin.com/'
                           }
                           className="text-dark_blue hover:underline"
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {daoData && daoData[9]?.linkedin
-                            ? daoData[9].linkedin
-                            : 'Not set'}
+                          {socials.linkedin ? socials.linkedin : 'Not set'}
                         </Link>
                       </div>
 
@@ -1694,17 +1709,15 @@ export default function ForSubmitPage({
                         <span className="font-medium">Twitter:</span>
                         <Link
                           href={
-                            daoData && daoData[9]
-                              ? daoData[9].twitter
+                            socials.twitter
+                              ? socials.twitter
                               : 'https://twitter.com'
                           }
                           className="text-dark_blue hover:underline"
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {daoData && daoData[9]?.twitter
-                            ? daoData[9].twitter
-                            : 'Not set'}
+                          {socials.twitter ? socials.twitter : 'Not set'}
                         </Link>
                       </div>
 
@@ -1712,17 +1725,15 @@ export default function ForSubmitPage({
                         <span className="font-medium">Telegram:</span>
                         <Link
                           href={
-                            daoData && daoData[9]
-                              ? daoData[9].telegram
+                            socials.telegram
+                              ? socials.telegram
                               : 'https://t.me/'
                           }
                           className="text-dark_blue hover:underline"
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {daoData && daoData[9]?.telegram
-                            ? daoData[9].telegram
-                            : 'Not set'}
+                          {socials.telegram ? socials.telegram : 'Not set'}
                         </Link>
                       </div>
                     </div>

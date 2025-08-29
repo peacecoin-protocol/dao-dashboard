@@ -98,7 +98,7 @@ export const GOVERNOR_ABI = [
       {
         name: '',
         type: 'tuple',
-        internalType: 'struct PEACECOINDAO_GOVERNOR.Receipt',
+        internalType: 'struct GovernorAlpha.Receipt',
         components: [
           { name: 'hasVoted', type: 'bool', internalType: 'bool' },
           { name: 'support', type: 'bool', internalType: 'bool' },
@@ -116,7 +116,7 @@ export const GOVERNOR_ABI = [
       {
         name: '',
         type: 'tuple',
-        internalType: 'struct PEACECOINDAO_GOVERNOR.SocialConfig',
+        internalType: 'struct GovernorAlpha.SocialConfig',
         components: [
           { name: 'description', type: 'string', internalType: 'string' },
           { name: 'website', type: 'string', internalType: 'string' },
@@ -141,13 +141,11 @@ export const GOVERNOR_ABI = [
     inputs: [
       { name: 'daoName', type: 'string', internalType: 'string' },
       { name: '_token', type: 'address', internalType: 'address' },
-      { name: '_sbt', type: 'address', internalType: 'address' },
       { name: '_timelock', type: 'address', internalType: 'address' },
       { name: '_votingDelay', type: 'uint256', internalType: 'uint256' },
       { name: '_votingPeriod', type: 'uint256', internalType: 'uint256' },
       { name: '_proposalThreshold', type: 'uint256', internalType: 'uint256' },
       { name: '_quorumVotes', type: 'uint256', internalType: 'uint256' },
-      { name: '_guardian', type: 'address', internalType: 'address' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -248,15 +246,6 @@ export const GOVERNOR_ABI = [
   },
   {
     type: 'function',
-    name: 'sbt',
-    inputs: [],
-    outputs: [
-      { name: '', type: 'address', internalType: 'contract SBTInterface' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'socialConfig',
     inputs: [],
     outputs: [
@@ -276,7 +265,7 @@ export const GOVERNOR_ABI = [
       {
         name: '',
         type: 'uint8',
-        internalType: 'enum PEACECOINDAO_GOVERNOR.ProposalState',
+        internalType: 'enum GovernorAlpha.ProposalState',
       },
     ],
     stateMutability: 'view',
@@ -415,67 +404,10 @@ export const GOVERNOR_ABI = [
   },
   {
     type: 'event',
-    name: 'ProposalMaxOperationsSet',
-    inputs: [
-      {
-        name: 'oldProposalMaxOperations',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-      {
-        name: 'newProposalMaxOperations',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
     name: 'ProposalQueued',
     inputs: [
       { name: 'id', type: 'uint256', indexed: false, internalType: 'uint256' },
       { name: 'eta', type: 'uint256', indexed: false, internalType: 'uint256' },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'ProposalThresholdSet',
-    inputs: [
-      {
-        name: 'oldProposalThreshold',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-      {
-        name: 'newProposalThreshold',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'QuorumVotesSet',
-    inputs: [
-      {
-        name: 'oldQuorumVotes',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
-      {
-        name: 'newQuorumVotes',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
     ],
     anonymous: false,
   },
