@@ -639,7 +639,7 @@ const CreateTokenModal = ({
           <span className="text-sm text-gray-500">{labels.preview}</span>
           <Image
             src={croppedImage}
-            className="contain rounded-lg border border-gray-200 max-h-48"
+            className="contain border border-gray-200 max-h-48"
             alt="Selected"
             width={100}
             height={100}

@@ -211,6 +211,7 @@ const useNFTData = (
           }
         })
       )
+
       setState((prev) => ({ ...prev, nftMetadata }))
     } catch (error) {
       const fallbackMetadata = nftTokenURIs.map((_, index) => ({
@@ -263,7 +264,7 @@ const NFTBalancesCard = ({
       <CardHeader>
         <CardTitle className="text-xl md:text-2xl font-bold">
           {isNFT
-            ? (campaign.noNFTs ?? 'No NFTs')
+            ? (campaign.noNFTs ?? 'NFT Balances')
             : (campaign.sbtBalances ?? 'SBT Balances')}
         </CardTitle>
       </CardHeader>
@@ -1046,7 +1047,7 @@ export default function ForCampaignPage({
               </Card>
             )}
 
-            {/* <NFTBalancesCard
+            <NFTBalancesCard
               balances={nftBalances}
               metadata={nftMetadata}
               onNFTClick={handleNFTClick}
@@ -1060,7 +1061,7 @@ export default function ForCampaignPage({
               onNFTClick={handleNFTClick}
               campaign={campaign}
               isNFT={false}
-            /> */}
+            />
           </div>
         )}
 

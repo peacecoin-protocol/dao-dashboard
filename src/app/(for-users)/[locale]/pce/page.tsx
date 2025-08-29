@@ -1243,7 +1243,15 @@ export default function PCEPage({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setIsEditingSocials(!isEditingSocials)}
+                      onClick={() => {
+                        setIsEditingSocials(!isEditingSocials)
+                        setEditingSocials({
+                          website: socials.website,
+                          linkedin: socials.linkedin,
+                          twitter: socials.twitter,
+                          telegram: socials.telegram,
+                        })
+                      }}
                     >
                       {isEditingSocials ? 'Cancel' : 'Edit'}
                     </Button>
