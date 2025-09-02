@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { formatEther, parseEther, ZeroAddress } from 'ethers'
+import { formatEther, parseEther } from 'ethers'
 import { readContract } from '@wagmi/core'
 import { useToast } from '~/hooks/use-toast'
 import {
@@ -12,18 +12,9 @@ import {
   type BaseError,
 } from 'wagmi'
 import { waitForTransactionReceipt } from '@wagmi/core'
-import { ExchangeInput } from '~/components/custom/exchange-input'
-import { TransferInput } from '~/components/custom/transfer-input'
+import { TokenTable } from '~/components/custom/token-table'
 import { Input } from '~/components/ui/input'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '~/components/ui/table'
+
 import {
   Dialog,
   DialogContent,
@@ -620,81 +611,24 @@ export default function ForTokenPage({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        <div className="border rounded-xl">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{dict?.token?.name ?? ''}</TableHead>
-                <TableHead>{dict?.token?.symbol ?? ''}</TableHead>
-                <TableHead>{token.tokenAddress ?? ''}</TableHead>
-                <TableHead>{token.balance ?? 'Balance'}</TableHead>
-                <TableHead className="max-xl:hidden"></TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {communityTokenInfo &&
-                communityTokenInfo.map((token, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{token.name}</TableCell>
-                    <TableCell>{token.symbol}</TableCell>
-                    <TableCell>{token.address}</TableCell>
-                    <TableCell>
-                      {token.balance
-                        ? formatString(formatEther(token.balance))
-                        : 0}
-                    </TableCell>
-
-                    <TableCell className="flex flex-col xl:flex-row font-medium gap-2">
-                      <ExchangeInput
-                        className="w-full"
-                        setSwapAmount={setSwapAmount}
-                        handleSwap={(fromToken, toToken) => {
-                          if (fromToken.address === ZeroAddress) {
-                            handleSwapToLocalToken(toToken.address)
-                          } else {
-                            if (toToken.address === ZeroAddress) {
-                              handleSwapFromLocalToken(fromToken.address)
-                            } else {
-                              handleSwap(fromToken, toToken)
-                            }
-                          }
-                        }}
-                        tokenLists={communityTokenInfo}
-                        selectedToken={token}
-                        pceBalance={balance as bigint}
-                        exchangeRates={exchangeRates}
-                      ></ExchangeInput>
-                    </TableCell>
-                    <TableCell className="max-xl:hidden">
-                      <TransferInput
-                        className="w-full"
-                        setTransferAmount={setTransferAmount}
-                        setTransferAddress={setTransferAddress}
-                        handleTransfer={() =>
-                          handleTransfer(token.address as `0x${string}`)
-                        }
-                        symbol={token.symbol}
-                        maxAmount={
-                          token.balance
-                            ? Number(formatEther(BigInt(token.balance)))
-                            : 0
-                        }
-                      ></TransferInput>
-                    </TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={colSpan ? 6 : 5}>
-                  {token.totalToken ?? ''}
-                </TableCell>
-                <TableCell>{tokens && tokens.length}</TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
-        </div>
+        <TokenTable
+          communityTokenInfo={communityTokenInfo}
+          tokens={tokens}
+          dict={dict}
+          colSpan={colSpan}
+          balance={balance as bigint}
+          exchangeRates={exchangeRates}
+          swapAmount={swapAmount}
+          transferAmount={transferAmount}
+          transferAddress={transferAddress}
+          setSwapAmount={setSwapAmount}
+          setTransferAmount={setTransferAmount}
+          setTransferAddress={setTransferAddress}
+          handleSwap={handleSwap}
+          handleSwapFromLocalToken={handleSwapFromLocalToken}
+          handleSwapToLocalToken={handleSwapToLocalToken}
+          handleTransfer={handleTransfer}
+        />
       </div>
     </div>
   )
