@@ -20,14 +20,14 @@ import {
   SelectValue,
 } from '~/components/ui/select'
 import { Textarea } from '~/components/ui/textarea'
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from '~/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table'
 import { Input } from '~/components/ui/input'
 import { readContract } from '@wagmi/core'
 
@@ -94,6 +94,8 @@ import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { Env } from '~/env'
 import { useToast } from '~/hooks/use-toast'
 import { DAO_FACTORY_ABI } from '~/app/ABIs/DAOFactory'
+import { DialogTrigger } from '~/components/ui/dialog'
+import { AmountInput } from '~/components/custom/amount-input'
 
 type Dao = {
   id: string
@@ -1741,6 +1743,402 @@ export default function ForSubmitPage({
                 </div>
               </div>
             </div>
+          </TabsContent>
+          <TabsContent value="all">
+            <div className="flex flex-row w-full items-center">
+              <Tabs defaultValue="all" className="gap-0 w-full">
+                <TabsList>
+                  <TabsTrigger className="w-20" value="all">
+                    {localDict.all}
+                  </TabsTrigger>
+                  <TabsTrigger className="w-20" value="active">
+                    {localDict.active}
+                  </TabsTrigger>
+                  <TabsTrigger className="w-20" value="executed">
+                    {localDict.executed}
+                  </TabsTrigger>
+                  <TabsTrigger className="w-20" value="defeated">
+                    {localDict.defeated}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent
+                  value="all"
+                  className="flex w-full flex-col gap-4 mt-4"
+                >
+                  {proposals.length > 0 ? (
+                    proposals.map((proposal, index) => {
+                      return (
+                        <ProposalCard
+                          key={index}
+                          proposal={proposal}
+                          status={proposalStatus[index]}
+                          index={index}
+                        />
+                      )
+                    })
+                  ) : (
+                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                      {localDict.noProposals ?? 'No proposals at the moment'}
+                    </div>
+                  )}
+                </TabsContent>
+                <TabsContent
+                  value="active"
+                  className="flex w-full flex-col mt-0"
+                >
+                  {proposals.filter(
+                    (_, index) => proposalStatus[index] === 'Active'
+                  ).length > 0 ? (
+                    proposals.map((proposal, index) => {
+                      if (proposalStatus[index] === 'Active') {
+                        return (
+                          <ProposalCard
+                            key={index}
+                            proposal={proposal}
+                            status={proposalStatus[index]}
+                            index={index}
+                          />
+                        )
+                      }
+                      return null
+                    })
+                  ) : (
+                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                      {localDict.noProposals ??
+                        'No active proposals at the moment'}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent
+                  value="executed"
+                  className="flex w-full flex-col mt-0"
+                >
+                  {proposals.filter(
+                    (_, index) => proposalStatus[index] === 'Executed'
+                  ).length > 0 ? (
+                    proposals.map((proposal, index) => {
+                      if (proposalStatus[index] === 'Executed') {
+                        return (
+                          <ProposalCard
+                            key={index}
+                            proposal={proposal}
+                            status={proposalStatus[index]}
+                            index={index}
+                          />
+                        )
+                      }
+                      return null
+                    })
+                  ) : (
+                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                      {localDict.noProposals ??
+                        'No succeeded proposals at the moment'}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent
+                  value="defeated"
+                  className="flex w-full flex-col gap-4 mt-0"
+                >
+                  {proposals.filter(
+                    (_, index) => proposalStatus[index] === 'Defeated'
+                  ).length > 0 ? (
+                    proposals.map((proposal, index) => {
+                      if (proposalStatus[index] === 'Defeated') {
+                        return (
+                          <ProposalCard
+                            key={index}
+                            proposal={proposal}
+                            status={proposalStatus[index]}
+                            index={index}
+                          />
+                        )
+                      }
+                      return null
+                    })
+                  ) : (
+                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                      {localDict.noProposals ??
+                        'No defeated proposals at the moment'}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
+          </TabsContent>
+          <TabsContent value="balance">
+            <div className="flex flex-col md:flex-row mt-4 gap-4 ">
+              <div className="flex flex-col w-full">
+                <h1 className="text-2xl font-bold">
+                  {localDict.treasury ?? 'Treasury'}
+                </h1>
+                <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="font-bold">
+                          {localDict.token ?? 'Token'}
+                        </TableHead>
+                        <TableHead className="font-bold">
+                          {localDict.amount ?? 'Amount'}
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {treasuryBalances.length > 0 ? (
+                        treasuryBalances.map((token, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-bold">
+                              {token.name === '' ? 'PCE TEST' : token.name}
+                            </TableCell>
+                            <TableCell className="font-bold">
+                              {formatString(
+                                formatEther(
+                                  BigInt(token.tokenBalance).toString()
+                                )
+                              )}{' '}
+                              {token.symbol === '' ? 'PCE TEST' : token.symbol}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-center">
+                            No tokens found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+              <div className="flex flex-col w-full md:w-[40%]">
+                <h1 className="text-2xl font-bold">
+                  {localDict.daoBalance ?? 'DAO Balance'}
+                </h1>
+
+                <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
+                  <h1 className="font-bold rounded-xl flex">
+                    {localDict.daoTreasury ?? 'DAO Treasury'}
+                  </h1>
+                  <div className="flex flex-row justify-between">
+                    <h1 className="font-bold rounded-xl  flex">
+                      {localDict.totalValue ?? 'Total Value'}
+                    </h1>
+                    <h1 className="font-bold rounded-xl  flex">$0</h1>
+                  </div>
+
+                  <div className="flex flex-row justify-between">
+                    <h1 className="font-bold rounded-xl  flex">
+                      {localDict.numberOfTokens ?? 'Number of Tokens'}
+                    </h1>
+                    <h1 className="font-bold rounded-xl  flex">
+                      {treasuryBalances.length}
+                    </h1>
+                  </div>
+
+                  <div className="flex flex-row justify-between">
+                    <h1 className="font-bold rounded-xl  flex">
+                      {localDict.numberOfNfts ?? 'Number of NFTs'}
+                    </h1>
+                    <h1 className="font-bold rounded-xl  flex">$0</h1>
+                  </div>
+
+                  <Dialog
+                    open={isDepositDialogOpened}
+                    onOpenChange={() => {
+                      setIsDepositDialogOpened(!isDepositDialogOpened)
+                    }}
+                  >
+                    <DialogTrigger>
+                      <Button className="w-full bg-dark_blue">
+                        {localDict.depositToDaoTreasury ??
+                          'Deposit to DAO Treasury'}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader className="flex flex-col gap-2">
+                        <DialogTitle>Address</DialogTitle>
+                        <DialogDescription>
+                          {localDict.tokenAddressToDeposit ??
+                            'Token address to deposit'}
+                        </DialogDescription>
+                        <Input
+                          onChange={(e) => setTokenAddress(e.target.value)}
+                          placeholder={localDict.address ?? 'Address'}
+                        />
+                        <DialogTitle>
+                          {localDict.amount ?? 'Amount'}
+                        </DialogTitle>
+                        <DialogDescription>
+                          {localDict.amountToDeposit ?? 'Amount to deposit'}
+                        </DialogDescription>
+                        <Input
+                          onChange={(e) => setTransferAmount(e.target.value)}
+                          placeholder={localDict.amount ?? 'Amount'}
+                        />
+                        <Button
+                          className="w-full bg-dark_blue"
+                          onClick={async () => {
+                            await writeContract({
+                              abi: PCE_ABI,
+                              address: tokenAddress as `0x${string}`,
+                              functionName: 'transfer',
+                              args: [
+                                daoInfo?.timelock,
+                                parseEther(transferAmount),
+                              ],
+                            })
+
+                            setTokenAddress('')
+                            setTransferAmount('')
+                            setIsDepositDialogOpened(!isDepositDialogOpened)
+                          }}
+                        >
+                          {localDict.deposit ?? 'Deposit'}
+                        </Button>
+                      </DialogHeader>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {/* <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
+                  <h1 className="font-bold rounded-xl flex">DAO Delegated</h1>
+                  <div className="flex flex-row justify-between">
+                    <h1 className="font-bold rounded-xl  flex">
+                      DAO Delegated to
+                    </h1>
+                    <h1 className="font-bold rounded-xl  flex">$0</h1>
+                  </div>
+
+                  <div className="flex flex-row justify-between">
+                    <h1 className="font-bold rounded-xl  flex">
+                      Historical Rewards Earned
+                    </h1>
+                    <h1 className="font-bold rounded-xl flex">$0</h1>
+                  </div>
+
+                  <div className="flex flex-row justify-between">
+                    <h1 className="font-bold rounded-xl flex">
+                      Available to claim
+                    </h1>
+                    <h1 className="font-bold rounded-xl  flex">$0</h1>
+                  </div>
+                </div> */}
+              </div>
+            </div>
+          </TabsContent>
+          <TabsContent value="holders">
+            <div className="flex flex-row mt-4 gap-4">
+              <div className="flex flex-col w-full gap-4">
+                <div className="flex flex-col md:flex-row w-full gap-4 items-center justify-between">
+                  <div className="flex flex-col gap-4">
+                    <h1 className="flex flex-row text-2xl font-bold gap-4">
+                      {localDict.votingPowerBreakdown ??
+                        'Voting Power Breakdown'}
+                    </h1>
+                  </div>
+                </div>
+                <div className="flex flex-row gap-4">
+                  <AmountInput
+                    localDict={localDict}
+                    className="w-60 bg-dark_blue"
+                    setStakingAmount={setStakingAmount}
+                    handleStake={handleStake}
+                    maxAmount={
+                      communityTokenBalance
+                        ? Number(
+                            formatEther(BigInt(communityTokenBalance as string))
+                          )
+                        : 0
+                    }
+                  />
+                  <Button
+                    className="w-60 bg-dark_blue"
+                    onClick={handleWithdraw}
+                  >
+                    {localDict.withdraw ?? 'Withdraw'}
+                  </Button>
+
+                  <Button
+                    className="w-60 bg-dark_blue"
+                    onClick={async () => {
+                      setIsDelegateDialogOpened(true)
+                    }}
+                  >
+                    {localDict.delegate ?? 'Delegate'}
+                  </Button>
+                </div>
+                <div className="rounded-xl flex border mt-4 flex-row w-full gap-4">
+                  <Table className="w-full">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>
+                          <div className="flex flex-row gap-4">
+                            {localDict.address ?? 'Address'}
+                          </div>
+                        </TableHead>
+                        <TableHead>
+                          {localDict.communityToken ?? 'Community Token'}
+                        </TableHead>
+                        <TableHead>
+                          {localDict.governanceToken ?? 'Governance Token'}
+                        </TableHead>
+                        <TableHead>
+                          {localDict.delegatedAmount ?? 'Delegated Amount'}
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell>
+                          <div className="flex flex-row gap-2 items-center">
+                            <h1 className="text-md text-dark_blue font-bold">
+                              {daoInfo ? daoInfo.communityToken : '-'}
+                            </h1>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-bold font-md text-dark_blue">
+                          {communityTokenBalance
+                            ? formatString(
+                                formatEther(
+                                  BigInt(communityTokenBalance as string)
+                                )
+                              )
+                            : '0'}{' '}
+                          {daoInfo?.communityTokenSymbol}
+                        </TableCell>
+                        <TableCell className="font-bold font-md text-dark_blue">
+                          {governanceTokenBalance
+                            ? formatString(
+                                formatEther(
+                                  BigInt(governanceTokenBalance as string)
+                                )
+                              )
+                            : '0'}{' '}
+                          {daoInfo?.communityTokenSymbol}
+                        </TableCell>
+                        <TableCell className="font-bold font-md text-dark_blue">
+                          {votes
+                            ? formatString(formatEther(BigInt(votes as string)))
+                            : '0'}{' '}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+
+            <DelegateDialog
+              isOpen={isDelegateDialogOpened}
+              onOpenChange={setIsDelegateDialogOpened}
+              delegateAddr={delegateAddr}
+              localDict={localDict}
+              handleDelegate={handleDelegate}
+            />
           </TabsContent>
         </Tabs>
       </div>

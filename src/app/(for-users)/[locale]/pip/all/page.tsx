@@ -306,7 +306,7 @@ export default function ForPage({
             </PopoverContent>
           </Popover>
 
-          <Popover open={isLabelFilterOpen} onOpenChange={setIsLabelFilterOpen}>
+          {/* <Popover open={isLabelFilterOpen} onOpenChange={setIsLabelFilterOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -370,7 +370,7 @@ export default function ForPage({
                 </CommandList>
               </Command>
             </PopoverContent>
-          </Popover>
+          </Popover> */}
         </div>
         <Table>
           <TableHeader>
@@ -386,9 +386,6 @@ export default function ForPage({
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
                 {dict?.pipAll?.state || 'State'}
-              </TableHead>
-              <TableHead className="border-2 border-gray87 border-solid	">
-                {dict?.pipAll?.category || 'Category'}
               </TableHead>
               <TableHead className="border-2 border-gray87 border-solid	">
                 {dict?.pipAll?.types || 'Types'}
@@ -435,9 +432,6 @@ export default function ForPage({
                   </TableCell>
                   <TableCell className="border-2 border-gray87 border-solid	">
                     {pip.status}
-                  </TableCell>
-                  <TableCell className="border-2 border-gray87 border-solid	">
-                    {pip.category}
                   </TableCell>
                   <TableCell className="border-2 border-gray87 border-solid	">
                     {pip.type}
