@@ -93,6 +93,8 @@ export interface Metadata {
   }[]
   external_url?: string
   token_id: number
+  timestamp: string
+  votingPower?: string
 }
 
 export interface PIP {
@@ -105,4 +107,8 @@ export interface PIP {
   category: string
   type: string
   path: string
+}
+
+export interface ActionInfo {
+  title: string
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, useMemo } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import Image from 'next/image'
 
@@ -9,17 +9,11 @@ import {
   NFTAddress,
   PCE_SBT_ADDRESS,
   defaultChainId,
+  sbtTableHeaders,
 } from '~/app/constants/constants'
 import { Button } from '~/components/custom/button'
 import { getDict } from '~/i18n/get-dict'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '~/components/ui/table'
+
 import { useToast } from '~/hooks/use-toast'
 import { Input } from '~/components/ui/input'
 import { DialogContent, DialogTitle, Dialog } from '~/components/ui/dialog'
@@ -55,14 +49,11 @@ import {
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { config } from '~/lib/config'
+import { ChevronsUpDown, Plus, Image as ImageIcon } from 'lucide-react'
 import {
-  ChevronsUpDown,
-  Plus,
-  Eye,
-  X,
-  Calendar,
-  Image as ImageIcon,
-} from 'lucide-react'
+  SBTInfo,
+  SBTTableComponent,
+} from '~/components/custom/sbt-tableComponent'
 
 // Types
 interface CardFormState {
@@ -70,18 +61,6 @@ interface CardFormState {
   description: string
   votingPower: string
   isSBT: boolean
-}
-
-interface TokenData {
-  id?: string
-  name: string
-  description: string
-  votingPower: string
-  image: string
-  timestamp: number
-  isRevoked: boolean
-  tokenId: number
-  metadata: string
 }
 
 interface FilterOption {
@@ -109,8 +88,8 @@ const MAX_VOTING_POWER = 10000
 // Custom Hooks
 const useTokenData = (chainId: number | undefined) => {
   const { toast } = useToast()
-  const [sbtData, setSBTData] = useState<TokenData[]>([])
-  const [nftData, setNFTData] = useState<TokenData[]>([])
+  const [sbtData, setSBTData] = useState<SBTInfo[]>([])
+  const [nftData, setNFTData] = useState<SBTInfo[]>([])
   const [loading, setLoading] = useState(false)
 
   const { data: currentSBTId } = useReadContract({
@@ -204,8 +183,8 @@ const useTokenData = (chainId: number | undefined) => {
 
     setLoading(true)
     try {
-      const sbtTokens: TokenData[] = []
-      const nftTokens: TokenData[] = []
+      const sbtTokens: SBTInfo[] = []
+      const nftTokens: SBTInfo[] = []
 
       for (let i = 1; i <= Number(currentSBTId); i++) {
         try {
@@ -214,7 +193,7 @@ const useTokenData = (chainId: number | undefined) => {
             checkSBTRevokedStatus(i),
           ])
 
-          let tokenDataJson: Partial<TokenData> = {}
+          let tokenDataJson: Partial<SBTInfo> = {}
           try {
             const response = await fetch(tokenURI)
             if (response.ok) {
@@ -224,16 +203,19 @@ const useTokenData = (chainId: number | undefined) => {
             console.warn(`Failed to fetch metadata for token ${i}:`, error)
           }
 
+          console.log(tokenDataJson, 'tokenDataJson')
           sbtTokens.push({
-            ...tokenDataJson,
             isRevoked: isTokenRevoked,
-            tokenId: i,
-            metadata: tokenURI,
+            tokenId: i.toString(),
             name: tokenDataJson.name || `Token ${i}`,
             description: tokenDataJson.description || '',
             votingPower: tokenDataJson.votingPower || '0',
             image: tokenDataJson.image || '/images/empty-nft.svg',
-            timestamp: tokenDataJson.timestamp || 0,
+            createdAt:
+              (
+                Number((tokenDataJson as any).timestamp || 0) / 1000
+              ).toString() || '0',
+            isSBT: true,
           })
         } catch (error) {
           console.error(`Error processing token ${i}:`, error)
@@ -247,7 +229,7 @@ const useTokenData = (chainId: number | undefined) => {
             checkNFTRevokedStatus(i),
           ])
 
-          let tokenDataJson: Partial<TokenData> = {}
+          let tokenDataJson: Partial<SBTInfo> = {}
           try {
             const response = await fetch(tokenURI)
             if (response.ok) {
@@ -258,15 +240,17 @@ const useTokenData = (chainId: number | undefined) => {
           }
 
           nftTokens.push({
-            ...tokenDataJson,
             isRevoked: isTokenRevoked,
-            tokenId: i,
-            metadata: tokenURI,
+            tokenId: i.toString(),
             name: tokenDataJson.name || `Token ${i}`,
             description: tokenDataJson.description || '',
             votingPower: tokenDataJson.votingPower || '0',
             image: tokenDataJson.image || '/images/empty-nft.svg',
-            timestamp: tokenDataJson.timestamp || 0,
+            createdAt:
+              (
+                Number((tokenDataJson as any).timestamp || 0) / 1000
+              ).toString() || '0',
+            isSBT: false,
           })
         } catch (error) {
           console.error(`Error processing token ${i}:`, error)
@@ -381,163 +365,171 @@ const CreateButton = ({
   </Button>
 )
 
-const TokenTable = ({
-  cardData,
-  filter,
-  onViewMetadata,
-  onRevoke,
-  labels,
-}: {
-  cardData: TokenData[]
-  filter: string
-  onViewMetadata: (metadata: string) => void
-  onRevoke: (tokenId: string, isRevoked: boolean) => void
-  labels: Record<string, string>
-}) => {
-  const filteredData = useMemo(() => {
-    if (filter == 'all') return cardData
-    if (filter == 'revoked') return cardData.filter((token) => token.isRevoked)
-    if (filter == 'unrevoked')
-      return cardData.filter((token) => !token.isRevoked)
+// const TokenTable = ({
+//   cardData,
+//   filter,
+//   onViewMetadata,
+//   onRevoke,
+//   labels,
+// }: {
+//   cardData: SBTInfo[]
+//   filter: string
+//   onViewMetadata: (metadata: string) => void
+//   onRevoke: (tokenId: string, isRevoked: boolean) => void
+//   labels: Record<string, string>
+// }) => {
+//   const filteredData = useMemo(() => {
+//     if (filter == 'all') return cardData
+//     if (filter == 'revoked') return cardData.filter((token) => token.isRevoked)
+//     if (filter == 'unrevoked')
+//       return cardData.filter((token) => !token.isRevoked)
 
-    return []
-  }, [cardData, filter])
+//     return []
+//   }, [cardData, filter])
 
-  if (filteredData.length === 0) {
-    return (
-      <div className="overflow-x-auto rounded-xl bg-white shadow-lg w-full">
-        <div className="py-8 px-4 text-center text-gray-400 text-lg">
-          {labels.noTokensFound}
-        </div>
-      </div>
-    )
-  }
+//   if (filteredData.length === 0) {
+//     return (
+//       <div className="overflow-x-auto rounded-xl bg-white shadow-lg w-full">
+//         <div className="py-8 px-4 text-center text-gray-400 text-lg">
+//           {labels.noTokensFound}
+//         </div>
+//       </div>
+//     )
+//   }
 
-  return (
-    <div className="overflow-x-auto rounded-xl bg-white shadow-lg w-full">
-      <Table className="w-full">
-        <TableHeader>
-          <TableRow className="hidden md:table-row bg-gray-100">
-            <TableHead className="font-bold w-8 text-gray-700 text-center">
-              #
-            </TableHead>
-            <TableHead className="font-bold text-gray-700 text-center">
-              {labels.name}
-            </TableHead>
-            <TableHead className="font-bold text-gray-700 text-center">
-              {labels.description}
-            </TableHead>
-            <TableHead className="font-bold text-gray-700 text-center">
-              Voting Power
-            </TableHead>
-            <TableHead className="font-bold text-gray-700 text-center">
-              {labels.image}
-            </TableHead>
-            <TableHead className="font-bold text-gray-700 text-center">
-              {labels.createdAt}
-            </TableHead>
-            <TableHead className="font-bold text-gray-700 text-center">
-              {labels.actions}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredData.map((token, index) => (
-            <TableRow
-              key={token.tokenId}
-              className="hover:bg-gray-50 transition md:table-row flex flex-col md:flex-row md:items-center border-b last:border-b-0"
-            >
-              {/* Mobile Card Header */}
-              <TableCell className="md:hidden flex flex-row items-center gap-2 py-2 bg-gray-100 rounded-t-lg text-center justify-center">
-                <span className="font-bold text-gray-500 text-center">
-                  #{index + 1}
-                </span>
-                <span className="font-bold">{token.name}</span>
-              </TableCell>
+//   return (
+//     <div className="overflow-x-auto rounded-xl bg-white shadow-lg w-full">
+//       <Table className="w-full">
+//         <TableHeader>
+//           <TableRow className="hidden md:table-row bg-gray-100">
+//             <TableHead className="font-bold w-8 text-gray-700 text-center">
+//               #
+//             </TableHead>
+//             <TableHead className="font-bold text-gray-700 text-center">
+//               {labels.name}
+//             </TableHead>
+//             <TableHead className="font-bold text-gray-700 text-center">
+//               {labels.description}
+//             </TableHead>
+//             <TableHead className="font-bold text-gray-700 text-center">
+//               Voting Power
+//             </TableHead>
+//             <TableHead className="font-bold text-gray-700 text-center">
+//               {labels.image}
+//             </TableHead>
+//             <TableHead className="font-bold text-gray-700 text-center">
+//               {labels.createdAt}
+//             </TableHead>
+//           </TableRow>
+//         </TableHeader>
+//         <TableBody>
+//           {filteredData.map((token, index) => (
+//             <TableRow
+//               key={token.tokenId}
+//               className="hover:bg-gray-50 transition md:table-row flex flex-col md:flex-row md:items-center border-b last:border-b-0"
+//             >
+//               {/* Mobile Card Header */}
+//               <TableCell className="md:hidden flex flex-row items-center gap-2 py-2 bg-gray-100 rounded-t-lg text-center justify-center">
+//                 <span className="font-bold text-gray-500 text-center">
+//                   #{index + 1}
+//                 </span>
+//                 <span className="font-bold">{token.name}</span>
+//               </TableCell>
 
-              {/* Desktop Index */}
-              <TableCell className="hidden md:table-cell text-gray-700 font-medium text-center">
-                {index + 1}
-              </TableCell>
+//               {/* Desktop Index */}
+//               <TableCell className="hidden md:table-cell text-gray-700 font-medium text-center">
+//                 {index + 1}
+//               </TableCell>
 
-              {/* Name */}
-              <TableCell className="hidden md:table-cell flex-1 md:flex-none break-words text-gray-900 text-center">
-                <span className="md:hidden font-semibold text-gray-500 text-center">
-                  {labels.name}:{' '}
-                </span>
-                {token.name}
-              </TableCell>
+//               {/* Name */}
+//               <TableCell className="hidden md:table-cell flex-1 md:flex-none break-words text-gray-900 text-center">
+//                 <span className="md:hidden font-semibold text-gray-500 text-center">
+//                   {labels.name}:{' '}
+//                 </span>
+//                 {token.name}
+//               </TableCell>
 
-              <TableCell className="hidden md:table-cell flex-1 md:flex-none break-words text-gray-900 text-center">
-                {token.description}
-              </TableCell>
-              {/* Name */}
-              <TableCell className="hidden md:table-cell flex-1 md:flex-none break-words text-gray-900 text-center">
-                {token.votingPower}
-              </TableCell>
-              {/* Image */}
-              <TableCell className="md:table-cell flex-1 md:flex-none text-center">
-                <div className="flex items-center justify-center">
-                  <Image
-                    src={token.image}
-                    className="object-cover"
-                    alt={token.name}
-                    onError={(e) => {
-                      e.currentTarget.src = '/images/empty-nft.svg'
-                    }}
-                    width={96}
-                    height={96}
-                  />
-                </div>
-              </TableCell>
+//               <TableCell className="hidden md:table-cell flex-1 md:flex-none break-words text-gray-900 text-center">
+//                 {token.description}
+//               </TableCell>
+//               {/* Name */}
+//               <TableCell className="hidden md:table-cell flex-1 md:flex-none break-words text-gray-900 text-center">
+//                 {token.votingPower}
+//               </TableCell>
+//               {/* Image */}
+//               <TableCell className="md:table-cell flex-1 md:flex-none text-center">
+//                 <div className="flex items-center justify-center">
+//                   <Image
+//                     src={token.image}
+//                     className="object-cover"
+//                     alt={token.name}
+//                     onError={(e) => {
+//                       e.currentTarget.src = '/images/empty-nft.svg'
+//                     }}
+//                     width={96}
+//                     height={96}
+//                   />
+//                 </div>
+//               </TableCell>
 
-              {/* Created At */}
-              <TableCell className="md:table-cell flex-1 md:flex-none text-gray-700 text-center">
-                <span className="md:hidden font-semibold text-gray-500">
-                  {labels.createdAt}:{' '}
-                </span>
-                {token.timestamp ? (
-                  <div className="flex items-center justify-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    {new Date(token.timestamp).toLocaleDateString()}
-                  </div>
-                ) : (
-                  '-'
-                )}
-              </TableCell>
+//               {/* Created At */}
+//               <TableCell className="md:table-cell flex-1 md:flex-none text-gray-700 text-center">
+//                 <span className="md:hidden font-semibold text-gray-500">
+//                   {labels.createdAt}:{' '}
+//                 </span>
+//                 {token.createdAt ? (
+//                   <div className="flex items-center justify-center gap-1">
+//                     <Calendar className="w-4 h-4" />
+//                     {new Date(token.createdAt).toLocaleDateString()}
+//                   </div>
+//                 ) : (
+//                   '-'
+//                 )}
+//               </TableCell>
 
-              {/* Actions */}
-              <TableCell className="md:table-cell gap-4 flex flex-row items-center justify-center text-center">
-                <Button
-                  variant="outline"
-                  className="w-full md:w-auto"
-                  onClick={() => onViewMetadata(token.metadata)}
-                >
-                  <span className="flex items-center gap-1">
-                    <Eye className="w-4 h-4" />
-                    {labels.viewMetadata}
-                  </span>
-                </Button>
-                <Button
-                  variant="destructive"
-                  className="w-full ml-2 md:w-auto bg-red-600 hover:bg-red-700 text-white"
-                  onClick={() =>
-                    onRevoke(token.tokenId.toString(), token.isRevoked)
-                  }
-                >
-                  <span className="flex items-center gap-1">
-                    <X className="w-4 h-4" />
-                    {token.isRevoked ? labels.unrevoke : labels.revoke}
-                  </span>
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  )
-}
+//               {/* Actions */}
+//               <TableCell className="md:table-cell gap-4 flex flex-row items-center justify-center text-center">
+//                 <Button
+//                   variant="outline"
+//                   className="w-full md:w-auto"
+//                   // onClick={() => onViewMetadata(token.metadata)}
+//                 >
+//                   <span className="flex items-center gap-1">
+//                     <Eye className="w-4 h-4" />
+//                     {labels.viewMetadata}
+//                   </span>
+//                 </Button>
+//                 <Button
+//                   variant="destructive"
+//                   className="w-full ml-2 md:w-auto bg-red-600 hover:bg-red-700 text-white"
+//                   onClick={() => onRevoke(token.tokenId, token.isRevoked)}
+//                 >
+//                   <span className="flex items-center gap-1">
+//                     <X className="w-4 h-4" />
+//                     {token.isRevoked ? labels.unrevoke : labels.revoke}
+//                   </span>
+//                 </Button>
+//               </TableCell>
+//             </TableRow>
+//           ))}
+//         </TableBody>
+//       </Table>
+
+//       <SBTTableComponent
+//         headers={[...sbtTableHeaders, labels.action || 'Action']}
+//         sbtInfo={cardData}
+//         action={{ title: labels.revoke ?? 'Revoke' }}
+//         onRevoke={(index) => {
+//           console.log(index, 'index')
+//           onRevoke(
+//             cardData[index]?.tokenId ?? '',
+//             cardData[index]?.isRevoked ?? false
+//           )
+//         }}
+//       />
+//     </div>
+//   )
+// }
 
 const CreateTokenModal = ({
   isOpen,
@@ -855,40 +847,6 @@ export default function SBTBuilderPage({
     toast,
   ])
 
-  const handleRevokeToken = useCallback(
-    async (tokenId: string, isRevoked: boolean) => {
-      if (!address) return
-
-      try {
-        toast({
-          title: isRevoked ? 'Unrevoking token...' : 'Revoking token...',
-        })
-
-        const revokeTx = await writeContractAsync({
-          abi: SBT_ABI,
-          address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-          functionName: 'revoke',
-          args: [tokenId, !isRevoked],
-        })
-
-        await waitForTransactionReceipt(config, {
-          hash: revokeTx,
-          confirmations: 1,
-        })
-
-        toast({
-          title: isRevoked
-            ? 'Token unrevoked successfully'
-            : 'Token revoked successfully',
-        })
-      } catch (error) {
-        console.error('Error revoking token:', error)
-        toast({ title: 'Failed to revoke token' })
-      }
-    },
-    [address, writeContractAsync, chainId, toast]
-  )
-
   const handleViewMetadata = useCallback((metadata: string) => {
     window.open(metadata, '_blank')
   }, [])
@@ -949,13 +907,72 @@ export default function SBTBuilderPage({
     createToken: localDict.createSBT_NFT ?? 'Create SBT/NFT',
   }
 
+  const tokenInfo = useCallback(() => {
+    let data =
+      tokenType == 'sbt'
+        ? sbtData
+        : tokenType == 'nft'
+          ? nftData
+          : [...sbtData, ...nftData]
+
+    if (filter == 'revoked') {
+      data = data.filter((token) => token.isRevoked)
+    } else if (filter == 'unrevoked') {
+      data = data.filter((token) => !token.isRevoked)
+    }
+
+    return data
+  }, [sbtData, nftData, filter, tokenType])
+
+  const handleRevokeToken = useCallback(
+    async (index: number) => {
+      if (!address) return
+      const token = tokenInfo()[index]
+      console.log(token, 'token')
+
+      if (!token) {
+        toast({ title: 'Token not found' })
+        return
+      }
+
+      try {
+        toast({
+          title: token.isRevoked ? 'Unrevoking token...' : 'Revoking token...',
+        })
+
+        const revokeTx = await writeContractAsync({
+          abi: SBT_ABI,
+          address: token.isSBT
+            ? (PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`)
+            : (NFTAddress[chainId || defaultChainId] as `0x${string}`),
+          functionName: 'revoke',
+          args: [token.tokenId, !token.isRevoked],
+        })
+
+        await waitForTransactionReceipt(config, {
+          hash: revokeTx,
+          confirmations: 1,
+        })
+
+        toast({
+          title: token.isRevoked
+            ? 'Token unrevoked successfully'
+            : 'Token revoked successfully',
+        })
+      } catch (error) {
+        console.error('Error revoking token:', error)
+        toast({ title: 'Failed to revoke token' })
+      }
+    },
+    [address, writeContractAsync, chainId, toast, tokenInfo]
+  )
+
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-50 px-4 py-8 md:px-20 md:py-16 gap-4">
       {loading && <LoadingOverlay />}
 
       <div className="w-full gap-4 flex flex-col">
         <PageHeader title={currentLabels.sbtList} />
-
         <div className="flex flex-row gap-4">
           <CreateButton
             onClick={handleCreateModalOpen}
@@ -982,7 +999,17 @@ export default function SBTBuilderPage({
           </div>
         </div>
 
-        <TokenTable
+        <SBTTableComponent
+          headers={[...sbtTableHeaders, 'Action']}
+          sbtInfo={tokenInfo()}
+          action={{ title: 'Revoke' }}
+          onRevoke={(index) => {
+            console.log(index, 'index')
+            handleRevokeToken(index)
+          }}
+        />
+
+        {/* <TokenTable
           cardData={
             tokenType == 'sbt'
               ? sbtData
@@ -994,8 +1021,7 @@ export default function SBTBuilderPage({
           onViewMetadata={handleViewMetadata}
           onRevoke={handleRevokeToken}
           labels={currentLabels}
-        />
-
+        /> */}
         <CreateTokenModal
           isOpen={isCreateModalOpen}
           onClose={handleCreateModalClose}

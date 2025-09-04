@@ -304,7 +304,7 @@
     "description": "これは勝者にインセンティブを提供するキャンペーンプログラムです",
     "announcement": "お知らせ",
     "pastCampaign": "過去のキャンペーン",
-    "sbtBalances": "SBT残高",
+    "sbtBalances": "Token残高",
     "noSBTs": "SBTなし",
     "signMessage": "メッセージに署名",
     "message": "メッセージ",

@@ -21,9 +21,7 @@ export default function ForUsersAnyLocaleIndexLayout({
     >
       <AppBar locale={locale} />
       <main className="overflow-y-auto">
-        <div className="container py-4 items-center flex flex-col">
-          {children}
-        </div>
+        <div className="py-4 items-center flex flex-col">{children}</div>
       </main>
     </div>
   )

@@ -432,6 +432,8 @@ export default function PCEPage({
               attributes: [],
               external_url: '',
               token_id: 0,
+              timestamp: '0',
+              votingPower: '0',
             }
             _nftMetadata.push(metadata)
           }

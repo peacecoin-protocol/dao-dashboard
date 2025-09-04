@@ -304,7 +304,7 @@
     "description": "This is a Campaign Program that provide incentives for winners",
     "announcement": "Announcement",
     "pastCampaign": "Past Campaigns",
-    "sbtBalances": "SBT Balances",
+    "sbtBalances": "Token Balances",
     "noSBTs": "No SBTs",
     "signMessage": "Sign Message",
     "message": "Message",

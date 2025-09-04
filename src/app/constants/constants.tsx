@@ -136,3 +136,26 @@ export const CATEGORY = [
 ]
 
 export const EMPTY_NFT_IMAGE = '/images/empty-nft.svg'
+export const sbtTableHeaders = [
+  'Type',
+  'Image',
+  'Title',
+  'Description',
+  'Token ID',
+  'Voting Power',
+  'Created At',
+]
+
+export const campaignTableHeaders = [
+  'ID',
+  'Image',
+  'Title',
+  'Description',
+  'Type',
+  'Claimed Amount/Total Amount',
+  'Claim Amount',
+  'Token Type',
+  'Start Time',
+  'End Time',
+  'Status',
+]

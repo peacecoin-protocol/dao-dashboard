@@ -5,14 +5,7 @@ import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '~/components/custom/button'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '~/components/ui/table'
+
 import { Input } from '~/components/ui/input'
 import { readContract } from '@wagmi/core'
 
@@ -45,12 +38,15 @@ import {
   pceAddress,
   stakingAddress,
   WPCE_ADDRESS,
+  sbtTableHeaders,
 } from '~/app/constants/constants'
 
 import { STAKING_ABI } from '~/app/ABIs/Staking'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import axios from 'axios'
 import { PCE_GOV_TOKEN_ABI } from '~/app/ABIs/PCEGovToken'
+import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
+import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 
 export default function StakingPage({
   params: { locale },
@@ -272,6 +268,7 @@ export default function StakingPage({
               attributes: [],
               external_url: '',
               token_id: 0,
+              timestamp: '0',
             }
             _nftMetadata.push(metadata)
           }
@@ -420,6 +417,19 @@ export default function StakingPage({
     }
     fetchDict()
   }, [locale])
+
+  const sbtInfo = useMemo<SBTInfo[]>(() => {
+    return nftMetadata.map((metadata, index) => ({
+      tokenId: (index + 1).toString(),
+      name: metadata.name,
+      description: metadata.description,
+      votingPower: sbtVotingPower[index]?.toString() || '0',
+      image: nftMetadata[index]?.image || '/images/empty-nft.svg',
+      createdAt: metadata.timestamp.toString(),
+      isRevoked: false,
+      isSBT: true,
+    }))
+  }, [nftMetadata, sbtVotingPower, nftBalances])
 
   const votingPower = useMemo(() => {
     return (
@@ -713,65 +723,7 @@ export default function StakingPage({
               )}
             </div>
 
-            {/* Desktop Table View */}
-            <div className="hidden lg:block">
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50 dark:bg-gray-800">
-                      <TableHead className="font-bold text-gray-800 dark:text-white">
-                        {votingPowerDict.id ?? 'ID'}
-                      </TableHead>
-                      <TableHead className="font-bold text-gray-800 dark:text-white">
-                        {votingPowerDict.image ?? 'Image'}
-                      </TableHead>
-                      <TableHead className="font-bold text-gray-800 dark:text-white">
-                        {votingPowerDict.amount ?? 'Amount'}
-                      </TableHead>
-                      <TableHead className="font-bold text-gray-800 dark:text-white">
-                        {votingPowerDict.votingPower ?? 'Voting Power'}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {nftBalances.map((balance, index) =>
-                      balance > 0 ? (
-                        <TableRow
-                          key={index}
-                          className="hover:bg-gray-50 dark:hover:bg-gray-800"
-                        >
-                          <TableCell className="font-semibold text-gray-800 dark:text-white">
-                            {index + 1}
-                          </TableCell>
-                          <TableCell>
-                            <Image
-                              src={
-                                !nftMetadata || nftMetadata.length === 0
-                                  ? '/images/empty-nft.svg'
-                                  : nftMetadata[index]?.image ||
-                                    '/images/empty-nft.svg'
-                              }
-                              alt={`NFT #${index}`}
-                              className="rounded-lg object-cover"
-                              width={80}
-                              height={80}
-                            />
-                          </TableCell>
-                          <TableCell className="font-semibold text-gray-800 dark:text-white">
-                            {formatString(balance.toString())}
-                          </TableCell>
-                          <TableCell className="font-semibold text-gray-800 dark:text-white">
-                            {sbtVotingPower[index]
-                              ? formatString(sbtVotingPower[index].toString())
-                              : '0'}
-                          </TableCell>
-                        </TableRow>
-                      ) : null
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+            <SBTTableComponent headers={sbtTableHeaders} sbtInfo={sbtInfo} />
           </div>
         </div>
       </div>
