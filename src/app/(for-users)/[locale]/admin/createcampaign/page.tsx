@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
 import { ethers, formatEther, parseEther, ZeroAddress } from 'ethers'
 import axios from 'axios'
+import { useToast } from '~/hooks/use-toast'
+
 import {
   useAccount,
   useReadContract,
@@ -18,7 +20,6 @@ import { CAMPAIGN, Metadata } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/custom/button'
-import { toast } from 'sonner'
 
 import {
   Dialog,
@@ -35,6 +36,7 @@ import {
   SUBGRAPH_URL,
   defaultChainId,
   NFTAddress,
+  campaignTableHeaders,
 } from '~/app/constants/constants'
 
 import { CAMPAIGN_ABI } from '~/app/ABIs/Campaigns'
@@ -47,9 +49,14 @@ import { NFT_DETAIL } from '~/components/custom/nft-detail'
 import { Spinner } from '~/components/ui/Spinner'
 import { CreateCampaignModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/createCampaignModal'
 import { AddWhitelistModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/addWhitelistModal'
-import { CampaignsTable } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/campaignTable'
+import {
+  CampaignInfo,
+  TableComponent,
+} from '~/components/custom/tableComponent'
+import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 
 // Constants
+const PCE_LOGO = '/pce_logo.jpg'
 const CLAIM_MESSAGE = 'Claim Bounty for dApp.xyz'
 const DEFAULT_CAMPAIGN_ID = -1
 const DEFAULT_NFT_DETAIL_INDEX = -1
@@ -144,10 +151,6 @@ const useNFTData = (
     } catch (error) {}
   }, [chainId, address, tokenURIs, isConfirmed])
 
-  useEffect(() => {
-    toast('test')
-  }, [])
-
   const fetchSBTMetadata = useCallback(async () => {
     if (tokenURIs.length === 0 || !uri_) return
 
@@ -161,6 +164,8 @@ const useNFTData = (
           try {
             tokenData = await fetch(tokenUri)
             tokenDataJson = await tokenData.json()
+
+            console.log(tokenDataJson, 'tokenDataJson')
           } catch (error) {}
           return {
             image: tokenDataJson.image,
@@ -169,6 +174,7 @@ const useNFTData = (
             attributes: [],
             external_url: '',
             token_id: tokenURI.internal_id,
+            timestamp: Number(tokenDataJson.timestamp).toString(),
           }
         })
       )
@@ -181,6 +187,7 @@ const useNFTData = (
         attributes: [],
         external_url: '',
         token_id: index,
+        timestamp: '0',
       }))
       setState((prev) => ({ ...prev, sbtMetadata: fallbackMetadata }))
     }
@@ -207,9 +214,11 @@ const useNFTData = (
             attributes: [],
             external_url: '',
             token_id: tokenURI.internal_id,
+            timestamp: Number(tokenDataJson.timestamp).toString(),
           }
         })
       )
+
       setState((prev) => ({ ...prev, nftMetadata }))
     } catch (error) {
       const fallbackMetadata = nftTokenURIs.map((_, index) => ({
@@ -219,6 +228,7 @@ const useNFTData = (
         attributes: [],
         external_url: '',
         token_id: index,
+        timestamp: '0',
       }))
       setState((prev) => ({ ...prev, nftMetadata: fallbackMetadata }))
     }
@@ -369,6 +379,7 @@ export default function ForCampaignPage({
   const { address, chainId } = useAccount()
   const { signMessageAsync } = useSignMessage()
   const { chains, switchChain } = useSwitchChain()
+  const { toast } = useToast()
 
   // State
   const [dialogState, setDialogState] = useState<DialogState>({
@@ -566,7 +577,11 @@ export default function ForCampaignPage({
           isClaimed: isClaimed as boolean,
         })
       } catch (error) {
-        toast('Failed to check campaign status')
+        console.error('Error checking campaign status:', error)
+        toast({
+          title: 'Failed to check campaign status',
+          description: 'Please try again later',
+        })
       }
     }
 
@@ -617,9 +632,13 @@ export default function ForCampaignPage({
   useEffect(() => {
     const fetchData = async () => {
       if (isConfirmed) {
-        toast('Transaction Succeeded! Data refreshed.')
+        toast({
+          title: 'Transaction Succeeded! Data refreshed.',
+        })
       } else if (error) {
-        toast((error as BaseError).shortMessage)
+        toast({
+          title: (error as BaseError).shortMessage,
+        })
       }
     }
     fetchData()
@@ -628,7 +647,9 @@ export default function ForCampaignPage({
   // Handlers
   const signMessage = useCallback(async () => {
     if (!chainId) {
-      toast('Please connect your wallet first')
+      toast({
+        title: 'Please connect your wallet first',
+      })
       return
     }
 
@@ -636,10 +657,14 @@ export default function ForCampaignPage({
       setLoading(true)
       const message = await signMessageAsync({ message: CLAIM_MESSAGE })
       setSignature(message)
-      toast('Message signed successfully')
+      toast({
+        title: 'Message signed successfully',
+      })
     } catch (error) {
       console.error('Error signing message:', error)
-      toast('Failed to sign message')
+      toast({
+        title: 'Failed to sign message',
+      })
     } finally {
       setLoading(false)
     }
@@ -676,10 +701,14 @@ export default function ForCampaignPage({
         confirmations: 1,
       })
 
-      toast('Winners added successfully')
+      toast({
+        title: 'Winners added successfully',
+      })
     } catch (error) {
       console.error('Error adding whitelist:', error)
-      toast('Failed to add whitelist')
+      toast({
+        title: 'Failed to add whitelist',
+      })
     } finally {
       setLoading(false)
     }
@@ -725,10 +754,14 @@ export default function ForCampaignPage({
       })
 
       await fetchCampaignData()
-      toast('Campaign created successfully')
+      toast({
+        title: 'Campaign created successfully',
+      })
     } catch (error) {
       console.error('Error creating campaign:', error)
-      toast('Failed to create campaign')
+      toast({
+        title: 'Failed to create campaign',
+      })
     } finally {
       setLoading(false)
     }
@@ -763,7 +796,9 @@ export default function ForCampaignPage({
         try {
           gistUsername = parseGithubUsername(gistUrl)
           if (!gistUsername) {
-            toast('Invalid Github Gist URL')
+            toast({
+              title: 'Invalid Github Gist URL',
+            })
             return
           }
 
@@ -774,7 +809,9 @@ export default function ForCampaignPage({
           message = gistData.Message
         } catch (error) {
           console.error('Error fetching gist data:', error)
-          toast('Failed to fetch gist data')
+          toast({
+            title: 'Failed to fetch gist data',
+          })
           return
         }
       }
@@ -791,10 +828,14 @@ export default function ForCampaignPage({
           args: [campaignId, gistUsernameHash, message, signature],
         })
 
-        toast('Campaign claimed successfully')
+        toast({
+          title: 'Campaign claimed successfully',
+        })
       } catch (error) {
         console.error('Error claiming campaign:', error)
-        toast('Failed to claim campaign')
+        toast({
+          title: 'Failed to claim campaign',
+        })
       } finally {
         await fetchCampaignData()
         setLoading(false)
@@ -820,10 +861,14 @@ export default function ForCampaignPage({
           'Wallet Address': address,
         })
       )
-      toast('Signature copied to clipboard')
+      toast({
+        title: 'Signature copied to clipboard',
+      })
     } catch (error) {
       console.error('Error copying signature:', error)
-      toast('Failed to copy signature')
+      toast({
+        title: 'Failed to copy signature',
+      })
     }
   }, [signature, address])
 
@@ -835,15 +880,69 @@ export default function ForCampaignPage({
     [campaignData, dialogState.campaignId]
   )
 
+  const campaignInfo = useCallback((): CampaignInfo[] => {
+    const info: CampaignInfo[] = campaignData.data.map((campaign) => ({
+      id: campaign.campaignId.toString(),
+      image:
+        campaign.tokenType === 1
+          ? sbtMetadata?.find((m) => m.token_id == campaign.sbtId)?.image ||
+            EMPTY_NFT_IMAGE
+          : campaign.tokenType === 2
+            ? nftMetadata?.find((m) => m.token_id == campaign.sbtId)?.image ||
+              EMPTY_NFT_IMAGE
+            : PCE_LOGO,
+      tokenId: campaign.sbtId.toString(),
+      title: campaign.title,
+      description: campaign.description,
+      isValidateSignatures: campaign.validateSignatures,
+      totalClaimAmount: (() => {
+        const claimed =
+          totalClaimed.find((t) => t.campaignId === campaign.campaignId)
+            ?.totalClaimed ?? '0'
+        return `${claimed}/${campaign.totalAmount.toString()}`
+      })(),
+      claimedAmount:
+        totalClaimed.find((t) => t.campaignId == campaign.campaignId)
+          ?.totalClaimed ?? '0',
+      claimAmount: campaign.claimAmount.toString(),
+      totalClaimedAmount: campaign.totalAmount.toString(),
+      tokenType:
+        campaign.tokenType === 1
+          ? 'SBT'
+          : campaign.tokenType === 2
+            ? 'NFT'
+            : 'PCE',
+      startTime: campaign.startDate,
+      endTime: campaign.endDate,
+      isEnded: Number(campaign.endDate) < new Date().getTime() / 1000,
+    }))
+    return info
+  }, [campaignData, sbtMetadata, nftMetadata, totalClaimed])
+
+  const sbtInfo = useMemo(() => {
+    const info: SBTInfo[] = sbtBalances.map((_, index) => ({
+      image: sbtMetadata[index]?.image || EMPTY_NFT_IMAGE,
+      tokenId: (index + 1).toString(),
+      name: sbtMetadata[index]?.name || '',
+      description: sbtMetadata[index]?.description || '',
+      votingPower: sbtMetadata[index]?.votingPower || '0',
+      createdAt:
+        (Number(sbtMetadata[index]?.timestamp) / 1000).toString() || '0',
+      isRevoked: false,
+      isSBT: true,
+    }))
+    return info ?? []
+  }, [sbtMetadata, sbtBalances])
+
   return (
-    <div className="w-full min-h-screen bg-background">
+    <div className="w-full min-h-screen bg-background container">
       {loading && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
           <Spinner show={true} size="large" />
         </div>
       )}
 
-      <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <div className="mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Header Section */}
         <div className="space-y-3 sm:space-y-4">
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
@@ -926,20 +1025,17 @@ export default function ForCampaignPage({
               </Card>
             )} */}
 
-            {/* <NFTBalancesCard
-              balances={nftBalances}
-              metadata={nftMetadata}
-              onNFTClick={handleNFTClick}
-              campaign={campaign}
-              isNFT={true}
-            />
-
-            <NFTBalancesCard
-              balances={sbtBalances}
-              metadata={sbtMetadata}
-              onNFTClick={handleNFTClick}
-              campaign={campaign}
-              isNFT={false}
+            {/* <SBTTableComponent
+              headers={[
+                'Image',
+                'Token ID',
+                'Title',
+                'Description',
+                'Type',
+                'Voting Power',
+                'Created At',
+              ]}
+              sbtInfo={sbtInfo}
             /> */}
           </div>
         )}
@@ -971,7 +1067,7 @@ export default function ForCampaignPage({
             </div>
           </div>
 
-          <CampaignsTable
+          {/* <CampaignsTable
             campaigns={campaignData.data}
             sbtMetadata={sbtMetadata}
             nftMetadata={nftMetadata}
@@ -984,9 +1080,14 @@ export default function ForCampaignPage({
             }}
             totalClaimed={totalClaimed}
             campaign={campaign}
-          />
+          /> */}
         </div>
       </div>
+
+      <TableComponent
+        headers={campaignTableHeaders}
+        campaignInfo={campaignInfo()}
+      />
 
       {/* Campaign Dialog */}
       <CampaignDialog

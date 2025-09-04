@@ -22,7 +22,7 @@ import { CAMPAIGN, Metadata } from '~/i18n/types'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/custom/button'
 
-import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/card'
+import { Card, CardContent } from '~/components/ui/card'
 
 import {
   Dialog,
@@ -47,14 +47,25 @@ import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { SBT_ABI } from '~/app/ABIs/SBT'
-import Image from 'next/image'
 import { NFT_DETAIL } from '~/components/custom/nft-detail'
 import { Spinner } from '~/components/ui/Spinner'
 import { CreateCampaignModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/createCampaignModal'
 import { AddWhitelistModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/addWhitelistModal'
-import { CampaignsTable } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/campaignTable'
+import {
+  CampaignInfo,
+  TableComponent,
+} from '~/components/custom/tableComponent'
+import {
+  SBTTableComponent,
+  SBTInfo,
+} from '~/components/custom/sbt-tableComponent'
+import {
+  campaignTableHeaders,
+  sbtTableHeaders,
+} from '~/app/constants/constants'
 
 // Constants
+const PCE_LOGO = '/pce_logo.jpg'
 const CLAIM_MESSAGE = 'Claim Bounty for dApp.xyz'
 const DEFAULT_CAMPAIGN_ID = -1
 const DEFAULT_NFT_DETAIL_INDEX = -1
@@ -170,6 +181,8 @@ const useNFTData = (
             attributes: [],
             external_url: '',
             token_id: tokenURI.internal_id,
+            timestamp: Number(tokenDataJson.timestamp).toString(),
+            votingPower: tokenDataJson.votingPower,
           }
         })
       )
@@ -182,6 +195,8 @@ const useNFTData = (
         attributes: [],
         external_url: '',
         token_id: index,
+        timestamp: '0',
+        votingPower: '0',
       }))
       setState((prev) => ({ ...prev, sbtMetadata: fallbackMetadata }))
     }
@@ -208,6 +223,8 @@ const useNFTData = (
             attributes: [],
             external_url: '',
             token_id: tokenURI.internal_id,
+            timestamp: Number(tokenDataJson.timestamp).toString(),
+            votingPower: tokenDataJson.votingPower,
           }
         })
       )
@@ -221,6 +238,8 @@ const useNFTData = (
         attributes: [],
         external_url: '',
         token_id: index,
+        timestamp: '0',
+        votingPower: '0',
       }))
       setState((prev) => ({ ...prev, nftMetadata: fallbackMetadata }))
     }
@@ -243,90 +262,6 @@ const useNFTData = (
 }
 
 // Components
-
-const NFTBalancesCard = ({
-  balances,
-  metadata,
-  onNFTClick,
-  campaign,
-  isNFT,
-}: {
-  balances: number[]
-  metadata: Metadata[]
-  onNFTClick: (index: number) => void
-  campaign: any
-  isNFT: boolean
-}) => {
-  const hasBalances = balances.length > 0 && balances.some((b) => b > 0)
-
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-xl md:text-2xl font-bold">
-          {isNFT
-            ? (campaign.noNFTs ?? 'NFT Balances')
-            : (campaign.sbtBalances ?? 'SBT Balances')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {!hasBalances ? (
-          <div className="flex justify-center items-center py-8 text-muted-foreground">
-            {isNFT
-              ? (campaign.noNFTs ?? 'No NFTs')
-              : (campaign.noSBTs ?? 'No SBTs')}
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-3 sm:gap-4 md:gap-6">
-            {(() => {
-              // Count how many balances > 0
-              const positiveBalances = balances.filter((b) => b > 0)
-              const numPositive = positiveBalances.length
-
-              // Determine number of columns: for every 3 positive balances, add 1 column (minimum 1)
-              const numColumns = Math.max(1, Math.ceil(numPositive / 3))
-
-              // Build grid style
-              const gridStyle = {
-                gridTemplateColumns: `repeat(${numColumns}, minmax(0, 1fr))`,
-              }
-
-              return (
-                <div className="flex flex-row flex-wrap gap-3 sm:gap-4 md:gap-6 w-full">
-                  {balances.map((balance, index) =>
-                    balance > 0 ? (
-                      <div key={index} className="flex-shrink-0">
-                        <div
-                          className="flex flex-col items-center gap-2 p-2 sm:p-3 cursor-pointer hover:scale-105 transition-transform duration-200 rounded-lg hover:bg-muted/50"
-                          onClick={() => onNFTClick(index)}
-                        >
-                          <div className="relative">
-                            <Image
-                              src={metadata[index]?.image || EMPTY_NFT_IMAGE}
-                              alt={`NFT #${index} (shown as original image)`}
-                              className="rounded-lg object-cover w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24"
-                              width={96}
-                              height={96}
-                            />
-                            <div className="absolute -top-1 -right-1 bg-primary text-white rounded-full w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex items-center justify-center text-xs font-bold">
-                              {balance.toString()}
-                            </div>
-                          </div>
-                          <p className="text-xs sm:text-sm text-muted-foreground text-center font-medium">
-                            #{index + 1}
-                          </p>
-                        </div>
-                      </div>
-                    ) : null
-                  )}
-                </div>
-              )
-            })()}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
 
 const CampaignDialog = ({
   isOpen,
@@ -956,15 +891,92 @@ export default function ForCampaignPage({
     [campaignData, dialogState.campaignId]
   )
 
+  const campaignInfo = useCallback((): CampaignInfo[] => {
+    console.log(totalClaimed, 'XX')
+    const info: CampaignInfo[] = campaignData.data.map((campaign) => ({
+      id: campaign.campaignId.toString(),
+      image:
+        campaign.tokenType === 1
+          ? sbtMetadata?.find((m) => m.token_id == campaign.sbtId)?.image ||
+            EMPTY_NFT_IMAGE
+          : campaign.tokenType === 2
+            ? nftMetadata?.find((m) => m.token_id == campaign.sbtId)?.image ||
+              EMPTY_NFT_IMAGE
+            : PCE_LOGO,
+      tokenId: campaign.sbtId.toString(),
+      title: campaign.title,
+      description: campaign.description,
+      isValidateSignatures: campaign.validateSignatures,
+      totalClaimAmount: (() => {
+        const claimed =
+          totalClaimed.find((t) => t.campaignId === campaign.campaignId)
+            ?.totalClaimed ?? '0'
+        return `${claimed}/${campaign.totalAmount.toString()}`
+      })(),
+      claimedAmount:
+        totalClaimed.find((t) => t.campaignId == campaign.campaignId)
+          ?.totalClaimed ?? '0',
+      claimAmount: campaign.claimAmount.toString(),
+      totalClaimedAmount: campaign.totalAmount.toString(),
+      tokenType:
+        campaign.tokenType === 1
+          ? 'SBT'
+          : campaign.tokenType === 2
+            ? 'NFT'
+            : 'PCE',
+      startTime: campaign.startDate,
+      endTime: campaign.endDate,
+      isEnded: Number(campaign.endDate) < new Date().getTime() / 1000,
+    }))
+    return info
+  }, [campaignData, sbtMetadata, nftMetadata, totalClaimed])
+
+  const sbtInfo = useMemo(() => {
+    const info: SBTInfo[] = sbtBalances.map((_, index) => ({
+      image: sbtMetadata[index]?.image || EMPTY_NFT_IMAGE,
+      tokenId: (index + 1).toString(),
+      name: sbtMetadata[index]?.name || '',
+      description: sbtMetadata[index]?.description || '',
+      votingPower: sbtMetadata[index]?.votingPower || '0',
+      createdAt:
+        (Number(sbtMetadata[index]?.timestamp) / 1000).toString() || '0',
+      isRevoked: false,
+      isSBT: true,
+    }))
+    return info ?? []
+  }, [sbtMetadata, sbtBalances])
+
+  const nftInfo = useMemo(() => {
+    const info: SBTInfo[] = nftBalances.map((_, index) => ({
+      image: nftMetadata[index]?.image || EMPTY_NFT_IMAGE,
+      tokenId: (index + 1).toString(),
+      name: nftMetadata[index]?.name || '',
+      description: nftMetadata[index]?.description || '',
+      votingPower: nftMetadata[index]?.votingPower || '0',
+      createdAt:
+        (Number(nftMetadata[index]?.timestamp) / 1000).toString() || '0',
+      isRevoked: false,
+      isSBT: false,
+    }))
+    return info ?? []
+  }, [nftMetadata, nftBalances])
+
+  const tokenInfo = useMemo(() => {
+    const info: SBTInfo[] = []
+    info.push(...sbtInfo)
+    info.push(...nftInfo)
+    return info
+  }, [sbtInfo, nftInfo])
+
   return (
-    <div className="w-full min-h-screen bg-background">
+    <div className="w-full min-h-screen bg-background container">
       {loading && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
           <Spinner show={true} size="large" />
         </div>
       )}
 
-      <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <div className="mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Header Section */}
         <div className="space-y-3 sm:space-y-4">
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
@@ -1046,68 +1058,30 @@ export default function ForCampaignPage({
                 </CardContent>
               </Card>
             )}
+            <div className="space-y-3 sm:space-y-4">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
+                {campaign.sbtBalances ?? 'Token Balances'}
+              </h2>
+            </div>
 
-            <NFTBalancesCard
-              balances={nftBalances}
-              metadata={nftMetadata}
-              onNFTClick={handleNFTClick}
-              campaign={campaign}
-              isNFT={true}
-            />
-
-            <NFTBalancesCard
-              balances={sbtBalances}
-              metadata={sbtMetadata}
-              onNFTClick={handleNFTClick}
-              campaign={campaign}
-              isNFT={false}
-            />
+            {tokenInfo.length == 0 ? (
+              <div className="flex justify-center items-center py-8 text-muted-foreground">
+                {campaign.noSBTs ?? 'No  Balances'}
+              </div>
+            ) : (
+              <SBTTableComponent
+                headers={sbtTableHeaders}
+                sbtInfo={tokenInfo}
+              />
+            )}
           </div>
         )}
-
-        {/* Campaigns Section */}
-        <div className="space-y-4 sm:space-y-6">
-          {/* <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <Button
-                onClick={() =>
-                  setDialogState((prev) => ({ ...prev, isCreateOpen: true }))
-                }
-                className="w-full sm:w-auto"
-              >
-                {campaign.createCampaign ?? 'Create Campaign'}
-              </Button>
-              <Button
-                onClick={() =>
-                  setDialogState((prev) => ({
-                    ...prev,
-                    isAddWinnersOpen: true,
-                  }))
-                }
-                variant="outline"
-                className="w-full sm:w-auto"
-              >
-                {campaign.addWinners ?? 'Add Winners'}
-              </Button>
-            </div>
-          </div> */}
-
-          <CampaignsTable
-            campaigns={campaignData.data}
-            sbtMetadata={sbtMetadata}
-            nftMetadata={nftMetadata}
-            onCampaignClick={(index) => {
-              setDialogState((prev) => ({
-                ...prev,
-                campaignId: campaignData.data[index]?.campaignId ?? 0,
-                isOpen: true,
-              }))
-            }}
-            totalClaimed={totalClaimed}
-            campaign={campaign}
-          />
-        </div>
       </div>
+
+      <TableComponent
+        headers={campaignTableHeaders}
+        campaignInfo={campaignInfo()}
+      />
 
       {/* Campaign Dialog */}
       <CampaignDialog
