@@ -924,6 +924,7 @@ export default function ForCampaignPage({
       endTime: campaign.endDate,
       isEnded: Number(campaign.endDate) < new Date().getTime() / 1000,
     }))
+
     return info
   }, [campaignData, sbtMetadata, nftMetadata, totalClaimed])
 
@@ -1060,16 +1061,7 @@ export default function ForCampaignPage({
               </h2>
             </div>
 
-            {tokenInfo.length == 0 ? (
-              <div className="flex justify-center items-center py-8 text-muted-foreground">
-                {campaign.noSBTs ?? 'No  Balances'}
-              </div>
-            ) : (
-              <SBTTableComponent
-                headers={sbtTableHeaders}
-                sbtInfo={tokenInfo}
-              />
-            )}
+            <SBTTableComponent headers={sbtTableHeaders} sbtInfo={tokenInfo} />
           </div>
         )}
       </div>
@@ -1077,6 +1069,13 @@ export default function ForCampaignPage({
       <TableComponent
         headers={campaignTableHeaders}
         campaignInfo={campaignInfo()}
+        onCampaignClick={(campaignId) => {
+          setDialogState((prev) => ({
+            ...prev,
+            isOpen: true,
+            campaignId: Number(campaignId),
+          }))
+        }}
       />
 
       {/* Campaign Dialog */}

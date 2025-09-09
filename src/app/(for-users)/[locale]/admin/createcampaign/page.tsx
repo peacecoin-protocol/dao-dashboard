@@ -17,7 +17,6 @@ import {
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { CAMPAIGN, Metadata } from '~/i18n/types'
-import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/custom/button'
@@ -723,22 +722,22 @@ export default function ForCampaignPage({
     setLoading(true)
 
     try {
-      if (formData.tokenType == 0) {
-        const hash = await writeContractAsync({
-          abi: PCE_ABI,
-          address: formData.tokenAddress as `0x${string}`,
-          functionName: 'approve',
-          args: [
-            campaignAddress[chainId || defaultChainId] as `0x${string}`,
-            parseEther(formData.totalAmount),
-          ],
-        })
+      // if (formData.tokenType == 0) {
+      //   const hash = await writeContractAsync({
+      //     abi: PCE_ABI,
+      //     address: formData.tokenAddress as `0x${string}`,
+      //     functionName: 'approve',
+      //     args: [
+      //       campaignAddress[chainId || defaultChainId] as `0x${string}`,
+      //       parseEther(formData.totalAmount),
+      //     ],
+      //   })
 
-        await waitForTransactionReceipt(config, {
-          hash: hash,
-          confirmations: 1,
-        })
-      }
+      //   await waitForTransactionReceipt(config, {
+      //     hash: hash,
+      //     confirmations: 1,
+      //   })
+      // }
 
       const campaign = {
         sbtId: formData.sbtId,

@@ -55,6 +55,7 @@ export const CAMPAIGN_ABI = [
         type: 'uint8',
         internalType: 'enum Campaigns.TokenType',
       },
+      { name: 'token', type: 'address', internalType: 'address' },
     ],
     stateMutability: 'view',
   },
@@ -112,6 +113,7 @@ export const CAMPAIGN_ABI = [
             type: 'uint8',
             internalType: 'enum Campaigns.TokenType',
           },
+          { name: 'token', type: 'address', internalType: 'address' },
         ],
       },
     ],
@@ -131,11 +133,6 @@ export const CAMPAIGN_ABI = [
     type: 'function',
     name: 'initialize',
     inputs: [
-      {
-        name: '_token',
-        type: 'address',
-        internalType: 'contract ERC20Upgradeable',
-      },
       {
         name: '_sbt',
         type: 'address',
@@ -236,15 +233,6 @@ export const CAMPAIGN_ABI = [
     name: 'supportsInterface',
     inputs: [{ name: 'interfaceId', type: 'bytes4', internalType: 'bytes4' }],
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'token',
-    inputs: [],
-    outputs: [
-      { name: '', type: 'address', internalType: 'contract ERC20Upgradeable' },
-    ],
     stateMutability: 'view',
   },
   {
@@ -368,6 +356,12 @@ export const CAMPAIGN_ABI = [
         type: 'uint8',
         indexed: false,
         internalType: 'enum Campaigns.TokenType',
+      },
+      {
+        name: 'token',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
       },
     ],
     anonymous: false,
