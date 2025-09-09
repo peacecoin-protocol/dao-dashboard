@@ -32,7 +32,7 @@ export const CreateCampaignModal = ({
 }) => {
   const { toast } = useToast()
   const [form, setForm] = useState({
-    sbtId: '',
+    sbtId: 0,
     title: '',
     description: '',
     totalAmount: '',
@@ -41,6 +41,7 @@ export const CreateCampaignModal = ({
     endDate: '',
     isVerifySignature: true,
     tokenType: 0,
+    tokenAddress: '',
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,7 +63,7 @@ export const CreateCampaignModal = ({
 
   const handleSubmit = () => {
     if (
-      (form.tokenType != 0 && (form.sbtId === '' || form.sbtId === '0')) ||
+      (form.sbtId == 0 && form.tokenAddress == '') ||
       form.title === '' ||
       form.description === '' ||
       form.totalAmount === '' ||
@@ -100,7 +101,7 @@ export const CreateCampaignModal = ({
 
     onSubmit(form)
     setForm({
-      sbtId: '',
+      sbtId: 0,
       title: '',
       description: '',
       totalAmount: '',
@@ -109,6 +110,7 @@ export const CreateCampaignModal = ({
       endDate: '',
       isVerifySignature: true,
       tokenType: 0,
+      tokenAddress: '',
     })
   }
 
@@ -160,48 +162,68 @@ export const CreateCampaignModal = ({
           </div>
 
           {/* SBT ID Input */}
-          {form.tokenType != 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="sbt-id">
-                {form.tokenType == 1 ? 'SBT ID' : 'NFT ID'}
-              </Label>
+
+          <div className="space-y-2">
+            <Label htmlFor="sbt-id">
+              {form.tokenType == 1
+                ? 'SBT ID'
+                : form.tokenType == 2
+                  ? 'NFT ID'
+                  : 'Token Address'}
+            </Label>
+            {form.tokenType != 0 && (
               <Input
                 id="sbt-id"
                 type="text"
                 name="sbtId"
                 placeholder={
-                  form.tokenType == 1
+                  form.tokenType == 2
                     ? (campaign.enterNftId ?? 'Enter NFT ID')
-                    : (campaign.enterSbtId ?? 'Enter SBT ID')
+                    : (campaign.enterNftId ?? 'Enter SBT ID')
                 }
-                value={form.sbtId}
+                value={form.sbtId == 0 ? '' : form.sbtId.toString()}
                 onChange={handleChange}
                 className="w-full"
               />
-              {/* SBT Preview */}
-              {form.sbtId && form.sbtId !== '0' && (
-                <div className="flex justify-center">
-                  <Image
-                    src={
-                      form.tokenType == 2
-                        ? nftMetadata.find(
+            )}
+
+            {form.tokenType == 0 && (
+              <Input
+                id="token-address"
+                type="text"
+                name="tokenAddress"
+                placeholder={
+                  campaign.enterTokenAddress ?? 'Enter Token Address'
+                }
+                value={form.tokenAddress}
+                onChange={handleChange}
+                className="w-full"
+              />
+            )}
+
+            {/* SBT Preview */}
+            {form.tokenType != 0 && form.sbtId != 0 && (
+              <div className="flex justify-center">
+                <Image
+                  src={
+                    form.tokenType == 2
+                      ? nftMetadata.find(
+                          (m) => m.token_id == Number(form.sbtId)
+                        )?.image || EMPTY_NFT_IMAGE
+                      : form.tokenType == 1
+                        ? sbtMetadata.find(
                             (m) => m.token_id == Number(form.sbtId)
                           )?.image || EMPTY_NFT_IMAGE
-                        : form.tokenType == 1
-                          ? sbtMetadata.find(
-                              (m) => m.token_id == Number(form.sbtId)
-                            )?.image || EMPTY_NFT_IMAGE
-                          : EMPTY_NFT_IMAGE
-                    }
-                    alt="SBT Preview"
-                    width={80}
-                    height={80}
-                    className="object-cover"
-                  />
-                </div>
-              )}
-            </div>
-          )}
+                        : EMPTY_NFT_IMAGE
+                  }
+                  alt="SBT Preview"
+                  width={80}
+                  height={80}
+                  className="object-cover"
+                />
+              </div>
+            )}
+          </div>
 
           {/* Title Input */}
           <div className="space-y-2">

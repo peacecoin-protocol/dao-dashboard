@@ -31,6 +31,7 @@ export interface CAMPAIGN {
   endDate: string
   validateSignatures: boolean
   tokenType: number
+  token: string
 }
 
 export interface BOUNTY_PROPOSAL {

@@ -11,6 +11,7 @@ import {
 } from '~/components/ui/table'
 import Image from 'next/image'
 import { timestampToDate } from '../utils'
+import { formatEther } from 'ethers'
 
 export interface CampaignInfo {
   id: string
@@ -74,10 +75,19 @@ export function TableComponent({ headers, campaignInfo }: CampaignTableProps) {
                     : 'Whitelist'}
                 </TableCell>
                 <TableCell className="text-center">
-                  {campaign.totalClaimAmount}
+                  {campaign.tokenType !== 'ERC20'
+                    ? (campaign.claimedAmount ?? '0')
+                    : formatEther(campaign.claimedAmount ?? '0')}{' '}
+                  /
+                  {campaign.tokenType !== 'ERC20'
+                    ? campaign.totalClaimAmount
+                    : formatEther(campaign.totalClaimAmount ?? '0')}
                 </TableCell>
+
                 <TableCell className="text-center">
-                  {campaign.claimAmount}
+                  {campaign.tokenType !== 'ERC20'
+                    ? campaign.claimAmount
+                    : formatEther(campaign.claimAmount ?? '0')}
                 </TableCell>
                 <TableCell className="text-center">
                   {campaign.tokenType}
