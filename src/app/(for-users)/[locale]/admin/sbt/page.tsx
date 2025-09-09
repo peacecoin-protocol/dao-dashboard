@@ -203,7 +203,6 @@ const useTokenData = (chainId: number | undefined) => {
             console.warn(`Failed to fetch metadata for token ${i}:`, error)
           }
 
-          console.log(tokenDataJson, 'tokenDataJson')
           sbtTokens.push({
             isRevoked: isTokenRevoked,
             tokenId: i.toString(),
@@ -520,7 +519,6 @@ const CreateButton = ({
 //         sbtInfo={cardData}
 //         action={{ title: labels.revoke ?? 'Revoke' }}
 //         onRevoke={(index) => {
-//           console.log(index, 'index')
 //           onRevoke(
 //             cardData[index]?.tokenId ?? '',
 //             cardData[index]?.isRevoked ?? false
@@ -928,7 +926,6 @@ export default function SBTBuilderPage({
     async (index: number) => {
       if (!address) return
       const token = tokenInfo()[index]
-      console.log(token, 'token')
 
       if (!token) {
         toast({ title: 'Token not found' })
@@ -1004,7 +1001,6 @@ export default function SBTBuilderPage({
           sbtInfo={tokenInfo()}
           action={{ title: 'Revoke' }}
           onRevoke={(index) => {
-            console.log(index, 'index')
             handleRevokeToken(index)
           }}
         />

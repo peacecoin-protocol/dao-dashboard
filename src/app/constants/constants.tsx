@@ -73,7 +73,7 @@ export const daoStudioAddress = {
 } as Record<number, `0x${string}`>
 
 export const campaignAddress = {
-  [sepolia.id]: '0xeFDf833AD260162Da0b6984E51087466d7494b1C',
+  [sepolia.id]: '0xe475EEc6248aA4faF8d4F01E996cBd2d292b64E8',
   [localhost.id]: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',
@@ -88,7 +88,7 @@ export const stakingAddress = {
 
 export const SUBGRAPH_URL = {
   [sepolia.id]:
-    'https://api.studio.thegraph.com/query/81073/dao-subgraph/version/latest',
+    'https://api.studio.thegraph.com/query/81073/dao-subgraph/9.7.1/',
   [localhost.id]: 'http://localhost:8000/subgraphs/name/dao_dashboard',
   [polygon.id]:
     'https://api.studio.thegraph.com/query/81073/dao_dashboard/version/latest',

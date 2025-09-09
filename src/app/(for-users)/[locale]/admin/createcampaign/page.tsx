@@ -17,6 +17,7 @@ import {
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { CAMPAIGN, Metadata } from '~/i18n/types'
+import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/custom/button'
@@ -164,8 +165,6 @@ const useNFTData = (
           try {
             tokenData = await fetch(tokenUri)
             tokenDataJson = await tokenData.json()
-
-            console.log(tokenDataJson, 'tokenDataJson')
           } catch (error) {}
           return {
             image: tokenDataJson.image,
@@ -313,13 +312,13 @@ const CampaignDialog = ({
               <p className="break-words">
                 <span className="font-semibold">
                   {campaignDict.startTime ?? 'Start Time'}:
-                </span>{' '}
+                </span>
                 {timestampToDate(parseInt(campaign.startDate ?? '0'))}
               </p>
               <p className="break-words">
                 <span className="font-semibold">
                   {campaignDict.endTime ?? 'End Time'}:
-                </span>{' '}
+                </span>
                 {timestampToDate(parseInt(campaign.endDate ?? '0'))}
               </p>
             </>
@@ -473,6 +472,7 @@ export default function ForCampaignPage({
               validateSignatures
               totalAmount
               claimAmount
+              token
               tokenType
             }
             setTokenURIs(first: 10, orderBy: internal_id, orderDirection: asc) {
@@ -723,6 +723,23 @@ export default function ForCampaignPage({
     setLoading(true)
 
     try {
+      if (formData.tokenType == 0) {
+        const hash = await writeContractAsync({
+          abi: PCE_ABI,
+          address: formData.tokenAddress as `0x${string}`,
+          functionName: 'approve',
+          args: [
+            campaignAddress[chainId || defaultChainId] as `0x${string}`,
+            parseEther(formData.totalAmount),
+          ],
+        })
+
+        await waitForTransactionReceipt(config, {
+          hash: hash,
+          confirmations: 1,
+        })
+      }
+
       const campaign = {
         sbtId: formData.sbtId,
         title: formData.title,
@@ -739,6 +756,7 @@ export default function ForCampaignPage({
         endDate: new Date(formData.endDate).getTime() / 1000,
         validateSignatures: formData.isVerifySignature,
         tokenType: formData.tokenType,
+        token: formData.tokenAddress,
       }
 
       const tx = await writeContractAsync({
@@ -895,15 +913,11 @@ export default function ForCampaignPage({
       title: campaign.title,
       description: campaign.description,
       isValidateSignatures: campaign.validateSignatures,
-      totalClaimAmount: (() => {
-        const claimed =
-          totalClaimed.find((t) => t.campaignId === campaign.campaignId)
-            ?.totalClaimed ?? '0'
-        return `${claimed}/${campaign.totalAmount.toString()}`
-      })(),
+      totalClaimAmount: campaign.totalAmount.toString() || '0',
       claimedAmount:
-        totalClaimed.find((t) => t.campaignId == campaign.campaignId)
-          ?.totalClaimed ?? '0',
+        totalClaimed
+          .find((t) => t.campaignId == campaign.campaignId)
+          ?.totalClaimed.toString() ?? '0',
       claimAmount: campaign.claimAmount.toString(),
       totalClaimedAmount: campaign.totalAmount.toString(),
       tokenType:
@@ -911,7 +925,7 @@ export default function ForCampaignPage({
           ? 'SBT'
           : campaign.tokenType === 2
             ? 'NFT'
-            : 'PCE',
+            : 'ERC20',
       startTime: campaign.startDate,
       endTime: campaign.endDate,
       isEnded: Number(campaign.endDate) < new Date().getTime() / 1000,

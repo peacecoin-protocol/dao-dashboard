@@ -484,6 +484,7 @@ export default function ForCampaignPage({
               validateSignatures
               totalAmount
               claimAmount
+              token
               tokenType
             }
             setTokenURIs(first: 10, orderBy: internal_id, orderDirection: asc) {
@@ -892,7 +893,6 @@ export default function ForCampaignPage({
   )
 
   const campaignInfo = useCallback((): CampaignInfo[] => {
-    console.log(totalClaimed, 'XX')
     const info: CampaignInfo[] = campaignData.data.map((campaign) => ({
       id: campaign.campaignId.toString(),
       image:
@@ -907,15 +907,11 @@ export default function ForCampaignPage({
       title: campaign.title,
       description: campaign.description,
       isValidateSignatures: campaign.validateSignatures,
-      totalClaimAmount: (() => {
-        const claimed =
-          totalClaimed.find((t) => t.campaignId === campaign.campaignId)
-            ?.totalClaimed ?? '0'
-        return `${claimed}/${campaign.totalAmount.toString()}`
-      })(),
+      totalClaimAmount: campaign.totalAmount.toString() || '0',
       claimedAmount:
-        totalClaimed.find((t) => t.campaignId == campaign.campaignId)
-          ?.totalClaimed ?? '0',
+        totalClaimed
+          .find((t) => t.campaignId == campaign.campaignId)
+          ?.totalClaimed.toString() ?? '0',
       claimAmount: campaign.claimAmount.toString(),
       totalClaimedAmount: campaign.totalAmount.toString(),
       tokenType:
@@ -923,7 +919,7 @@ export default function ForCampaignPage({
           ? 'SBT'
           : campaign.tokenType === 2
             ? 'NFT'
-            : 'PCE',
+            : 'ERC20',
       startTime: campaign.startDate,
       endTime: campaign.endDate,
       isEnded: Number(campaign.endDate) < new Date().getTime() / 1000,
