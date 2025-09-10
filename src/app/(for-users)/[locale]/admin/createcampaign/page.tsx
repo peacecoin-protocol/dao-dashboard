@@ -45,6 +45,7 @@ import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { SBT_ABI } from '~/app/ABIs/SBT'
+import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { NFT_DETAIL } from '~/components/custom/nft-detail'
 import { Spinner } from '~/components/ui/Spinner'
 import { CreateCampaignModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/createCampaignModal'
@@ -722,22 +723,22 @@ export default function ForCampaignPage({
     setLoading(true)
 
     try {
-      // if (formData.tokenType == 0) {
-      //   const hash = await writeContractAsync({
-      //     abi: PCE_ABI,
-      //     address: formData.tokenAddress as `0x${string}`,
-      //     functionName: 'approve',
-      //     args: [
-      //       campaignAddress[chainId || defaultChainId] as `0x${string}`,
-      //       parseEther(formData.totalAmount),
-      //     ],
-      //   })
+      if (formData.tokenType == 0) {
+        const hash = await writeContractAsync({
+          abi: PCE_ABI,
+          address: formData.tokenAddress as `0x${string}`,
+          functionName: 'approve',
+          args: [
+            campaignAddress[chainId || defaultChainId] as `0x${string}`,
+            parseEther(formData.totalAmount),
+          ],
+        })
 
-      //   await waitForTransactionReceipt(config, {
-      //     hash: hash,
-      //     confirmations: 1,
-      //   })
-      // }
+        await waitForTransactionReceipt(config, {
+          hash: hash,
+          confirmations: 1,
+        })
+      }
 
       const campaign = {
         sbtId: formData.sbtId,
