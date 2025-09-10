@@ -17,7 +17,6 @@ import {
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { CAMPAIGN, Metadata } from '~/i18n/types'
-import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/custom/button'

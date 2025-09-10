@@ -183,6 +183,7 @@ export default function StakingPage({
 
           _nftBalances.push(_balance)
         }
+
         setNftBalances(_nftBalances)
       }
     }
@@ -419,16 +420,27 @@ export default function StakingPage({
   }, [locale])
 
   const sbtInfo = useMemo<SBTInfo[]>(() => {
-    return nftMetadata.map((metadata, index) => ({
-      tokenId: (index + 1).toString(),
-      name: metadata.name,
-      description: metadata.description,
-      votingPower: sbtVotingPower[index]?.toString() || '0',
-      image: nftMetadata[index]?.image || '/images/empty-nft.svg',
-      createdAt: metadata.timestamp.toString(),
-      isRevoked: false,
-      isSBT: true,
-    }))
+    const _sbtInfo: SBTInfo[] = []
+    for (let i = 0; i < nftBalances.length; i++) {
+      if (
+        nftBalances?.[i] &&
+        nftBalances[i]! > 0 &&
+        nftMetadata?.[i] &&
+        sbtVotingPower?.[i]
+      ) {
+        _sbtInfo.push({
+          tokenId: (i + 1).toString(),
+          name: nftMetadata[i]?.name || '',
+          description: nftMetadata[i]?.description || '',
+          votingPower: sbtVotingPower?.[i]?.toString() || '0',
+          image: nftMetadata[i]?.image || '/images/empty-nft.svg',
+          createdAt: nftMetadata[i]?.timestamp?.toString() || '',
+          isRevoked: false,
+          isSBT: true,
+        })
+      }
+    }
+    return _sbtInfo
   }, [nftMetadata, sbtVotingPower, nftBalances])
 
   const votingPower = useMemo(() => {
@@ -660,67 +672,66 @@ export default function StakingPage({
         <div className="mt-8 sm:mt-12">
           <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-6">
-              {votingPowerDict.mySBTs ?? 'My SBTs'} ({nftBalances.length}{' '}
+              {votingPowerDict.mySBTs ?? 'My SBTs'} ({sbtInfo.length}{' '}
               {votingPowerDict.nfts ?? 'NFTs'})
             </h2>
 
             {/* Mobile Card View */}
             <div className="lg:hidden space-y-4">
-              {nftBalances.map((balance, index) =>
-                balance > 0 ? (
-                  <div
-                    key={index}
-                    className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                        {votingPowerDict.id ?? 'ID'}
-                      </span>
-                      <span className="text-sm font-semibold text-gray-800 dark:text-white">
-                        {index + 1}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                        {votingPowerDict.image ?? 'Image'}
-                      </span>
-                      <Image
-                        src={
-                          !nftMetadata || nftMetadata.length === 0
-                            ? '/images/empty-nft.svg'
-                            : nftMetadata[index]?.image ||
-                              '/images/empty-nft.svg'
-                        }
-                        alt={`NFT #${index}`}
-                        className="rounded-lg object-cover"
-                        width={60}
-                        height={60}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                        {votingPowerDict.amount ?? 'Amount'}
-                      </span>
-                      <span className="text-sm font-semibold text-gray-800 dark:text-white">
-                        {formatString(balance.toString())}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                        {votingPowerDict.votingPower ?? 'Voting Power'}
-                      </span>
-                      <span className="text-sm font-semibold text-gray-800 dark:text-white">
-                        {sbtVotingPower[index]
-                          ? formatString(sbtVotingPower[index].toString())
-                          : '0'}
-                      </span>
-                    </div>
+              {sbtInfo.map((balance, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      {votingPowerDict.id ?? 'ID'}
+                    </span>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-white">
+                      {index + 1}
+                    </span>
                   </div>
-                ) : null
-              )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      {votingPowerDict.image ?? 'Image'}
+                    </span>
+                    <Image
+                      src={
+                        !nftMetadata || nftMetadata.length === 0
+                          ? '/images/empty-nft.svg'
+                          : nftMetadata[index]?.image || '/images/empty-nft.svg'
+                      }
+                      alt={`NFT #${index}`}
+                      className="rounded-lg object-cover"
+                      width={60}
+                      height={60}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      {votingPowerDict.amount ?? 'Amount'}
+                    </span>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-white">
+                      {formatString(balance.toString())}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                      {votingPowerDict.votingPower ?? 'Voting Power'}
+                    </span>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-white">
+                      {sbtVotingPower?.[index]
+                        ? formatString(
+                            sbtVotingPower?.[index]?.toString() || '0'
+                          )
+                        : '0'}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
 
             <SBTTableComponent headers={sbtTableHeaders} sbtInfo={sbtInfo} />

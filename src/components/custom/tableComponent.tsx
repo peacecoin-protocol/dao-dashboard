@@ -33,9 +33,14 @@ export interface CampaignInfo {
 interface CampaignTableProps {
   headers: string[]
   campaignInfo: CampaignInfo[]
+  onCampaignClick?: (campaignId: string) => void
 }
 
-export function TableComponent({ headers, campaignInfo }: CampaignTableProps) {
+export function TableComponent({
+  headers,
+  campaignInfo,
+  onCampaignClick,
+}: CampaignTableProps) {
   return (
     <div className="border rounded-xl">
       <Table>
@@ -51,10 +56,11 @@ export function TableComponent({ headers, campaignInfo }: CampaignTableProps) {
         <TableBody>
           {campaignInfo &&
             campaignInfo.map((campaign, index) => (
-              <TableRow key={index}>
-                <TableCell className="text-center">
-                  {campaign.tokenId}
-                </TableCell>
+              <TableRow
+                key={index}
+                onClick={() => onCampaignClick?.(campaign.id)}
+              >
+                <TableCell className="text-center">{campaign.id}</TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center">
                     <Image
