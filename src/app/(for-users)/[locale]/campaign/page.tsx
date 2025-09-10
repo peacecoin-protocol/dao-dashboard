@@ -929,32 +929,36 @@ export default function ForCampaignPage({
   }, [campaignData, sbtMetadata, nftMetadata, totalClaimed])
 
   const sbtInfo = useMemo(() => {
-    const info: SBTInfo[] = sbtBalances.map((_, index) => ({
-      image: sbtMetadata[index]?.image || EMPTY_NFT_IMAGE,
-      tokenId: (index + 1).toString(),
-      name: sbtMetadata[index]?.name || '',
-      description: sbtMetadata[index]?.description || '',
-      votingPower: sbtMetadata[index]?.votingPower || '0',
-      createdAt:
-        (Number(sbtMetadata[index]?.timestamp) / 1000).toString() || '0',
-      isRevoked: false,
-      isSBT: true,
-    }))
+    const info: SBTInfo[] = sbtBalances
+      .filter((balance, index) => balance > 0)
+      .map((_, index) => ({
+        image: sbtMetadata[index]?.image || EMPTY_NFT_IMAGE,
+        tokenId: (index + 1).toString(),
+        name: sbtMetadata[index]?.name || '',
+        description: sbtMetadata[index]?.description || '',
+        votingPower: sbtMetadata[index]?.votingPower || '0',
+        createdAt:
+          (Number(sbtMetadata[index]?.timestamp) / 1000).toString() || '0',
+        isRevoked: false,
+        isSBT: true,
+      }))
     return info ?? []
   }, [sbtMetadata, sbtBalances])
 
   const nftInfo = useMemo(() => {
-    const info: SBTInfo[] = nftBalances.map((_, index) => ({
-      image: nftMetadata[index]?.image || EMPTY_NFT_IMAGE,
-      tokenId: (index + 1).toString(),
-      name: nftMetadata[index]?.name || '',
-      description: nftMetadata[index]?.description || '',
-      votingPower: nftMetadata[index]?.votingPower || '0',
-      createdAt:
-        (Number(nftMetadata[index]?.timestamp) / 1000).toString() || '0',
-      isRevoked: false,
-      isSBT: false,
-    }))
+    const info: SBTInfo[] = nftBalances
+      .filter((balance, index) => balance > 0)
+      .map((_, index) => ({
+        image: nftMetadata[index]?.image || EMPTY_NFT_IMAGE,
+        tokenId: (index + 1).toString(),
+        name: nftMetadata[index]?.name || '',
+        description: nftMetadata[index]?.description || '',
+        votingPower: nftMetadata[index]?.votingPower || '0',
+        createdAt:
+          (Number(nftMetadata[index]?.timestamp) / 1000).toString() || '0',
+        isRevoked: false,
+        isSBT: false,
+      }))
     return info ?? []
   }, [nftMetadata, nftBalances])
 
