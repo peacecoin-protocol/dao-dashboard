@@ -722,6 +722,8 @@ export default function ForCampaignPage({
     }))
     setLoading(true)
 
+    console.log(formData)
+
     try {
       if (formData.tokenType == 0) {
         const hash = await writeContractAsync({
@@ -756,7 +758,8 @@ export default function ForCampaignPage({
         endDate: new Date(formData.endDate).getTime() / 1000,
         validateSignatures: formData.isVerifySignature,
         tokenType: formData.tokenType,
-        token: formData.tokenAddress,
+        token:
+          formData.tokenAddress == '' ? ZeroAddress : formData.tokenAddress,
       }
 
       const tx = await writeContractAsync({
