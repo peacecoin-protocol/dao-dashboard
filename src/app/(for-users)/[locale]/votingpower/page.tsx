@@ -62,8 +62,8 @@ export default function StakingPage({
   let [loading, setLoading] = useState(true)
 
   const [stakingAmount, setStakingAmount] = useState('')
-  const [nftBalances, setNftBalances] = useState<number[]>([])
-  const [nftMetadata, setNftMetadata] = useState<Metadata[]>([])
+  const [sbtBalances, setSBTBalances] = useState<number[]>([])
+  const [sbtMetadata, setSBTDMetadata] = useState<Metadata[]>([])
   const [sbtVotingPower, setSBTVotingPower] = useState<number[]>([])
   const [totalSBTVotingPower, setTotalSBTVotingPower] = useState<number>(0)
   const [stakedBalance, setStakedBalance] = useState<string>('0')
@@ -170,7 +170,7 @@ export default function StakingPage({
           title: votingPowerDict.loadingSBTNFTs ?? 'Loading SBT NFTs...',
         })
 
-        let _nftBalances: number[] = []
+        let _sbtBalances: number[] = []
         for (let i = 1; i <= (currentTokenId as number); i++) {
           const _balance = (await readContract(config, {
             abi: SBT_ABI,
@@ -181,10 +181,10 @@ export default function StakingPage({
             args: [address, i],
           })) as number
 
-          _nftBalances.push(_balance)
+          _sbtBalances.push(_balance)
         }
 
-        setNftBalances(_nftBalances)
+        setSBTBalances(_sbtBalances)
       }
     }
 
@@ -224,14 +224,14 @@ export default function StakingPage({
   }, [chainId, currentTokenId, isConfirmed])
 
   useEffect(() => {
-    if (nftBalances.length > 0 && sbtVotingPower.length > 0) {
+    if (sbtBalances.length > 0 && sbtVotingPower.length > 0) {
       let _SBTPower = 0
-      for (let i = 0; i < nftBalances.length; i++) {
-        _SBTPower += Number(nftBalances?.[i]) * Number(sbtVotingPower?.[i])
+      for (let i = 0; i < sbtBalances.length; i++) {
+        _SBTPower += Number(sbtBalances?.[i]) * Number(sbtVotingPower?.[i])
       }
       setTotalSBTVotingPower(_SBTPower)
     }
-  }, [nftBalances, sbtVotingPower])
+  }, [sbtBalances, sbtVotingPower])
 
   useEffect(() => {
     const fetchNFTMetadata = async () => {
@@ -240,7 +240,7 @@ export default function StakingPage({
           title: votingPowerDict.loadingMetadata ?? 'Loading Metadata...',
         })
 
-        const _nftMetadata: Metadata[] = []
+        const _sbtMetadata: Metadata[] = []
         for (let i = 1; i <= (currentTokenId as number); i++) {
           try {
             const _uri = await readContract(config, {
@@ -259,7 +259,7 @@ export default function StakingPage({
             })
             const data = response.data
             data.token_id = i
-            _nftMetadata.push(data)
+            _sbtMetadata.push(data)
           } catch (error) {
             console.error('Error fetching NFT metadata:', error)
             const metadata: Metadata = {
@@ -271,10 +271,10 @@ export default function StakingPage({
               token_id: 0,
               timestamp: '0',
             }
-            _nftMetadata.push(metadata)
+            _sbtMetadata.push(metadata)
           }
         }
-        setNftMetadata(_nftMetadata)
+        setSBTDMetadata(_sbtMetadata)
       }
     }
 
@@ -421,27 +421,27 @@ export default function StakingPage({
 
   const sbtInfo = useMemo<SBTInfo[]>(() => {
     const _sbtInfo: SBTInfo[] = []
-    for (let i = 0; i < nftBalances.length; i++) {
+    for (let i = 0; i < sbtBalances.length; i++) {
       if (
-        nftBalances?.[i] &&
-        nftBalances[i]! > 0 &&
-        nftMetadata?.[i] &&
+        sbtBalances?.[i] &&
+        sbtBalances[i]! > 0 &&
+        sbtMetadata?.[i] &&
         sbtVotingPower?.[i]
       ) {
         _sbtInfo.push({
           tokenId: (i + 1).toString(),
-          name: nftMetadata[i]?.name || '',
-          description: nftMetadata[i]?.description || '',
+          name: sbtMetadata[i]?.name || '',
+          description: sbtMetadata[i]?.description || '',
           votingPower: sbtVotingPower?.[i]?.toString() || '0',
-          image: nftMetadata[i]?.image || '/images/empty-nft.svg',
-          createdAt: nftMetadata[i]?.timestamp?.toString() || '',
+          image: sbtMetadata[i]?.image || '/images/empty-nft.svg',
+          createdAt: sbtMetadata[i]?.timestamp?.toString() || '',
           isRevoked: false,
           isSBT: true,
         })
       }
     }
     return _sbtInfo
-  }, [nftMetadata, sbtVotingPower, nftBalances])
+  }, [sbtMetadata, sbtVotingPower, sbtBalances])
 
   const votingPower = useMemo(() => {
     return (
@@ -672,8 +672,7 @@ export default function StakingPage({
         <div className="mt-8 sm:mt-12">
           <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-6">
-              {votingPowerDict.mySBTs ?? 'My SBTs'} ({sbtInfo.length}{' '}
-              {votingPowerDict.nfts ?? 'NFTs'})
+              {votingPowerDict.mySBTs ?? 'My SBTs'} ({sbtInfo.length})
             </h2>
 
             {/* Mobile Card View */}
@@ -698,11 +697,11 @@ export default function StakingPage({
                     </span>
                     <Image
                       src={
-                        !nftMetadata || nftMetadata.length === 0
+                        !sbtMetadata || sbtMetadata.length === 0
                           ? '/images/empty-nft.svg'
-                          : nftMetadata[index]?.image || '/images/empty-nft.svg'
+                          : sbtMetadata[index]?.image || '/images/empty-nft.svg'
                       }
-                      alt={`NFT #${index}`}
+                      alt={`SBT #${index}`}
                       className="rounded-lg object-cover"
                       width={60}
                       height={60}

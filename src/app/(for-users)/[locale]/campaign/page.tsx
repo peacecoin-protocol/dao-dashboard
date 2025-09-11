@@ -127,7 +127,7 @@ const useNFTData = (
 
     try {
       const balances = await Promise.all(
-        tokenURIs.map(async (tokenURI) => {
+        nftTokenURIs.map(async (tokenURI) => {
           return (await readContract(config, {
             abi: SBT_ABI,
             address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
@@ -930,9 +930,11 @@ export default function ForCampaignPage({
   }, [campaignData, sbtMetadata, nftMetadata, totalClaimed])
 
   const sbtInfo = useMemo(() => {
+    console.log(sbtBalances, 'sbtBalances')
     const info: SBTInfo[] = sbtBalances
-      .filter((balance, index) => balance > 0)
-      .map((_, index) => ({
+      .map((balance, index) => ({ balance, index }))
+      .filter(({ balance }) => balance > 0)
+      .map(({ index }) => ({
         image: sbtMetadata[index]?.image || EMPTY_NFT_IMAGE,
         tokenId: (index + 1).toString(),
         name: sbtMetadata[index]?.name || '',
@@ -947,9 +949,11 @@ export default function ForCampaignPage({
   }, [sbtMetadata, sbtBalances])
 
   const nftInfo = useMemo(() => {
+    console.log(nftBalances, 'nftBalances')
     const info: SBTInfo[] = nftBalances
-      .filter((balance, index) => balance > 0)
-      .map((_, index) => ({
+      .map((balance, index) => ({ balance, index }))
+      .filter(({ balance }) => balance > 0)
+      .map(({ index }) => ({
         image: nftMetadata[index]?.image || EMPTY_NFT_IMAGE,
         tokenId: (index + 1).toString(),
         name: nftMetadata[index]?.name || '',
@@ -964,6 +968,8 @@ export default function ForCampaignPage({
   }, [nftMetadata, nftBalances])
 
   const tokenInfo = useMemo(() => {
+    console.log(sbtInfo, 'sbtInfo')
+    console.log(nftInfo, 'nftInfo')
     const info: SBTInfo[] = []
     info.push(...sbtInfo)
     info.push(...nftInfo)
