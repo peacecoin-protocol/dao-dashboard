@@ -208,7 +208,7 @@ export const useSideLinks = (locale: Locale, isOwner: boolean): SideLink[] => {
         {
           title: sidebar.createSBT_NFT ?? 'Create SBT/NFT',
           label: '',
-          href: '/admin/createsbt/',
+          href: '/admin/sbt/',
           icon: <IconHexagonNumber2 size={18} />,
         },
       ],

@@ -275,7 +275,7 @@ const router = createBrowserRouter([
         lazy: createLazy('campaign'),
       },
       {
-        path: 'admin/createsbt',
+        path: 'admin/sbt',
         loader: createLoader('createsbt'),
         lazy: createLazy('createsbt'),
       },
