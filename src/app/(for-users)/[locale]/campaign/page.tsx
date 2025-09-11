@@ -578,7 +578,7 @@ export default function ForCampaignPage({
             address: campaignAddress[
               chainId || defaultChainId
             ] as `0x${string}`,
-            functionName: 'champWinnersClaimed',
+            functionName: 'campWinnersClaimed',
             args: [dialogState.campaignId, address],
           }),
         ])
@@ -838,6 +838,7 @@ export default function ForCampaignPage({
           address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
           functionName: 'claimCampaign',
           args: [campaignId, gistUsernameHash, message, signature],
+          gas: BigInt(1000000),
         })
 
         toast({

@@ -45,7 +45,6 @@ import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { SBT_ABI } from '~/app/ABIs/SBT'
-import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { NFT_DETAIL } from '~/components/custom/nft-detail'
 import { Spinner } from '~/components/ui/Spinner'
 import { CreateCampaignModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/createCampaignModal'
@@ -55,6 +54,7 @@ import {
   TableComponent,
 } from '~/components/custom/tableComponent'
 import { SBTInfo } from '~/components/custom/sbt-tableComponent'
+import { erc20Abi } from 'viem'
 
 // Constants
 const PCE_LOGO = '/pce_logo.jpg'
@@ -566,7 +566,7 @@ export default function ForCampaignPage({
             address: campaignAddress[
               chainId || defaultChainId
             ] as `0x${string}`,
-            functionName: 'champWinnersClaimed',
+            functionName: 'campWinnersClaimed',
             args: [dialogState.campaignId, address],
           }),
         ])
@@ -722,38 +722,47 @@ export default function ForCampaignPage({
     }))
     setLoading(true)
 
-    console.log(formData)
-
     try {
       if (formData.tokenType == 0) {
-        const hash = await writeContractAsync({
-          abi: PCE_ABI,
+        const _allowance = await readContract(config, {
+          abi: erc20Abi,
           address: formData.tokenAddress as `0x${string}`,
-          functionName: 'approve',
+          functionName: 'allowance',
           args: [
+            address as `0x${string}`,
             campaignAddress[chainId || defaultChainId] as `0x${string}`,
-            parseEther(formData.totalAmount),
           ],
         })
+        if (_allowance < parseEther(formData.totalAmount)) {
+          const hash = await writeContractAsync({
+            abi: erc20Abi,
+            address: formData.tokenAddress as `0x${string}`,
+            functionName: 'approve',
+            args: [
+              campaignAddress[chainId || defaultChainId] as `0x${string}`,
+              parseEther(formData.totalAmount),
+            ],
+          })
 
-        await waitForTransactionReceipt(config, {
-          hash: hash,
-          confirmations: 1,
-        })
+          await waitForTransactionReceipt(config, {
+            hash: hash,
+            confirmations: 1,
+          })
+        }
       }
 
       const campaign = {
         sbtId: formData.sbtId,
         title: formData.title,
         description: formData.description,
-        totalAmount:
-          formData.tokenType !== 0
-            ? formData.totalAmount
-            : parseEther(formData.totalAmount),
         claimAmount:
           formData.tokenType !== 0
             ? formData.claimAmount
             : parseEther(formData.claimAmount),
+        totalAmount:
+          formData.tokenType !== 0
+            ? formData.totalAmount
+            : parseEther(formData.totalAmount),
         startDate: new Date(formData.startDate).getTime() / 1000,
         endDate: new Date(formData.endDate).getTime() / 1000,
         validateSignatures: formData.isVerifySignature,
@@ -767,11 +776,12 @@ export default function ForCampaignPage({
         address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
         functionName: 'createCampaign',
         args: [campaign],
+        gas: BigInt(1000000),
       })
 
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 2,
+        confirmations: 1,
       })
 
       await fetchCampaignData()
