@@ -22,12 +22,32 @@ export const CAMPAIGN_ABI = [
   },
   {
     type: 'function',
+    name: 'campGistsClaimed',
+    inputs: [
+      { name: '', type: 'uint256', internalType: 'uint256' },
+      { name: '', type: 'bytes32', internalType: 'bytes32' },
+    ],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'campWinners',
     inputs: [
       { name: '', type: 'uint256', internalType: 'uint256' },
       { name: '', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'campWinnersClaimed',
+    inputs: [
+      { name: '', type: 'uint256', internalType: 'uint256' },
+      { name: '', type: 'address', internalType: 'address' },
+    ],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
     stateMutability: 'view',
   },
   {
@@ -57,26 +77,6 @@ export const CAMPAIGN_ABI = [
       },
       { name: 'token', type: 'address', internalType: 'address' },
     ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'champGistsClaimed',
-    inputs: [
-      { name: '', type: 'uint256', internalType: 'uint256' },
-      { name: '', type: 'bytes32', internalType: 'bytes32' },
-    ],
-    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'champWinnersClaimed',
-    inputs: [
-      { name: '', type: 'uint256', internalType: 'uint256' },
-      { name: '', type: 'address', internalType: 'address' },
-    ],
-    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
     stateMutability: 'view',
   },
   {

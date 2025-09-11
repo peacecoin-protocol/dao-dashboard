@@ -4,7 +4,7 @@ import { localhost } from '~/lib/config'
 
 export const pceAddress = {
   [sepolia.id]: '0x951E69b565924c0b846Ed0E779f190c53d29F62e',
-  [localhost.id]: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+  [localhost.id]: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x1F9FcC5f8DF936b8E3c9617565FfAd7fF6222b14',
 } as Record<number, `0x${string}`>
@@ -73,7 +73,7 @@ export const daoStudioAddress = {
 } as Record<number, `0x${string}`>
 
 export const campaignAddress = {
-  [sepolia.id]: '0xe475EEc6248aA4faF8d4F01E996cBd2d292b64E8',
+  [sepolia.id]: '0x74df4502a5B23da2AE241DA9D44D2739e23c5A7b',
   [localhost.id]: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',
