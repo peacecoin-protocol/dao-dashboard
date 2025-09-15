@@ -78,7 +78,7 @@ interface CampaignState {
   nftTokenURIs: { internal_id: number; uri: string }[]
 }
 
-interface NFTState {
+export interface NFTState {
   sbtBalances: number[]
   nftBalances: number[]
   nftMetadata: Metadata[]
@@ -930,7 +930,6 @@ export default function ForCampaignPage({
   }, [campaignData, sbtMetadata, nftMetadata, totalClaimed])
 
   const sbtInfo = useMemo(() => {
-    console.log(sbtBalances, 'sbtBalances')
     const info: SBTInfo[] = sbtBalances
       .map((balance, index) => ({ balance, index }))
       .filter(({ balance }) => balance > 0)
@@ -949,7 +948,6 @@ export default function ForCampaignPage({
   }, [sbtMetadata, sbtBalances])
 
   const nftInfo = useMemo(() => {
-    console.log(nftBalances, 'nftBalances')
     const info: SBTInfo[] = nftBalances
       .map((balance, index) => ({ balance, index }))
       .filter(({ balance }) => balance > 0)
@@ -968,8 +966,6 @@ export default function ForCampaignPage({
   }, [nftMetadata, nftBalances])
 
   const tokenInfo = useMemo(() => {
-    console.log(sbtInfo, 'sbtInfo')
-    console.log(nftInfo, 'nftInfo')
     const info: SBTInfo[] = []
     info.push(...sbtInfo)
     info.push(...nftInfo)
