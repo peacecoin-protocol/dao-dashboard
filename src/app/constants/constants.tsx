@@ -142,6 +142,7 @@ export const sbtTableHeaders = [
   'Title',
   'Description',
   'Token ID',
+  'Balance',
   'Voting Power',
   'Created At',
 ]

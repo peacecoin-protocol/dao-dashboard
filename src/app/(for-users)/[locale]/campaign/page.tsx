@@ -938,6 +938,7 @@ export default function ForCampaignPage({
         tokenId: (index + 1).toString(),
         name: sbtMetadata[index]?.name || '',
         description: sbtMetadata[index]?.description || '',
+        balance: sbtBalances?.[index]?.toString() || '0',
         votingPower: sbtMetadata[index]?.votingPower || '0',
         createdAt:
           (Number(sbtMetadata[index]?.timestamp) / 1000).toString() || '0',
@@ -956,6 +957,7 @@ export default function ForCampaignPage({
         tokenId: (index + 1).toString(),
         name: nftMetadata[index]?.name || '',
         description: nftMetadata[index]?.description || '',
+        balance: nftBalances?.[index]?.toString() || '0',
         votingPower: nftMetadata[index]?.votingPower || '0',
         createdAt:
           (Number(nftMetadata[index]?.timestamp) / 1000).toString() || '0',
