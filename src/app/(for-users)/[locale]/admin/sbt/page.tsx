@@ -209,6 +209,7 @@ const useTokenData = (chainId: number | undefined) => {
             name: tokenDataJson.name || `Token ${i}`,
             description: tokenDataJson.description || '',
             votingPower: tokenDataJson.votingPower || '0',
+            balance: tokenDataJson.balance || '0',
             image: tokenDataJson.image || '/images/empty-nft.svg',
             createdAt:
               (
@@ -244,6 +245,7 @@ const useTokenData = (chainId: number | undefined) => {
             name: tokenDataJson.name || `Token ${i}`,
             description: tokenDataJson.description || '',
             votingPower: tokenDataJson.votingPower || '0',
+            balance: tokenDataJson.balance || '0',
             image: tokenDataJson.image || '/images/empty-nft.svg',
             createdAt:
               (

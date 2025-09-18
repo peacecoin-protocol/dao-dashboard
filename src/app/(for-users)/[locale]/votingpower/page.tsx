@@ -299,9 +299,13 @@ export default function StakingPage({
       for (let i = 0; i < sbtBalances.length; i++) {
         _SBTPower += Number(sbtBalances?.[i]) * Number(sbtVotingPower?.[i])
       }
+
+      for (let i = 0; i < nftBalances.length; i++) {
+        _SBTPower += Number(nftBalances?.[i]) * Number(nftVotingPower?.[i])
+      }
       setTotalSBTVotingPower(_SBTPower)
     }
-  }, [sbtBalances, sbtVotingPower])
+  }, [sbtBalances, sbtVotingPower, nftBalances, nftVotingPower])
 
   useEffect(() => {
     const fetchSBTMetadata = async () => {
@@ -548,6 +552,7 @@ export default function StakingPage({
           tokenId: (i + 1).toString(),
           name: sbtMetadata[i]?.name || '',
           description: sbtMetadata[i]?.description || '',
+          balance: sbtBalances?.[i]?.toString() || '0',
           votingPower: sbtVotingPower?.[i]?.toString() || '0',
           image: sbtMetadata[i]?.image || '/images/empty-nft.svg',
           createdAt:
@@ -573,6 +578,7 @@ export default function StakingPage({
           tokenId: (i + 1).toString(),
           name: nftMetadata[i]?.name || '',
           description: nftMetadata[i]?.description || '',
+          balance: nftBalances?.[i]?.toString() || '0',
           votingPower: nftVotingPower?.[i]?.toString() || '0',
           image: nftMetadata[i]?.image || '/images/empty-nft.svg',
           createdAt:

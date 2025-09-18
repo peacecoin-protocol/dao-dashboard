@@ -18,6 +18,7 @@ export interface SBTInfo {
   tokenId: string
   name: string
   description: string
+  balance: string
   votingPower: string
   image: string
   createdAt: string
@@ -72,6 +73,7 @@ export function SBTTableComponent({
                 <TableCell className="text-center">{sbt.name}</TableCell>
                 <TableCell className="text-center">{sbt.description}</TableCell>
                 <TableCell className="text-center">{sbt.tokenId}</TableCell>
+                <TableCell className="text-center">{sbt.balance}</TableCell>
                 <TableCell className="text-center">{sbt.votingPower}</TableCell>
                 <TableCell className="text-center">
                   {timestampToDate(Number(sbt.createdAt))}
