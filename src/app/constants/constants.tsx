@@ -24,7 +24,7 @@ export const PCE_SBT_ADDRESS = {
 } as Record<number, `0x${string}`>
 
 export const WPCE_ADDRESS = {
-  [sepolia.id]: '0x02735B9d4A829C11a1FC925367C65740D35c9DEb',
+  [sepolia.id]: '0xaf826b76EA6F65efbdd1D976e367eF770FBdD77D',
   [localhost.id]: '0x4c5859f0F772848b2D91F1D83E2Fe57935348029',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xFf6eF3e8CA9dEfb0A6E42d10fBAA3261981B93D1',
@@ -80,7 +80,7 @@ export const campaignAddress = {
 } as Record<number, `0x${string}`>
 
 export const stakingAddress = {
-  [sepolia.id]: '0x5E0Bd4bfbEbf238c360c9c6bde2cc2a4E4CeA6E8',
+  [sepolia.id]: '0x53E94ca5b9FAecEFE3D9aab15CC65ECa60893937',
   [localhost.id]: '0x3Aa5ebB10DC797CAC828524e59A333d0A371443c',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xafe9F87C70cA6b033Dab2E5a17b7C90Cd2c55C45',

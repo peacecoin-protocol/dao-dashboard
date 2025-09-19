@@ -767,7 +767,7 @@ export default function StakingPage({
 
                 <div className="flex justify-between items-center">
                   <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                    {votingPowerDict.sbtVotingPower ?? 'SBT Voting Power'}
+                    {votingPowerDict.sbtVotingPower ?? 'SBT & NFT Voting Power'}
                   </span>
                   <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white">
                     {totalSBTVotingPower
