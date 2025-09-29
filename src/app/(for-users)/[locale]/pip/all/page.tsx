@@ -54,6 +54,8 @@ export default function ForPage({
     auth: Env.GITHUB_TOKEN,
   })
 
+  console.log(Env.GITHUB_TOKEN, 'Env.GITHUB_TOKEN')
+
   useEffect(() => {
     const fetchDict = async () => {
       try {
