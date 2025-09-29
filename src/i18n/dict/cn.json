@@ -405,7 +405,7 @@
     "myVotingPower": "我的投票权",
     "votingPowerAndInfo": "投票权与信息",
     "active": "活跃",
-    "stakedAmount": "质押金额",
+    "stakedAmount": "质押金额 投票权",
     "delegationPower": "委托投票权",
     "sbtVotingPower": "SBT & NFT投票权",
     "votingPowerFeature1": "您的总投票权是您质押金额的总和",
