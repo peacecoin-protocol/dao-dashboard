@@ -747,8 +747,7 @@ export default function StakingPage({
                       ? formatNumber(
                           parseFloat(formatEther(stakedBalance as string))
                         )
-                      : '0'}{' '}
-                    PCE
+                      : '0'}
                   </span>
                 </div>
 
