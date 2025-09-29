@@ -405,7 +405,7 @@
     "myVotingPower": "My Voting Power",
     "votingPowerAndInfo": "Voting Power & Info",
     "active": "Active",
-    "stakedAmount": "Staked Amount",
+    "stakedAmount": "Staked Voting Power",
     "delegationPower": "Delegation Voting Power",
     "sbtVotingPower": "SBT & NFTVoting Power",
     "votingPowerFeature1": "Your total voting power is the sum of your staked amount",
