@@ -32,30 +32,25 @@ import { useToast } from '~/hooks/use-toast'
 import { cn } from '~/lib/utils'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
-import { STATUS, CATEGORY } from '~/app/constants/constants'
+import { STATUS } from '~/app/constants/constants'
 import { PIP } from '~/i18n/types'
 
 export default function ForPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const githubBaseUrl = 'https://github.com/peacecoin-protocol/PIPs/pulls/'
   const [dict, setDict] = useState<Dictionary | null>(null)
   const [open, setOpen] = useState(false)
-  const [isLabelFilterOpen, setIsLabelFilterOpen] = useState(false)
+
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false)
 
   const [filteredStatus, setFilteredStatus] = useState<string[]>([])
   const [filteredCategory, setFilteredCategory] = useState<string[]>([])
 
   const [statusLabels, setStatusLabels] = useState<string[]>(STATUS)
-  const [categoryLabels, setCategoryLabels] = useState<string[]>(CATEGORY)
 
   const [pipContents, setPipContents] = useState<PIP[]>([])
   const [pip, setPip] = useState<PIP | null>(null)
 
-  const { toast } = useToast()
-
-  // const STATUS = ['open', 'closed']
   const octokit = new Octokit({
     auth: Env.GITHUB_TOKEN,
   })
@@ -72,157 +67,103 @@ export default function ForPage({
     fetchDict()
   }, [locale])
 
-  useEffect(() => {
-    const fetchPip = async () => {
-      // To fetch all files in a branch in a GitHub repo, you can use the GitHub REST API to get the tree recursively.
-      // Example: fetch all files in the 'main' branch of 'peacecoin-protocol/dao'
-      try {
-        // To get pull requests, use the listPullRequests endpoint:
-        const { data: pullRequests } = await octokit.rest.pulls.list({
+  const fetchOpendPip = async (): Promise<any> => {
+    try {
+      const { data: pullRequests } = await octokit.rest.pulls.list({
+        owner: 'peacecoin-protocol',
+        repo: 'PIPs',
+        state: 'open', // or 'open', 'closed'
+        per_page: 100, // adjust as needed
+      })
+
+      let pullRequestFiles: any[] = []
+      for (const pullRequest of pullRequests) {
+        // Get files changed in the pull request
+        const { data: _files } = await octokit.rest.pulls.listFiles({
           owner: 'peacecoin-protocol',
           repo: 'PIPs',
-          state: 'all', // or 'open', 'closed'
-          per_page: 100, // adjust as needed
+          pull_number: pullRequest.number,
         })
+        pullRequestFiles = [...pullRequestFiles, ..._files]
+      }
 
-        for (const pullRequest of pullRequests) {
-          // Get files changed in the pull request
-          const { data: pullRequestFiles } = await octokit.rest.pulls.listFiles(
-            {
-              owner: 'peacecoin-protocol',
-              repo: 'PIPs',
-              pull_number: pullRequest.number,
-            }
-          )
+      return pullRequestFiles
+    } catch (error) {
+      console.error('Error fetching all files in branch:', error)
+    }
+  }
 
-          for (let i = 0; i < pullRequestFiles.length; i++) {
-            const file = pullRequestFiles[i]
-            const fileSha = file?.sha || ''
-            const { data: blobData } = await octokit.rest.git.getBlob({
-              owner: 'peacecoin-protocol',
-              repo: 'PIPs',
-              file_sha: fileSha,
-            })
-            // The content is base64 encoded
-            const fileContent = atob(blobData.content.replace(/\n/g, ''))
+  useEffect(() => {
+    const fetchAllPip = async () => {
+      try {
+        let pullRequestFiles: any[] = []
 
-            const pipContent = {
-              number: parseContent(fileContent, 'pip'),
-              title: parseContent(fileContent, 'title'),
-              proposer: parseContent(fileContent, 'proposer'),
-              status: parseContent(fileContent, 'status'),
-              type: parseContent(fileContent, 'type'),
-              category: parseContent(fileContent, 'category'),
-              content: fileContent,
-              created: parseContent(fileContent, 'created'),
-              path: pullRequest.html_url,
-            }
-            setPipContents((prevPipContents) => [
-              ...prevPipContents,
-              pipContent,
-            ])
+        const openedFiles = await fetchOpendPip()
+        pullRequestFiles = [...pullRequestFiles, ...openedFiles]
+
+        const closedFiles = await fetchClosedPip()
+        pullRequestFiles = [...pullRequestFiles, ...closedFiles]
+
+        for (let i = 0; i < pullRequestFiles.length; i++) {
+          const file = pullRequestFiles[i]
+          const fileSha = file?.sha || ''
+          const { data: blobData } = await octokit.rest.git.getBlob({
+            owner: 'peacecoin-protocol',
+            repo: 'PIPs',
+            file_sha: fileSha,
+          })
+
+          // The content is base64 encoded
+          const fileContent = atob(blobData.content.replace(/\n/g, ''))
+
+          let _path = ''
+          if (i < openedFiles.length) {
+            _path = pullRequestFiles[i].blob_url
+          } else {
+            _path = pullRequestFiles[i].html_url
           }
+
+          const pipContent = fetchFileContent(fileContent, _path)
+          setPipContents((prevPipContents) => [...prevPipContents, pipContent])
         }
       } catch (error) {
         console.error('Error fetching all files in branch:', error)
       }
     }
-    fetchPip()
+    fetchAllPip()
   }, [])
+
+  const fetchClosedPip = async (): Promise<any> => {
+    // Get files from the repository
+    const { data: files } = await octokit.rest.repos.getContent({
+      owner: 'peacecoin-protocol',
+      repo: 'PIPs',
+      path: 'PIPs',
+      ref: 'main',
+    })
+
+    return files as any
+  }
+
+  const fetchFileContent = (fileContent: string, path: string) => {
+    const pipContent = {
+      number: parseContent(fileContent, 'pip'),
+      title: parseContent(fileContent, 'title'),
+      proposer: parseContent(fileContent, 'proposer'),
+      status: parseContent(fileContent, 'status'),
+      type: parseContent(fileContent, 'type'),
+      category: parseContent(fileContent, 'category'),
+      content: fileContent,
+      created: parseContent(fileContent, 'created'),
+      path: path,
+    }
+    return pipContent
+  }
 
   function parseContent(content: string, start: string) {
     const match = content.match(new RegExp(`^${start}:\\s*(.*)$`, 'm'))
     return match?.[1]?.trim() ?? ''
   }
-
-  // useEffect(() => {
-  //   const fetchLabels = async () => {
-  //     const labels = await octokit.rest.issues.listLabelsForRepo({
-  //       owner: 'peacecoin-protocol',
-  //       repo: 'dao',
-  //     })
-  //     const parsedLabels = labels.data.map((label: any) => ({
-  //       id: label.id,
-  //       name: label.name,
-  //       color: label.color,
-  //     }))
-
-  //     const filteredLabels = parsedLabels.filter(
-  //       (label: any) => label.name !== 'PIP'
-  //     )
-
-  //     const _typeLabels = filteredLabels
-  //       .filter((label: any) => label.name.includes('type_'))
-  //       .map((label: any) => ({
-  //         ...label,
-  //         name: label.name.replace('type_', ''),
-  //       }))
-
-  //     const _statusLabels = filteredLabels
-  //       .filter((label: any) => label.name.includes('status_'))
-  //       .map((label: any) => ({
-  //         ...label,
-  //         name: label.name.replace('status_', ''),
-  //       }))
-
-  //     setTypeLabels([..._typeLabels])
-  //     setStatusLabels([..._statusLabels])
-
-  //   }
-  //   fetchLabels()
-  // }, [])
-
-  // useEffect(() => {
-  //   const fetchPip = async () => {
-  //     toast({ title: 'Fetching PIPs...' })
-
-  //     const { data: issues } = await octokit.rest.issues.listForRepo({
-  //       owner: 'peacecoin-protocol',
-  //       repo: 'dao',
-  //       per_page: 100,
-  //       state: 'open',
-  //       labels: 'PIP',
-  //     })
-
-  //     for (const issue of issues) {
-  //       const issueData: ISSUE = {
-  //         number: issue.number,
-  //         title: issue.title,
-  //         body: issue.body || '',
-  //         created_at: issue.created_at,
-  //         updated_at: issue.updated_at,
-  //         status: issue.labels
-  //           .filter(
-  //             (label: any) =>
-  //               label.name !== 'PIP' && label.name.includes('status_')
-  //           )
-  //           .map((label: any) => ({
-  //             name: label.name || '',
-  //             color: label.color || '',
-  //             id: label.id || 0,
-  //           })),
-  //         types: issue.labels
-  //           .filter(
-  //             (label: any) =>
-  //               label.name !== 'PIP' && label.name.includes('type_')
-  //           )
-  //           .map((label: any) => ({
-  //             name: label.name || '',
-  //             color: label.color || '',
-  //             id: label.id || 0,
-  //           })),
-  //         closed_at: issue.closed_at || '',
-  //         url: issue.url,
-  //         html_url: issue.html_url,
-  //         author: issue.user?.login || '',
-  //         avatar_url: issue.user?.avatar_url || '',
-  //         isPullRequest: issue.pull_request != null,
-  //       }
-  //       setIssues((prevIssues) => [...prevIssues, issueData])
-  //     }
-  //   }
-  //   fetchPip()
-  // }, [locale])
 
   function handleOpen() {
     setOpen(!open)
@@ -305,72 +246,6 @@ export default function ForPage({
               </Command>
             </PopoverContent>
           </Popover>
-
-          {/* <Popover open={isLabelFilterOpen} onOpenChange={setIsLabelFilterOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                className={cn(
-                  'w-[200px] justify-between',
-                  filteredCategory && 'text-muted-foreground'
-                )}
-              >
-                {filteredCategory.length > 0
-                  ? filteredCategory[0] +
-                    (filteredCategory.length > 1
-                      ? ` + ${filteredCategory.length - 1} more`
-                      : '')
-                  : dict?.pipAll?.selectCategory || 'Select category'}
-                <ChevronsUpDown className="opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
-              <Command>
-                <CommandInput
-                  placeholder={
-                    dict?.pipAll?.searchCategory || 'Search category...'
-                  }
-                  className="h-9"
-                />
-                <CommandList>
-                  <CommandEmpty>
-                    {dict?.pipAll?.noCategoryFound || 'No category found.'}
-                  </CommandEmpty>
-                  <CommandGroup>
-                    {categoryLabels.map((label, index) => (
-                      <CommandItem
-                        value={label}
-                        key={index}
-                        onSelect={() => {
-                          if (filteredCategory.includes(label)) {
-                            setFilteredCategory(
-                              filteredCategory.filter(
-                                (category) => category !== label
-                              )
-                            )
-                          } else {
-                            setFilteredCategory([...filteredCategory, label])
-                          }
-                          setIsLabelFilterOpen(false)
-                        }}
-                      >
-                        {label}
-                        <Check
-                          className={cn(
-                            'ml-auto',
-                            filteredCategory.includes(label)
-                              ? 'opacity-100'
-                              : 'opacity-0'
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover> */}
         </div>
         <Table>
           <TableHeader>
