@@ -28,7 +28,6 @@ import {
   PopoverTrigger,
 } from '~/components/ui/popover'
 import { DialogGithub } from '~/components/custom/dialog-github'
-import { useToast } from '~/hooks/use-toast'
 import { cn } from '~/lib/utils'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
