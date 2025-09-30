@@ -14,7 +14,5 @@ export const Env = {
   MORALIS_API_KEY:
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6ImUzZTUzMTg0LWRlYTctNGNjZS1iYmUyLTA5YzVlNTAxNTg4MiIsIm9yZ0lkIjoiMzk1MzE2IiwidXNlcklkIjoiNDA2MjE2IiwidHlwZUlkIjoiYTdiZTM0YzEtZjdmOS00ZWM3LTlmNmQtMjQyNzEyZTk1MzRhIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3MTc2ODM3NjksImV4cCI6NDg3MzQ0Mzc2OX0.DY1svaKLFchcxzHR1_HNXA-vDS4NbVHzn9o3cjro8W0',
   NEXT_PUBLIC_GATEWAY_URL: 'peacecoin-dao.mypinata.cloud',
-  GITHUB_TOKEN:
-    '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',
   PINATA_GATEWAY_URL: 'https://peacecoin-dao.mypinata.cloud',
 }

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { Octokit } from 'octokit'
-import { Env } from '~/env'
 
 import {
   Table,
@@ -50,11 +49,15 @@ export default function ForPage({
   const [pipContents, setPipContents] = useState<PIP[]>([])
   const [pip, setPip] = useState<PIP | null>(null)
 
-  const octokit = new Octokit({
-    auth: Env.GITHUB_TOKEN,
-  })
+  let octokit: Octokit | null = null
 
-  console.log(Env.GITHUB_TOKEN, 'Env.GITHUB_TOKEN')
+  const githubAccessToken = process.env.NEXT_PUBLIC_GITHUB_ACCESS
+
+  useEffect(() => {
+    octokit = new Octokit({
+      auth: githubAccessToken,
+    })
+  }, [githubAccessToken])
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -68,8 +71,9 @@ export default function ForPage({
     fetchDict()
   }, [locale])
 
-  const fetchOpendPip = async (): Promise<any> => {
+  const fetchOpendPip = async (): Promise<any[]> => {
     try {
+      if (!octokit) return []
       const { data: pullRequests } = await octokit.rest.pulls.list({
         owner: 'peacecoin-protocol',
         repo: 'PIPs',
@@ -91,12 +95,14 @@ export default function ForPage({
       return pullRequestFiles
     } catch (error) {
       console.error('Error fetching all files in branch:', error)
+      return []
     }
   }
 
   useEffect(() => {
     const fetchAllPip = async () => {
       try {
+        if (!octokit) return []
         let pullRequestFiles: any[] = []
 
         const openedFiles = await fetchOpendPip()
@@ -134,8 +140,9 @@ export default function ForPage({
     fetchAllPip()
   }, [])
 
-  const fetchClosedPip = async (): Promise<any> => {
+  const fetchClosedPip = async (): Promise<any[]> => {
     // Get files from the repository
+    if (!octokit) return []
     const { data: files } = await octokit.rest.repos.getContent({
       owner: 'peacecoin-protocol',
       repo: 'PIPs',
@@ -143,7 +150,7 @@ export default function ForPage({
       ref: 'main',
     })
 
-    return files as any
+    return files as any[]
   }
 
   const fetchFileContent = (fileContent: string, path: string) => {

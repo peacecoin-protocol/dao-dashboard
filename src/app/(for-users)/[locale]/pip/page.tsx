@@ -4,7 +4,6 @@ import Link from 'next/link'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
-import { Env } from '~/env'
 
 import { useEffect, useState } from 'react'
 import { Octokit } from 'octokit'
@@ -14,9 +13,14 @@ export default function ForPendingPage({
 }: PagePropsWithLocale<{}>) {
   const [dict, setDict] = useState<Dictionary | null>(null)
 
-  const octokit = new Octokit({
-    auth: Env.GITHUB_TOKEN,
-  })
+  let octokit: Octokit | null = null
+  const githubAccessToken = process.env.NEXT_PUBLIC_GITHUB_ACCESS
+
+  useEffect(() => {
+    octokit = new Octokit({
+      auth: githubAccessToken,
+    })
+  }, [githubAccessToken])
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -29,20 +33,6 @@ export default function ForPendingPage({
     }
     fetchDict()
   }, [locale])
-
-  useEffect(() => {
-    const fetchPip = async () => {
-      const iterator = octokit.paginate.iterator(
-        octokit.rest.issues.listForRepo,
-        {
-          owner: 'peacecoin-protocol',
-          repo: 'dao',
-          per_page: 100,
-        }
-      )
-    }
-    fetchPip()
-  }, [locale, octokit])
 
   return (
     <div className="w-full gap-4 flex flex-col">
