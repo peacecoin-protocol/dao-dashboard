@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 
 import { getDict } from '~/i18n/get-dict'
@@ -10,11 +10,22 @@ import { formatEther } from 'viem'
 export default function ForPCEDetailPage({
   params: { locale },
 }: PagePropsWithLocale<{}>) {
-  const navigate = useNavigate()
-  const { proposal } = useLocation().state || { proposal: undefined }
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // Try to get proposal from search params or session storage
+  const [proposal, setProposal] = useState<any>(null)
   const [dict, setDict] = useState<Dictionary | null>(null)
 
   const localDict = dict?.pceDetail ?? {}
+
+  useEffect(() => {
+    // Try to get proposal data from sessionStorage if passed via state
+    const proposalData = sessionStorage.getItem('currentProposal')
+    if (proposalData) {
+      setProposal(JSON.parse(proposalData))
+    }
+  }, [])
 
   useEffect(() => {
     const fetchDict = async () => {
