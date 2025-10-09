@@ -52,6 +52,7 @@
     "votingPower": "投票权",
     "campaign": "活动",
     "admin": "管理员",
+    "daoManagement": "DAO管理",
     "createCampaign": "创建活动",
     "createSBT_NFT": "创建SBT",
     "allProposals": "所有提案"

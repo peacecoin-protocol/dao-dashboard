@@ -52,6 +52,7 @@
     "votingPower": "投票力",
     "campaign": "キャンペーン",
     "admin": "管理者",
+    "daoManagement": "DAO管理",
     "createCampaign": "キャンペーンを作成",
     "createSBT_NFT": "SBTを作成",
     "allProposals": "すべての提案"
