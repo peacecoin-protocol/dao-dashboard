@@ -1,4 +1,6 @@
-import { useNavigate } from 'react-router-dom'
+'use client'
+
+import { useRouter } from 'next/navigation'
 import { cn } from '~/lib/utils'
 
 interface GeneralErrorProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -9,7 +11,7 @@ export default function GeneralError({
   className,
   minimal = false,
 }: GeneralErrorProps) {
-  const navigate = useNavigate()
+  const router = useRouter()
   return (
     <div className={cn('h-svh w-full', className)}>
       <div className="m-auto flex h-full w-full flex-col items-center justify-center gap-2">
