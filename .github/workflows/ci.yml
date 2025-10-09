@@ -21,16 +21,16 @@ jobs:
           node-version: '22.4.x'
 
       - name: Install dependencies
-        run: yarn install
+        run: npm install
 
       - name: Build project
-        run: yarn build
+        run: npm run build
 
       - name: Type check
-        run: yarn tsc
+        run: npm run tsc
 
       - name: Format check
-        run: yarn format
+        run: npm run format
 
       - name: Lint
-        run: yarn lint
+        run: npm run lint
