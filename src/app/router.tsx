@@ -1,3 +1,5 @@
+'use client'
+
 import {
   createBrowserRouter,
   LoaderFunction,
@@ -27,7 +29,8 @@ const loadComponent = async (key: string) => {
       //   break
       // case 'pending':
       //   Component = (await import('./(for-users)/[locale]/pending/page')).default
-      break
+      //   break
+    break
     case 'pip':
       Component = (await import('./(for-users)/[locale]/pip/page')).default
       break
