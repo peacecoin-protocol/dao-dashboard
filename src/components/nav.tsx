@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom'
+'use client'
+
+import NextLink from 'next/link'
 import { IconChevronDown } from '@tabler/icons-react'
 import { Button, buttonVariants } from './custom/button'
 import {
@@ -105,8 +107,8 @@ function NavLink({
   const { checkActiveNav } = useCheckActiveNav()
   const _href: string = href === '/' ? `/${locale}` : `/${locale}${href}`
   return (
-    <Link
-      to={_href}
+    <NextLink
+      href={_href}
       onClick={closeNav}
       className={cn(
         buttonVariants({
@@ -125,7 +127,7 @@ function NavLink({
           {label}
         </div>
       )}
-    </Link>
+    </NextLink>
   )
 }
 
@@ -197,8 +199,8 @@ function NavLinkIcon({
   return (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
-        <Link
-          to={_href}
+        <NextLink
+          href={_href}
           onClick={closeNav}
           className={cn(
             buttonVariants({
@@ -210,7 +212,7 @@ function NavLinkIcon({
         >
           {icon}
           <span className="sr-only">{title}</span>
-        </Link>
+        </NextLink>
       </TooltipTrigger>
       <TooltipContent side="right" className="flex items-center gap-4">
         {title}
@@ -268,14 +270,14 @@ function NavLinkIconDropdown({
         <DropdownMenuSeparator />
         {sub!.map(({ title, icon, label, href }) => (
           <DropdownMenuItem key={`${title}-${href}`} asChild>
-            <Link
-              to={href === '/' ? `/${locale}` : `/${locale}${href}`}
+            <NextLink
+              href={href === '/' ? `/${locale}` : `/${locale}${href}`}
               onClick={closeNav}
               className={`${checkActiveNav(href) ? 'bg-secondary' : ''}`}
             >
               {icon} <span className="ml-2 max-w-52 text-wrap">{title}</span>
               {label && <span className="ml-auto text-xs">{label}</span>}
-            </Link>
+            </NextLink>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
