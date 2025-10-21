@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 
 import copy from 'clipboard-copy'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { useDisconnect, useAccount, useBalance } from 'wagmi'
 import { useConnectModal } from '@rainbow-me/rainbowkit'
 import { Button } from '~/components/custom/button'
@@ -49,7 +49,7 @@ function AppBar({ locale }: { locale: Locale }) {
   const navigation = dict?.navigation ?? {}
 
   return (
-    <header className="border-gray94 py-[12px] sticky top-0 z-40  border-b-2 border-opacity-50">
+    <header className="border-gray94 py-[16px] sticky top-0 z-40  border-b-2 border-opacity-50">
       <div className="standardContainer flex justify-between items-center container">
         <div className="flex gap-4 ml-auto flex-row items-center mr-4">
           <Button
@@ -117,14 +117,14 @@ function AppBar({ locale }: { locale: Locale }) {
           </DropdownMenu>
           <Link
             className="max-md:hidden"
-            to={LINKS.TWITTER.link}
+            href={LINKS.TWITTER.link}
             target="_blank"
           >
             <TwitterIcon colorClass="fill-oil" />
           </Link>
           <Link
             className="max-md:hidden"
-            to={LINKS.DISCORD.link}
+            href={LINKS.DISCORD.link}
             target="_blank"
           >
             <DiscordIcon colorClass="fill-oil" />

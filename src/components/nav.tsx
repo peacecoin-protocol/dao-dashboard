@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { IconChevronDown } from '@tabler/icons-react'
 import { Button, buttonVariants } from './custom/button'
 import {
@@ -104,10 +104,16 @@ function NavLink({
 }: NavLinkProps) {
   const { checkActiveNav } = useCheckActiveNav()
   const _href: string = href === '/' ? `/${locale}` : `/${locale}${href}`
+
+  const handleClick = () => {
+    console.log(`Navigating to: ${_href}`)
+    closeNav()
+  }
+
   return (
     <Link
-      to={_href}
-      onClick={closeNav}
+      href={_href}
+      onClick={handleClick}
       className={cn(
         buttonVariants({
           variant: checkActiveNav(href) ? 'secondary' : 'secondary',
@@ -194,12 +200,18 @@ function NavLinkIcon({
 }: NavLinkProps) {
   const { checkActiveNav } = useCheckActiveNav()
   const _href: string = href === '/' ? `/${locale}` : `/${locale}${href}`
+
+  const handleClick = () => {
+    console.log(`Navigating to: ${_href}`)
+    closeNav()
+  }
+
   return (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
         <Link
-          to={_href}
-          onClick={closeNav}
+          href={_href}
+          onClick={handleClick}
           className={cn(
             buttonVariants({
               variant: checkActiveNav(href) ? 'secondary' : 'secondary',
@@ -269,8 +281,8 @@ function NavLinkIconDropdown({
         {sub!.map(({ title, icon, label, href }) => (
           <DropdownMenuItem key={`${title}-${href}`} asChild>
             <Link
-              to={href === '/' ? `/${locale}` : `/${locale}${href}`}
-              onClick={closeNav}
+              href={href === '/' ? `/${locale}` : `/${locale}${href}`}
+              onClick={() => closeNav()}
               className={`${checkActiveNav(href) ? 'bg-secondary' : ''}`}
             >
               {icon} <span className="ml-2 max-w-52 text-wrap">{title}</span>

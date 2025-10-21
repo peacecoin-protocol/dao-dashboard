@@ -51,13 +51,16 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
     },
     ref
   ) => {
-    const PCE_TOKEN = {
-      symbol: 'PCE',
-      address: ZeroAddress,
-      balance: pceBalance,
-      name: 'PEACE COIN',
-      swapToLocalAllowance: Number(formatEther(pceBalance)),
-    }
+    const PCE_TOKEN = React.useMemo(
+      () => ({
+        symbol: 'PCE',
+        address: ZeroAddress,
+        balance: pceBalance,
+        name: 'PEACE COIN',
+        swapToLocalAllowance: Number(formatEther(pceBalance)),
+      }),
+      [pceBalance]
+    )
 
     const [amount, setAmount] = React.useState('')
     const [_isFromLocal, _setIsFromLocal] = React.useState(false)

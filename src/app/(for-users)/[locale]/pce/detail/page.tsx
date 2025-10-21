@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 
 import { getDict } from '~/i18n/get-dict'
@@ -10,8 +10,8 @@ import { formatEther } from 'viem'
 export default function ForPCEDetailPage({
   params: { locale },
 }: PagePropsWithLocale<{}>) {
-  const navigate = useNavigate()
-  const { proposal } = useLocation().state || { proposal: undefined }
+  const router = useRouter()
+  const { proposal } = { proposal: undefined } // TODO: Handle state properly with Next.js
   const [dict, setDict] = useState<Dictionary | null>(null)
 
   const localDict = dict?.pceDetail ?? {}

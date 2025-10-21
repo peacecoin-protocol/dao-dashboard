@@ -1,34 +1,46 @@
 'use client'
-import { SidebarProvider, SidebarTrigger } from '~/components/ui/sidebar'
-import { Sidebar } from '~/components/ui/sidebar'
-import Link from 'next/link'
 
-export default function ForUsersLayout({ children }: { children: React.ReactNode }) {
+import { useEffect, useState } from 'react'
+import Sidebar from '~/components/sidebar'
+import AppBar from '~/components/common/app-bar'
+import useIsCollapsed from '~/hooks/use-is-collapsed'
+import { Locale } from '~/i18n/types'
+
+interface ForUsersLayoutProps {
+  children: React.ReactNode
+  params: { locale: Locale }
+}
+
+export default function ForUsersLayout({
+  children,
+  params,
+}: ForUsersLayoutProps) {
+  const [isCollapsed, setIsCollapsed] = useIsCollapsed()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null
+  }
+
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen">
-        <Sidebar>
-          <nav className="flex flex-col gap-2 p-4">
-            <div> Testing Shadcn/ui Sidebar</div>
-            <Link href="/" className="text-sm font-medium hover:underline">
-              Dashboard
-            </Link>
-            <Link href="/faq" className="text-sm font-medium hover:underline">
-              FAQ
-            </Link>
-            <Link href="/pip" className="text-sm font-medium hover:underline">
-              PIPs
-            </Link>
-            <Link href="/dao" className="text-sm font-medium hover:underline">
-              DAO
-            </Link>
-          </nav>
-        </Sidebar>
-        <main className="flex-1">
-          <SidebarTrigger />
+    <div className="flex min-h-screen">
+      <Sidebar
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+        locale={params.locale}
+      />
+      <div className="flex-1 flex flex-col">
+        <AppBar locale={params.locale} />
+        <main
+          className={`flex-1 transition-[margin-left] duration-300 ${isCollapsed ? 'md:ml-14' : 'md:ml-64'}`}
+        >
           {children}
         </main>
       </div>
-    </SidebarProvider>
+    </div>
   )
 }

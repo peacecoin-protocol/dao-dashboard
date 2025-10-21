@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 
 export default function UnauthorisedError() {
-  const navigate = useNavigate()
+  const router = useRouter()
   return (
     <div className="h-svh">
       <div className="m-auto flex h-full w-full flex-col items-center justify-center gap-2">
