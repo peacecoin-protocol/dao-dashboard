@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState, ChangeEvent } from 'react'
 import { formatEther, parseEther } from 'ethers'
 import { readContract } from '@wagmi/core'
 import { useToast } from '~/hooks/use-toast'
@@ -161,7 +161,7 @@ export default function ForTokenPage({
     }
   }, [tokens])
 
-  function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const name = event.target.name
     const value = event.target.value
 
@@ -211,81 +211,84 @@ export default function ForTokenPage({
 
   const [communityTokenInfo, setCommunityTokenInfo] = useState<TOKEN[]>([])
 
-  const getCommunityTokenInfo = async (tokenAddress: string) => {
-    if (!tokenAddress || !tokenAddress.startsWith('0x')) return
-    try {
-      const name = (await readContract(config, {
-        address: tokenAddress as `0x${string}`,
-        abi: PCE_ABI,
-        functionName: 'name',
-        args: [],
-      })) as string
+  const getCommunityTokenInfo = React.useCallback(
+    async (tokenAddress: string) => {
+      if (!tokenAddress || !tokenAddress.startsWith('0x')) return
+      try {
+        const name = (await readContract(config, {
+          address: tokenAddress as `0x${string}`,
+          abi: PCE_ABI,
+          functionName: 'name',
+          args: [],
+        })) as string
 
-      const symbol = (await readContract(config, {
-        address: tokenAddress as `0x${string}`,
-        abi: PCE_ABI,
-        functionName: 'symbol',
-        args: [],
-      })) as string
+        const symbol = (await readContract(config, {
+          address: tokenAddress as `0x${string}`,
+          abi: PCE_ABI,
+          functionName: 'symbol',
+          args: [],
+        })) as string
 
-      const balance = (await readContract(config, {
-        address: tokenAddress as `0x${string}`,
-        abi: PCE_ABI,
-        functionName: 'balanceOf',
-        args: [address],
-      })) as bigint
+        const balance = (await readContract(config, {
+          address: tokenAddress as `0x${string}`,
+          abi: PCE_ABI,
+          functionName: 'balanceOf',
+          args: [address],
+        })) as bigint
 
-      const swappableBalanceToday = (await readContract(config, {
-        address: tokenAddress as `0x${string}`,
-        abi: COMMUNITY_TOKEN_ABI,
-        functionName: 'getTodaySwapableToPCEBalance',
-        args: [],
-      })) as string
+        const swappableBalanceToday = (await readContract(config, {
+          address: tokenAddress as `0x${string}`,
+          abi: COMMUNITY_TOKEN_ABI,
+          functionName: 'getTodaySwapableToPCEBalance',
+          args: [],
+        })) as string
 
-      const swappableBalanceForIndividual = (await readContract(config, {
-        address: tokenAddress as `0x${string}`,
-        abi: COMMUNITY_TOKEN_ABI,
-        functionName: 'getTodaySwapableToPCEBalanceForIndividual',
-        args: [address],
-      })) as string
+        const swappableBalanceForIndividual = (await readContract(config, {
+          address: tokenAddress as `0x${string}`,
+          abi: COMMUNITY_TOKEN_ABI,
+          functionName: 'getTodaySwapableToPCEBalanceForIndividual',
+          args: [address],
+        })) as string
 
-      setCommunityTokenInfo((prev) => {
-        const existingTokenIndex = prev.findIndex(
-          (t) => t.address === tokenAddress
-        )
-        if (existingTokenIndex >= 0) {
-          const newArray = [...prev]
-          newArray[existingTokenIndex] = {
-            address: tokenAddress,
-            name,
-            symbol,
-            balance,
-            swapToLocalAllowance: Math.min(
-              Number(formatEther(swappableBalanceToday)),
-              Number(formatEther(swappableBalanceForIndividual))
-            ),
+        setCommunityTokenInfo((prev) => {
+          const existingTokenIndex = prev.findIndex(
+            (t) => t.address === tokenAddress
+          )
+          if (existingTokenIndex >= 0) {
+            const newArray = [...prev]
+            newArray[existingTokenIndex] = {
+              address: tokenAddress,
+              name,
+              symbol,
+              balance,
+              swapToLocalAllowance: Math.min(
+                Number(formatEther(swappableBalanceToday)),
+                Number(formatEther(swappableBalanceForIndividual))
+              ),
+            }
+            return newArray
           }
-          return newArray
-        }
-        return [
-          ...prev,
-          {
-            address: tokenAddress,
-            name,
-            symbol,
-            balance,
-            swapToLocalAllowance: Math.min(
-              Number(formatEther(swappableBalanceToday)),
-              Number(formatEther(swappableBalanceForIndividual))
-            ),
-          },
-        ]
-      })
-    } catch (err) {
-      console.error('Error getting balance:', err)
-      return null
-    }
-  }
+          return [
+            ...prev,
+            {
+              address: tokenAddress,
+              name,
+              symbol,
+              balance,
+              swapToLocalAllowance: Math.min(
+                Number(formatEther(swappableBalanceToday)),
+                Number(formatEther(swappableBalanceForIndividual))
+              ),
+            },
+          ]
+        })
+      } catch (err) {
+        console.error('Error getting balance:', err)
+        return null
+      }
+    },
+    [config, address]
+  )
 
   useEffect(() => {
     if (tokens) {

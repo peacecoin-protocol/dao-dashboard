@@ -31,7 +31,7 @@ import { Dialog, DialogContent, DialogTitle } from '~/components/ui/dialog'
 
 import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
 
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 
 import { getDict } from '~/i18n/get-dict'
 
@@ -124,14 +124,14 @@ import { pinata } from '~/lib/config'
 const DaoCard = ({
   dao,
   locale,
-  navigate,
+  router,
   chainId,
   localeDict,
 }: {
   dao: Dao
   locale: string
   localeDict: any
-  navigate: any
+  router: any
   chainId: number
 }) => {
   const { toast } = useToast()
@@ -149,7 +149,7 @@ const DaoCard = ({
           showConnectWalletAlert()
           return
         }
-        navigate(`/${locale}/dao/detail/${dao.id}`)
+        router.push(`/${locale}/dao/detail/${dao.id}`)
       }}
     >
       <div className="flex flex-row w-full items-center ">
@@ -212,7 +212,7 @@ const StatItem = ({
 export default function ForDAOPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const navigate = useNavigate()
+  const router = useRouter()
 
   const [dict, setDict] = useState<Dictionary | null>(null)
   const localeDict = dict?.studio ?? {}
@@ -605,7 +605,7 @@ export default function ForDAOPage({
                   dao={dao}
                   locale={locale}
                   localeDict={localeDict}
-                  navigate={navigate}
+                  router={router}
                   chainId={chainId || 0}
                 />
               ))}
@@ -636,7 +636,7 @@ export default function ForDAOPage({
                     dao={dao}
                     locale={locale}
                     localeDict={localeDict}
-                    navigate={navigate}
+                    router={router}
                     chainId={chainId || 0}
                   />
                 ))

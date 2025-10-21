@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
 import axios from 'axios'
 
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 
 import { Alchemy, Network } from 'alchemy-sdk'
 
@@ -116,7 +116,7 @@ type TokenBalance = {
 export default function PCEPage({
   params: { locale },
 }: PagePropsWithLocale<{}>) {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [dict, setDict] = useState<Dictionary | null>(null)
 
   const localDict = dict?.daoInfo ?? {}
@@ -458,9 +458,7 @@ export default function PCEPage({
       <div
         className="flex flex-col gap-2 cursor-pointer"
         onClick={() => {
-          navigate(`/${locale}/pce/detail/`, {
-            state: { proposal },
-          })
+          router.push(`/${locale}/pce/detail/`)
         }}
       >
         <div className="flex flex-row items-center justify-between w-full rounded-xl">
@@ -750,83 +748,90 @@ export default function PCEPage({
       functionName: 'proposalCount',
     })
 
-  const fetchData = async (count: number) => {
-    setLoading(true)
-    if (!count || !governorAddress || count == 0) {
-      setProposals([])
-      setStatus([])
+  const fetchData = React.useCallback(
+    async (count: number) => {
+      setLoading(true)
+      if (!count || !governorAddress || count == 0) {
+        setProposals([])
+        setStatus([])
+        setLoading(false)
+        return
+      }
+
+      let temp = []
+      let _status = []
+      for (let i = 1; i <= count; i++) {
+        let proposal = null
+        let status = null
+        try {
+          proposal = await readContract(config, {
+            address: governorAddress[
+              chainId || defaultChainId
+            ] as `0x${string}`,
+            abi: GOVERNOR_ABI,
+            functionName: 'proposals',
+            args: [i],
+          })
+
+          status = await readContract(config, {
+            address: governorAddress[
+              chainId || defaultChainId
+            ] as `0x${string}`,
+            abi: GOVERNOR_ABI,
+            functionName: 'state',
+            args: [i],
+          })
+        } catch (error) {
+          i--
+          continue
+        }
+
+        switch (status as number) {
+          case 0:
+            _status.push('Pending')
+            temp.push(proposal)
+            break
+          case 1:
+            _status.push('Active')
+            temp.push(proposal)
+            break
+          case 2:
+            _status.push('Canceled')
+            temp.push(proposal)
+            break
+          case 3:
+            _status.push('Defeated')
+            temp.push(proposal)
+            break
+          case 4:
+            _status.push('Succeeded')
+            temp.push(proposal)
+            break
+          case 5:
+            _status.push('Queued')
+            temp.push(proposal)
+            break
+          case 6:
+            _status.push('Expired')
+            temp.push(proposal)
+            break
+          case 7:
+            _status.push('Executed')
+            temp.push(proposal)
+            break
+          default:
+            break
+        }
+      }
+      setProposals(temp)
+      setStatus(_status)
       setLoading(false)
-      return
-    }
-
-    let temp = []
-    let _status = []
-    for (let i = 1; i <= count; i++) {
-      let proposal = null
-      let status = null
-      try {
-        proposal = await readContract(config, {
-          address: governorAddress[chainId || defaultChainId] as `0x${string}`,
-          abi: GOVERNOR_ABI,
-          functionName: 'proposals',
-          args: [i],
-        })
-
-        status = await readContract(config, {
-          address: governorAddress[chainId || defaultChainId] as `0x${string}`,
-          abi: GOVERNOR_ABI,
-          functionName: 'state',
-          args: [i],
-        })
-      } catch (error) {
-        i--
-        continue
-      }
-
-      switch (status as number) {
-        case 0:
-          _status.push('Pending')
-          temp.push(proposal)
-          break
-        case 1:
-          _status.push('Active')
-          temp.push(proposal)
-          break
-        case 2:
-          _status.push('Canceled')
-          temp.push(proposal)
-          break
-        case 3:
-          _status.push('Defeated')
-          temp.push(proposal)
-          break
-        case 4:
-          _status.push('Succeeded')
-          temp.push(proposal)
-          break
-        case 5:
-          _status.push('Queued')
-          temp.push(proposal)
-          break
-        case 6:
-          _status.push('Expired')
-          temp.push(proposal)
-          break
-        case 7:
-          _status.push('Executed')
-          temp.push(proposal)
-          break
-        default:
-          break
-      }
-    }
-    setProposals(temp)
-    setStatus(_status)
-    setLoading(false)
-  }
+    },
+    [config, governorAddress, chainId, defaultChainId]
+  )
   useEffect(() => {
     fetchData(Number(proposalCount))
-  }, [proposalCount, governorAddress, chainId, isConfirmed])
+  }, [proposalCount, governorAddress, chainId, isConfirmed, fetchData])
 
   useEffect(() => {
     const fetchIdenticon = async () => {

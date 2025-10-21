@@ -1,14 +1,23 @@
-import { useLocation } from 'react-router-dom'
+import { usePathname } from 'next/navigation'
 
 export default function useCheckActiveNav() {
-  const { pathname } = useLocation()
+  const pathname = usePathname()
 
   const checkActiveNav = (nav: string) => {
-    const pathArray = pathname.split('/').filter((item) => item !== '')
+    // Remove locale from pathname for comparison
+    const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '') || '/'
 
-    if (nav === '/' && pathArray.length < 1) return true
+    // Handle root path
+    if (nav === '/' && pathWithoutLocale === '/') return true
 
-    return pathArray.includes(nav.replace(/^\//, ''))
+    // Remove leading slash from nav for comparison
+    const cleanNav = nav.replace(/^\//, '')
+
+    // Check if the current path starts with the nav path
+    return (
+      pathWithoutLocale.startsWith(`/${cleanNav}`) ||
+      pathWithoutLocale === `/${cleanNav}`
+    )
   }
 
   return { checkActiveNav }

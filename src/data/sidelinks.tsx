@@ -194,7 +194,7 @@ export const useSideLinks = (locale: Locale, isOwner: boolean): SideLink[] => {
 
   if (isOwner) {
     sideLinks.push({
-      title: sidebar.admin ?? 'Admin',
+      title: sidebar.daoManagement ?? 'Dao Management',
       label: '',
       href: '/',
       icon: <IconUserShield size={18} />,

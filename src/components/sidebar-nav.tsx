@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import { buttonVariants } from '~/components/custom/button'
 import {
   Select,
@@ -23,13 +24,13 @@ export default function SidebarNav({
   items,
   ...props
 }: SidebarNavProps) {
-  const { pathname } = useLocation()
-  const navigate = useNavigate()
+  const pathname = usePathname()
+  const router = useRouter()
   const [val, setVal] = useState(pathname ?? '/settings')
 
   const handleSelect = (e: string) => {
     setVal(e)
-    navigate(e)
+    router.push(e)
   }
 
   return (
@@ -63,7 +64,7 @@ export default function SidebarNav({
           {items.map((item) => (
             <Link
               key={item.href}
-              to={item.href}
+              href={item.href}
               className={cn(
                 buttonVariants({ variant: 'secondary' }),
                 pathname === item.href

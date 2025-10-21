@@ -1,6 +1,7 @@
 'use client'
 
-import { Link, useLocation } from 'react-router-dom'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 import { Button } from '~/components/custom/button'
 import {
@@ -12,8 +13,7 @@ import {
 import { Locale } from '~/i18n/types'
 
 export function UserNav({ locale }: { locale: Locale }) {
-  const location = useLocation()
-  const fullPath = `${window.location.origin}${location.pathname}`
+  const pathname = usePathname()
 
   return (
     <DropdownMenu>
@@ -35,56 +35,32 @@ export function UserNav({ locale }: { locale: Locale }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-24" align="end" forceMount>
         <DropdownMenuItem>
-          <Link
-            className="w-full"
-            to={fullPath.replace(`/${locale}`, '/cn')}
-            reloadDocument={true}
-          >
+          <Link className="w-full" href={pathname.replace(`/${locale}`, '/cn')}>
             中文
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link
-            className="w-full"
-            to={fullPath.replace(`/${locale}`, '/en')}
-            reloadDocument={true}
-          >
+          <Link className="w-full" href={pathname.replace(`/${locale}`, '/en')}>
             English
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link
-            className="w-full"
-            to={fullPath.replace(`/${locale}`, '/es')}
-            reloadDocument={true}
-          >
+          <Link className="w-full" href={pathname.replace(`/${locale}`, '/es')}>
             Español
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link
-            className="w-full"
-            to={fullPath.replace(`/${locale}`, '/fr')}
-            reloadDocument={true}
-          >
+          <Link className="w-full" href={pathname.replace(`/${locale}`, '/fr')}>
             Français
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link
-            className="w-full"
-            to={fullPath.replace(`/${locale}`, '/ja')}
-            reloadDocument={true}
-          >
+          <Link className="w-full" href={pathname.replace(`/${locale}`, '/ja')}>
             日本語
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link
-            className="w-full"
-            to={fullPath.replace(`/${locale}`, '/pt')}
-            reloadDocument={true}
-          >
+          <Link className="w-full" href={pathname.replace(`/${locale}`, '/pt')}>
             Português
           </Link>
         </DropdownMenuItem>

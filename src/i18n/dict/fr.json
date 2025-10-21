@@ -52,6 +52,7 @@
     "votingPower": "Pouvoir de Vote",
     "campaign": "Campagne",
     "admin": "Administrateur",
+    "daoManagement": "Gestion du DAO",
     "createCampaign": "Créer une Campagne",
     "createSBT_NFT": "Créer SBT",
     "allProposals": "Toutes les Propositions"
