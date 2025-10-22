@@ -104,6 +104,7 @@ export default function ForPage({
       try {
         if (!octokit) return []
         let pullRequestFiles: any[] = []
+        let pipContents: PIP[] = []
 
         const openedFiles = await fetchOpendPip()
         pullRequestFiles = [...pullRequestFiles, ...openedFiles]
@@ -131,8 +132,10 @@ export default function ForPage({
           }
 
           const pipContent = fetchFileContent(fileContent, _path)
-          setPipContents((prevPipContents) => [...prevPipContents, pipContent])
+          pipContents.push(pipContent)
         }
+        pipContents.sort((a, b) => Number(a.number) - Number(b.number))
+        setPipContents(pipContents)
       } catch (error) {
         console.error('Error fetching all files in branch:', error)
       }
@@ -224,7 +227,7 @@ export default function ForPage({
                     {statusLabels.map((label, index) => (
                       <CommandItem
                         value={label}
-                        key={index}
+                        key={`status-${label}-${index}`}
                         onSelect={() => {
                           if (filteredStatus.includes(label)) {
                             setFilteredStatus(
@@ -295,9 +298,9 @@ export default function ForPage({
                   filteredCategory.includes(pip.category)
                 )
               })
-              .map((pip) => (
+              .map((pip, index) => (
                 <TableRow
-                  key={pip.number}
+                  key={`${pip.number}-${pip.title}-${index}`}
                   className="border-2 border-gray87 border-solid cursor-pointer"
                   onClick={() => {
                     setPip(pip)
