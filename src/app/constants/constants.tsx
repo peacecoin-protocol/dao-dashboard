@@ -88,7 +88,7 @@ export const stakingAddress = {
 
 export const SUBGRAPH_URL = {
   [sepolia.id]:
-    'https://api.studio.thegraph.com/query/81073/dao-subgraph/v10.26.1',
+    'https://api.studio.thegraph.com/query/81073/test/version/latest',
   [localhost.id]: 'http://localhost:8000/subgraphs/name/dao_dashboard',
   [polygon.id]:
     'https://api.studio.thegraph.com/query/81073/dao_dashboard/version/latest',

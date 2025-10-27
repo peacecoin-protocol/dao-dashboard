@@ -4,8 +4,6 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
 
-import { Alchemy } from 'alchemy-sdk'
-
 import RingLoader from 'react-spinners/RingLoader'
 import { ringStyle } from '~/app/constants/styles'
 import { Line } from 'rc-progress'
@@ -58,8 +56,6 @@ import {
 
 // import { AmountInput } from '~/components/custom/amount-input'
 
-import { ApolloClient, InMemoryCache, gql } from '@apollo/client'
-
 import { getDict } from '~/i18n/get-dict'
 
 import { Dictionary, Locale } from '~/i18n/types'
@@ -73,11 +69,7 @@ import { TooltipComponent } from '~/components/custom/TooltipComponent'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { defaultChainId } from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
-import {
-  factoryAddress,
-  governorAddress,
-  SUBGRAPH_URL,
-} from '~/app/constants/constants'
+import { factoryAddress } from '~/app/constants/constants'
 import { useBlockNumber, useBlock } from 'wagmi'
 import { pinata } from '~/lib/config'
 import ImageCropModal from '~/components/ui/ImageCropModal'
@@ -88,7 +80,6 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { timestampToDate } from '~/components/utils'
-import { ALCHEMY_CONFIG } from '~/app/constants/constants'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { Env } from '~/env'
 import { useToast } from '~/hooks/use-toast'

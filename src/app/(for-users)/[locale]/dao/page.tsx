@@ -36,7 +36,7 @@ import { useRouter } from 'next/navigation'
 import { getDict } from '~/i18n/get-dict'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { formatEther, parseEther } from 'viem'
+import { parseEther } from 'viem'
 
 import { Env } from '~/env'
 
@@ -105,7 +105,6 @@ type DaoFormState = {
   quorumVotes: string
   timelockDelay: string
 }
-import { formatString } from '~/components/utils'
 import { TabsContent } from '@radix-ui/react-tabs'
 import RingLoader from 'react-spinners/RingLoader'
 

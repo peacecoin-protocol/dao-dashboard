@@ -8,11 +8,7 @@ import { Locale } from '~/i18n/types'
 import { useSideLinks } from '~/data/sidelinks'
 import { getDict } from '~/i18n/get-dict'
 import { Dictionary } from '~/i18n/types'
-import {
-  daoStudioAddress,
-  defaultChainId,
-  OWNER_ADDRESSES,
-} from '~/app/constants/constants'
+import { daoStudioAddress, defaultChainId } from '~/app/constants/constants'
 import { useAccount } from 'wagmi'
 import { readContract } from '@wagmi/core'
 import { keccak256, toBytes } from 'viem'

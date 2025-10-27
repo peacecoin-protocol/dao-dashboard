@@ -6,6 +6,7 @@ const nextConfig = {
       'avatars.githubusercontent.com',
       'api.github.com',
       'kite.mypinata.cloud',
+      'peacecoin-dao.mypinata.cloud',
     ],
   },
 }

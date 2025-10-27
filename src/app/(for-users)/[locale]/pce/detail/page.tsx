@@ -25,7 +25,6 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
-import { formatString } from '~/components/utils'
 import { useAccount } from 'wagmi'
 
 type TokenBalance = {

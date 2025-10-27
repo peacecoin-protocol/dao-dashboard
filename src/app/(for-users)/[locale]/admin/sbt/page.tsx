@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { v4 as uuidv4 } from 'uuid'
 import Image from 'next/image'
 import { config } from '~/lib/config'
 
@@ -33,14 +32,12 @@ import {
 import ImageCropModal from '~/components/ui/ImageCropModal'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { Env } from '~/env'
-import {
-  addFilesToGroupPublic,
-  createFile,
-  JSON_GROUP_ID,
-  NFT_GROUP_ID,
-  SBT_GROUP_ID,
-} from '~/app/pinata/pinataAPI'
+
+import { createFile } from '~/app/pinata/pinataAPI'
+import { SBT_GROUP_ID, NFT_GROUP_ID } from '~/app/pinata/pinataAPI'
+import { v4 as uuidv4 } from 'uuid'
+import { addFilesToGroupPublic } from '~/app/pinata/pinataAPI'
+
 import {
   useAccount,
   useReadContract,
@@ -763,29 +760,31 @@ export default function SBTBuilderPage({
         : NFTAddress[chainId || defaultChainId]
 
     // Set token URI on contract
-    const createTokenTx = await writeContractAsync({
-      abi: SBT_ABI,
-      address: contractAddress as `0x${string}`,
-      functionName: 'createToken',
-      args: [],
-    })
+    // const createTokenTx = await writeContractAsync({
+    //   abi: SBT_ABI,
+    //   address: contractAddress as `0x${string}`,
+    //   functionName: 'createToken',
+    //   args: [],
+    // })
 
     // try {
-    //   toast({ title: 'Uploading image...' })
+    toast({ title: 'Uploading image...' })
 
-    //   const timestamp = Date.now()
-    //   const imageName = `${uuidv4()}-${timestamp}.png`
+    const timestamp = Date.now()
+    const imageName = `${uuidv4()}-${timestamp}.png`
 
-    //   // Upload image
-    //   const file = await createFile(croppedImage, imageName)
-    //   const uploadResult = await addFilesToGroupPublic(
-    //     file,
-    //     cardForm.isSBT == true ? SBT_GROUP_ID : NFT_GROUP_ID
-    //   )
+    // Upload image
+    const file = await createFile(croppedImage, imageName)
+    const uploadResult = await addFilesToGroupPublic(
+      file,
+      cardForm.isSBT == true ? SBT_GROUP_ID : NFT_GROUP_ID
+    )
 
-    //   if (!uploadResult?.cid) {
-    //     throw new Error('Failed to upload image')
-    //   }
+    if (!uploadResult?.cid) {
+      throw new Error('Failed to upload image')
+    }
+
+    console.log(uploadResult)
 
     //   // Create and upload metadata
     //   const tokenInfo = {
