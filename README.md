@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Node.js v20.19.0
+- Node.js v22.4.1
 
 ## Getting Started
 
