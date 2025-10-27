@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import Image from 'next/image'
+import { config } from '~/lib/config'
 
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import {
@@ -48,7 +49,6 @@ import {
   type BaseError,
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
-import { config } from '~/lib/config'
 import { ChevronsUpDown, Plus, Image as ImageIcon } from 'lucide-react'
 import {
   SBTInfo,
@@ -92,17 +92,17 @@ const useTokenData = (chainId: number | undefined) => {
   const [nftData, setNFTData] = useState<SBTInfo[]>([])
   const [loading, setLoading] = useState(false)
 
-  const { data: currentSBTId } = useReadContract({
+  const { data: numberOfSBTs } = useReadContract({
     address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
     abi: SBT_ABI,
-    functionName: 'currentTokenId',
+    functionName: 'numberOfTokens',
     args: [],
   })
 
-  const { data: currentNFTId } = useReadContract({
+  const { data: numberOfNFTs } = useReadContract({
     address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
     abi: SBT_ABI,
-    functionName: 'currentTokenId',
+    functionName: 'numberOfTokens',
     args: [],
   })
 
@@ -179,14 +179,14 @@ const useTokenData = (chainId: number | undefined) => {
   )
 
   const fetchTokenData = useCallback(async () => {
-    if (!currentSBTId || !currentNFTId) return
+    if (!numberOfSBTs || !numberOfNFTs) return
 
     setLoading(true)
     try {
       const sbtTokens: SBTInfo[] = []
       const nftTokens: SBTInfo[] = []
 
-      for (let i = 1; i <= Number(currentSBTId); i++) {
+      for (let i = 1; i <= Number(numberOfSBTs); i++) {
         try {
           const [tokenURI, isTokenRevoked] = await Promise.all([
             getSBTTokenURI(i),
@@ -222,7 +222,7 @@ const useTokenData = (chainId: number | undefined) => {
         }
       }
 
-      for (let i = 1; i <= Number(currentNFTId); i++) {
+      for (let i = 1; i <= Number(numberOfNFTs); i++) {
         try {
           const [tokenURI, isTokenRevoked] = await Promise.all([
             getNFTTokenURI(i),
@@ -266,8 +266,8 @@ const useTokenData = (chainId: number | undefined) => {
       setLoading(false)
     }
   }, [
-    currentSBTId,
-    currentNFTId,
+    numberOfSBTs,
+    numberOfNFTs,
     getSBTTokenURI,
     getNFTTokenURI,
     checkSBTRevokedStatus,
@@ -278,7 +278,7 @@ const useTokenData = (chainId: number | undefined) => {
     fetchTokenData()
   }, [fetchTokenData])
 
-  return { sbtData, nftData, currentSBTId, currentNFTId, loading }
+  return { sbtData, nftData, numberOfSBTs, numberOfNFTs, loading }
 }
 
 // Components
@@ -686,7 +686,6 @@ export default function SBTBuilderPage({
     isSBT: true,
   })
 
-  // Contract interactions
   const { data: hash, error, writeContractAsync } = useWriteContract()
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -696,7 +695,7 @@ export default function SBTBuilderPage({
     })
 
   // Custom hooks
-  const { sbtData, nftData, currentSBTId, currentNFTId, loading } =
+  const { sbtData, nftData, numberOfSBTs, numberOfNFTs, loading } =
     useTokenData(chainId)
 
   // Effects
@@ -758,91 +757,97 @@ export default function SBTBuilderPage({
 
     setIsCreateModalOpen(false)
 
-    try {
-      toast({ title: 'Uploading image...' })
+    const contractAddress =
+      cardForm.isSBT == true
+        ? PCE_SBT_ADDRESS[chainId || defaultChainId]
+        : NFTAddress[chainId || defaultChainId]
 
-      const timestamp = Date.now()
-      const imageName = `${uuidv4()}-${timestamp}.png`
+    // Set token URI on contract
+    const createTokenTx = await writeContractAsync({
+      abi: SBT_ABI,
+      address: contractAddress as `0x${string}`,
+      functionName: 'createToken',
+      args: [],
+    })
 
-      // Upload image
-      const file = await createFile(croppedImage, imageName)
-      const uploadResult = await addFilesToGroupPublic(
-        file,
-        cardForm.isSBT == true ? SBT_GROUP_ID : NFT_GROUP_ID
-      )
+    // try {
+    //   toast({ title: 'Uploading image...' })
 
-      if (!uploadResult?.cid) {
-        throw new Error('Failed to upload image')
-      }
+    //   const timestamp = Date.now()
+    //   const imageName = `${uuidv4()}-${timestamp}.png`
 
-      const contractAddress =
-        cardForm.isSBT == true
-          ? PCE_SBT_ADDRESS[chainId || defaultChainId]
-          : NFTAddress[chainId || defaultChainId]
+    //   // Upload image
+    //   const file = await createFile(croppedImage, imageName)
+    //   const uploadResult = await addFilesToGroupPublic(
+    //     file,
+    //     cardForm.isSBT == true ? SBT_GROUP_ID : NFT_GROUP_ID
+    //   )
 
-      // Create and upload metadata
-      const tokenInfo = {
-        name: cardForm.name,
-        description: cardForm.description,
-        votingPower: cardForm.votingPower,
-        image: `${Env.PINATA_GATEWAY_URL}/ipfs/${uploadResult.cid}`,
-        timestamp,
-      }
+    //   if (!uploadResult?.cid) {
+    //     throw new Error('Failed to upload image')
+    //   }
 
-      const jsonBlob = new Blob([JSON.stringify(tokenInfo, null, 2)], {
-        type: 'application/json',
-      })
-      const jsonFile = new File([jsonBlob], `${uploadResult.cid}.json`, {
-        type: 'application/json',
-      })
+    //   // Create and upload metadata
+    //   const tokenInfo = {
+    //     name: cardForm.name,
+    //     description: cardForm.description,
+    //     votingPower: cardForm.votingPower,
+    //     image: `${Env.PINATA_GATEWAY_URL}/ipfs/${uploadResult.cid}`,
+    //     timestamp,
+    //   }
 
-      const jsonUploadResult = await addFilesToGroupPublic(
-        jsonFile,
-        JSON_GROUP_ID
-      )
+    //   const jsonBlob = new Blob([JSON.stringify(tokenInfo, null, 2)], {
+    //     type: 'application/json',
+    //   })
+    //   const jsonFile = new File([jsonBlob], `${uploadResult.cid}.json`, {
+    //     type: 'application/json',
+    //   })
 
-      if (!jsonUploadResult?.cid) {
-        throw new Error('Failed to upload metadata')
-      }
+    //   const jsonUploadResult = await addFilesToGroupPublic(
+    //     jsonFile,
+    //     JSON_GROUP_ID
+    //   )
 
-      // Set token URI on contract
-      const setTokenURITx = await writeContractAsync({
-        abi: SBT_ABI,
-        address: contractAddress as `0x${string}`,
-        functionName: 'setTokenURI',
-        args: [
-          cardForm.isSBT == true
-            ? Number(currentSBTId) + 1
-            : Number(currentNFTId) + 1,
-          jsonUploadResult.cid,
-          cardForm.votingPower,
-        ],
-      })
+    //   if (!jsonUploadResult?.cid) {
+    //     throw new Error('Failed to upload metadata')
+    //   }
 
-      await waitForTransactionReceipt(config, {
-        hash: setTokenURITx,
-        confirmations: 1,
-      })
+    //   // Set token URI on contract
+    //   const setTokenURITx = await writeContractAsync({
+    //     abi: SBT_ABI,
+    //     address: contractAddress as `0x${string}`,
+    //     functionName: 'setTokenURI',
+    //     args: [
+    //       cardForm.isSBT == true ? numberOfSBTs : numberOfNFTs,
+    //       jsonUploadResult.cid,
+    //       cardForm.votingPower,
+    //     ],
+    //   })
 
-      toast({ title: 'Token created successfully!' })
-    } catch (error) {
-      console.error('Error creating token:', error)
-      toast({ title: 'Failed to create token' })
-    } finally {
-      // Reset form
-      setCroppedImage(null)
-      setSelectedImage(null)
-      setCardForm({ name: '', description: '', votingPower: '', isSBT: true })
-      setIsTokenTypeOpen(false)
-      setIsFilterOpen(false)
-    }
+    //   await waitForTransactionReceipt(config, {
+    //     hash: setTokenURITx,
+    //     confirmations: 1,
+    //   })
+
+    //   toast({ title: 'Token created successfully!' })
+    // } catch (error) {
+    //   console.error('Error creating token:', error)
+    //   toast({ title: 'Failed to create token' })
+    // } finally {
+    //   // Reset form
+    //   setCroppedImage(null)
+    //   setSelectedImage(null)
+    //   setCardForm({ name: '', description: '', votingPower: '', isSBT: true })
+    //   setIsTokenTypeOpen(false)
+    //   setIsFilterOpen(false)
+    // }
   }, [
     croppedImage,
     address,
     cardForm,
     chainId,
-    currentSBTId,
-    currentNFTId,
+    numberOfSBTs,
+    numberOfNFTs,
     writeContractAsync,
     toast,
   ])

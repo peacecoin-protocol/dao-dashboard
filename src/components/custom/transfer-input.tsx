@@ -109,7 +109,7 @@ const TransferInput = React.forwardRef<HTMLInputElement, TransferInputProps>(
               </h1>
             )}
 
-            <DialogClose>
+            <DialogClose asChild>
               <Button
                 size="lg"
                 className="w-full text-xl rounded-full"

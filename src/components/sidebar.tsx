@@ -8,8 +8,17 @@ import { Locale } from '~/i18n/types'
 import { useSideLinks } from '~/data/sidelinks'
 import { getDict } from '~/i18n/get-dict'
 import { Dictionary } from '~/i18n/types'
-import { OWNER_ADDRESSES } from '~/app/constants/constants'
+import {
+  daoStudioAddress,
+  defaultChainId,
+  OWNER_ADDRESSES,
+} from '~/app/constants/constants'
 import { useAccount } from 'wagmi'
+import { readContract } from '@wagmi/core'
+import { keccak256, toBytes } from 'viem'
+
+import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
+import { config } from '~/lib/config'
 interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   isCollapsed: boolean
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
@@ -23,13 +32,32 @@ export default function Sidebar({
   locale,
 }: SidebarProps) {
   const [dict, setDict] = useState<Dictionary | null>(null)
-  const { address } = useAccount()
+  const { address, chainId } = useAccount()
   const [navOpened, setNavOpened] = useState(false)
 
   const localDict = dict?.sidebar ?? {}
-  const isOwner = OWNER_ADDRESSES.includes(address as `0x${string}`)
 
-  const sideLinks = useSideLinks(locale, isOwner)
+  const DAO_MANAGER_ROLE = keccak256(toBytes('DAO_MANAGER_ROLE'))
+
+  const [hasRole, setHasRole] = useState(false)
+
+  useEffect(() => {
+    const fetchHasRole = async () => {
+      if (!address || !chainId) return
+
+      const hasRole = await readContract(config, {
+        address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
+        abi: DAO_STUDIO_ABI,
+        functionName: 'hasRole',
+        args: [DAO_MANAGER_ROLE, address],
+      })
+      setHasRole(hasRole as boolean)
+    }
+    fetchHasRole()
+  }, [address])
+
+  const sideLinks = useSideLinks(locale, hasRole)
+
   useEffect(() => {
     const fetchDict = async () => {
       try {

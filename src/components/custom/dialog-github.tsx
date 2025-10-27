@@ -30,20 +30,22 @@ const DialogGithub = React.forwardRef<HTMLInputElement, DialogGithubProps>(
         <DialogContent className="max-h-[80vh] max-w-[90vw] overflow-hidden">
           <DialogHeader className="flex flex-col gap-2">
             <DialogTitle>{pip?.title || ''}</DialogTitle>
-            <DialogDescription className="flex flex-col gap-2 overflow-y-auto overflow-x-auto max-h-[60vh]">
-              <div className="flex flex-row gap-2">
-                <div className="flex flex-col gap-1">
-                  <p>{pip?.proposer || ''}</p>
-                  <p>{pip?.created || ''}</p>
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <ReactMarkdown>{pip?.content || ''}</ReactMarkdown>
-              </div>
-            </DialogDescription>
-
-            <Button onClick={() => setOpen(false)}>Close</Button>
+            <DialogDescription>Proposal details and content</DialogDescription>
           </DialogHeader>
+          <div className="flex flex-col gap-2 overflow-y-auto overflow-x-auto max-h-[60vh] mt-4">
+            <div className="flex flex-row gap-2">
+              <div className="flex flex-col gap-1">
+                <p>{pip?.proposer || ''}</p>
+                <p>{pip?.created || ''}</p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <ReactMarkdown>{pip?.content || ''}</ReactMarkdown>
+            </div>
+          </div>
+          <div className="mt-4">
+            <Button onClick={() => setOpen(false)}>Close</Button>
+          </div>
         </DialogContent>
       </Dialog>
     )

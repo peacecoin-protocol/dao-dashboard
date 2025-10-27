@@ -2,13 +2,13 @@ export const Env = {
   NEXT_PUBLIC_WC_PROJECT_ID: '71e7256c9ebc4818fd7d76d7fcae403a',
   NEXT_PUBLIC_ENABLE_TESTNETS: 'true',
   NEXT_PUBLIC_SEPOLIA_RPC_URL:
-    'https://eth-sepolia.g.alchemy.com/v2/CordKfjSEw1wPs8tXRfYVnGV7fl17csn',
+    'https://eth-sepolia.g.alchemy.com/v2/7fsZZN_84W4-C4Sq_HSCS',
   NEXT_PUBLIC_HOODI_RPC_URL:
-    'https://eth-hoodi.g.alchemy.com/v2/CordKfjSEw1wPs8tXRfYVnGV7fl17csn',
+    'https://eth-hoodi.g.alchemy.com/v2/7fsZZN_84W4-C4Sq_HSCS',
   NEXT_PUBLIC_POLYGON_RPC_URL:
-    'https://polygon-mainnet.g.alchemy.com/v2/CordKfjSEw1wPs8tXRfYVnGV7fl17csn',
+    'https://polygon-mainnet.g.alchemy.com/v2/7fsZZN_84W4-C4Sq_HSCS',
   NEXT_PUBLIC_LOCALHOST_RPC_URL: 'http://localhost:8545',
-  ALCHEMY_API_KEY: 'CordKfjSEw1wPs8tXRfYVnGV7fl17csn',
+  ALCHEMY_API_KEY: '7fsZZN_84W4-C4Sq_HSCS',
   PINATA_JWT:
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiJiYzdjZmI5NS02ODlhLTQ0N2EtYmQyNC00N2YxNTAzNWU3YmQiLCJlbWFpbCI6InNtYXJ0Y29kZWZhbkBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicGluX3BvbGljeSI6eyJyZWdpb25zIjpbeyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJGUkExIn0seyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJOWUMxIn1dLCJ2ZXJzaW9uIjoxfSwibWZhX2VuYWJsZWQiOmZhbHNlLCJzdGF0dXMiOiJBQ1RJVkUifSwiYXV0aGVudGljYXRpb25UeXBlIjoic2NvcGVkS2V5Iiwic2NvcGVkS2V5S2V5IjoiNzVjZTZjMDQ1OWZiMThlMTNiZmUiLCJzY29wZWRLZXlTZWNyZXQiOiJmODAwZGQxZGMwZGFmNTEzZDZhYzlhODJiNGQxMWVjYWQ0MTU0YWZlMDM5NDIzNjhiYjdlYjM5OTA5NGU2ZjI0IiwiZXhwIjoxNzg3OTQwNzQ2fQ.pqAbwgAcwBiM09-7MlfrhXOLT4tQ7HD-vwYhdyqAyV0',
   MORALIS_API_KEY:

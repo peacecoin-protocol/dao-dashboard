@@ -10,14 +10,14 @@ export const pceAddress = {
 } as Record<number, `0x${string}`>
 
 export const pceCommunity = {
-  [sepolia.id]: '0xB457Ae7711fa1ea9BcEf8816e2229a1ae152A077',
+  [sepolia.id]: '0xf4b7161e885278BC1095Dc7Cf7BD65203a8770d8',
   [localhost.id]: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xBa9E16D096262023c50A3cCCC4f08af4b321fB21',
 } as Record<number, `0x${string}`>
 
 export const PCE_SBT_ADDRESS = {
-  [sepolia.id]: '0x27E2A35C5f7fEa1BD9d90e61Ded262781b0045A3',
+  [sepolia.id]: '0x026DEf1bf746ca367D3750068030f2BCe80bc915',
   [localhost.id]: '0x3d3a47670cebC45B405268BE07371F97AB408f81',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xBa9E16D096262023c50A3cCCC4f08af4b321fB21',
@@ -31,49 +31,49 @@ export const WPCE_ADDRESS = {
 } as Record<number, `0x${string}`>
 
 export const timelockAddress = {
-  [sepolia.id]: '0xa227d5733B26E722A0F877c30847c464D397672A',
+  [sepolia.id]: '0xA79692f61Ca0141736b003eCfC5537cE325E7821',
   [localhost.id]: '0x0E801D84Fa97b50751Dbf25036d067dCf18858bF',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x0F4E3eEEA64268926454aF8C38D62938637fd18e',
 } as Record<number, `0x${string}`>
 
 export const governorAddress = {
-  [sepolia.id]: '0x8687b8F235fcC5ecF379ec2719d2583bdEc44B19',
+  [sepolia.id]: '0xf3f451FfB378aafF526201850271f8c098B6E111',
   [localhost.id]: '0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x4a1EBA4B4895b6562B8d67510FF07c95F90049d8',
 } as Record<number, `0x${string}`>
 
 export const bountyAddress = {
-  [sepolia.id]: '0xAa407A5E2fD68Aeea3535EB7F6ca1520FDC710B6',
+  [sepolia.id]: '0x128459EA3c53a6717f80D1f310689eBB4DCFF24e',
   [localhost.id]: '0x9d4454B023096f34B160D6B654540c56A1F81688',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xEb0978C48aced59209242d677A404bBB2126413c',
 } as Record<number, `0x${string}`>
 
 export const factoryAddress = {
-  [sepolia.id]: '0x35Cc384EC6828ee07f70b5298f952aD48c133B9A',
+  [sepolia.id]: '0x0Ce275CA7bB9c204FAEE5fD1012C6b6f3D3E828a',
   [localhost.id]: '0x36C02dA8a0983159322a80FFE9F24b1acfF8B570',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xe004A0f37B2Be66e7225119F7EFF2d49C7F93629',
 } as Record<number, `0x${string}`>
 
 export const NFTAddress = {
-  [sepolia.id]: '0x76a3eD980e49AEB2785F0Eb914688FB273857EAF',
+  [sepolia.id]: '0x8F7d85848d49A008267fe14918b7090C829f32D8',
   [localhost.id]: '0x0ce968ba1ff3035bd54679a5bc7ad6b21cca4c25',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xe004A0f37B2Be66e7225119F7EFF2d49C7F93629',
 } as Record<number, `0x${string}`>
 
 export const daoStudioAddress = {
-  [sepolia.id]: '0xd2AfC59605183Ac3B395CB5db6a224C23059BabE',
+  [sepolia.id]: '0x0Ce275CA7bB9c204FAEE5fD1012C6b6f3D3E828a',
   [localhost.id]: '0x809d550fca64d94Bd9F66E60752A544199cfAC3D',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
 export const campaignAddress = {
-  [sepolia.id]: '0x74df4502a5B23da2AE241DA9D44D2739e23c5A7b',
+  [sepolia.id]: '0x9bB531B35E4051bA5d373c86B4D0c3bE3e321565',
   [localhost.id]: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',
@@ -88,7 +88,7 @@ export const stakingAddress = {
 
 export const SUBGRAPH_URL = {
   [sepolia.id]:
-    'https://api.studio.thegraph.com/query/81073/dao-subgraph/version/latest',
+    'https://api.studio.thegraph.com/query/81073/dao-subgraph/v10.26.1',
   [localhost.id]: 'http://localhost:8000/subgraphs/name/dao_dashboard',
   [polygon.id]:
     'https://api.studio.thegraph.com/query/81073/dao_dashboard/version/latest',

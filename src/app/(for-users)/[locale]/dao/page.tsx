@@ -80,17 +80,11 @@ async function getHolders(chainId: number, tokenAddress: string) {
 type Dao = {
   id: string
   daoId: string
-  name: string
-  governor: string
-  blockTimestamp: string
-  website: string
-  linkedin: string
-  twitter: string
-  telegram: string
-  votes: number
-  identicon: string
+  daoName: string
+  creator: string
   imageHash: string
-  holders: number
+  identicon: string
+  blockTimestamp: string
 }
 
 type DaoMetadata = {
@@ -149,7 +143,7 @@ const DaoCard = ({
           showConnectWalletAlert()
           return
         }
-        router.push(`/${locale}/dao/detail/${dao.id}`)
+        router.push(`/${locale}/dao/detail/${dao.daoId}`)
       }}
     >
       <div className="flex flex-row w-full items-center ">
@@ -168,7 +162,7 @@ const DaoCard = ({
 
           <div className="flex flex-col gap-4 w-full">
             <div className="font-bold text-xl md:text-2xl w-full flex">
-              {dao.name}
+              {dao.daoName}
             </div>
             {/* <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-16 items-center justify-center">
             DAO
@@ -180,12 +174,14 @@ const DaoCard = ({
       <div className="flex flex-row gap-4 items-center justify-center w-full">
         <StatItem
           label={localeDict.myPower}
-          value={dao.votes ? formatString(formatEther(BigInt(dao.votes))) : 0}
+          // value={dao.votes ? formatString(formatEther(BigInt(dao.votes))) : 0}
+          value={0}
         />
-        {/* <StatItem label="TVL" value="$0" /> */}
+
         <StatItem
           label={localeDict.members}
-          value={dao.holders ? dao.holders + 1 : 1}
+          // value={dao.holders ? dao.holders + 1 : 1}
+          value={1}
         />
       </div>
     </div>
@@ -289,8 +285,8 @@ export default function ForDAOPage({
         daoForm.votingDelay,
         daoForm.votingPeriod,
         parseEther(daoForm.proposalThreshold),
-        parseEther(daoForm.quorumVotes),
         daoForm.timelockDelay,
+        parseEther(daoForm.quorumVotes),
       ],
     })
   }
@@ -366,15 +362,8 @@ export default function ForDAOPage({
               ) {
                 id
                 daoId
-                description
-                website
-                linkedin
-                twitter
-                telegram
-                name
-                governor
-                timelock
-                governanceToken
+                daoName
+                creator
                 blockTimestamp
               }
             }
@@ -402,7 +391,7 @@ export default function ForDAOPage({
               dao.governanceToken as string
             )
             const identicon = await generateIdenteapot(dao.governor, '')
-            const imageHash = await fetchImage(dao.id)
+            const imageHash = await fetchImage(dao.daoId)
 
             updatedDaos.push({
               ...dao,
@@ -597,7 +586,7 @@ export default function ForDAOPage({
           >
             {daos
               .filter((dao) =>
-                dao.name.toLowerCase().includes(search.toLowerCase())
+                dao.daoName.toLowerCase().includes(search.toLowerCase())
               )
               .map((dao) => (
                 <DaoCard

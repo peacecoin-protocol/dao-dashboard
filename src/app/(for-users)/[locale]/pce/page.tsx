@@ -225,20 +225,23 @@ export default function PCEPage({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{localDict.delegate ?? 'Delegate'}</DialogTitle>
-          <DialogDescription className="flex flex-col gap-4">
-            <Input
-              placeholder={localDict.enterAddress ?? 'Enter address'}
-              value={delegateAddr}
-              name="delegateAddr"
-              onChange={(e) => setDelegateAddr(e.target.value)}
-            />
-            <div>
-              <Button onClick={handleDelegate}>
-                {localDict.delegate ?? 'Delegate'}
-              </Button>
-            </div>
+          <DialogDescription>
+            Enter the address to delegate your voting power
           </DialogDescription>
         </DialogHeader>
+        <div className="flex flex-col gap-4 mt-4">
+          <Input
+            placeholder={localDict.enterAddress ?? 'Enter address'}
+            value={delegateAddr}
+            name="delegateAddr"
+            onChange={(e) => setDelegateAddr(e.target.value)}
+          />
+          <div>
+            <Button onClick={handleDelegate}>
+              {localDict.delegate ?? 'Delegate'}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )
@@ -1602,7 +1605,7 @@ export default function PCEPage({
                       setIsDepositDialogOpened(!isDepositDialogOpened)
                     }}
                   >
-                    <DialogTrigger>
+                    <DialogTrigger asChild>
                       <Button className="w-full bg-dark_blue">
                         {localDict.depositToDaoTreasury ??
                           'Deposit to DAO Treasury'}
@@ -1721,7 +1724,10 @@ export default function PCEPage({
           <DialogTitle>
             {localDict.createProposal ?? 'Create a Proposal'}
           </DialogTitle>
-          <DialogDescription className="flex flex-col gap-4 mb-2">
+          <DialogDescription>
+            Configure the proposal details below
+          </DialogDescription>
+          <div className="flex flex-col gap-4 mt-4 mb-2">
             <Select onValueChange={(value) => handleSelect(value)}>
               <SelectTrigger className="w-full">
                 <SelectValue
@@ -1813,7 +1819,7 @@ export default function PCEPage({
             </div>
 
             <Button onClick={handleCreateProposal}>Create</Button>
-          </DialogDescription>
+          </div>
         </DialogContent>
       </Dialog>
 

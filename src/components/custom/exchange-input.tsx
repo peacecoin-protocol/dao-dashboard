@@ -282,7 +282,7 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
                 </h1>
               )}
 
-            <DialogClose>
+            <DialogClose asChild>
               <Button
                 size="lg"
                 className="w-full text-xl rounded-full"
