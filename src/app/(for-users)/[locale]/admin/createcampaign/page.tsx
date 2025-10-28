@@ -479,8 +479,6 @@ export default function ForCampaignPage({
         `,
       })
 
-      console.log(data, 'XX')
-
       setCampaignData({
         data: data.campaignCreateds,
         tokenURIs: [],
@@ -902,7 +900,6 @@ export default function ForCampaignPage({
   )
 
   const campaignInfo = useCallback((): CampaignInfo[] => {
-    console.log(campaignData.data, 'XX!!')
     const info: CampaignInfo[] = campaignData.data.map((campaign) => ({
       id: campaign.campaignId.toString(),
       image:

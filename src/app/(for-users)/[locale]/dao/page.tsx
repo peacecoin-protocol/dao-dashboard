@@ -17,7 +17,11 @@ import { generateIdenteapot } from '@teapotlabs/identeapots'
 import { ringStyle } from '~/app/constants/styles'
 
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
-import { daoStudioAddress, SUBGRAPH_URL } from '~/app/constants/constants'
+import {
+  DAO_STUDIO_SUBGRAPH_URL,
+  daoStudioAddress,
+  factoryAddress,
+} from '~/app/constants/constants'
 
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { Input } from '~/components/ui/input'
@@ -29,7 +33,7 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogTitle } from '~/components/ui/dialog'
 
-import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
+import { ApolloClient, gql, HttpLink, InMemoryCache } from '@apollo/client'
 
 import { useRouter } from 'next/navigation'
 
@@ -113,6 +117,9 @@ import { sepolia } from 'wagmi/chains'
 import { defaultChainId } from '~/app/constants/constants'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { pinata } from '~/lib/config'
+import { DAO_FACTORY_ABI } from '~/app/ABIs/DAOFactory'
+import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
+import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 const DaoCard = ({
   dao,
@@ -217,8 +224,10 @@ export default function ForDAOPage({
   const { address, chainId } = useAccount()
 
   const client = new ApolloClient({
-    uri: SUBGRAPH_URL[chainId || sepolia.id] as string,
     cache: new InMemoryCache(),
+    link: new HttpLink({
+      uri: DAO_STUDIO_SUBGRAPH_URL[chainId || defaultChainId] as string,
+    }),
   })
 
   const { toast } = useToast()
@@ -349,21 +358,19 @@ export default function ForDAOPage({
       try {
         setLoading(true)
 
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-
         const { data } = await client.query({
           query: gql`
             query totalDaos {
               daocreateds(
                 first: 100
-                orderBy: blockTimestamp
+                orderBy: timestamp_
                 orderDirection: desc
               ) {
                 id
                 daoId
                 daoName
                 creator
-                blockTimestamp
+                timestamp_
               }
             }
           `,
@@ -374,22 +381,47 @@ export default function ForDAOPage({
           const dao = data.daocreateds[i]
           try {
             let votes = 0
-            if (address) {
-              votes = Number(
-                await readContract(config, {
-                  address: dao.governanceToken as `0x${string}`,
-                  abi: PCE_C_GOV_TOKEN_ABI,
-                  functionName: 'getVotes',
-                  args: [address],
-                })
-              )
-            }
+            let holders = 0
 
-            const holders = await getHolders(
-              chainId == undefined ? defaultChainId : chainId,
-              dao.governanceToken as string
-            )
-            const identicon = await generateIdenteapot(dao.governor, '')
+            try {
+              const timelock = await readContract(config, {
+                address: factoryAddress[
+                  chainId || defaultChainId
+                ] as `0x${string}`,
+                abi: DAO_FACTORY_ABI,
+                functionName: 'timelock',
+                args: [dao.daoId],
+              })
+
+              const admin = await readContract(config, {
+                address: timelock as `0x${string}`,
+                abi: TIMELOCK_ABI,
+                functionName: 'admin',
+                args: [],
+              })
+
+              const token = await readContract(config, {
+                address: admin as `0x${string}`,
+                abi: GOVERNOR_ABI,
+                functionName: 'token',
+                args: [],
+              })
+
+              votes = (await readContract(config, {
+                address: token as `0x${string}`,
+                abi: PCE_C_GOV_TOKEN_ABI,
+                functionName: 'getVotes',
+                args: [address],
+              })) as unknown as number
+
+              holders = await getHolders(
+                chainId == undefined ? defaultChainId : chainId,
+                dao.governanceToken as string
+              )
+            } catch (error) {
+              console.error('Error fetching votes:', error)
+            }
+            const identicon = await generateIdenteapot(dao.daoId, '')
             const imageHash = await fetchImage(dao.daoId)
 
             updatedDaos.push({

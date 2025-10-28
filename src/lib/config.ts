@@ -30,5 +30,5 @@ export const config = createConfig({
 
 export const pinata = new PinataSDK({
   pinataJwt: Env.PINATA_JWT,
-  pinataGateway: Env.NEXT_PUBLIC_GATEWAY_URL,
+  pinataGateway: Env.PINATA_GATEWAY_URL,
 })

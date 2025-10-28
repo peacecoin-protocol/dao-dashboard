@@ -9,12 +9,10 @@ import { useSideLinks } from '~/data/sidelinks'
 import { getDict } from '~/i18n/get-dict'
 import { Dictionary } from '~/i18n/types'
 import { daoStudioAddress, defaultChainId } from '~/app/constants/constants'
-import { useAccount } from 'wagmi'
-import { readContract } from '@wagmi/core'
+import { useAccount, useReadContract } from 'wagmi'
 import { keccak256, toBytes } from 'viem'
 
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
-import { config } from '~/lib/config'
 interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   isCollapsed: boolean
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
@@ -35,24 +33,14 @@ export default function Sidebar({
 
   const DAO_MANAGER_ROLE = keccak256(toBytes('DAO_MANAGER_ROLE'))
 
-  const [hasRole, setHasRole] = useState(false)
+  const { data: hasRole } = useReadContract({
+    address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
+    abi: DAO_STUDIO_ABI,
+    functionName: 'hasRole',
+    args: [DAO_MANAGER_ROLE, address],
+  }) as { data?: boolean; refetch: () => void }
 
-  useEffect(() => {
-    const fetchHasRole = async () => {
-      if (!address || !chainId) return
-
-      const hasRole = await readContract(config, {
-        address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
-        abi: DAO_STUDIO_ABI,
-        functionName: 'hasRole',
-        args: [DAO_MANAGER_ROLE, address],
-      })
-      setHasRole(hasRole as boolean)
-    }
-    fetchHasRole()
-  }, [address])
-
-  const sideLinks = useSideLinks(locale, hasRole)
+  const sideLinks = useSideLinks(locale, hasRole ?? false)
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -92,7 +80,7 @@ export default function Sidebar({
         {/* Header */}
         <Layout.Header
           sticky
-          className="z-50 flex justify-between px-4 py-3 shadow-sm md:px-4"
+          className="z-50 flex justify-between px-4 py-3 shadow-sm md:px-4 bg-white"
         >
           <div className={`flex items-center ${!isCollapsed ? 'gap-2' : ''}`}>
             <img

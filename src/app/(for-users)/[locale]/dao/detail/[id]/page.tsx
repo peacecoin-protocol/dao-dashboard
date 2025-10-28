@@ -125,8 +125,6 @@ export default function ForDaoDetailPage({
   // To get the full path of the current file in a Next.js app, you can use the `window.location.pathname` in the browser.
   // For server-side or Node.js, you can use __filename, but in a Next.js page component, you typically want the route path.
   // Example for client-side full path:
-  const fullPath = typeof window !== 'undefined' ? window.location.pathname : ''
-  const id = fullPath.split('/').pop()
 
   const [dict, setDict] = useState<Dictionary | null>(null)
   const localDict = useMemo(() => dict?.daoInfo ?? {}, [dict])
@@ -140,6 +138,8 @@ export default function ForDaoDetailPage({
   const [transferAmount, setTransferAmount] = useState('')
   const [tokenAddress, setTokenAddress] = useState('')
   const [imageHash, setImageHash] = useState('')
+
+  const [id, setId] = useState('')
 
   const [proposals, setProposals] = useState<any[]>([])
   const [proposalStatus, setStatus] = useState<any[]>([])
@@ -246,12 +246,20 @@ export default function ForDaoDetailPage({
   }
 
   useEffect(() => {
+    const fullPath =
+      typeof window !== 'undefined' ? window.location.pathname : ''
+    const id = fullPath.split('/').pop()
+    setId(id as string)
+  }, [])
+
+  useEffect(() => {
     const loadImage = async () => {
       if (id && localDict && !imageLoadedRef.current) {
         try {
           imageLoadedRef.current = true
           setIsImageLoading(true)
           const _image = await fetchImage(id)
+
           setImageHash(_image ? (_image?.cid as string) : '')
           toast({
             title:
@@ -818,7 +826,7 @@ export default function ForDaoDetailPage({
   useEffect(() => {
     const fetchIdenticon = async () => {
       if (governorAddress) {
-        setIdenticon(await generateIdenteapot(governorAddress, ''))
+        setIdenticon(await generateIdenteapot(id, ''))
       }
     }
     fetchIdenticon()
@@ -1052,11 +1060,19 @@ export default function ForDaoDetailPage({
             name: id,
           },
         })
-        setImageHash(upload.cid)
-        toast({
-          title:
-            localDict.imageUpdatedSuccessfully ?? 'Image updated successfully',
-        })
+        if (upload.cid) {
+          setImageHash(upload.cid)
+
+          toast({
+            title:
+              localDict.imageUpdatedSuccessfully ??
+              'Image updated successfully',
+          })
+        } else {
+          toast({
+            title: 'Failed to update image',
+          })
+        }
       } catch (error) {
         console.error('Error updating image:', error)
         toast({

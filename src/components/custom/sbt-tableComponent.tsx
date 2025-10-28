@@ -13,6 +13,7 @@ import Image from 'next/image'
 import { timestampToDate } from '../utils'
 import { ActionInfo } from '~/i18n/types'
 import { Button } from '~/components/custom/button'
+import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 
 export interface SBTInfo {
   tokenId: string
@@ -30,7 +31,7 @@ interface SBTTableProps {
   headers: string[]
   sbtInfo: SBTInfo[]
   action?: ActionInfo
-  onRevoke?: (index: number) => void
+  onRevoke?: (token: SBTInfo) => void
 }
 
 export function SBTTableComponent({
@@ -39,8 +40,8 @@ export function SBTTableComponent({
   action,
   onRevoke,
 }: SBTTableProps) {
-  const handleRevoke = (index: number) => {
-    onRevoke?.(index)
+  const handleRevoke = (token: SBTInfo) => {
+    onRevoke?.(token)
   }
   return (
     <div className="border rounded-xl w-full">
@@ -64,7 +65,7 @@ export function SBTTableComponent({
 
                 <TableCell className="text-center items-center flex justify-center">
                   <Image
-                    src={sbt.image}
+                    src={sbt.image === '' ? EMPTY_NFT_IMAGE : sbt.image}
                     alt={sbt.name}
                     width={128}
                     height={128}
@@ -80,7 +81,7 @@ export function SBTTableComponent({
                 </TableCell>
                 {action && (
                   <TableCell className="text-center">
-                    <Button onClick={() => handleRevoke?.(index)}>
+                    <Button onClick={() => handleRevoke(sbt)}>
                       {sbt.isRevoked ? 'Unrevoke' : 'Revoke'}
                     </Button>
                   </TableCell>

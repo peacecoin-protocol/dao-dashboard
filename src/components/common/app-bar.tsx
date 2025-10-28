@@ -49,7 +49,7 @@ function AppBar({ locale }: { locale: Locale }) {
   const navigation = dict?.navigation ?? {}
 
   return (
-    <header className="border-gray94 py-[16px] sticky top-0 z-40  border-b-2 border-opacity-50">
+    <header className="border-gray94 py-[16px] sticky top-0 z-40  border-b-2 border-opacity-50 bg-white">
       <div className="standardContainer flex justify-between items-center container">
         <div className="flex gap-4 ml-auto flex-row items-center mr-4">
           <Button

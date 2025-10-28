@@ -189,7 +189,6 @@ export const CampaignsTable = ({
   totalClaimed: { campaignId: number; totalClaimed: string }[]
   campaign: any
 }) => {
-  console.log(campaigns, 'XX')
   return (
     <div className="space-y-6">
       {/* Mobile View - Cards */}

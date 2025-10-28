@@ -58,7 +58,10 @@ export const SBT_ABI = [
   {
     type: 'function',
     name: 'createToken',
-    inputs: [],
+    inputs: [
+      { name: '_tokenURI', type: 'string', internalType: 'string' },
+      { name: '_votingPower', type: 'uint256', internalType: 'uint256' },
+    ],
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -295,7 +298,7 @@ export const SBT_ABI = [
     inputs: [
       { name: 'id', type: 'uint256', internalType: 'uint256' },
       { name: '_tokenURI', type: 'string', internalType: 'string' },
-      { name: 'weight', type: 'uint256', internalType: 'uint256' },
+      { name: '_votingPower', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -364,9 +367,32 @@ export const SBT_ABI = [
   },
   {
     type: 'event',
-    name: 'CreatedSBT',
+    name: 'CreatedToken',
     inputs: [
-      { name: 'id', type: 'uint256', indexed: true, internalType: 'uint256' },
+      {
+        name: 'tokenId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'tokenURI',
+        type: 'string',
+        indexed: false,
+        internalType: 'string',
+      },
+      {
+        name: 'votingPower',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+      {
+        name: 'creator',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
     ],
     anonymous: false,
   },
@@ -412,7 +438,12 @@ export const SBT_ABI = [
     type: 'event',
     name: 'Revoked',
     inputs: [
-      { name: 'id', type: 'uint256', indexed: true, internalType: 'uint256' },
+      {
+        name: 'tokenId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
       { name: 'isRevoked', type: 'bool', indexed: false, internalType: 'bool' },
     ],
     anonymous: false,
@@ -481,7 +512,12 @@ export const SBT_ABI = [
     type: 'event',
     name: 'SetTokenURI',
     inputs: [
-      { name: 'id', type: 'uint256', indexed: true, internalType: 'uint256' },
+      {
+        name: 'tokenId',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
       { name: 'uri', type: 'string', indexed: false, internalType: 'string' },
       {
         name: 'weight',
