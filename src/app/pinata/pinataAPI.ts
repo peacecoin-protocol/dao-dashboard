@@ -8,7 +8,7 @@ export const JSON_GROUP_ID = 'bb530602-5a43-43fa-8a4c-98833d15ef9b'
 
 export const pinata = new PinataSDK({
   pinataJwt: Env.PINATA_JWT,
-  pinataGateway: Env.NEXT_PUBLIC_GATEWAY_URL,
+  pinataGateway: Env.PINATA_GATEWAY_URL,
 })
 
 // FILE

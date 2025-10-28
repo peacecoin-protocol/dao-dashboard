@@ -1,10 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
-
-import { Alchemy } from 'alchemy-sdk'
 
 import RingLoader from 'react-spinners/RingLoader'
 import { ringStyle } from '~/app/constants/styles'
@@ -58,15 +56,12 @@ import {
 
 // import { AmountInput } from '~/components/custom/amount-input'
 
-import { ApolloClient, InMemoryCache, gql } from '@apollo/client'
-
 import { getDict } from '~/i18n/get-dict'
 
 import { Dictionary, Locale } from '~/i18n/types'
 
 import { formatString, shortenAddress } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
-import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 // import { Textarea } from '~/components/ui/textarea'
 import { config } from '~/lib/config'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
@@ -74,11 +69,7 @@ import { TooltipComponent } from '~/components/custom/TooltipComponent'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { defaultChainId } from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
-import {
-  factoryAddress,
-  governorAddress,
-  SUBGRAPH_URL,
-} from '~/app/constants/constants'
+import { factoryAddress } from '~/app/constants/constants'
 import { useBlockNumber, useBlock } from 'wagmi'
 import { pinata } from '~/lib/config'
 import ImageCropModal from '~/components/ui/ImageCropModal'
@@ -89,24 +80,19 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { timestampToDate } from '~/components/utils'
-import { ALCHEMY_CONFIG } from '~/app/constants/constants'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { Env } from '~/env'
 import { useToast } from '~/hooks/use-toast'
 import { DAO_FACTORY_ABI } from '~/app/ABIs/DAOFactory'
 import { DialogTrigger } from '~/components/ui/dialog'
 import { AmountInput } from '~/components/custom/amount-input'
-
+import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 type Dao = {
   id: string
   daoId: string
   name: string
   governor: string
   blockTimestamp: string
-  website: string
-  linkedin: string
-  twitter: string
-  telegram: string
   governanceToken: string
   timelock: string
   communityToken: string
@@ -128,7 +114,7 @@ type TokenBalance = {
   logo: string
 }
 
-export default function ForSubmitPage({
+export default function ForDaoDetailPage({
   params,
 }: {
   params: { locale: Locale }
@@ -139,13 +125,13 @@ export default function ForSubmitPage({
   // To get the full path of the current file in a Next.js app, you can use the `window.location.pathname` in the browser.
   // For server-side or Node.js, you can use __filename, but in a Next.js page component, you typically want the route path.
   // Example for client-side full path:
-  const fullPath = typeof window !== 'undefined' ? window.location.pathname : ''
-  const id = fullPath.split('/').pop()
 
   const [dict, setDict] = useState<Dictionary | null>(null)
-  const localDict = dict?.daoInfo ?? {}
+  const localDict = useMemo(() => dict?.daoInfo ?? {}, [dict])
 
-  const [daoInfo, setDaoInfo] = useState<Dao>()
+  const communityTokenAddress = '0xb2512eabfa28f8baa0a4b52a848286699d9b46c5'
+  const communityTokenSymbol = 'PCE'
+
   const [delegateAddr, setDelegateAddr] = useState('')
   const [transferAddr, setTransferAddr] = useState('')
   const [description, setDescription] = useState('')
@@ -153,9 +139,11 @@ export default function ForSubmitPage({
   const [tokenAddress, setTokenAddress] = useState('')
   const [imageHash, setImageHash] = useState('')
 
+  const [id, setId] = useState('')
+
   const [proposals, setProposals] = useState<any[]>([])
   const [proposalStatus, setStatus] = useState<any[]>([])
-  let [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   const [category, setCategory] = useState('')
 
@@ -167,6 +155,9 @@ export default function ForSubmitPage({
     useState(false)
   const [isProposalDetailDialogOpened, setIsProposalDetailDialogOpened] =
     useState(false)
+  const [selectedProposalIndex, setSelectedProposalIndex] = useState<
+    number | null
+  >(null)
   const [identicon, setIdenticon] = useState('')
 
   const [tabContent, setTabContent] = useState('about')
@@ -175,8 +166,14 @@ export default function ForSubmitPage({
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [croppedImage, setCroppedImage] = useState<string | null>(null)
-  const [isCropModalOpen, setIsCropModalOpen] = useState(false)
   const [isImageLoading, setIsImageLoading] = useState(false)
+  const imageLoadedRef = useRef(false)
+  const lastToastStateRef = useRef<{
+    isConfirmed?: boolean
+    isConfirming?: boolean
+    error?: any
+  }>({})
+  const lastCroppedImageRef = useRef<string | null>(null)
 
   // Social editing state variables
   const [isEditingSocials, setIsEditingSocials] = useState(false)
@@ -188,6 +185,7 @@ export default function ForSubmitPage({
   })
 
   const [socials, setSocials] = useState({
+    name: '',
     website: '',
     linkedin: '',
     twitter: '',
@@ -199,8 +197,6 @@ export default function ForSubmitPage({
   const { data: block } = useBlock({
     blockNumber,
   })
-
-  const alchemy = new Alchemy(ALCHEMY_CONFIG)
 
   const getTreasuryBalances = async (address: string) => {
     // Fetch ERC20 token balances for the given address using Moralis API
@@ -234,12 +230,6 @@ export default function ForSubmitPage({
     setTreasuryBalances(formatedBalances)
   }
 
-  useEffect(() => {
-    if (daoInfo?.timelock) {
-      getTreasuryBalances(daoInfo?.timelock)
-    }
-  }, [daoInfo])
-
   const fetchImage = async (name: string) => {
     try {
       const files = await pinata.files.public.list()
@@ -256,14 +246,20 @@ export default function ForSubmitPage({
   }
 
   useEffect(() => {
+    const fullPath =
+      typeof window !== 'undefined' ? window.location.pathname : ''
+    const id = fullPath.split('/').pop()
+    setId(id as string)
+  }, [])
+
+  useEffect(() => {
     const loadImage = async () => {
-      if (daoInfo?.id && localDict) {
+      if (id && localDict && !imageLoadedRef.current) {
         try {
+          imageLoadedRef.current = true
           setIsImageLoading(true)
-          toast({
-            title: localDict.fetchingImage ?? 'Fetching image...',
-          })
-          const _image = await fetchImage(daoInfo?.id)
+          const _image = await fetchImage(id)
+
           setImageHash(_image ? (_image?.cid as string) : '')
           toast({
             title:
@@ -282,7 +278,7 @@ export default function ForSubmitPage({
     }
 
     loadImage()
-  }, [daoInfo, localDict])
+  }, [id, localDict])
 
   const DelegateDialog = ({
     isOpen,
@@ -301,20 +297,23 @@ export default function ForSubmitPage({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{localDict.delegate ?? 'Delegate'}</DialogTitle>
-          <DialogDescription className="flex flex-col gap-4">
-            <Input
-              placeholder={localDict.enterAddress ?? 'Enter address'}
-              value={delegateAddr}
-              name="delegateAddr"
-              onChange={(e) => setDelegateAddr(e.target.value)}
-            />
-            <div>
-              <Button onClick={handleDelegate}>
-                {localDict.delegate ?? 'Delegate'}
-              </Button>
-            </div>
+          <DialogDescription>
+            Enter the address to delegate your voting power
           </DialogDescription>
         </DialogHeader>
+        <div className="flex flex-col gap-4 mt-4">
+          <Input
+            placeholder={localDict.enterAddress ?? 'Enter address'}
+            value={delegateAddr}
+            name="delegateAddr"
+            onChange={(e) => setDelegateAddr(e.target.value)}
+          />
+          <div>
+            <Button onClick={handleDelegate}>
+              {localDict.delegate ?? 'Delegate'}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )
@@ -323,7 +322,7 @@ export default function ForSubmitPage({
   const handleUpdateSocials = async () => {
     setIsEditingSocials(false)
 
-    if (!daoInfo?.id) {
+    if (!id) {
       toast({
         title: 'Error',
         description: 'DAO ID not found. Please refresh the page and try again.',
@@ -345,7 +344,7 @@ export default function ForSubmitPage({
     try {
       const contractConfig = {
         abi: GOVERNOR_ABI,
-        address: daoInfo?.governor as `0x${string}`,
+        address: governorAddress as `0x${string}`,
         functionName: 'updateSocialConfig',
         args: [
           '',
@@ -379,11 +378,6 @@ export default function ForSubmitPage({
     }
   }
 
-  const client = new ApolloClient({
-    uri: SUBGRAPH_URL[chainId || defaultChainId] as string,
-    cache: new InMemoryCache(),
-  })
-
   const {
     data: hash,
     error,
@@ -396,65 +390,92 @@ export default function ForSubmitPage({
       confirmations: 1,
     })
 
-  const { data: quorum, refetch: refetchQuorum } = useReadContract({
-    address: daoInfo?.governor as `0x${string}`,
-    abi: GOVERNOR_ABI,
-    functionName: 'quorumVotes',
-  })
-
-  const { data: votingDelay, refetch: refetchVotingDelay } = useReadContract({
-    address: daoInfo?.governor as `0x${string}`,
-    abi: GOVERNOR_ABI,
-    functionName: 'votingDelay',
-  })
-
   const { data: communityTokenBalance, refetch: refetchCommunityTokenBalance } =
     useReadContract({
-      address: daoInfo?.communityToken as `0x${string}`,
+      address: communityTokenAddress as `0x${string}`,
       abi: PCE_ABI,
       functionName: 'balanceOf',
       args: [address],
-    })
+    }) as { data?: string; refetch: () => void }
+
+  const { data: timelockAddress, refetch: refetchTimelockAddress } =
+    useReadContract({
+      address: factoryAddress[chainId || defaultChainId] as `0x${string}`,
+      abi: DAO_FACTORY_ABI,
+      functionName: 'timelock',
+      args: [id],
+    }) as { data?: string; refetch: () => void }
+
+  useEffect(() => {
+    if (timelockAddress) {
+      getTreasuryBalances(timelockAddress as `0x${string}`)
+    }
+  }, [timelockAddress])
+
+  const { data: governorAddress, refetch: refetchGovernorAddress } =
+    useReadContract({
+      address: timelockAddress as `0x${string}`,
+      abi: TIMELOCK_ABI,
+      functionName: 'admin',
+    }) as { data?: `0x${string}`; refetch: () => void }
+
+  const { data: socialConfig, refetch: refetchSocialConfig } = useReadContract({
+    address: governorAddress as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'socialConfig',
+  })
+
+  const { data: name } = useReadContract({
+    address: governorAddress as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'name',
+  }) as { data?: string; refetch: () => void }
+
+  const { data: governanceTokenAddress } = useReadContract({
+    address: governorAddress as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'token',
+  }) as { data?: string; refetch: () => void }
+
+  const { data: votingDelay, refetch: refetchVotingDelay } = useReadContract({
+    address: governorAddress as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'votingDelay',
+  }) as { data?: string; refetch: () => void }
+
+  const { data: quorum, refetch: refetchQuorum } = useReadContract({
+    address: governorAddress as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'quorumVotes',
+  }) as { data?: string; refetch: () => void }
 
   const { data: governanceTokenBalance, refetch: refetchGovTokenBalance } =
     useReadContract({
-      address: daoInfo?.governanceToken as `0x${string}`,
+      address: governanceTokenAddress as `0x${string}`,
       abi: PCE_ABI,
       functionName: 'balanceOf',
       args: [address],
-    })
-
-  const { data: totalSupply, refetch: refetchTotalSupply } = useReadContract({
-    address: daoInfo?.governanceToken as `0x${string}`,
-    abi: PCE_ABI,
-    functionName: 'totalSupply',
-  })
-
-  const { data: _owner, refetch: refetchOwner } = useReadContract({
-    address: daoInfo?.communityToken as `0x${string}`,
-    abi: PCE_ABI,
-    functionName: 'owner',
-  })
+    }) as { data?: string; refetch: () => void }
 
   const { data: proposalThreshold, refetch: refetchProposalThreshold } =
     useReadContract({
-      address: daoInfo?.governor as `0x${string}`,
+      address: governorAddress as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalThreshold',
-    })
+    }) as { data?: string; refetch: () => void }
 
   const { data: votingPeriod, refetch: refetchVotingPeriod } = useReadContract({
-    address: daoInfo?.governor as `0x${string}`,
+    address: governorAddress as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'votingPeriod',
-  })
+  }) as { data?: string; refetch: () => void }
 
   const { data: timelockDelay, refetch: refetchTimelockDelay } =
     useReadContract({
-      address: daoInfo?.timelock as `0x${string}`,
+      address: timelockAddress as `0x${string}`,
       abi: TIMELOCK_ABI,
       functionName: 'delay',
-    })
+    }) as { data?: string; refetch: () => void }
 
   const getCurrentTimestamp = () => {
     return Number(block?.timestamp)
@@ -472,6 +493,7 @@ export default function ForSubmitPage({
     <article
       className="flex flex-col w-full bg-gray-100 p-4 rounded-xl gap-2 cursor-pointer"
       onClick={() => {
+        setSelectedProposalIndex(index)
         setIsProposalDetailDialogOpened(true)
       }}
     >
@@ -645,9 +667,7 @@ export default function ForSubmitPage({
             onClick={async () => {
               await writeContract({
                 abi: GOVERNOR_ABI,
-                address: governorAddress[
-                  chainId || defaultChainId
-                ] as `0x${string}`,
+                address: governorAddress as `0x${string}`,
                 functionName: 'castVote',
                 args: [proposal[0], true],
               })
@@ -661,9 +681,7 @@ export default function ForSubmitPage({
             onClick={async () => {
               await writeContract({
                 abi: GOVERNOR_ABI,
-                address: governorAddress[
-                  chainId || defaultChainId
-                ] as `0x${string}`,
+                address: governorAddress as `0x${string}`,
                 functionName: 'castVote',
                 args: [proposal[0], false],
               })
@@ -677,9 +695,7 @@ export default function ForSubmitPage({
             onClick={async () => {
               await writeContract({
                 abi: GOVERNOR_ABI,
-                address: governorAddress[
-                  chainId || defaultChainId
-                ] as `0x${string}`,
+                address: governorAddress as `0x${string}`,
                 functionName: 'queue',
                 args: [proposal[0]],
               })
@@ -696,9 +712,7 @@ export default function ForSubmitPage({
             onClick={async () => {
               await writeContract({
                 abi: GOVERNOR_ABI,
-                address: governorAddress[
-                  chainId || defaultChainId
-                ] as `0x${string}`,
+                address: governorAddress as `0x${string}`,
                 functionName: 'execute',
                 args: [proposal[0]],
               })
@@ -708,31 +722,6 @@ export default function ForSubmitPage({
           </Button>
         </div>
       </div>
-      <Dialog
-        open={isProposalDetailDialogOpened}
-        onOpenChange={(open) => {
-          setIsProposalDetailDialogOpened(open)
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {localDict.proposalDetails ?? 'Proposal Details'}
-            </DialogTitle>
-            <DialogDescription>
-              <div className="flex flex-col gap-2">
-                <h1>
-                  {localDict.proposalId ?? 'Proposal ID'}: {index}
-                </h1>
-                <h1>
-                  {localDict.proposalDescription ?? 'Proposal Description'}:{' '}
-                  {proposal[9]}
-                </h1>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
     </article>
   )
 
@@ -741,51 +730,43 @@ export default function ForSubmitPage({
   }
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
-    address: daoInfo?.governanceToken as `0x${string}`,
+    address: governanceTokenAddress as `0x${string}`,
     abi: PCE_C_GOV_TOKEN_ABI,
     functionName: 'getVotes',
     args: [address],
-  })
+  }) as { data?: string; refetch: () => void }
 
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
-      address: daoInfo?.governor as `0x${string}`,
+      address: governorAddress as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
-    })
+    }) as { data?: number; refetch: () => void }
 
-  const { data: daoData, refetch: refetchDaoData } = useReadContract({
-    address: factoryAddress[chainId || defaultChainId] as `0x${string}`,
-    abi: DAO_FACTORY_ABI,
-    functionName: 'daos',
-    args: [daoInfo?.daoId],
-  }) as any
-
-  const fetchData = async (count: any) => {
+  const fetchData = async (count: number) => {
     setLoading(true)
-    if (!count || !daoInfo?.governor || count === 0) {
+    if (!count || !governorAddress || count === 0) {
       setProposals([])
       setStatus([])
       setLoading(false)
       return
     }
-    const proposalCount = typeof count === 'bigint' ? Number(count) : count
 
     let temp = []
     let _status = []
-    for (let i = 1; i <= proposalCount; i++) {
+    for (let i = 1; i <= count; i++) {
       let proposal = null
       let status = null
       try {
         proposal = await readContract(config, {
-          address: daoInfo?.governor as `0x${string}`,
+          address: governorAddress as `0x${string}`,
           abi: GOVERNOR_ABI,
           functionName: 'proposals',
           args: [i],
         })
 
         status = await readContract(config, {
-          address: daoInfo?.governor as `0x${string}`,
+          address: governorAddress as `0x${string}`,
           abi: GOVERNOR_ABI,
           functionName: 'state',
           args: [i],
@@ -837,19 +818,19 @@ export default function ForSubmitPage({
     setLoading(false)
   }
   useEffect(() => {
-    if (daoInfo && daoInfo?.governor) {
-      fetchData(proposalCount)
+    if (governorAddress) {
+      fetchData(Number(proposalCount))
     }
-  }, [proposalCount, isConfirmed, daoInfo])
+  }, [proposalCount, isConfirmed, governorAddress])
 
   useEffect(() => {
     const fetchIdenticon = async () => {
-      if (daoInfo && daoInfo?.governor) {
-        setIdenticon(await generateIdenteapot(daoInfo?.governor, ''))
+      if (governorAddress) {
+        setIdenticon(await generateIdenteapot(id, ''))
       }
     }
     fetchIdenticon()
-  }, [daoInfo])
+  }, [governorAddress])
 
   const handleCreateProposal = async () => {
     setIsCreateProposalDialogOpened(false)
@@ -862,7 +843,7 @@ export default function ForSubmitPage({
 
     writeContract({
       abi: GOVERNOR_ABI,
-      address: daoInfo?.governor as `0x${string}`,
+      address: governorAddress as `0x${string}`,
       functionName: 'propose',
       args: [
         [tokenAddress as `0x${string}`],
@@ -876,19 +857,10 @@ export default function ForSubmitPage({
     await refetchProposalCount()
   }
 
-  const { data: socialConfig, refetch: refetchSocialConfig } = useReadContract({
-    address: daoInfo?.governor as `0x${string}`,
-    abi: GOVERNOR_ABI,
-    functionName: 'socialConfig',
-  })
-
   useEffect(() => {
-    if (
-      socialConfig &&
-      Array.isArray(socialConfig) &&
-      socialConfig.length > 0
-    ) {
+    if (socialConfig && Array.isArray(socialConfig)) {
       setSocials({
+        name: socialConfig[0] as string,
         website: socialConfig[1] as string,
         linkedin: socialConfig[2] as string,
         twitter: socialConfig[3] as string,
@@ -899,9 +871,9 @@ export default function ForSubmitPage({
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     abi: PCE_ABI,
-    address: daoInfo?.communityToken as `0x${string}`,
+    address: communityTokenAddress as `0x${string}`,
     functionName: 'allowance',
-    args: [address, daoInfo?.governanceToken as `0x${string}`],
+    args: [address, governanceTokenAddress as `0x${string}`],
   })
 
   const handleStake = async () => {
@@ -914,9 +886,9 @@ export default function ForSubmitPage({
 
     const allowance = await readContract(config, {
       abi: PCE_ABI,
-      address: daoInfo?.communityToken as `0x${string}`,
+      address: communityTokenAddress as `0x${string}`,
       functionName: 'allowance',
-      args: [address, daoInfo?.governanceToken as `0x${string}`],
+      args: [address, governanceTokenAddress as `0x${string}`],
     })
 
     if (
@@ -927,10 +899,10 @@ export default function ForSubmitPage({
       try {
         tx = await writeContractAsync({
           abi: PCE_ABI,
-          address: daoInfo?.communityToken as `0x${string}`,
+          address: communityTokenAddress as `0x${string}`,
           functionName: 'approve',
           args: [
-            daoInfo?.governanceToken as `0x${string}`,
+            governanceTokenAddress as `0x${string}`,
             parseEther(stakingAmount),
           ],
         })
@@ -948,7 +920,7 @@ export default function ForSubmitPage({
     try {
       tx = await writeContractAsync({
         abi: CommunityGov_ABI,
-        address: daoInfo?.governanceToken as `0x${string}`,
+        address: governanceTokenAddress as `0x${string}`,
         functionName: 'deposit',
         args: [parseEther(stakingAmount)],
       })
@@ -975,7 +947,7 @@ export default function ForSubmitPage({
       try {
         tx = await writeContractAsync({
           abi: CommunityGov_ABI,
-          address: daoInfo?.governanceToken as `0x${string}`,
+          address: governanceTokenAddress as `0x${string}`,
           functionName: 'withdraw',
           args: [governanceTokenBalance],
         })
@@ -1002,7 +974,7 @@ export default function ForSubmitPage({
       try {
         tx = await writeContractAsync({
           abi: CommunityGov_ABI,
-          address: daoInfo?.governanceToken as `0x${string}`,
+          address: governanceTokenAddress as `0x${string}`,
           functionName: 'delegate',
           args: [delegateAddr],
         })
@@ -1015,20 +987,30 @@ export default function ForSubmitPage({
 
   useEffect(() => {
     const notify = async () => {
-      if (isConfirmed) {
+      // Only show toast if state has actually changed
+      if (
+        isConfirmed &&
+        lastToastStateRef.current.isConfirmed !== isConfirmed
+      ) {
+        lastToastStateRef.current.isConfirmed = isConfirmed
         toast({
           title: 'Transaction Succeed!',
         })
 
         setDelegateAddr('')
         await refetchVotes()
-        await getTreasuryBalances(daoInfo?.timelock as `0x${string}`)
+        await getTreasuryBalances(timelockAddress as `0x${string}`)
         await refetchProposalCount()
-      } else if (isConfirming) {
+      } else if (
+        isConfirming &&
+        lastToastStateRef.current.isConfirming !== isConfirming
+      ) {
+        lastToastStateRef.current.isConfirming = isConfirming
         toast({
           title: 'TX is Pending, Please Wait...',
         })
-      } else if (error) {
+      } else if (error && lastToastStateRef.current.error !== error) {
+        lastToastStateRef.current.error = error
         toast({
           title: (error as BaseError).shortMessage,
         })
@@ -1051,105 +1033,46 @@ export default function ForSubmitPage({
   }, [locale])
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return
-      try {
-        setLoading(true)
-
-        const { data } = await client.query({
-          query: gql`
-            query GetDao {
-            daocreateds(where: { id: "${id}" }) {
-              id
-              daoId
-              description
-              website
-              linkedin
-              twitter
-              telegram
-              name
-              governor
-              timelock
-              governanceToken
-              communityToken
-              blockTimestamp
-            }
-          }
-          `,
-        })
-
-        let _daoInfo = data.daocreateds[0]
-
-        if (_daoInfo.website && _daoInfo.website === 'https://') {
-          _daoInfo = { ..._daoInfo, website: 'https://website.com' }
-        }
-
-        if (_daoInfo.linkedin && _daoInfo.linkedin === 'https://') {
-          _daoInfo = { ..._daoInfo, linkedin: 'https://www.linkedin.com/' }
-        }
-
-        if (_daoInfo.twitter && _daoInfo.twitter === 'https://') {
-          _daoInfo = { ..._daoInfo, twitter: 'https://twitter.com' }
-        }
-
-        const symbol = await readContract(config, {
-          abi: PCE_ABI,
-          address: _daoInfo.communityToken as `0x${string}`,
-          functionName: 'symbol',
-        })
-
-        if (_daoInfo) {
-          setDaoInfo({
-            ..._daoInfo,
-            communityTokenSymbol: symbol as string,
-          })
-        } else {
-          toast({
-            title: 'DAO not found',
-          })
-          console.error('DAO not found for ID:', id)
-        }
-      } catch (error) {
-        console.error('Error fetching data', error)
-        toast({
-          title: 'Failed to fetch DAO data',
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [id, chainId])
-
-  useEffect(() => {
     const updateImage = async () => {
       try {
-        if (!daoInfo?.id) return
+        if (!id || !croppedImage) return
+
+        // Only update if croppedImage has actually changed
+        if (lastCroppedImageRef.current === croppedImage) return
+
+        lastCroppedImageRef.current = croppedImage
 
         toast({
           title: localDict.updatingImage ?? 'Updating image...',
         })
-        const prevImages = await fetchImage(daoInfo?.id)
+        const prevImages = await fetchImage(id)
         if (prevImages) {
           const res = await pinata.files.public.delete([prevImages.id])
         }
 
         const response = await fetch(croppedImage as string)
         const blob = await response.blob()
-        const _file = new File([blob], daoInfo?.id || 'dao-image', {
+        const _file = new File([blob], id || 'dao-image', {
           type: 'image/png',
         })
         const upload = await pinata.upload.public.file(_file, {
           metadata: {
-            name: daoInfo?.id,
+            name: id,
           },
         })
-        setImageHash(upload.cid)
-        toast({
-          title:
-            localDict.imageUpdatedSuccessfully ?? 'Image updated successfully',
-        })
+        if (upload.cid) {
+          setImageHash(upload.cid)
+
+          toast({
+            title:
+              localDict.imageUpdatedSuccessfully ??
+              'Image updated successfully',
+          })
+        } else {
+          toast({
+            title: 'Failed to update image',
+          })
+        }
       } catch (error) {
         console.error('Error updating image:', error)
         toast({
@@ -1158,17 +1081,20 @@ export default function ForSubmitPage({
       }
     }
 
-    updateImage()
+    if (croppedImage) {
+      updateImage()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [croppedImage])
 
   const deleteImage = async () => {
     try {
-      if (!daoInfo?.id) return
+      if (!id) return
 
       toast({
         title: 'Deleting image...',
       })
-      const prevImages = await fetchImage(daoInfo?.id)
+      const prevImages = await fetchImage(id)
       if (prevImages) {
         try {
           const deleted = await pinata.files.public.delete([prevImages.id])
@@ -1199,7 +1125,6 @@ export default function ForSubmitPage({
         reader.readAsDataURL(file)
         reader.onload = () => {
           setSelectedImage(reader.result as string)
-          setIsCropModalOpen(true)
         }
       }
     }
@@ -1288,7 +1213,7 @@ export default function ForSubmitPage({
                   <span className="sr-only">Open menu</span>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button> */}
-                <Button className="w-full h-full bg-transparent gap-2 items-end justify-center">
+                <button className="w-full h-full bg-transparent gap-2 items-end justify-center flex p-2 hover:opacity-80 transition-opacity">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="18"
@@ -1304,7 +1229,7 @@ export default function ForSubmitPage({
                     <path d="m15 5 4 4" />
                   </svg>
                   {localDict.edit ?? 'Edit'}
-                </Button>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
@@ -1337,9 +1262,7 @@ export default function ForSubmitPage({
           </div>
         </div>
 
-        <div className="flex flex-row gap-2 font-bold text-5xl">
-          {daoInfo?.name}{' '}
-        </div>
+        <div className="flex flex-row gap-2 font-bold text-5xl">{name} </div>
       </div>
       {selectedImage && (
         <Dialog open={!!selectedImage}>
@@ -1425,8 +1348,8 @@ export default function ForSubmitPage({
                     <CustomLink.default
                       chainId={chainId}
                       type="address"
-                      address={daoInfo?.governanceToken}
-                      message={shortenAddress(daoInfo?.governanceToken)}
+                      address={governanceTokenAddress}
+                      message={shortenAddress(governanceTokenAddress)}
                     ></CustomLink.default>
                   </div>
 
@@ -1439,8 +1362,8 @@ export default function ForSubmitPage({
                     <CustomLink.default
                       chainId={chainId}
                       type="address"
-                      address={daoInfo?.timelock}
-                      message={shortenAddress(daoInfo?.timelock)}
+                      address={timelockAddress}
+                      message={shortenAddress(timelockAddress)}
                     ></CustomLink.default>
                   </div>
 
@@ -1453,8 +1376,8 @@ export default function ForSubmitPage({
                     <CustomLink.default
                       chainId={chainId}
                       type="address"
-                      address={daoInfo?.governor}
-                      message={shortenAddress(daoInfo?.governor)}
+                      address={governorAddress}
+                      message={shortenAddress(governorAddress)}
                     ></CustomLink.default>
                   </div>
                 </div>
@@ -1537,9 +1460,7 @@ export default function ForSubmitPage({
                     className="font-bold rounded-xl flex"
                   />
                   <div className="text-dark_blue">
-                    {votes
-                      ? formatString(formatEther(BigInt(votes as string)))
-                      : '0'}
+                    {votes ? formatString(formatEther(votes as string)) : '0'}
                   </div>
                 </div>
 
@@ -1569,9 +1490,7 @@ export default function ForSubmitPage({
                 <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
                   <h1 className="font-bold rounded-xl  flex">
                     {localDict.createdAt ?? 'Created at'}{' '}
-                    {new Date(
-                      Number(daoInfo?.blockTimestamp) * 1000
-                    ).toLocaleString()}
+                    {new Date(Number(172839000) * 1000).toLocaleString()}
                   </h1>
                 </div>
                 <div className="flex flex-col border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
@@ -1952,7 +1871,7 @@ export default function ForSubmitPage({
                       setIsDepositDialogOpened(!isDepositDialogOpened)
                     }}
                   >
-                    <DialogTrigger>
+                    <DialogTrigger asChild>
                       <Button className="w-full bg-dark_blue">
                         {localDict.depositToDaoTreasury ??
                           'Deposit to DAO Treasury'}
@@ -1987,7 +1906,7 @@ export default function ForSubmitPage({
                               address: tokenAddress as `0x${string}`,
                               functionName: 'transfer',
                               args: [
-                                daoInfo?.timelock,
+                                timelockAddress as `0x${string}`,
                                 parseEther(transferAmount),
                               ],
                             })
@@ -2049,9 +1968,7 @@ export default function ForSubmitPage({
                     handleStake={handleStake}
                     maxAmount={
                       communityTokenBalance
-                        ? Number(
-                            formatEther(BigInt(communityTokenBalance as string))
-                          )
+                        ? Number(formatEther(BigInt(communityTokenBalance)))
                         : 0
                     }
                   />
@@ -2096,7 +2013,9 @@ export default function ForSubmitPage({
                         <TableCell>
                           <div className="flex flex-row gap-2 items-center">
                             <h1 className="text-md text-dark_blue font-bold">
-                              {daoInfo ? daoInfo.communityToken : '-'}
+                              {communityTokenAddress
+                                ? communityTokenAddress
+                                : '-'}
                             </h1>
                           </div>
                         </TableCell>
@@ -2108,7 +2027,7 @@ export default function ForSubmitPage({
                                 )
                               )
                             : '0'}{' '}
-                          {daoInfo?.communityTokenSymbol}
+                          {communityTokenSymbol}
                         </TableCell>
                         <TableCell className="font-bold font-md text-dark_blue">
                           {governanceTokenBalance
@@ -2118,7 +2037,7 @@ export default function ForSubmitPage({
                                 )
                               )
                             : '0'}{' '}
-                          {daoInfo?.communityTokenSymbol}
+                          {communityTokenSymbol}
                         </TableCell>
                         <TableCell className="font-bold font-md text-dark_blue">
                           {votes
@@ -2150,7 +2069,10 @@ export default function ForSubmitPage({
           <DialogTitle>
             {localDict.createProposal ?? 'Create a Proposal'}
           </DialogTitle>
-          <DialogDescription className="flex flex-col gap-4">
+          <DialogDescription>
+            Configure the proposal details below
+          </DialogDescription>
+          <div className="flex flex-col gap-4 mt-4">
             <Select onValueChange={handleSelect}>
               <SelectTrigger className="w-full">
                 <SelectValue
@@ -2200,9 +2122,44 @@ export default function ForSubmitPage({
             <Button onClick={handleCreateProposal}>
               {localDict.create ?? 'Create'}
             </Button>
-          </DialogDescription>
+          </div>
         </DialogContent>
       </Dialog>
+
+      {/* Proposal Detail Dialog - Single shared instance */}
+      <Dialog
+        open={isProposalDetailDialogOpened}
+        onOpenChange={(open) => {
+          setIsProposalDetailDialogOpened(open)
+          if (!open) {
+            setSelectedProposalIndex(null)
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {localDict.proposalDetails ?? 'Proposal Details'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedProposalIndex !== null &&
+              proposals[selectedProposalIndex] ? (
+                <div className="flex flex-col gap-2">
+                  <h1>
+                    {localDict.proposalId ?? 'Proposal ID'}:{' '}
+                    {selectedProposalIndex + 1}
+                  </h1>
+                  <h1>
+                    {localDict.proposalDescription ?? 'Proposal Description'}:{' '}
+                    {proposals[selectedProposalIndex][9]}
+                  </h1>
+                </div>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
       <RingLoader
         style={{
           position: 'fixed',

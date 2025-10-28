@@ -48,10 +48,10 @@ const CampaignCard = ({
         <div className="flex items-start gap-4">
           <Image
             src={
-              campaign.tokenType === 1
+              campaign.tokenType == 1
                 ? sbtMetadata?.find((m) => m.token_id == campaign.sbtId)
                     ?.image || EMPTY_NFT_IMAGE
-                : campaign.tokenType === 2
+                : campaign.tokenType == 2
                   ? nftMetadata?.find((m) => m.token_id == campaign.sbtId)
                       ?.image || EMPTY_NFT_IMAGE
                   : PCE_LOGO
@@ -115,9 +115,9 @@ const CampaignCard = ({
               {campaignDict.rewardType ?? 'Reward Type'}:
             </span>
             <span className="ml-2">
-              {campaign.tokenType === 1
+              {campaign.tokenType == 1
                 ? (campaignDict.sbt ?? 'SBT')
-                : campaign.tokenType === 2
+                : campaign.tokenType == 2
                   ? (campaignDict.nft ?? 'NFT')
                   : (campaignDict.pce ?? 'PCE')}
             </span>
@@ -127,7 +127,7 @@ const CampaignCard = ({
               {campaignDict.claimAmountHeader ?? 'Claim Amount'}:
             </span>
             <span className="ml-2">
-              {campaign.tokenType === 0
+              {campaign.tokenType == 0
                 ? formatEther(parseEther(campaign.claimAmount as string))
                 : campaign.claimAmount}
             </span>
@@ -141,9 +141,9 @@ const CampaignCard = ({
               {campaignDict.totalClaimed ?? 'Total Claimed / Total Amount'}:
             </span>
             <div className="mt-1 font-mono text-xs">
-              {campaign.tokenType === 1
+              {campaign.tokenType == 1
                 ? `${claimedAmount} / ${campaign.totalAmount} SBTs`
-                : campaign.tokenType === 2
+                : campaign.tokenType == 2
                   ? `${claimedAmount} / ${campaign.totalAmount} NFTs`
                   : `${formatEther(claimedAmount)} / ${formatEther(campaign.totalAmount ?? '0')} PCE`}
             </div>
@@ -285,11 +285,11 @@ export const CampaignsTable = ({
                           <div className="flex justify-center">
                             <Image
                               src={
-                                campaign.tokenType === 1
+                                campaign.tokenType == 1
                                   ? sbtMetadata?.find(
                                       (m) => m.token_id == campaign.sbtId
                                     )?.image || EMPTY_NFT_IMAGE
-                                  : campaign.tokenType === 2
+                                  : campaign.tokenType == 2
                                     ? nftMetadata?.find(
                                         (m) => m.token_id == campaign.sbtId
                                       )?.image || EMPTY_NFT_IMAGE
@@ -313,21 +313,21 @@ export const CampaignsTable = ({
                             : 'Whitelist'}
                         </TableCell>
                         <TableCell className="text-center text-sm">
-                          {campaign.tokenType === 1
+                          {campaign.tokenType == 1
                             ? `${totalClaimed.find((t) => t.campaignId === campaign.campaignId)?.totalClaimed ?? '0'} / ${campaign.totalAmount} SBTs`
-                            : campaign.tokenType === 2
+                            : campaign.tokenType == 2
                               ? `${totalClaimed.find((t) => t.campaignId === campaign.campaignId)?.totalClaimed ?? '0'} / ${campaign.totalAmount} NFTs`
                               : `${formatEther(totalClaimed.find((t) => t.campaignId === campaign.campaignId)?.totalClaimed ?? '0')} / ${formatEther(campaign.totalAmount ?? '0')}`}
                         </TableCell>
                         <TableCell className="text-center">
-                          {campaign.tokenType === 0
+                          {campaign.tokenType == 0
                             ? formatEther(campaign.claimAmount)
                             : campaign.claimAmount}
                         </TableCell>
                         <TableCell className="text-center">
-                          {campaign.tokenType === 1
+                          {campaign.tokenType == 1
                             ? 'SBT'
-                            : campaign.tokenType === 2
+                            : campaign.tokenType == 2
                               ? 'NFT'
                               : 'PCE'}
                         </TableCell>

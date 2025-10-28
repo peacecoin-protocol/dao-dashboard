@@ -17,7 +17,11 @@ import { generateIdenteapot } from '@teapotlabs/identeapots'
 import { ringStyle } from '~/app/constants/styles'
 
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
-import { daoStudioAddress, SUBGRAPH_URL } from '~/app/constants/constants'
+import {
+  DAO_STUDIO_SUBGRAPH_URL,
+  daoStudioAddress,
+  factoryAddress,
+} from '~/app/constants/constants'
 
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { Input } from '~/components/ui/input'
@@ -29,14 +33,14 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogTitle } from '~/components/ui/dialog'
 
-import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
+import { ApolloClient, gql, HttpLink, InMemoryCache } from '@apollo/client'
 
 import { useRouter } from 'next/navigation'
 
 import { getDict } from '~/i18n/get-dict'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { formatEther, parseEther } from 'viem'
+import { parseEther } from 'viem'
 
 import { Env } from '~/env'
 
@@ -80,17 +84,11 @@ async function getHolders(chainId: number, tokenAddress: string) {
 type Dao = {
   id: string
   daoId: string
-  name: string
-  governor: string
-  blockTimestamp: string
-  website: string
-  linkedin: string
-  twitter: string
-  telegram: string
-  votes: number
-  identicon: string
+  daoName: string
+  creator: string
   imageHash: string
-  holders: number
+  identicon: string
+  blockTimestamp: string
 }
 
 type DaoMetadata = {
@@ -111,7 +109,6 @@ type DaoFormState = {
   quorumVotes: string
   timelockDelay: string
 }
-import { formatString } from '~/components/utils'
 import { TabsContent } from '@radix-ui/react-tabs'
 import RingLoader from 'react-spinners/RingLoader'
 
@@ -120,6 +117,9 @@ import { sepolia } from 'wagmi/chains'
 import { defaultChainId } from '~/app/constants/constants'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { pinata } from '~/lib/config'
+import { DAO_FACTORY_ABI } from '~/app/ABIs/DAOFactory'
+import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
+import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 const DaoCard = ({
   dao,
@@ -149,7 +149,7 @@ const DaoCard = ({
           showConnectWalletAlert()
           return
         }
-        router.push(`/${locale}/dao/detail/${dao.id}`)
+        router.push(`/${locale}/dao/detail/${dao.daoId}`)
       }}
     >
       <div className="flex flex-row w-full items-center ">
@@ -168,7 +168,7 @@ const DaoCard = ({
 
           <div className="flex flex-col gap-4 w-full">
             <div className="font-bold text-xl md:text-2xl w-full flex">
-              {dao.name}
+              {dao.daoName}
             </div>
             {/* <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-16 items-center justify-center">
             DAO
@@ -180,12 +180,14 @@ const DaoCard = ({
       <div className="flex flex-row gap-4 items-center justify-center w-full">
         <StatItem
           label={localeDict.myPower}
-          value={dao.votes ? formatString(formatEther(BigInt(dao.votes))) : 0}
+          // value={dao.votes ? formatString(formatEther(BigInt(dao.votes))) : 0}
+          value={0}
         />
-        {/* <StatItem label="TVL" value="$0" /> */}
+
         <StatItem
           label={localeDict.members}
-          value={dao.holders ? dao.holders + 1 : 1}
+          // value={dao.holders ? dao.holders + 1 : 1}
+          value={1}
         />
       </div>
     </div>
@@ -222,8 +224,10 @@ export default function ForDAOPage({
   const { address, chainId } = useAccount()
 
   const client = new ApolloClient({
-    uri: SUBGRAPH_URL[chainId || sepolia.id] as string,
     cache: new InMemoryCache(),
+    link: new HttpLink({
+      uri: DAO_STUDIO_SUBGRAPH_URL[chainId || defaultChainId] as string,
+    }),
   })
 
   const { toast } = useToast()
@@ -289,8 +293,8 @@ export default function ForDAOPage({
         daoForm.votingDelay,
         daoForm.votingPeriod,
         parseEther(daoForm.proposalThreshold),
-        parseEther(daoForm.quorumVotes),
         daoForm.timelockDelay,
+        parseEther(daoForm.quorumVotes),
       ],
     })
   }
@@ -354,28 +358,19 @@ export default function ForDAOPage({
       try {
         setLoading(true)
 
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-
         const { data } = await client.query({
           query: gql`
             query totalDaos {
               daocreateds(
                 first: 100
-                orderBy: blockTimestamp
+                orderBy: timestamp_
                 orderDirection: desc
               ) {
                 id
                 daoId
-                description
-                website
-                linkedin
-                twitter
-                telegram
-                name
-                governor
-                timelock
-                governanceToken
-                blockTimestamp
+                daoName
+                creator
+                timestamp_
               }
             }
           `,
@@ -386,23 +381,48 @@ export default function ForDAOPage({
           const dao = data.daocreateds[i]
           try {
             let votes = 0
-            if (address) {
-              votes = Number(
-                await readContract(config, {
-                  address: dao.governanceToken as `0x${string}`,
-                  abi: PCE_C_GOV_TOKEN_ABI,
-                  functionName: 'getVotes',
-                  args: [address],
-                })
-              )
-            }
+            let holders = 0
 
-            const holders = await getHolders(
-              chainId == undefined ? defaultChainId : chainId,
-              dao.governanceToken as string
-            )
-            const identicon = await generateIdenteapot(dao.governor, '')
-            const imageHash = await fetchImage(dao.id)
+            try {
+              const timelock = await readContract(config, {
+                address: factoryAddress[
+                  chainId || defaultChainId
+                ] as `0x${string}`,
+                abi: DAO_FACTORY_ABI,
+                functionName: 'timelock',
+                args: [dao.daoId],
+              })
+
+              const admin = await readContract(config, {
+                address: timelock as `0x${string}`,
+                abi: TIMELOCK_ABI,
+                functionName: 'admin',
+                args: [],
+              })
+
+              const token = await readContract(config, {
+                address: admin as `0x${string}`,
+                abi: GOVERNOR_ABI,
+                functionName: 'token',
+                args: [],
+              })
+
+              votes = (await readContract(config, {
+                address: token as `0x${string}`,
+                abi: PCE_C_GOV_TOKEN_ABI,
+                functionName: 'getVotes',
+                args: [address],
+              })) as unknown as number
+
+              holders = await getHolders(
+                chainId == undefined ? defaultChainId : chainId,
+                dao.governanceToken as string
+              )
+            } catch (error) {
+              console.error('Error fetching votes:', error)
+            }
+            const identicon = await generateIdenteapot(dao.daoId, '')
+            const imageHash = await fetchImage(dao.daoId)
 
             updatedDaos.push({
               ...dao,
@@ -597,7 +617,7 @@ export default function ForDAOPage({
           >
             {daos
               .filter((dao) =>
-                dao.name.toLowerCase().includes(search.toLowerCase())
+                dao.daoName.toLowerCase().includes(search.toLowerCase())
               )
               .map((dao) => (
                 <DaoCard

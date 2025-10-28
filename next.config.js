@@ -5,9 +5,23 @@ const nextConfig = {
       'nftmedia.parallelnft.com',
       'avatars.githubusercontent.com',
       'api.github.com',
-      'orange-elegant-takin-78.mypinata.cloud',
+      'kite.mypinata.cloud',
       'peacecoin-dao.mypinata.cloud',
     ],
+  },
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+      crypto: false,
+      '@react-native-async-storage/async-storage': false,
+    }
+
+    config.externals.push('pino-pretty', 'lokijs', 'encoding')
+
+    return config
   },
 }
 

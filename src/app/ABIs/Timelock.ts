@@ -1,13 +1,5 @@
 export const TIMELOCK_ABI = [
   {
-    type: 'constructor',
-    inputs: [
-      { name: 'admin_', type: 'address', internalType: 'address' },
-      { name: 'delay_', type: 'uint256', internalType: 'uint256' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
     type: 'function',
     name: 'GRACE_PERIOD',
     inputs: [],
@@ -84,6 +76,16 @@ export const TIMELOCK_ABI = [
   },
   {
     type: 'function',
+    name: 'initialize',
+    inputs: [
+      { name: 'admin_', type: 'address', internalType: 'address' },
+      { name: 'delay_', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'pendingAdmin',
     inputs: [],
     outputs: [{ name: '', type: 'address', internalType: 'address' }],
@@ -120,11 +122,18 @@ export const TIMELOCK_ABI = [
     type: 'function',
     name: 'setPendingAdmin',
     inputs: [
-      {
-        name: 'pendingAdmin_',
-        type: 'address',
-        internalType: 'address',
-      },
+      { name: 'pendingAdmin_', type: 'address', internalType: 'address' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'updateVariables',
+    inputs: [
+      { name: 'gracePeriod_', type: 'uint256', internalType: 'uint256' },
+      { name: 'minDelay_', type: 'uint256', internalType: 'uint256' },
+      { name: 'maxDelay_', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -157,18 +166,8 @@ export const TIMELOCK_ABI = [
         indexed: false,
         internalType: 'string',
       },
-      {
-        name: 'data',
-        type: 'bytes',
-        indexed: false,
-        internalType: 'bytes',
-      },
-      {
-        name: 'eta',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
+      { name: 'data', type: 'bytes', indexed: false, internalType: 'bytes' },
+      { name: 'eta', type: 'uint256', indexed: false, internalType: 'uint256' },
     ],
     anonymous: false,
   },
@@ -200,17 +199,20 @@ export const TIMELOCK_ABI = [
         indexed: false,
         internalType: 'string',
       },
+      { name: 'data', type: 'bytes', indexed: false, internalType: 'bytes' },
+      { name: 'eta', type: 'uint256', indexed: false, internalType: 'uint256' },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'Initialized',
+    inputs: [
       {
-        name: 'data',
-        type: 'bytes',
+        name: 'version',
+        type: 'uint64',
         indexed: false,
-        internalType: 'bytes',
-      },
-      {
-        name: 'eta',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
+        internalType: 'uint64',
       },
     ],
     anonymous: false,
@@ -282,19 +284,11 @@ export const TIMELOCK_ABI = [
         indexed: false,
         internalType: 'string',
       },
-      {
-        name: 'data',
-        type: 'bytes',
-        indexed: false,
-        internalType: 'bytes',
-      },
-      {
-        name: 'eta',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
-      },
+      { name: 'data', type: 'bytes', indexed: false, internalType: 'bytes' },
+      { name: 'eta', type: 'uint256', indexed: false, internalType: 'uint256' },
     ],
     anonymous: false,
   },
+  { type: 'error', name: 'InvalidInitialization', inputs: [] },
+  { type: 'error', name: 'NotInitializing', inputs: [] },
 ]

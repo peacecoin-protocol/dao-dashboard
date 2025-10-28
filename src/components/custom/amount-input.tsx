@@ -80,7 +80,7 @@ const AmountInput = React.forwardRef<HTMLInputElement, AmountInputProps>(
               </h1>
             )}
 
-            <DialogClose>
+            <DialogClose asChild>
               <Button
                 className="w-full"
                 variant="outline"

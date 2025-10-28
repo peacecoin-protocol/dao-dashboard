@@ -37,25 +37,28 @@ const DelegateInput = React.forwardRef<HTMLInputElement, DelegateInputProps>(
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delegate</DialogTitle>
-            <DialogDescription className="flex flex-col gap-4">
-              <Input
-                placeholder="Enter address"
-                name="delegateAddr"
-                onChange={(e) => setDelegateAddr(e.target.value)}
-              />
-              <div>
-                <DialogClose>
-                  <Button
-                    onClick={() => {
-                      handleDelegate()
-                    }}
-                  >
-                    Delegate
-                  </Button>
-                </DialogClose>
-              </div>
+            <DialogDescription>
+              Enter the address to delegate your voting power
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-col gap-4 mt-4">
+            <Input
+              placeholder="Enter address"
+              name="delegateAddr"
+              onChange={(e) => setDelegateAddr(e.target.value)}
+            />
+            <div>
+              <DialogClose asChild>
+                <Button
+                  onClick={() => {
+                    handleDelegate()
+                  }}
+                >
+                  Delegate
+                </Button>
+              </DialogClose>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     )

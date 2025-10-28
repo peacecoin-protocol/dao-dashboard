@@ -8,8 +8,11 @@ import { Locale } from '~/i18n/types'
 import { useSideLinks } from '~/data/sidelinks'
 import { getDict } from '~/i18n/get-dict'
 import { Dictionary } from '~/i18n/types'
-import { OWNER_ADDRESSES } from '~/app/constants/constants'
-import { useAccount } from 'wagmi'
+import { daoStudioAddress, defaultChainId } from '~/app/constants/constants'
+import { useAccount, useReadContract } from 'wagmi'
+import { keccak256, toBytes } from 'viem'
+
+import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
 interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   isCollapsed: boolean
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
@@ -23,13 +26,22 @@ export default function Sidebar({
   locale,
 }: SidebarProps) {
   const [dict, setDict] = useState<Dictionary | null>(null)
-  const { address } = useAccount()
+  const { address, chainId } = useAccount()
   const [navOpened, setNavOpened] = useState(false)
 
   const localDict = dict?.sidebar ?? {}
-  const isOwner = OWNER_ADDRESSES.includes(address as `0x${string}`)
 
-  const sideLinks = useSideLinks(locale, isOwner)
+  const DAO_MANAGER_ROLE = keccak256(toBytes('DAO_MANAGER_ROLE'))
+
+  const { data: hasRole } = useReadContract({
+    address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
+    abi: DAO_STUDIO_ABI,
+    functionName: 'hasRole',
+    args: [DAO_MANAGER_ROLE, address],
+  }) as { data?: boolean; refetch: () => void }
+
+  const sideLinks = useSideLinks(locale, hasRole ?? false)
+
   useEffect(() => {
     const fetchDict = async () => {
       try {
@@ -68,7 +80,7 @@ export default function Sidebar({
         {/* Header */}
         <Layout.Header
           sticky
-          className="z-50 flex justify-between px-4 py-3 shadow-sm md:px-4"
+          className="z-50 flex justify-between px-4 py-3 shadow-sm md:px-4 bg-white"
         >
           <div className={`flex items-center ${!isCollapsed ? 'gap-2' : ''}`}>
             <img

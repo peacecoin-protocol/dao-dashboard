@@ -301,9 +301,9 @@ const CampaignDialog = ({
             <span className="font-semibold">
               {campaignDict.reward ?? 'Reward'}:
             </span>{' '}
-            {campaign.tokenType === 1
+            {campaign.tokenType == 1
               ? `${campaign.totalAmount} Contributor SBTs`
-              : campaign.tokenType === 2
+              : campaign.tokenType == 2
                 ? `${campaign.totalAmount} Contributor NFTs`
                 : `${formatEther(campaign.totalAmount ?? '0')} ${campaignDict.pce ?? 'PCE'}`}
           </p>
@@ -475,26 +475,14 @@ export default function ForCampaignPage({
               token
               tokenType
             }
-            setTokenURIs(first: 10, orderBy: internal_id, orderDirection: asc) {
-              internal_id
-              uri
-            }
-            peacecoindaoNftsetTokenURIs(
-              first: 10
-              orderBy: internal_id
-              orderDirection: asc
-            ) {
-              internal_id
-              uri
-            }
           }
         `,
       })
 
       setCampaignData({
         data: data.campaignCreateds,
-        tokenURIs: data.setTokenURIs,
-        nftTokenURIs: data.peacecoindaoNftsetTokenURIs,
+        tokenURIs: [],
+        nftTokenURIs: [],
       })
     } catch (error) {
     } finally {
@@ -915,10 +903,10 @@ export default function ForCampaignPage({
     const info: CampaignInfo[] = campaignData.data.map((campaign) => ({
       id: campaign.campaignId.toString(),
       image:
-        campaign.tokenType === 1
+        campaign.tokenType == 1
           ? sbtMetadata?.find((m) => m.token_id == campaign.sbtId)?.image ||
             EMPTY_NFT_IMAGE
-          : campaign.tokenType === 2
+          : campaign.tokenType == 2
             ? nftMetadata?.find((m) => m.token_id == campaign.sbtId)?.image ||
               EMPTY_NFT_IMAGE
             : PCE_LOGO,
@@ -934,9 +922,9 @@ export default function ForCampaignPage({
       claimAmount: campaign.claimAmount.toString(),
       totalClaimedAmount: campaign.totalAmount.toString(),
       tokenType:
-        campaign.tokenType === 1
+        campaign.tokenType == 1
           ? 'SBT'
-          : campaign.tokenType === 2
+          : campaign.tokenType == 2
             ? 'NFT'
             : 'ERC20',
       startTime: campaign.startDate,

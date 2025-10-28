@@ -1,19 +1,21 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { v4 as uuidv4 } from 'uuid'
 import Image from 'next/image'
+import { config } from '~/lib/config'
 
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import {
   NFTAddress,
   PCE_SBT_ADDRESS,
+  NFT_SUBGRAPH_URL,
+  SBT_SUBGRAPH_URL,
   defaultChainId,
   sbtTableHeaders,
 } from '~/app/constants/constants'
 import { Button } from '~/components/custom/button'
 import { getDict } from '~/i18n/get-dict'
-
+import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import { useToast } from '~/hooks/use-toast'
 import { Input } from '~/components/ui/input'
 import { DialogContent, DialogTitle, Dialog } from '~/components/ui/dialog'
@@ -32,28 +34,26 @@ import {
 import ImageCropModal from '~/components/ui/ImageCropModal'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { Env } from '~/env'
-import {
-  addFilesToGroupPublic,
-  createFile,
-  JSON_GROUP_ID,
-  NFT_GROUP_ID,
-  SBT_GROUP_ID,
-} from '~/app/pinata/pinataAPI'
+
+import { createFile, JSON_GROUP_ID } from '~/app/pinata/pinataAPI'
+import { SBT_GROUP_ID, NFT_GROUP_ID } from '~/app/pinata/pinataAPI'
+import { v4 as uuidv4 } from 'uuid'
+import { addFilesToGroupPublic } from '~/app/pinata/pinataAPI'
+
 import {
   useAccount,
-  useReadContract,
   useWriteContract,
   useWaitForTransactionReceipt,
   type BaseError,
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
-import { config } from '~/lib/config'
 import { ChevronsUpDown, Plus, Image as ImageIcon } from 'lucide-react'
 import {
   SBTInfo,
   SBTTableComponent,
 } from '~/components/custom/sbt-tableComponent'
+import { Env } from '~/env'
+import { ApolloClient, HttpLink, InMemoryCache, gql } from '@apollo/client'
 
 // Types
 interface CardFormState {
@@ -84,202 +84,6 @@ const TOKEN_TYPE_OPTIONS: FilterOption[] = [
 const MAX_NAME_LENGTH = 64
 const MAX_DESCRIPTION_LENGTH = 256
 const MAX_VOTING_POWER = 10000
-
-// Custom Hooks
-const useTokenData = (chainId: number | undefined) => {
-  const { toast } = useToast()
-  const [sbtData, setSBTData] = useState<SBTInfo[]>([])
-  const [nftData, setNFTData] = useState<SBTInfo[]>([])
-  const [loading, setLoading] = useState(false)
-
-  const { data: currentSBTId } = useReadContract({
-    address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-    abi: SBT_ABI,
-    functionName: 'currentTokenId',
-    args: [],
-  })
-
-  const { data: currentNFTId } = useReadContract({
-    address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
-    abi: SBT_ABI,
-    functionName: 'currentTokenId',
-    args: [],
-  })
-
-  const getSBTTokenURI = useCallback(
-    async (tokenId: number) => {
-      const contractAddress = PCE_SBT_ADDRESS[
-        chainId || defaultChainId
-      ] as `0x${string}`
-
-      return (await readContract(config, {
-        abi: SBT_ABI,
-        address: contractAddress,
-        functionName: 'uri',
-        args: [tokenId],
-      })) as string
-    },
-    [chainId]
-  )
-
-  const getNFTTokenURI = useCallback(
-    async (tokenId: number) => {
-      const contractAddress = NFTAddress[
-        chainId || defaultChainId
-      ] as `0x${string}`
-
-      return (await readContract(config, {
-        abi: SBT_ABI,
-        address: contractAddress,
-        functionName: 'uri',
-        args: [tokenId],
-      })) as string
-    },
-    [chainId]
-  )
-
-  const checkSBTRevokedStatus = useCallback(
-    async (tokenId: number) => {
-      try {
-        const contractAddress = PCE_SBT_ADDRESS[
-          chainId || defaultChainId
-        ] as `0x${string}`
-        return (await readContract(config, {
-          abi: SBT_ABI,
-          address: contractAddress,
-          functionName: 'isRevoked',
-          args: [tokenId],
-        })) as boolean
-      } catch (err) {
-        console.error('Error checking revoked status:', err)
-        return false
-      }
-    },
-    [chainId]
-  )
-
-  const checkNFTRevokedStatus = useCallback(
-    async (tokenId: number) => {
-      try {
-        const contractAddress = NFTAddress[
-          chainId || defaultChainId
-        ] as `0x${string}`
-        return (await readContract(config, {
-          abi: SBT_ABI,
-          address: contractAddress,
-          functionName: 'isRevoked',
-          args: [tokenId],
-        })) as boolean
-      } catch (err) {
-        console.error('Error checking revoked status:', err)
-        return false
-      }
-    },
-    [chainId]
-  )
-
-  const fetchTokenData = useCallback(async () => {
-    if (!currentSBTId || !currentNFTId) return
-
-    setLoading(true)
-    try {
-      const sbtTokens: SBTInfo[] = []
-      const nftTokens: SBTInfo[] = []
-
-      for (let i = 1; i <= Number(currentSBTId); i++) {
-        try {
-          const [tokenURI, isTokenRevoked] = await Promise.all([
-            getSBTTokenURI(i),
-            checkSBTRevokedStatus(i),
-          ])
-
-          let tokenDataJson: Partial<SBTInfo> = {}
-          try {
-            const response = await fetch(tokenURI)
-            if (response.ok) {
-              tokenDataJson = await response.json()
-            }
-          } catch (error) {
-            console.warn(`Failed to fetch metadata for token ${i}:`, error)
-          }
-
-          sbtTokens.push({
-            isRevoked: isTokenRevoked,
-            tokenId: i.toString(),
-            name: tokenDataJson.name || `Token ${i}`,
-            description: tokenDataJson.description || '',
-            votingPower: tokenDataJson.votingPower || '0',
-            balance: tokenDataJson.balance || '0',
-            image: tokenDataJson.image || '/images/empty-nft.svg',
-            createdAt:
-              (
-                Number((tokenDataJson as any).timestamp || 0) / 1000
-              ).toString() || '0',
-            isSBT: true,
-          })
-        } catch (error) {
-          console.error(`Error processing token ${i}:`, error)
-        }
-      }
-
-      for (let i = 1; i <= Number(currentNFTId); i++) {
-        try {
-          const [tokenURI, isTokenRevoked] = await Promise.all([
-            getNFTTokenURI(i),
-            checkNFTRevokedStatus(i),
-          ])
-
-          let tokenDataJson: Partial<SBTInfo> = {}
-          try {
-            const response = await fetch(tokenURI)
-            if (response.ok) {
-              tokenDataJson = await response.json()
-            }
-          } catch (error) {
-            console.warn(`Failed to fetch metadata for token ${i}:`, error)
-          }
-
-          nftTokens.push({
-            isRevoked: isTokenRevoked,
-            tokenId: i.toString(),
-            name: tokenDataJson.name || `Token ${i}`,
-            description: tokenDataJson.description || '',
-            votingPower: tokenDataJson.votingPower || '0',
-            balance: tokenDataJson.balance || '0',
-            image: tokenDataJson.image || '/images/empty-nft.svg',
-            createdAt:
-              (
-                Number((tokenDataJson as any).timestamp || 0) / 1000
-              ).toString() || '0',
-            isSBT: false,
-          })
-        } catch (error) {
-          console.error(`Error processing token ${i}:`, error)
-        }
-      }
-
-      setNFTData(nftTokens)
-      setSBTData(sbtTokens)
-    } catch (error) {
-      console.error('Error fetching token data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [
-    currentSBTId,
-    currentNFTId,
-    getSBTTokenURI,
-    getNFTTokenURI,
-    checkSBTRevokedStatus,
-    checkNFTRevokedStatus,
-  ])
-
-  useEffect(() => {
-    fetchTokenData()
-  }, [fetchTokenData])
-
-  return { sbtData, nftData, currentSBTId, currentNFTId, loading }
-}
 
 // Components
 const LoadingOverlay = () => (
@@ -686,7 +490,26 @@ export default function SBTBuilderPage({
     isSBT: true,
   })
 
-  // Contract interactions
+  const [sbtData, setSBTData] = useState<any[]>([])
+  const [nftData, setNFTData] = useState<any[]>([])
+  const [tokenData, setTokenData] = useState<any[]>([])
+
+  const [refetchNFTData, setRefetchNFTData] = useState(false)
+  const [refetchSBTData, setRefetchSBTData] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const sbtClient = new ApolloClient({
+    cache: new InMemoryCache(),
+    link: new HttpLink({
+      uri: SBT_SUBGRAPH_URL[chainId || defaultChainId] as string,
+    }),
+  })
+  const nftClient = new ApolloClient({
+    cache: new InMemoryCache(),
+    link: new HttpLink({
+      uri: NFT_SUBGRAPH_URL[chainId || defaultChainId] as string,
+    }),
+  })
   const { data: hash, error, writeContractAsync } = useWriteContract()
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -694,10 +517,6 @@ export default function SBTBuilderPage({
       hash,
       confirmations: 1,
     })
-
-  // Custom hooks
-  const { sbtData, nftData, currentSBTId, currentNFTId, loading } =
-    useTokenData(chainId)
 
   // Effects
   useEffect(() => {
@@ -707,6 +526,218 @@ export default function SBTBuilderPage({
     }
     loadDictionary()
   }, [locale])
+
+  const fetchSBTStatus = useCallback(
+    async (_sbtData: SBTInfo[]) => {
+      if (!chainId || !address || !_sbtData.length) return
+      try {
+        const statuses = await Promise.all(
+          _sbtData.map(async (token: SBTInfo) => {
+            return (await readContract(config, {
+              abi: SBT_ABI,
+              address: PCE_SBT_ADDRESS[
+                chainId || defaultChainId
+              ] as `0x${string}`,
+              functionName: 'isRevoked',
+              args: [token.tokenId],
+            })) as boolean
+          })
+        )
+
+        const balances = await Promise.all(
+          _sbtData.map(async (token: SBTInfo) => {
+            return (await readContract(config, {
+              abi: SBT_ABI,
+              address: PCE_SBT_ADDRESS[
+                chainId || defaultChainId
+              ] as `0x${string}`,
+              functionName: 'balanceOf',
+              args: [address, token.tokenId],
+            })) as BigInt
+          })
+        )
+
+        setSBTData(
+          _sbtData.map((token: SBTInfo, index: number) => ({
+            ...token,
+            isRevoked: statuses[index] || false,
+            balance: balances[index]?.toString() || '0',
+          }))
+        )
+      } catch (error) {
+        console.error('Error fetching SBT status:', error)
+      }
+    },
+    [chainId, address, sbtData]
+  )
+
+  const fetchNFTStatus = useCallback(
+    async (_nftData: SBTInfo[]) => {
+      if (!chainId || !address || !_nftData.length) return
+      try {
+        const statuses = await Promise.all(
+          _nftData.map(async (token: SBTInfo) => {
+            return (await readContract(config, {
+              abi: SBT_ABI,
+              address: PCE_SBT_ADDRESS[
+                chainId || defaultChainId
+              ] as `0x${string}`,
+              functionName: 'isRevoked',
+              args: [token.tokenId],
+            })) as boolean
+          })
+        )
+
+        const balances = await Promise.all(
+          _nftData.map(async (token: SBTInfo) => {
+            return (await readContract(config, {
+              abi: SBT_ABI,
+              address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
+              functionName: 'balanceOf',
+              args: [address, token.tokenId],
+            })) as BigInt
+          })
+        )
+
+        setNFTData(
+          _nftData.map((token: SBTInfo, index: number) => ({
+            ...token,
+            isRevoked: statuses[index] || false,
+            balance: balances[index]?.toString() || '0',
+          }))
+        )
+      } catch (error) {
+        console.error('Error fetching SBT status:', error)
+      }
+    },
+    [chainId, address, sbtData]
+  )
+
+  const fetchMetadata = async (tokenURI: string) => {
+    const response = await fetch(tokenURI)
+    const data = await response.json()
+    return data
+  }
+
+  useEffect(() => {
+    const filteredSbtData: SBTInfo[] = sbtData.filter(
+      (token: SBTInfo) => token.tokenId !== '1'
+    )
+    const filteredNftData: SBTInfo[] = nftData.filter(
+      (token: SBTInfo) => token.tokenId !== '1'
+    )
+    setTokenData([...filteredSbtData, ...filteredNftData])
+  }, [sbtData, nftData])
+
+  useEffect(() => {
+    const fetchNFTData = async () => {
+      try {
+        setLoading(true)
+        const { data } = await nftClient.query({
+          query: gql`
+            query getNFTData {
+              createdTokens(first: 10, orderDirection: desc, where: {}) {
+                tokenId
+                timestamp_
+                tokenURI
+                votingPower
+              }
+            }
+          `,
+        })
+
+        let _nftData: SBTInfo[] = []
+        for (const token of data.createdTokens) {
+          let _metadata: any = {}
+          try {
+            _metadata = await fetchMetadata(
+              `${Env.PINATA_GATEWAY_URL}/ipfs/${token.tokenURI}`
+            )
+          } catch (error) {
+            console.error('Error fetching NFT data:', error)
+          }
+
+          _nftData.push({
+            tokenId: token.tokenId,
+            createdAt: Number(token.timestamp_).toString(),
+            image: _metadata.image
+              ? `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`
+              : EMPTY_NFT_IMAGE,
+            name: _metadata.name,
+            description: _metadata.description,
+            balance: '0',
+            votingPower: token.votingPower,
+            isRevoked: false,
+            isSBT: false,
+          })
+        }
+
+        setNFTData([..._nftData])
+        await fetchNFTStatus(_nftData)
+
+        setLoading(false)
+      } catch (error) {
+        setLoading(false)
+        console.error('Error:', error)
+      }
+    }
+    fetchNFTData()
+  }, [refetchNFTData])
+
+  useEffect(() => {
+    const fetchSBTData = async () => {
+      try {
+        setLoading(true)
+        const { data } = await sbtClient.query({
+          query: gql`
+            query getSBTData {
+              createdTokens(first: 10, orderDirection: desc, where: {}) {
+                tokenId
+                timestamp_
+                tokenURI
+                votingPower
+              }
+            }
+          `,
+        })
+
+        let _sbtData: SBTInfo[] = []
+        for (const token of data.createdTokens) {
+          let _metadata: any = {}
+          try {
+            _metadata = await fetchMetadata(
+              `${Env.PINATA_GATEWAY_URL}/ipfs/${token.tokenURI}`
+            )
+          } catch (error) {
+            console.error('Error fetching SBT data:', error)
+          }
+
+          _sbtData.push({
+            tokenId: token.tokenId,
+            createdAt: Number(token.timestamp_).toString(),
+            image: _metadata.image
+              ? `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`
+              : EMPTY_NFT_IMAGE,
+            name: _metadata.name,
+            description: _metadata.description,
+            balance: '0',
+            votingPower: token.votingPower,
+            isRevoked: false,
+            isSBT: true,
+          })
+        }
+
+        setSBTData([..._sbtData])
+        await fetchSBTStatus(_sbtData)
+
+        setLoading(false)
+      } catch (error) {
+        setLoading(false)
+        console.error('Error:', error)
+      }
+    }
+    fetchSBTData()
+  }, [refetchSBTData])
 
   useEffect(() => {
     if (isConfirmed) {
@@ -758,94 +789,76 @@ export default function SBTBuilderPage({
 
     setIsCreateModalOpen(false)
 
-    try {
-      toast({ title: 'Uploading image...' })
+    const contractAddress =
+      cardForm.isSBT == true
+        ? PCE_SBT_ADDRESS[chainId || defaultChainId]
+        : NFTAddress[chainId || defaultChainId]
 
-      const timestamp = Date.now()
-      const imageName = `${uuidv4()}-${timestamp}.png`
+    // try {
+    toast({ title: 'Uploading image...' })
 
-      // Upload image
-      const file = await createFile(croppedImage, imageName)
-      const uploadResult = await addFilesToGroupPublic(
-        file,
-        cardForm.isSBT == true ? SBT_GROUP_ID : NFT_GROUP_ID
-      )
+    const timestamp = Date.now()
+    const imageName = `${uuidv4()}-${timestamp}.png`
 
-      if (!uploadResult?.cid) {
-        throw new Error('Failed to upload image')
+    // Upload image
+    const file = await createFile(croppedImage, imageName)
+    const uploadResult = await addFilesToGroupPublic(
+      file,
+      cardForm.isSBT == true ? SBT_GROUP_ID : NFT_GROUP_ID
+    )
+
+    const jsonFile = new File(
+      [
+        JSON.stringify({
+          name: cardForm.name,
+          description: cardForm.description,
+          votingPower: cardForm.votingPower,
+          image: uploadResult?.cid,
+        }),
+      ],
+      uploadResult?.cid + '.json',
+      { type: 'application/json' }
+    )
+
+    const jsonUploadResult = await addFilesToGroupPublic(
+      jsonFile,
+      JSON_GROUP_ID
+    )
+
+    if (!jsonUploadResult?.cid) {
+      throw new Error('Failed to upload metadata')
+    } else {
+      toast({ title: 'Creating token...' })
+      try {
+        const createTokenTx = await writeContractAsync({
+          abi: SBT_ABI,
+          address: contractAddress as `0x${string}`,
+          functionName: 'createToken',
+          args: [jsonUploadResult?.cid, cardForm.votingPower],
+        })
+        await waitForTransactionReceipt(config, {
+          hash: createTokenTx,
+          confirmations: 1,
+        })
+        toast({ title: 'Token created successfully!' })
+
+        if (cardForm.isSBT.toString() === 'true') {
+          setRefetchSBTData(!refetchSBTData)
+        } else {
+          setRefetchNFTData(!refetchNFTData)
+        }
+      } catch (error) {
+        console.error('Error creating token:', error)
+        toast({ title: 'Failed to create token' })
+      } finally {
+        setCroppedImage(null)
+        setSelectedImage(null)
+        setCardForm({ name: '', description: '', votingPower: '', isSBT: true })
+        setIsTokenTypeOpen(false)
+        setIsFilterOpen(false)
       }
-
-      const contractAddress =
-        cardForm.isSBT == true
-          ? PCE_SBT_ADDRESS[chainId || defaultChainId]
-          : NFTAddress[chainId || defaultChainId]
-
-      // Create and upload metadata
-      const tokenInfo = {
-        name: cardForm.name,
-        description: cardForm.description,
-        votingPower: cardForm.votingPower,
-        image: `${Env.PINATA_GATEWAY_URL}/ipfs/${uploadResult.cid}`,
-        timestamp,
-      }
-
-      const jsonBlob = new Blob([JSON.stringify(tokenInfo, null, 2)], {
-        type: 'application/json',
-      })
-      const jsonFile = new File([jsonBlob], `${uploadResult.cid}.json`, {
-        type: 'application/json',
-      })
-
-      const jsonUploadResult = await addFilesToGroupPublic(
-        jsonFile,
-        JSON_GROUP_ID
-      )
-
-      if (!jsonUploadResult?.cid) {
-        throw new Error('Failed to upload metadata')
-      }
-
-      // Set token URI on contract
-      const setTokenURITx = await writeContractAsync({
-        abi: SBT_ABI,
-        address: contractAddress as `0x${string}`,
-        functionName: 'setTokenURI',
-        args: [
-          cardForm.isSBT == true
-            ? Number(currentSBTId) + 1
-            : Number(currentNFTId) + 1,
-          jsonUploadResult.cid,
-          cardForm.votingPower,
-        ],
-      })
-
-      await waitForTransactionReceipt(config, {
-        hash: setTokenURITx,
-        confirmations: 1,
-      })
-
-      toast({ title: 'Token created successfully!' })
-    } catch (error) {
-      console.error('Error creating token:', error)
-      toast({ title: 'Failed to create token' })
-    } finally {
-      // Reset form
-      setCroppedImage(null)
-      setSelectedImage(null)
-      setCardForm({ name: '', description: '', votingPower: '', isSBT: true })
-      setIsTokenTypeOpen(false)
-      setIsFilterOpen(false)
     }
-  }, [
-    croppedImage,
-    address,
-    cardForm,
-    chainId,
-    currentSBTId,
-    currentNFTId,
-    writeContractAsync,
-    toast,
-  ])
+  }, [croppedImage, address, cardForm, chainId, writeContractAsync, toast])
 
   const handleViewMetadata = useCallback((metadata: string) => {
     window.open(metadata, '_blank')
@@ -907,32 +920,9 @@ export default function SBTBuilderPage({
     createToken: localDict.createSBT_NFT ?? 'Create SBT/NFT',
   }
 
-  const tokenInfo = useCallback(() => {
-    let data =
-      tokenType == 'sbt'
-        ? sbtData
-        : tokenType == 'nft'
-          ? nftData
-          : [...sbtData, ...nftData]
-
-    if (filter == 'revoked') {
-      data = data.filter((token) => token.isRevoked)
-    } else if (filter == 'unrevoked') {
-      data = data.filter((token) => !token.isRevoked)
-    }
-
-    return data
-  }, [sbtData, nftData, filter, tokenType])
-
   const handleRevokeToken = useCallback(
-    async (index: number) => {
+    async (token: SBTInfo) => {
       if (!address) return
-      const token = tokenInfo()[index]
-
-      if (!token) {
-        toast({ title: 'Token not found' })
-        return
-      }
 
       try {
         toast({
@@ -958,12 +948,13 @@ export default function SBTBuilderPage({
             ? 'Token unrevoked successfully'
             : 'Token revoked successfully',
         })
+        await fetchSBTStatus(sbtData)
       } catch (error) {
         console.error('Error revoking token:', error)
         toast({ title: 'Failed to revoke token' })
       }
     },
-    [address, writeContractAsync, chainId, toast, tokenInfo]
+    [address, writeContractAsync, chainId, toast, sbtData, fetchSBTStatus]
   )
 
   return (
@@ -1000,10 +991,10 @@ export default function SBTBuilderPage({
 
         <SBTTableComponent
           headers={[...sbtTableHeaders, 'Action']}
-          sbtInfo={tokenInfo()}
+          sbtInfo={tokenData}
           action={{ title: 'Revoke' }}
-          onRevoke={(index) => {
-            handleRevokeToken(index)
+          onRevoke={(token: SBTInfo) => {
+            handleRevokeToken(token)
           }}
         />
 
