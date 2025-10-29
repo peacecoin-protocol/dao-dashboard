@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react'
 import Cropper from 'react-easy-crop'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 import { getCroppedImg } from '~/lib/cropUtils' // Create this utility function
 
 interface ImageCropModalProps {

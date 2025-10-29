@@ -23,7 +23,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '~/components/ui/dialog'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 import { formatString } from '~/components/utils'
 import useWindowWidth from '~/components/useWindWidth'
 

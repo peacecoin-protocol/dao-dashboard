@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { IconChevronDown } from '@tabler/icons-react'
-import { Button, buttonVariants } from './custom/button'
+import { Button, buttonVariants } from './ui/button'
 import {
   Collapsible,
   CollapsibleContent,
@@ -74,7 +74,7 @@ export default function Nav({
     <div
       data-collapsed={isCollapsed}
       className={cn(
-        'group border-b bg-background py-2 transition-[max-height,padding] duration-500 data-[collapsed=true]:py-2 md:border-none',
+        'group border-b bg-white py-2 transition-[max-height,padding] duration-500 data-[collapsed=true]:py-2 md:border-none',
         className
       )}
     >
@@ -119,7 +119,7 @@ function NavLink({
           variant: checkActiveNav(href) ? 'secondary' : 'secondary',
           size: 'sm',
         }),
-        'h-12 justify-start text-wrap rounded-none px-6',
+        'h-12 justify-start text-wrap rounded-none px-6 bg-white',
         subLink && 'h-10 w-full border-l border-l-slate-500 px-2'
       )}
       aria-current={checkActiveNav(href) ? 'page' : undefined}
@@ -154,7 +154,7 @@ function NavLinkDropdown({
       <CollapsibleTrigger
         className={cn(
           buttonVariants({ variant: 'secondary', size: 'sm' }),
-          'group h-12 w-full justify-start rounded-none px-6'
+          'group h-12 w-full justify-start rounded-none px-6 bg-white'
         )}
       >
         <div className="mr-2">{icon}</div>

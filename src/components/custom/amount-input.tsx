@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 import {
   Dialog,
   DialogClose,
@@ -83,7 +83,6 @@ const AmountInput = React.forwardRef<HTMLInputElement, AmountInputProps>(
             <DialogClose asChild>
               <Button
                 className="w-full"
-                variant="outline"
                 onClick={() => {
                   if (Number(amount) === 0) return
                   handleStake()

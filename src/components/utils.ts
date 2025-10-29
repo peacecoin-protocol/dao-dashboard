@@ -49,3 +49,9 @@ export const formatNumber = (num: number) => {
 export const timestampToDate = (timestamp: number) => {
   return new Date(timestamp * 1000).toLocaleString()
 }
+
+export const fetchMetadata = async (tokenURI: string) => {
+  const response = await fetch(tokenURI)
+  const data = await response.json()
+  return data
+}

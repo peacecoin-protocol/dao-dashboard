@@ -4,7 +4,7 @@ import Image from 'next/image'
 
 import { useEffect, useMemo, useState } from 'react'
 
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 
 import { Input } from '~/components/ui/input'
 import { readContract } from '@wagmi/core'

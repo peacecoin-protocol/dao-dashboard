@@ -15,7 +15,7 @@ import {
 import { readContract } from '@wagmi/core'
 import { config } from '~/lib/config'
 import { waitForTransactionReceipt } from '@wagmi/core'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 import { AmountInput } from '~/components/custom/amount-input'
 import { formatString } from '~/components/utils'
 

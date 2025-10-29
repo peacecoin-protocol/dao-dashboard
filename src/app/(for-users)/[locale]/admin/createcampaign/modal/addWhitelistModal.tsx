@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Modal from '~/components/custom/Modal'
 import { Input } from '~/components/ui/input'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 import { ethers } from 'ethers'
 import AddDynamicInputFields from '~/components/custom/AddDynamicInputFields'
 import { CAMPAIGN } from '~/i18n/types'

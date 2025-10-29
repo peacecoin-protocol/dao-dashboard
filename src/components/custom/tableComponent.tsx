@@ -99,6 +99,9 @@ export function TableComponent({
                   {campaign.tokenType}
                 </TableCell>
                 <TableCell className="text-center">
+                  {campaign.tokenId}
+                </TableCell>
+                <TableCell className="text-center">
                   {timestampToDate(Number(campaign.startTime))}
                 </TableCell>
                 <TableCell className="text-center">

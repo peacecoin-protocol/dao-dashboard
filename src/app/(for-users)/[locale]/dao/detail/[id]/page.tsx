@@ -9,7 +9,7 @@ import { ringStyle } from '~/app/constants/styles'
 import { Line } from 'rc-progress'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -128,9 +128,6 @@ export default function ForDaoDetailPage({
 
   const [dict, setDict] = useState<Dictionary | null>(null)
   const localDict = useMemo(() => dict?.daoInfo ?? {}, [dict])
-
-  const communityTokenAddress = '0xb2512eabfa28f8baa0a4b52a848286699d9b46c5'
-  const communityTokenSymbol = 'PCE'
 
   const [delegateAddr, setDelegateAddr] = useState('')
   const [transferAddr, setTransferAddr] = useState('')
@@ -390,14 +387,6 @@ export default function ForDaoDetailPage({
       confirmations: 1,
     })
 
-  const { data: communityTokenBalance, refetch: refetchCommunityTokenBalance } =
-    useReadContract({
-      address: communityTokenAddress as `0x${string}`,
-      abi: PCE_ABI,
-      functionName: 'balanceOf',
-      args: [address],
-    }) as { data?: string; refetch: () => void }
-
   const { data: timelockAddress, refetch: refetchTimelockAddress } =
     useReadContract({
       address: factoryAddress[chainId || defaultChainId] as `0x${string}`,
@@ -477,6 +466,26 @@ export default function ForDaoDetailPage({
       functionName: 'delay',
     }) as { data?: string; refetch: () => void }
 
+  const { data: communityTokenAddress } = useReadContract({
+    address: governanceTokenAddress as `0x${string}`,
+    abi: PCE_C_GOV_TOKEN_ABI,
+    functionName: 'communityToken',
+  }) as { data?: string; refetch: () => void }
+
+  const { data: communityTokenBalance, refetch: refetchCommunityTokenBalance } =
+    useReadContract({
+      address: communityTokenAddress as `0x${string}`,
+      abi: PCE_ABI,
+      functionName: 'balanceOf',
+      args: [address],
+    }) as { data?: string; refetch: () => void }
+
+  const { data: communityTokenSymbol } = useReadContract({
+    address: communityTokenAddress as `0x${string}`,
+    abi: PCE_C_GOV_TOKEN_ABI,
+    functionName: 'symbol',
+  }) as { data?: string; refetch: () => void }
+
   const getCurrentTimestamp = () => {
     return Number(block?.timestamp)
   }
@@ -492,7 +501,11 @@ export default function ForDaoDetailPage({
   }) => (
     <article
       className="flex flex-col w-full bg-gray-100 p-4 rounded-xl gap-2 cursor-pointer"
-      onClick={() => {
+      onClick={(e) => {
+        // Prevent onClick if a button inside the card was pressed
+        if ((e.target as HTMLElement).closest('button')) {
+          return
+        }
         setSelectedProposalIndex(index)
         setIsProposalDetailDialogOpened(true)
       }}
@@ -969,6 +982,10 @@ export default function ForDaoDetailPage({
   const handleDelegate = async () => {
     setIsDelegateDialogOpened(false)
 
+    toast({
+      title: 'Delegating voting power...',
+    })
+
     if (BigInt(governanceTokenBalance as string) > 0) {
       let tx
       try {
@@ -977,6 +994,11 @@ export default function ForDaoDetailPage({
           address: governanceTokenAddress as `0x${string}`,
           functionName: 'delegate',
           args: [delegateAddr],
+        })
+
+        await waitForTransactionReceipt(config, {
+          hash: tx,
+          confirmations: 1,
         })
       } catch (error) {
         console.error('Error delegating tokens:', error)
@@ -988,11 +1010,7 @@ export default function ForDaoDetailPage({
   useEffect(() => {
     const notify = async () => {
       // Only show toast if state has actually changed
-      if (
-        isConfirmed &&
-        lastToastStateRef.current.isConfirmed !== isConfirmed
-      ) {
-        lastToastStateRef.current.isConfirmed = isConfirmed
+      if (isConfirmed) {
         toast({
           title: 'Transaction Succeed!',
         })
@@ -1001,16 +1019,11 @@ export default function ForDaoDetailPage({
         await refetchVotes()
         await getTreasuryBalances(timelockAddress as `0x${string}`)
         await refetchProposalCount()
-      } else if (
-        isConfirming &&
-        lastToastStateRef.current.isConfirming !== isConfirming
-      ) {
-        lastToastStateRef.current.isConfirming = isConfirming
+      } else if (isConfirming) {
         toast({
           title: 'TX is Pending, Please Wait...',
         })
-      } else if (error && lastToastStateRef.current.error !== error) {
-        lastToastStateRef.current.error = error
+      } else if (error) {
         toast({
           title: (error as BaseError).shortMessage,
         })

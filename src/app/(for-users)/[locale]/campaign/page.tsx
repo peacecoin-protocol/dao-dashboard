@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
+import { ApolloClient, gql, HttpLink, InMemoryCache } from '@apollo/client'
 import { ethers, formatEther, parseEther, ZeroAddress } from 'ethers'
 import axios from 'axios'
 import { useToast } from '~/hooks/use-toast'
@@ -20,7 +20,7 @@ import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { CAMPAIGN, Metadata } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 
 import { Card, CardContent } from '~/components/ui/card'
 
@@ -36,21 +36,21 @@ import { timestampToDate } from '~/components/utils'
 import {
   PCE_SBT_ADDRESS,
   campaignAddress,
-  SUBGRAPH_URL,
   defaultChainId,
   NFTAddress,
+  NFT_SUBGRAPH_URL,
+  SBT_SUBGRAPH_URL,
+  CAMPAIGNS_SUBGRAPH_URL,
 } from '~/app/constants/constants'
 
+import { fetchMetadata } from '~/components/utils'
 import { CAMPAIGN_ABI } from '~/app/ABIs/Campaigns'
 
 import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { SBT_ABI } from '~/app/ABIs/SBT'
-import { NFT_DETAIL } from '~/components/custom/nft-detail'
 import { Spinner } from '~/components/ui/Spinner'
-import { CreateCampaignModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/createCampaignModal'
-import { AddWhitelistModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/addWhitelistModal'
 import {
   CampaignInfo,
   TableComponent,
@@ -63,6 +63,7 @@ import {
   campaignTableHeaders,
   sbtTableHeaders,
 } from '~/app/constants/constants'
+import { Env } from '~/env'
 
 // Constants
 const PCE_LOGO = '/pce_logo.jpg'
@@ -103,162 +104,6 @@ interface CampaignStatus {
 interface TotalClaimed {
   campaignId: number
   totalClaimed: string
-}
-
-const useNFTData = (
-  chainId: number | undefined,
-  address: string | undefined,
-  tokenURIs: { internal_id: number; uri: string }[],
-  nftTokenURIs: { internal_id: number; uri: string }[],
-  uri_: string | undefined,
-  isConfirmed: boolean
-) => {
-  const [state, setState] = useState<NFTState>({
-    sbtBalances: [],
-    nftBalances: [],
-    nftMetadata: [],
-    sbtMetadata: [],
-    detailIndex: DEFAULT_NFT_DETAIL_INDEX,
-    isDetailOpen: false,
-  })
-
-  const fetchNFTBalances = useCallback(async () => {
-    if (!chainId || !address || tokenURIs.length === 0) return
-
-    try {
-      const balances = await Promise.all(
-        nftTokenURIs.map(async (tokenURI) => {
-          return (await readContract(config, {
-            abi: SBT_ABI,
-            address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
-            functionName: 'balanceOf',
-            args: [address, tokenURI.internal_id],
-          })) as number
-        })
-      )
-      setState((prev) => ({ ...prev, nftBalances: balances }))
-    } catch (error) {}
-  }, [chainId, address, tokenURIs, isConfirmed])
-
-  const fetchSBTBalances = useCallback(async () => {
-    if (!chainId || !address || tokenURIs.length === 0) return
-
-    try {
-      const balances = await Promise.all(
-        tokenURIs.map(async (tokenURI) => {
-          return (await readContract(config, {
-            abi: SBT_ABI,
-            address: PCE_SBT_ADDRESS[
-              chainId || defaultChainId
-            ] as `0x${string}`,
-            functionName: 'balanceOf',
-            args: [address, tokenURI.internal_id],
-          })) as number
-        })
-      )
-      setState((prev) => ({ ...prev, sbtBalances: balances }))
-    } catch (error) {}
-  }, [chainId, address, tokenURIs, isConfirmed])
-
-  const fetchSBTMetadata = useCallback(async () => {
-    if (tokenURIs.length === 0 || !uri_) return
-
-    try {
-      const metadata = await Promise.all(
-        tokenURIs.map(async (tokenURI) => {
-          const tokenUri = uri_ + tokenURI.uri
-
-          let tokenData
-          let tokenDataJson
-          try {
-            tokenData = await fetch(tokenUri)
-            tokenDataJson = await tokenData.json()
-          } catch (error) {}
-          return {
-            image: tokenDataJson.image,
-            name: tokenDataJson.name,
-            description: tokenDataJson.description,
-            attributes: [],
-            external_url: '',
-            token_id: tokenURI.internal_id,
-            timestamp: Number(tokenDataJson.timestamp).toString(),
-            votingPower: tokenDataJson.votingPower,
-          }
-        })
-      )
-      setState((prev) => ({ ...prev, sbtMetadata: metadata }))
-    } catch (error) {
-      const fallbackMetadata = tokenURIs.map((_, index) => ({
-        image: EMPTY_NFT_IMAGE,
-        name: '',
-        description: '',
-        attributes: [],
-        external_url: '',
-        token_id: index,
-        timestamp: '0',
-        votingPower: '0',
-      }))
-      setState((prev) => ({ ...prev, sbtMetadata: fallbackMetadata }))
-    }
-  }, [uri_, tokenURIs])
-
-  const fetchNFTMetadata = useCallback(async () => {
-    if (nftTokenURIs.length === 0 || !uri_) return
-
-    try {
-      const nftMetadata = await Promise.all(
-        nftTokenURIs.map(async (tokenURI) => {
-          const tokenUri = uri_ + tokenURI.uri
-
-          let tokenData
-          let tokenDataJson
-          try {
-            tokenData = await fetch(tokenUri)
-            tokenDataJson = await tokenData.json()
-          } catch (error) {}
-          return {
-            image: tokenDataJson.image,
-            name: tokenDataJson.name,
-            description: tokenDataJson.description,
-            attributes: [],
-            external_url: '',
-            token_id: tokenURI.internal_id,
-            timestamp: Number(tokenDataJson.timestamp).toString(),
-            votingPower: tokenDataJson.votingPower,
-          }
-        })
-      )
-
-      setState((prev) => ({ ...prev, nftMetadata }))
-    } catch (error) {
-      const fallbackMetadata = nftTokenURIs.map((_, index) => ({
-        image: EMPTY_NFT_IMAGE,
-        name: '',
-        description: '',
-        attributes: [],
-        external_url: '',
-        token_id: index,
-        timestamp: '0',
-        votingPower: '0',
-      }))
-      setState((prev) => ({ ...prev, nftMetadata: fallbackMetadata }))
-    }
-  }, [uri_, nftTokenURIs])
-
-  useEffect(() => {
-    fetchSBTMetadata()
-    fetchNFTMetadata()
-    fetchSBTBalances()
-    fetchNFTBalances()
-  }, [uri_, tokenURIs, nftTokenURIs])
-
-  return {
-    ...state,
-    setDetailIndex: (index: number) =>
-      setState((prev) => ({ ...prev, detailIndex: index })),
-    setIsDetailOpen: (open: boolean) =>
-      setState((prev) => ({ ...prev, isDetailOpen: open })),
-  }
 }
 
 // Components
@@ -403,6 +248,24 @@ export default function ForCampaignPage({
   const [signature, setSignature] = useState<string>('')
   const [loading, setLoading] = useState<boolean>(false)
   const [totalClaimed, setTotalClaimed] = useState<TotalClaimed[]>([])
+  const [refetchNFTData, setRefetchNFTData] = useState(false)
+  const [refetchSBTData, setRefetchSBTData] = useState(false)
+  const [sbtData, setSBTData] = useState<any[]>([])
+  const [nftData, setNFTData] = useState<any[]>([])
+  const [tokenData, setTokenData] = useState<any[]>([])
+
+  const sbtClient = new ApolloClient({
+    cache: new InMemoryCache(),
+    link: new HttpLink({
+      uri: SBT_SUBGRAPH_URL[chainId || defaultChainId] as string,
+    }),
+  })
+  const nftClient = new ApolloClient({
+    cache: new InMemoryCache(),
+    link: new HttpLink({
+      uri: NFT_SUBGRAPH_URL[chainId || defaultChainId] as string,
+    }),
+  })
 
   // Contract hooks
   const {
@@ -442,27 +305,217 @@ export default function ForCampaignPage({
   })
 
   const client = new ApolloClient({
-    uri: SUBGRAPH_URL[chainId || defaultChainId] as string,
+    uri: CAMPAIGNS_SUBGRAPH_URL[chainId || defaultChainId] as string,
     cache: new InMemoryCache(),
   })
 
-  const {
-    sbtBalances,
-    nftBalances,
-    nftMetadata,
-    sbtMetadata,
-    detailIndex: nftDetailIndex,
-    isDetailOpen: isNFTDetailOpen,
-    setDetailIndex: setNftDetailIndex,
-    setIsDetailOpen: setIsNFTDetailOpen,
-  } = useNFTData(
-    chainId,
-    address,
-    campaignData.tokenURIs,
-    campaignData.nftTokenURIs,
-    uri_ as string,
-    isConfirmed
+  useEffect(() => {
+    const filteredSbtData: SBTInfo[] = sbtData.filter(
+      (token: SBTInfo) => token.tokenId !== '1'
+    )
+    const filteredNftData: SBTInfo[] = nftData.filter(
+      (token: SBTInfo) => token.tokenId !== '1'
+    )
+    setTokenData([...filteredSbtData, ...filteredNftData])
+  }, [sbtData, nftData])
+
+  const fetchSBTStatus = useCallback(
+    async (_sbtData: SBTInfo[]) => {
+      if (!chainId || !address || !_sbtData.length) return
+      try {
+        const statuses = await Promise.all(
+          _sbtData.map(async (token: SBTInfo) => {
+            return (await readContract(config, {
+              abi: SBT_ABI,
+              address: PCE_SBT_ADDRESS[
+                chainId || defaultChainId
+              ] as `0x${string}`,
+              functionName: 'isRevoked',
+              args: [token.tokenId],
+            })) as boolean
+          })
+        )
+
+        const balances = await Promise.all(
+          _sbtData.map(async (token: SBTInfo) => {
+            return (await readContract(config, {
+              abi: SBT_ABI,
+              address: PCE_SBT_ADDRESS[
+                chainId || defaultChainId
+              ] as `0x${string}`,
+              functionName: 'balanceOf',
+              args: [address, token.tokenId],
+            })) as BigInt
+          })
+        )
+
+        setSBTData(
+          _sbtData.map((token: SBTInfo, index: number) => ({
+            ...token,
+            isRevoked: statuses[index] || false,
+            balance: balances[index]?.toString() || '0',
+          }))
+        )
+      } catch (error) {
+        console.error('Error fetching SBT status:', error)
+      }
+    },
+    [chainId, address, sbtData]
   )
+
+  const fetchNFTStatus = useCallback(
+    async (_nftData: SBTInfo[]) => {
+      if (!chainId || !address || !_nftData.length) return
+      try {
+        const statuses = await Promise.all(
+          _nftData.map(async (token: SBTInfo) => {
+            return (await readContract(config, {
+              abi: SBT_ABI,
+              address: PCE_SBT_ADDRESS[
+                chainId || defaultChainId
+              ] as `0x${string}`,
+              functionName: 'isRevoked',
+              args: [token.tokenId],
+            })) as boolean
+          })
+        )
+
+        const balances = await Promise.all(
+          _nftData.map(async (token: SBTInfo) => {
+            return (await readContract(config, {
+              abi: SBT_ABI,
+              address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
+              functionName: 'balanceOf',
+              args: [address, token.tokenId],
+            })) as BigInt
+          })
+        )
+
+        setNFTData(
+          _nftData.map((token: SBTInfo, index: number) => ({
+            ...token,
+            isRevoked: statuses[index] || false,
+            balance: balances[index]?.toString() || '0',
+          }))
+        )
+      } catch (error) {
+        console.error('Error fetching SBT status:', error)
+      }
+    },
+    [chainId, address, sbtData]
+  )
+
+  useEffect(() => {
+    const fetchNFTData = async () => {
+      try {
+        setLoading(true)
+        const { data } = await nftClient.query({
+          query: gql`
+            query getNFTData {
+              createdTokens(first: 10, orderDirection: desc, where: {}) {
+                tokenId
+                timestamp_
+                tokenURI
+                votingPower
+              }
+            }
+          `,
+        })
+
+        let _nftData: SBTInfo[] = []
+        for (const token of data.createdTokens) {
+          let _metadata: any = {}
+          try {
+            _metadata = await fetchMetadata(
+              `${Env.PINATA_GATEWAY_URL}/ipfs/${token.tokenURI}`
+            )
+          } catch (error) {
+            console.error('Error fetching NFT data:', error)
+          }
+
+          _nftData.push({
+            tokenId: token.tokenId,
+            createdAt: Number(token.timestamp_).toString(),
+            image: _metadata.image
+              ? `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`
+              : EMPTY_NFT_IMAGE,
+            name: _metadata.name,
+            description: _metadata.description,
+            balance: '0',
+            votingPower: token.votingPower,
+            isRevoked: false,
+            isSBT: false,
+          })
+        }
+
+        setNFTData([..._nftData])
+        await fetchNFTStatus(_nftData)
+
+        setLoading(false)
+      } catch (error) {
+        setLoading(false)
+        console.error('Error:', error)
+      }
+    }
+    fetchNFTData()
+  }, [refetchNFTData])
+
+  useEffect(() => {
+    const fetchSBTData = async () => {
+      try {
+        setLoading(true)
+        const { data } = await sbtClient.query({
+          query: gql`
+            query getSBTData {
+              createdTokens(first: 10, orderDirection: desc, where: {}) {
+                tokenId
+                timestamp_
+                tokenURI
+                votingPower
+              }
+            }
+          `,
+        })
+
+        let _sbtData: SBTInfo[] = []
+        for (const token of data.createdTokens) {
+          let _metadata: any = {}
+          try {
+            _metadata = await fetchMetadata(
+              `${Env.PINATA_GATEWAY_URL}/ipfs/${token.tokenURI}`
+            )
+          } catch (error) {
+            console.error('Error fetching SBT data:', error)
+          }
+
+          console.log(_sbtData, '_sbtData')
+
+          _sbtData.push({
+            tokenId: token.tokenId,
+            createdAt: Number(token.timestamp_).toString(),
+            image: _metadata.image
+              ? `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`
+              : EMPTY_NFT_IMAGE,
+            name: _metadata.name,
+            description: _metadata.description,
+            balance: '0',
+            votingPower: token.votingPower,
+            isRevoked: false,
+            isSBT: true,
+          })
+        }
+
+        setSBTData([..._sbtData])
+        await fetchSBTStatus(_sbtData)
+
+        setLoading(false)
+      } catch (error) {
+        setLoading(false)
+        console.error('Error:', error)
+      }
+    }
+    fetchSBTData()
+  }, [refetchSBTData])
 
   const fetchCampaignData = async () => {
     setLoading(true)
@@ -845,13 +898,13 @@ export default function ForCampaignPage({
     [campaignData, parseGithubUsername, chainId, writeContract]
   )
 
-  const handleNFTClick = useCallback(
-    (index: number) => {
-      setNftDetailIndex(index)
-      setIsNFTDetailOpen(true)
-    },
-    [setNftDetailIndex, setIsNFTDetailOpen]
-  )
+  // const handleNFTClick = useCallback(
+  //   (index: number) => {
+  //     setNftDetailIndex(index)
+  //     setIsNFTDetailOpen(true)
+  //   },
+  //   [setNftDetailIndex, setIsNFTDetailOpen]
+  // )
 
   const handleCopySignature = useCallback(() => {
     try {
@@ -886,11 +939,11 @@ export default function ForCampaignPage({
       id: campaign.campaignId.toString(),
       image:
         campaign.tokenType == 1
-          ? sbtMetadata?.find((m) => m.token_id == campaign.sbtId)?.image ||
-            EMPTY_NFT_IMAGE
+          ? sbtData?.find((m) => m.tokenId == campaign.sbtId.toString())
+              ?.image || EMPTY_NFT_IMAGE
           : campaign.tokenType == 2
-            ? nftMetadata?.find((m) => m.token_id == campaign.sbtId)?.image ||
-              EMPTY_NFT_IMAGE
+            ? nftData?.find((m) => m.tokenId == campaign.sbtId.toString())
+                ?.image || EMPTY_NFT_IMAGE
             : PCE_LOGO,
       tokenId: campaign.sbtId.toString(),
       title: campaign.title,
@@ -915,52 +968,7 @@ export default function ForCampaignPage({
     }))
 
     return info
-  }, [campaignData, sbtMetadata, nftMetadata, totalClaimed])
-
-  const sbtInfo = useMemo(() => {
-    const info: SBTInfo[] = sbtBalances
-      .map((balance, index) => ({ balance, index }))
-      .filter(({ balance }) => balance > 0)
-      .map(({ index }) => ({
-        image: sbtMetadata[index]?.image || EMPTY_NFT_IMAGE,
-        tokenId: (index + 1).toString(),
-        name: sbtMetadata[index]?.name || '',
-        description: sbtMetadata[index]?.description || '',
-        balance: sbtBalances?.[index]?.toString() || '0',
-        votingPower: sbtMetadata[index]?.votingPower || '0',
-        createdAt:
-          (Number(sbtMetadata[index]?.timestamp) / 1000).toString() || '0',
-        isRevoked: false,
-        isSBT: true,
-      }))
-    return info ?? []
-  }, [sbtMetadata, sbtBalances])
-
-  const nftInfo = useMemo(() => {
-    const info: SBTInfo[] = nftBalances
-      .map((balance, index) => ({ balance, index }))
-      .filter(({ balance }) => balance > 0)
-      .map(({ index }) => ({
-        image: nftMetadata[index]?.image || EMPTY_NFT_IMAGE,
-        tokenId: (index + 1).toString(),
-        name: nftMetadata[index]?.name || '',
-        description: nftMetadata[index]?.description || '',
-        balance: nftBalances?.[index]?.toString() || '0',
-        votingPower: nftMetadata[index]?.votingPower || '0',
-        createdAt:
-          (Number(nftMetadata[index]?.timestamp) / 1000).toString() || '0',
-        isRevoked: false,
-        isSBT: false,
-      }))
-    return info ?? []
-  }, [nftMetadata, nftBalances])
-
-  const tokenInfo = useMemo(() => {
-    const info: SBTInfo[] = []
-    info.push(...sbtInfo)
-    info.push(...nftInfo)
-    return info
-  }, [sbtInfo, nftInfo])
+  }, [campaignData, sbtData, nftData, totalClaimed])
 
   return (
     <div className="w-full min-h-screen bg-background container">
@@ -980,28 +988,6 @@ export default function ForCampaignPage({
             {campaign.description ?? ''}
           </p>
         </div>
-
-        {/* Modals */}
-        <CreateCampaignModal
-          isOpen={dialogState.isCreateOpen}
-          onClose={() =>
-            setDialogState((prev) => ({ ...prev, isCreateOpen: false }))
-          }
-          nftMetadata={nftMetadata}
-          sbtMetadata={sbtMetadata}
-          onSubmit={handleCreateCampaign}
-          campaign={campaign}
-        />
-
-        <AddWhitelistModal
-          isOpen={dialogState.isAddWinnersOpen}
-          onClose={() =>
-            setDialogState((prev) => ({ ...prev, isAddWinnersOpen: false }))
-          }
-          campaignData={campaignData.data}
-          onSubmit={handleAddWhitelist}
-          campaign={campaign}
-        />
 
         {/* Wallet Connected Section */}
         {chainId && (
@@ -1058,7 +1044,7 @@ export default function ForCampaignPage({
               </h2>
             </div>
 
-            <SBTTableComponent headers={sbtTableHeaders} sbtInfo={tokenInfo} />
+            <SBTTableComponent headers={sbtTableHeaders} sbtInfo={tokenData} />
           </div>
         )}
       </div>
@@ -1092,17 +1078,6 @@ export default function ForCampaignPage({
         }
         isConnected={!!address}
         campaignDict={campaign}
-      />
-
-      {/* NFT Detail Dialog */}
-      <NFT_DETAIL
-        isOpen={isNFTDetailOpen}
-        onOpenChange={setIsNFTDetailOpen}
-        imageSrc={nftMetadata[nftDetailIndex]?.image || EMPTY_NFT_IMAGE}
-        imageName={campaignData.data[nftDetailIndex]?.title ?? ''}
-        tokenId={nftDetailIndex + 1}
-        description={campaignData.data[nftDetailIndex]?.description ?? ''}
-        metadata={JSON.stringify(nftMetadata[nftDetailIndex])}
       />
     </div>
   )
