@@ -6,7 +6,7 @@ import copy from 'clipboard-copy'
 import Link from 'next/link'
 import { useDisconnect, useAccount, useBalance } from 'wagmi'
 import { useConnectModal } from '@rainbow-me/rainbowkit'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,

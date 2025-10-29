@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import Modal from '~/components/custom/Modal'
 import { Input } from '~/components/ui/input'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 import { useToast } from '~/hooks/use-toast'
-import { Metadata } from '~/i18n/types'
+import { SBTInfo } from '~/components/custom/sbt-tableComponent'
+
 import Image from 'next/image'
 import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import { Label } from '~/components/ui/label'
@@ -19,15 +20,13 @@ export const CreateCampaignModal = ({
   isOpen,
   onClose,
   onSubmit,
-  nftMetadata,
-  sbtMetadata,
+  tokenData,
   campaign,
 }: {
   isOpen: boolean
   onClose: () => void
   onSubmit: (formData: any) => void
-  nftMetadata: Metadata[]
-  sbtMetadata: Metadata[]
+  tokenData: SBTInfo[]
   campaign: any
 }) => {
   const { toast } = useToast()
@@ -206,13 +205,15 @@ export const CreateCampaignModal = ({
               <div className="flex justify-center">
                 <Image
                   src={
-                    form.tokenType == 2
-                      ? nftMetadata.find(
-                          (m) => m.token_id == Number(form.sbtId)
+                    form.tokenType == 1
+                      ? tokenData.find(
+                          (m: SBTInfo) =>
+                            m.isSBT && m.tokenId == form.sbtId.toString()
                         )?.image || EMPTY_NFT_IMAGE
-                      : form.tokenType == 1
-                        ? sbtMetadata.find(
-                            (m) => m.token_id == Number(form.sbtId)
+                      : form.tokenType == 2
+                        ? tokenData.find(
+                            (m: SBTInfo) =>
+                              !m.isSBT && m.tokenId == form.sbtId.toString()
                           )?.image || EMPTY_NFT_IMAGE
                         : EMPTY_NFT_IMAGE
                   }
@@ -227,7 +228,7 @@ export const CreateCampaignModal = ({
 
           {/* Title Input */}
           <div className="space-y-2">
-            <Label htmlFor="title">{campaign.title ?? 'Title'}</Label>
+            <Label htmlFor="title">Title</Label>
             <Input
               id="title"
               type="text"
@@ -243,9 +244,7 @@ export const CreateCampaignModal = ({
 
           {/* Description Input */}
           <div className="space-y-2">
-            <Label htmlFor="description">
-              {campaign.description ?? 'Description'}
-            </Label>
+            <Label htmlFor="description">Description</Label>
             <Input
               id="description"
               type="text"

@@ -73,7 +73,7 @@ export const daoStudioAddress = {
 } as Record<number, `0x${string}`>
 
 export const campaignAddress = {
-  [sepolia.id]: '0xc6aDC40a090D8168bd8785fd852Ac833E5D02877',
+  [sepolia.id]: '0x848d975e788A1c917331Cc5773de1CA39AD29340',
   [localhost.id]: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',
@@ -124,6 +124,16 @@ export const DAO_STUDIO_SUBGRAPH_URL = {
     'https://api.goldsky.com/api/public/project_cmh9yq5lf9mwv01xhb96l1gbh/subgraphs/Peacecoin-DaoStudio/1.0.0/gn',
   [hoodi.id]:
     'https://api.goldsky.com/api/public/project_cmh9yq5lf9mwv01xhb96l1gbh/subgraphs/Peacecoin-DaoStudio/1.0.0/gn',
+} as Record<number, string>
+
+export const CAMPAIGNS_SUBGRAPH_URL = {
+  [sepolia.id]:
+    'https://api.goldsky.com/api/public/project_cmhau3g2q32y301wj6eog3f0i/subgraphs/Peacecoin-Campaigns/1.0.0/gn',
+  [localhost.id]: 'http://localhost:8000/subgraphs/name/campaigns',
+  [polygon.id]:
+    'https://api.goldsky.com/api/public/project_cmhau3g2q32y301wj6eog3f0i/subgraphs/Peacecoin-Campaigns/1.0.0/gn',
+  [hoodi.id]:
+    'https://api.goldsky.com/api/public/project_cmhau3g2q32y301wj6eog3f0i/subgraphs/Peacecoin-Campaigns/1.0.0/gn',
 } as Record<number, string>
 
 export const OWNER_ADDRESSES = [
@@ -183,6 +193,7 @@ export const campaignTableHeaders = [
   'Title',
   'Description',
   'Type',
+  'Token Id',
   'Claimed Amount/Total Amount',
   'Claim Amount',
   'Token Type',

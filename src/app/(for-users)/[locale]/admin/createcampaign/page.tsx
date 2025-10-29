@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
+import { ApolloClient, gql, HttpLink, InMemoryCache } from '@apollo/client'
 import { ethers, formatEther, parseEther, ZeroAddress } from 'ethers'
-import axios from 'axios'
 import { useToast } from '~/hooks/use-toast'
 
 import {
@@ -16,10 +15,10 @@ import {
   type BaseError,
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
-import { CAMPAIGN, Metadata } from '~/i18n/types'
+import { CAMPAIGN } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 
 import {
   Dialog,
@@ -29,14 +28,18 @@ import {
   DialogDescription,
 } from '~/components/ui/dialog'
 import { timestampToDate } from '~/components/utils'
+import { fetchMetadata } from '~/components/utils'
+import { Env } from '~/env'
 
 import {
   PCE_SBT_ADDRESS,
   campaignAddress,
-  SUBGRAPH_URL,
+  CAMPAIGNS_SUBGRAPH_URL,
   defaultChainId,
   NFTAddress,
   campaignTableHeaders,
+  NFT_SUBGRAPH_URL,
+  SBT_SUBGRAPH_URL,
 } from '~/app/constants/constants'
 
 import { CAMPAIGN_ABI } from '~/app/ABIs/Campaigns'
@@ -45,7 +48,6 @@ import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { SBT_ABI } from '~/app/ABIs/SBT'
-import { NFT_DETAIL } from '~/components/custom/nft-detail'
 import { Spinner } from '~/components/ui/Spinner'
 import { CreateCampaignModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/createCampaignModal'
 import { AddWhitelistModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/addWhitelistModal'
@@ -70,15 +72,6 @@ interface CampaignState {
   nftTokenURIs: { internal_id: number; uri: string }[]
 }
 
-interface NFTState {
-  sbtBalances: number[]
-  nftBalances: number[]
-  nftMetadata: Metadata[]
-  sbtMetadata: Metadata[]
-  detailIndex: number
-  isDetailOpen: boolean
-}
-
 interface DialogState {
   isOpen: boolean
   isCreateOpen: boolean
@@ -95,158 +88,6 @@ interface CampaignStatus {
 interface TotalClaimed {
   campaignId: number
   totalClaimed: string
-}
-
-const useNFTData = (
-  chainId: number | undefined,
-  address: string | undefined,
-  tokenURIs: { internal_id: number; uri: string }[],
-  nftTokenURIs: { internal_id: number; uri: string }[],
-  uri_: string | undefined,
-  isConfirmed: boolean
-) => {
-  const [state, setState] = useState<NFTState>({
-    sbtBalances: [],
-    nftBalances: [],
-    nftMetadata: [],
-    sbtMetadata: [],
-    detailIndex: DEFAULT_NFT_DETAIL_INDEX,
-    isDetailOpen: false,
-  })
-
-  const fetchNFTBalances = useCallback(async () => {
-    if (!chainId || !address || tokenURIs.length === 0) return
-
-    try {
-      const balances = await Promise.all(
-        tokenURIs.map(async (tokenURI) => {
-          return (await readContract(config, {
-            abi: SBT_ABI,
-            address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
-            functionName: 'balanceOf',
-            args: [address, tokenURI.internal_id],
-          })) as number
-        })
-      )
-      setState((prev) => ({ ...prev, nftBalances: balances }))
-    } catch (error) {}
-  }, [chainId, address, tokenURIs, isConfirmed])
-
-  const fetchSBTBalances = useCallback(async () => {
-    if (!chainId || !address || tokenURIs.length === 0) return
-
-    try {
-      const balances = await Promise.all(
-        tokenURIs.map(async (tokenURI) => {
-          return (await readContract(config, {
-            abi: SBT_ABI,
-            address: PCE_SBT_ADDRESS[
-              chainId || defaultChainId
-            ] as `0x${string}`,
-            functionName: 'balanceOf',
-            args: [address, tokenURI.internal_id],
-          })) as number
-        })
-      )
-      setState((prev) => ({ ...prev, sbtBalances: balances }))
-    } catch (error) {}
-  }, [chainId, address, tokenURIs, isConfirmed])
-
-  const fetchSBTMetadata = useCallback(async () => {
-    if (tokenURIs.length === 0 || !uri_) return
-
-    try {
-      const metadata = await Promise.all(
-        tokenURIs.map(async (tokenURI) => {
-          const tokenUri = uri_ + tokenURI.uri
-
-          let tokenData
-          let tokenDataJson
-          try {
-            tokenData = await fetch(tokenUri)
-            tokenDataJson = await tokenData.json()
-          } catch (error) {}
-          return {
-            image: tokenDataJson.image,
-            name: tokenDataJson.name,
-            description: tokenDataJson.description,
-            attributes: [],
-            external_url: '',
-            token_id: tokenURI.internal_id,
-            timestamp: Number(tokenDataJson.timestamp).toString(),
-          }
-        })
-      )
-      setState((prev) => ({ ...prev, sbtMetadata: metadata }))
-    } catch (error) {
-      const fallbackMetadata = tokenURIs.map((_, index) => ({
-        image: EMPTY_NFT_IMAGE,
-        name: '',
-        description: '',
-        attributes: [],
-        external_url: '',
-        token_id: index,
-        timestamp: '0',
-      }))
-      setState((prev) => ({ ...prev, sbtMetadata: fallbackMetadata }))
-    }
-  }, [uri_, tokenURIs])
-
-  const fetchNFTMetadata = useCallback(async () => {
-    if (nftTokenURIs.length === 0 || !uri_) return
-
-    try {
-      const nftMetadata = await Promise.all(
-        nftTokenURIs.map(async (tokenURI) => {
-          const tokenUri = uri_ + tokenURI.uri
-
-          let tokenData
-          let tokenDataJson
-          try {
-            tokenData = await fetch(tokenUri)
-            tokenDataJson = await tokenData.json()
-          } catch (error) {}
-          return {
-            image: tokenDataJson.image,
-            name: tokenDataJson.name,
-            description: tokenDataJson.description,
-            attributes: [],
-            external_url: '',
-            token_id: tokenURI.internal_id,
-            timestamp: Number(tokenDataJson.timestamp).toString(),
-          }
-        })
-      )
-
-      setState((prev) => ({ ...prev, nftMetadata }))
-    } catch (error) {
-      const fallbackMetadata = nftTokenURIs.map((_, index) => ({
-        image: EMPTY_NFT_IMAGE,
-        name: '',
-        description: '',
-        attributes: [],
-        external_url: '',
-        token_id: index,
-        timestamp: '0',
-      }))
-      setState((prev) => ({ ...prev, nftMetadata: fallbackMetadata }))
-    }
-  }, [uri_, nftTokenURIs])
-
-  useEffect(() => {
-    fetchSBTMetadata()
-    fetchNFTMetadata()
-    fetchSBTBalances()
-    fetchNFTBalances()
-  }, [uri_, tokenURIs, nftTokenURIs])
-
-  return {
-    ...state,
-    setDetailIndex: (index: number) =>
-      setState((prev) => ({ ...prev, detailIndex: index })),
-    setIsDetailOpen: (open: boolean) =>
-      setState((prev) => ({ ...prev, isDetailOpen: open })),
-  }
 }
 
 // Components
@@ -392,6 +233,25 @@ export default function ForCampaignPage({
   const [loading, setLoading] = useState<boolean>(false)
   const [totalClaimed, setTotalClaimed] = useState<TotalClaimed[]>([])
 
+  const [sbtData, setSBTData] = useState<SBTInfo[]>([])
+  const [nftData, setNFTData] = useState<SBTInfo[]>([])
+  const [tokenData, setTokenData] = useState<SBTInfo[]>([])
+  const [refetchNFTData, setRefetchNFTData] = useState(false)
+  const [refetchSBTData, setRefetchSBTData] = useState(false)
+
+  const sbtClient = new ApolloClient({
+    cache: new InMemoryCache(),
+    link: new HttpLink({
+      uri: SBT_SUBGRAPH_URL[chainId || defaultChainId] as string,
+    }),
+  })
+  const nftClient = new ApolloClient({
+    cache: new InMemoryCache(),
+    link: new HttpLink({
+      uri: NFT_SUBGRAPH_URL[chainId || defaultChainId] as string,
+    }),
+  })
+
   // Contract hooks
   const {
     data: hash,
@@ -430,27 +290,9 @@ export default function ForCampaignPage({
   })
 
   const client = new ApolloClient({
-    uri: SUBGRAPH_URL[chainId || defaultChainId] as string,
+    uri: CAMPAIGNS_SUBGRAPH_URL[chainId || defaultChainId] as string,
     cache: new InMemoryCache(),
   })
-
-  const {
-    sbtBalances,
-    nftBalances,
-    nftMetadata,
-    sbtMetadata,
-    detailIndex: nftDetailIndex,
-    isDetailOpen: isNFTDetailOpen,
-    setDetailIndex: setNftDetailIndex,
-    setIsDetailOpen: setIsNFTDetailOpen,
-  } = useNFTData(
-    chainId,
-    address,
-    campaignData.tokenURIs,
-    campaignData.nftTokenURIs,
-    uri_ as string,
-    isConfirmed
-  )
 
   const fetchCampaignData = async () => {
     setLoading(true)
@@ -576,6 +418,214 @@ export default function ForCampaignPage({
     checkCampaignStatus()
   }, [dialogState.campaignId, address, chainId])
 
+  const fetchNFTStatus = useCallback(
+    async (_nftData: SBTInfo[]) => {
+      if (!chainId || !address || !_nftData.length) return
+      try {
+        const statuses = await Promise.all(
+          _nftData.map(async (token: SBTInfo) => {
+            return (await readContract(config, {
+              abi: SBT_ABI,
+              address: PCE_SBT_ADDRESS[
+                chainId || defaultChainId
+              ] as `0x${string}`,
+              functionName: 'isRevoked',
+              args: [token.tokenId],
+            })) as boolean
+          })
+        )
+
+        const balances = await Promise.all(
+          _nftData.map(async (token: SBTInfo) => {
+            return (await readContract(config, {
+              abi: SBT_ABI,
+              address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
+              functionName: 'balanceOf',
+              args: [address, token.tokenId],
+            })) as BigInt
+          })
+        )
+
+        setNFTData(
+          _nftData.map((token: SBTInfo, index: number) => ({
+            ...token,
+            isRevoked: statuses[index] || false,
+            balance: balances[index]?.toString() || '0',
+          }))
+        )
+      } catch (error) {
+        console.error('Error fetching SBT status:', error)
+      }
+    },
+    [chainId, address, sbtData]
+  )
+
+  const fetchSBTStatus = useCallback(
+    async (_sbtData: SBTInfo[]) => {
+      if (!chainId || !address || !_sbtData.length) return
+      try {
+        const statuses = await Promise.all(
+          _sbtData.map(async (token: SBTInfo) => {
+            return (await readContract(config, {
+              abi: SBT_ABI,
+              address: PCE_SBT_ADDRESS[
+                chainId || defaultChainId
+              ] as `0x${string}`,
+              functionName: 'isRevoked',
+              args: [token.tokenId],
+            })) as boolean
+          })
+        )
+
+        const balances = await Promise.all(
+          _sbtData.map(async (token: SBTInfo) => {
+            return (await readContract(config, {
+              abi: SBT_ABI,
+              address: PCE_SBT_ADDRESS[
+                chainId || defaultChainId
+              ] as `0x${string}`,
+              functionName: 'balanceOf',
+              args: [address, token.tokenId],
+            })) as BigInt
+          })
+        )
+
+        setSBTData(
+          _sbtData.map((token: SBTInfo, index: number) => ({
+            ...token,
+            isRevoked: statuses[index] || false,
+            balance: balances[index]?.toString() || '0',
+          }))
+        )
+      } catch (error) {
+        console.error('Error fetching SBT status:', error)
+      }
+    },
+    [chainId, address, sbtData]
+  )
+
+  useEffect(() => {
+    const filteredSbtData: SBTInfo[] = sbtData.filter(
+      (token: SBTInfo) => token.tokenId !== '1'
+    )
+    const filteredNftData: SBTInfo[] = nftData.filter(
+      (token: SBTInfo) => token.tokenId !== '1'
+    )
+    setTokenData([...filteredSbtData, ...filteredNftData])
+  }, [sbtData, nftData])
+
+  useEffect(() => {
+    const fetchNFTData = async () => {
+      try {
+        setLoading(true)
+        const { data } = await nftClient.query({
+          query: gql`
+            query getNFTData {
+              createdTokens(first: 10, orderDirection: desc, where: {}) {
+                tokenId
+                timestamp_
+                tokenURI
+                votingPower
+              }
+            }
+          `,
+        })
+
+        let _nftData: SBTInfo[] = []
+        for (const token of data.createdTokens) {
+          let _metadata: any = {}
+          try {
+            _metadata = await fetchMetadata(
+              `${Env.PINATA_GATEWAY_URL}/ipfs/${token.tokenURI}`
+            )
+          } catch (error) {
+            console.error('Error fetching NFT data:', error)
+          }
+
+          _nftData.push({
+            tokenId: token.tokenId,
+            createdAt: Number(token.timestamp_).toString(),
+            image: _metadata.image
+              ? `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`
+              : EMPTY_NFT_IMAGE,
+            name: _metadata.name,
+            description: _metadata.description,
+            balance: '0',
+            votingPower: token.votingPower,
+            isRevoked: false,
+            isSBT: false,
+          })
+        }
+
+        setNFTData([..._nftData])
+        await fetchNFTStatus(_nftData)
+
+        setLoading(false)
+      } catch (error) {
+        setLoading(false)
+        console.error('Error:', error)
+      }
+    }
+    fetchNFTData()
+  }, [refetchNFTData])
+
+  useEffect(() => {
+    const fetchSBTData = async () => {
+      try {
+        setLoading(true)
+        const { data } = await sbtClient.query({
+          query: gql`
+            query getSBTData {
+              createdTokens(first: 10, orderDirection: desc, where: {}) {
+                tokenId
+                timestamp_
+                tokenURI
+                votingPower
+              }
+            }
+          `,
+        })
+
+        let _sbtData: SBTInfo[] = []
+        for (const token of data.createdTokens) {
+          let _metadata: any = {}
+          try {
+            _metadata = await fetchMetadata(
+              `${Env.PINATA_GATEWAY_URL}/ipfs/${token.tokenURI}`
+            )
+          } catch (error) {
+            console.error('Error fetching SBT data:', error)
+          }
+
+          console.log(_metadata, 'metadata')
+
+          _sbtData.push({
+            tokenId: token.tokenId,
+            createdAt: Number(token.timestamp_).toString(),
+            image: _metadata.image
+              ? `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`
+              : EMPTY_NFT_IMAGE,
+            name: _metadata.name,
+            description: _metadata.description,
+            balance: '0',
+            votingPower: token.votingPower,
+            isRevoked: false,
+            isSBT: true,
+          })
+        }
+
+        setSBTData([..._sbtData])
+        await fetchSBTStatus(_sbtData)
+
+        setLoading(false)
+      } catch (error) {
+        setLoading(false)
+        console.error('Error:', error)
+      }
+    }
+    fetchSBTData()
+  }, [refetchSBTData])
+
   useEffect(() => {
     const fetchTotalClaimed = async () => {
       if (campaignData.data.length === 0) return
@@ -631,32 +681,6 @@ export default function ForCampaignPage({
     }
     fetchData()
   }, [isConfirmed, error])
-
-  // Handlers
-  const signMessage = useCallback(async () => {
-    if (!chainId) {
-      toast({
-        title: 'Please connect your wallet first',
-      })
-      return
-    }
-
-    try {
-      setLoading(true)
-      const message = await signMessageAsync({ message: CLAIM_MESSAGE })
-      setSignature(message)
-      toast({
-        title: 'Message signed successfully',
-      })
-    } catch (error) {
-      console.error('Error signing message:', error)
-      toast({
-        title: 'Failed to sign message',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }, [chainId, signMessageAsync])
 
   const handleAddWhitelist = async (formData: any) => {
     setLoading(true)
@@ -755,9 +779,11 @@ export default function ForCampaignPage({
         endDate: new Date(formData.endDate).getTime() / 1000,
         validateSignatures: formData.isVerifySignature,
         tokenType: formData.tokenType,
-        token:
-          formData.tokenAddress == '' ? ZeroAddress : formData.tokenAddress,
+        token: formData.tokenType != 0 ? ZeroAddress : formData.tokenAddress,
+        creator: address as `0x${string}`,
       }
+
+      console.log(campaign, 'campaignData')
 
       const tx = await writeContractAsync({
         abi: CAMPAIGN_ABI,
@@ -786,129 +812,16 @@ export default function ForCampaignPage({
     }
   }
 
-  const parseGithubUsername = useCallback(
-    (gistUrl: string): string | undefined => {
-      try {
-        const url = new URL(gistUrl)
-        const parts = url.pathname.split('/')
-        return parts.length >= 2 ? parts[1] : undefined
-      } catch {
-        return undefined
-      }
-    },
-    []
-  )
-
-  const claimCampaign = useCallback(
-    async (campaignId: number, gistUrl: string) => {
-      setDialogState((prev) => ({ ...prev, isOpen: false }))
-      setLoading(true)
-
-      let signature = '0x'
-      let message = '_'
-      let gistUsername
-
-      const campaign = campaignData.data.find(
-        (campaign) => campaign.campaignId === campaignId
-      )
-      if (campaign?.validateSignatures) {
-        try {
-          gistUsername = parseGithubUsername(gistUrl)
-          if (!gistUsername) {
-            toast({
-              title: 'Invalid Github Gist URL',
-            })
-            return
-          }
-
-          const result = await axios.get(gistUrl)
-
-          const gistData = result.data
-          signature = gistData.Signature
-          message = gistData.Message
-        } catch (error) {
-          console.error('Error fetching gist data:', error)
-          toast({
-            title: 'Failed to fetch gist data',
-          })
-          return
-        }
-      }
-
-      const gistUsernameHash = ethers.keccak256(
-        ethers.toUtf8Bytes(gistUsername || '0x')
-      )
-
-      try {
-        await writeContractAsync({
-          abi: CAMPAIGN_ABI,
-          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
-          functionName: 'claimCampaign',
-          args: [campaignId, gistUsernameHash, message, signature],
-        })
-
-        toast({
-          title: 'Campaign claimed successfully',
-        })
-      } catch (error) {
-        console.error('Error claiming campaign:', error)
-        toast({
-          title: 'Failed to claim campaign',
-        })
-      } finally {
-        await fetchCampaignData()
-        setLoading(false)
-      }
-    },
-    [campaignData, parseGithubUsername, chainId, writeContract]
-  )
-
-  const handleNFTClick = useCallback(
-    (index: number) => {
-      setNftDetailIndex(index)
-      setIsNFTDetailOpen(true)
-    },
-    [setNftDetailIndex, setIsNFTDetailOpen]
-  )
-
-  const handleCopySignature = useCallback(() => {
-    try {
-      navigator.clipboard.writeText(
-        JSON.stringify({
-          Message: CLAIM_MESSAGE,
-          Signature: signature,
-          'Wallet Address': address,
-        })
-      )
-      toast({
-        title: 'Signature copied to clipboard',
-      })
-    } catch (error) {
-      console.error('Error copying signature:', error)
-      toast({
-        title: 'Failed to copy signature',
-      })
-    }
-  }, [signature, address])
-
-  const currentCampaign = useMemo(
-    () =>
-      campaignData.data.find(
-        (campaign) => campaign.campaignId == dialogState.campaignId
-      ),
-    [campaignData, dialogState.campaignId]
-  )
-
   const campaignInfo = useCallback((): CampaignInfo[] => {
     const info: CampaignInfo[] = campaignData.data.map((campaign) => ({
       id: campaign.campaignId.toString(),
       image:
         campaign.tokenType == 1
-          ? sbtMetadata?.find((m) => m.token_id == campaign.sbtId)?.image ||
-            EMPTY_NFT_IMAGE
+          ? sbtData?.find((m) => m.tokenId == campaign.sbtId.toString())
+              ?.image || EMPTY_NFT_IMAGE
           : campaign.tokenType == 2
-            ? nftMetadata?.find((m) => m.token_id == campaign.sbtId)?.image ||
-              EMPTY_NFT_IMAGE
+            ? nftData?.find((m) => m.tokenId == campaign.sbtId.toString())
+                ?.image || EMPTY_NFT_IMAGE
             : PCE_LOGO,
       tokenId: campaign.sbtId.toString(),
       title: campaign.title,
@@ -932,23 +845,7 @@ export default function ForCampaignPage({
       isEnded: Number(campaign.endDate) < new Date().getTime() / 1000,
     }))
     return info
-  }, [campaignData, sbtMetadata, nftMetadata, totalClaimed])
-
-  const sbtInfo = useMemo(() => {
-    const info: SBTInfo[] = sbtBalances.map((_, index) => ({
-      image: sbtMetadata[index]?.image || EMPTY_NFT_IMAGE,
-      tokenId: (index + 1).toString(),
-      name: sbtMetadata[index]?.name || '',
-      description: sbtMetadata[index]?.description || '',
-      balance: sbtBalances?.[index]?.toString() || '0',
-      votingPower: sbtMetadata[index]?.votingPower || '0',
-      createdAt:
-        (Number(sbtMetadata[index]?.timestamp) / 1000).toString() || '0',
-      isRevoked: false,
-      isSBT: true,
-    }))
-    return info ?? []
-  }, [sbtMetadata, sbtBalances])
+  }, [campaignData, sbtData, nftData, totalClaimed])
 
   return (
     <div className="w-full min-h-screen bg-background container">
@@ -975,8 +872,7 @@ export default function ForCampaignPage({
           onClose={() =>
             setDialogState((prev) => ({ ...prev, isCreateOpen: false }))
           }
-          nftMetadata={nftMetadata}
-          sbtMetadata={sbtMetadata}
+          tokenData={tokenData}
           onSubmit={handleCreateCampaign}
           campaign={campaign}
         />
@@ -990,71 +886,6 @@ export default function ForCampaignPage({
           onSubmit={handleAddWhitelist}
           campaign={campaign}
         />
-
-        {/* Wallet Connected Section */}
-        {chainId && (
-          <div className="space-y-4 sm:space-y-6">
-            {/* <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <Button
-                className="w-full sm:w-auto sm:min-w-[200px] text-sm sm:text-base"
-                onClick={signMessage}
-              >
-                {campaign.signMessage ?? 'Sign Message'}
-              </Button>
-            </div>
-
-            {signature.length > 0 && (
-              <Card className="w-full">
-                <CardContent className="p-3 sm:p-4 md:p-6">
-                  <div className="cursor-pointer" onClick={handleCopySignature}>
-                    <div className="relative bg-muted rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3">
-                      <div className="absolute top-2 right-2">
-                        <CopyIcon />
-                      </div>
-                      <div className="space-y-2 text-xs sm:text-sm md:text-base">
-                        <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                          <span className="font-semibold min-w-[80px] sm:min-w-[100px]">
-                            {campaign.message ?? 'Message'}:
-                          </span>
-                          <span className="break-all">{CLAIM_MESSAGE}</span>
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                          <span className="font-semibold min-w-[80px] sm:min-w-[100px]">
-                            {campaign.signature ?? 'Signature'}:
-                          </span>
-                          <span className="break-all font-mono text-xs">
-                            {signature}
-                          </span>
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                          <span className="font-semibold min-w-[80px] sm:min-w-[100px]">
-                            {campaign.walletAddress ?? 'Wallet Address'}:
-                          </span>
-                          <span className="break-all font-mono text-xs">
-                            {address}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )} */}
-
-            {/* <SBTTableComponent
-              headers={[
-                'Image',
-                'Token ID',
-                'Title',
-                'Description',
-                'Type',
-                'Voting Power',
-                'Created At',
-              ]}
-              sbtInfo={sbtInfo}
-            /> */}
-          </div>
-        )}
 
         {/* Campaigns Section */}
         <div className="space-y-4 sm:space-y-6">
@@ -1082,57 +913,12 @@ export default function ForCampaignPage({
               </Button>
             </div>
           </div>
-
-          {/* <CampaignsTable
-            campaigns={campaignData.data}
-            sbtMetadata={sbtMetadata}
-            nftMetadata={nftMetadata}
-            onCampaignClick={(index) => {
-              setDialogState((prev) => ({
-                ...prev,
-                campaignId: campaignData.data[index]?.campaignId ?? 0,
-                isOpen: true,
-              }))
-            }}
-            totalClaimed={totalClaimed}
-            campaign={campaign}
-          /> */}
         </div>
       </div>
 
       <TableComponent
         headers={campaignTableHeaders}
         campaignInfo={campaignInfo()}
-      />
-
-      {/* Campaign Dialog */}
-      <CampaignDialog
-        isOpen={dialogState.isOpen}
-        onOpenChange={(open) => {
-          setDialogState((prev) => ({
-            ...prev,
-            isOpen: open,
-            campaignId: currentCampaign?.campaignId ?? 0,
-          }))
-        }}
-        campaign={currentCampaign}
-        status={campaignStatus}
-        onClaim={(gistUrl) =>
-          claimCampaign(currentCampaign?.campaignId ?? 0, gistUrl)
-        }
-        isConnected={!!address}
-        campaignDict={campaign}
-      />
-
-      {/* NFT Detail Dialog */}
-      <NFT_DETAIL
-        isOpen={isNFTDetailOpen}
-        onOpenChange={setIsNFTDetailOpen}
-        imageSrc={nftMetadata[nftDetailIndex]?.image || EMPTY_NFT_IMAGE}
-        imageName={campaignData.data[nftDetailIndex]?.title ?? ''}
-        tokenId={nftDetailIndex + 1}
-        description={campaignData.data[nftDetailIndex]?.description ?? ''}
-        metadata={JSON.stringify(nftMetadata[nftDetailIndex])}
       />
     </div>
   )

@@ -1,5 +1,5 @@
 import { Input } from '../ui/input'
-import { Button } from './button'
+import { Button } from '~/components/ui/button'
 
 export default function AddDynamicInputFields({
   inputs,

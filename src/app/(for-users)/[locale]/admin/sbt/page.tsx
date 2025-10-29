@@ -13,7 +13,7 @@ import {
   defaultChainId,
   sbtTableHeaders,
 } from '~/app/constants/constants'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 import { getDict } from '~/i18n/get-dict'
 import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import { useToast } from '~/hooks/use-toast'
@@ -54,6 +54,7 @@ import {
 } from '~/components/custom/sbt-tableComponent'
 import { Env } from '~/env'
 import { ApolloClient, HttpLink, InMemoryCache, gql } from '@apollo/client'
+import { fetchMetadata } from '~/components/utils'
 
 // Types
 interface CardFormState {
@@ -612,12 +613,6 @@ export default function SBTBuilderPage({
     },
     [chainId, address, sbtData]
   )
-
-  const fetchMetadata = async (tokenURI: string) => {
-    const response = await fetch(tokenURI)
-    const data = await response.json()
-    return data
-  }
 
   useEffect(() => {
     const filteredSbtData: SBTInfo[] = sbtData.filter(

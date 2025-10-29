@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { formatEther } from 'ethers'
 import { useAccount, useReadContract } from 'wagmi'
 
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 import { Link } from '~/i18n/link'
 import { getDict } from '~/i18n/get-dict'
 

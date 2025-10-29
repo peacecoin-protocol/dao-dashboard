@@ -12,7 +12,7 @@ import {
 import Image from 'next/image'
 import { timestampToDate } from '../utils'
 import { ActionInfo } from '~/i18n/types'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 
 export interface SBTInfo {

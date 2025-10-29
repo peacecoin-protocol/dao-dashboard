@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import { Button } from '~/components/custom/button'
+import { Button } from '~/components/ui/button'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import {
   Command,
