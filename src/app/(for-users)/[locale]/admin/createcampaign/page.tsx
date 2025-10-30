@@ -597,8 +597,6 @@ export default function ForCampaignPage({
             console.error('Error fetching SBT data:', error)
           }
 
-          console.log(_metadata, 'metadata')
-
           _sbtData.push({
             tokenId: token.tokenId,
             createdAt: Number(token.timestamp_).toString(),
@@ -782,8 +780,6 @@ export default function ForCampaignPage({
         token: formData.tokenType != 0 ? ZeroAddress : formData.tokenAddress,
         creator: address as `0x${string}`,
       }
-
-      console.log(campaign, 'campaignData')
 
       const tx = await writeContractAsync({
         abi: CAMPAIGN_ABI,

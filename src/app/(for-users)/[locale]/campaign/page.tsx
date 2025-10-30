@@ -488,8 +488,6 @@ export default function ForCampaignPage({
             console.error('Error fetching SBT data:', error)
           }
 
-          console.log(_sbtData, '_sbtData')
-
           _sbtData.push({
             tokenId: token.tokenId,
             createdAt: Number(token.timestamp_).toString(),
