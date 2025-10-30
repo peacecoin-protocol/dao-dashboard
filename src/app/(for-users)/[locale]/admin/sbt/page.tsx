@@ -12,6 +12,7 @@ import {
   SBT_SUBGRAPH_URL,
   defaultChainId,
   sbtTableHeaders,
+  DAO_STUDIO_SUBGRAPH_URL,
 } from '~/app/constants/constants'
 import { Button } from '~/components/ui/button'
 import { getDict } from '~/i18n/get-dict'
@@ -62,6 +63,7 @@ interface CardFormState {
   description: string
   votingPower: string
   isSBT: boolean
+  daoId: string
 }
 
 interface FilterOption {
@@ -171,171 +173,6 @@ const CreateButton = ({
   </Button>
 )
 
-// const TokenTable = ({
-//   cardData,
-//   filter,
-//   onViewMetadata,
-//   onRevoke,
-//   labels,
-// }: {
-//   cardData: SBTInfo[]
-//   filter: string
-//   onViewMetadata: (metadata: string) => void
-//   onRevoke: (tokenId: string, isRevoked: boolean) => void
-//   labels: Record<string, string>
-// }) => {
-//   const filteredData = useMemo(() => {
-//     if (filter == 'all') return cardData
-//     if (filter == 'revoked') return cardData.filter((token) => token.isRevoked)
-//     if (filter == 'unrevoked')
-//       return cardData.filter((token) => !token.isRevoked)
-
-//     return []
-//   }, [cardData, filter])
-
-//   if (filteredData.length === 0) {
-//     return (
-//       <div className="overflow-x-auto rounded-xl bg-white shadow-lg w-full">
-//         <div className="py-8 px-4 text-center text-gray-400 text-lg">
-//           {labels.noTokensFound}
-//         </div>
-//       </div>
-//     )
-//   }
-
-//   return (
-//     <div className="overflow-x-auto rounded-xl bg-white shadow-lg w-full">
-//       <Table className="w-full">
-//         <TableHeader>
-//           <TableRow className="hidden md:table-row bg-gray-100">
-//             <TableHead className="font-bold w-8 text-gray-700 text-center">
-//               #
-//             </TableHead>
-//             <TableHead className="font-bold text-gray-700 text-center">
-//               {labels.name}
-//             </TableHead>
-//             <TableHead className="font-bold text-gray-700 text-center">
-//               {labels.description}
-//             </TableHead>
-//             <TableHead className="font-bold text-gray-700 text-center">
-//               Voting Power
-//             </TableHead>
-//             <TableHead className="font-bold text-gray-700 text-center">
-//               {labels.image}
-//             </TableHead>
-//             <TableHead className="font-bold text-gray-700 text-center">
-//               {labels.createdAt}
-//             </TableHead>
-//           </TableRow>
-//         </TableHeader>
-//         <TableBody>
-//           {filteredData.map((token, index) => (
-//             <TableRow
-//               key={token.tokenId}
-//               className="hover:bg-gray-50 transition md:table-row flex flex-col md:flex-row md:items-center border-b last:border-b-0"
-//             >
-//               {/* Mobile Card Header */}
-//               <TableCell className="md:hidden flex flex-row items-center gap-2 py-2 bg-gray-100 rounded-t-lg text-center justify-center">
-//                 <span className="font-bold text-gray-500 text-center">
-//                   #{index + 1}
-//                 </span>
-//                 <span className="font-bold">{token.name}</span>
-//               </TableCell>
-
-//               {/* Desktop Index */}
-//               <TableCell className="hidden md:table-cell text-gray-700 font-medium text-center">
-//                 {index + 1}
-//               </TableCell>
-
-//               {/* Name */}
-//               <TableCell className="hidden md:table-cell flex-1 md:flex-none break-words text-gray-900 text-center">
-//                 <span className="md:hidden font-semibold text-gray-500 text-center">
-//                   {labels.name}:{' '}
-//                 </span>
-//                 {token.name}
-//               </TableCell>
-
-//               <TableCell className="hidden md:table-cell flex-1 md:flex-none break-words text-gray-900 text-center">
-//                 {token.description}
-//               </TableCell>
-//               {/* Name */}
-//               <TableCell className="hidden md:table-cell flex-1 md:flex-none break-words text-gray-900 text-center">
-//                 {token.votingPower}
-//               </TableCell>
-//               {/* Image */}
-//               <TableCell className="md:table-cell flex-1 md:flex-none text-center">
-//                 <div className="flex items-center justify-center">
-//                   <Image
-//                     src={token.image}
-//                     className="object-cover"
-//                     alt={token.name}
-//                     onError={(e) => {
-//                       e.currentTarget.src = '/images/empty-nft.svg'
-//                     }}
-//                     width={96}
-//                     height={96}
-//                   />
-//                 </div>
-//               </TableCell>
-
-//               {/* Created At */}
-//               <TableCell className="md:table-cell flex-1 md:flex-none text-gray-700 text-center">
-//                 <span className="md:hidden font-semibold text-gray-500">
-//                   {labels.createdAt}:{' '}
-//                 </span>
-//                 {token.createdAt ? (
-//                   <div className="flex items-center justify-center gap-1">
-//                     <Calendar className="w-4 h-4" />
-//                     {new Date(token.createdAt).toLocaleDateString()}
-//                   </div>
-//                 ) : (
-//                   '-'
-//                 )}
-//               </TableCell>
-
-//               {/* Actions */}
-//               <TableCell className="md:table-cell gap-4 flex flex-row items-center justify-center text-center">
-//                 <Button
-//                   variant="outline"
-//                   className="w-full md:w-auto"
-//                   // onClick={() => onViewMetadata(token.metadata)}
-//                 >
-//                   <span className="flex items-center gap-1">
-//                     <Eye className="w-4 h-4" />
-//                     {labels.viewMetadata}
-//                   </span>
-//                 </Button>
-//                 <Button
-//                   variant="destructive"
-//                   className="w-full ml-2 md:w-auto bg-red-600 hover:bg-red-700 text-white"
-//                   onClick={() => onRevoke(token.tokenId, token.isRevoked)}
-//                 >
-//                   <span className="flex items-center gap-1">
-//                     <X className="w-4 h-4" />
-//                     {token.isRevoked ? labels.unrevoke : labels.revoke}
-//                   </span>
-//                 </Button>
-//               </TableCell>
-//             </TableRow>
-//           ))}
-//         </TableBody>
-//       </Table>
-
-//       <SBTTableComponent
-//         headers={[...sbtTableHeaders, labels.action || 'Action']}
-//         sbtInfo={cardData}
-//         action={{ title: labels.revoke ?? 'Revoke' }}
-//         onRevoke={(index) => {
-//           onRevoke(
-//             cardData[index]?.tokenId ?? '',
-//             cardData[index]?.isRevoked ?? false
-//           )
-//         }}
-//       />
-//     </div>
-//   )
-// }
-
 const CreateTokenModal = ({
   isOpen,
   onClose,
@@ -349,6 +186,7 @@ const CreateTokenModal = ({
   onCropComplete,
   onCloseCropModal,
   labels,
+  allDAOs,
   disabled,
 }: {
   isOpen: boolean
@@ -363,6 +201,7 @@ const CreateTokenModal = ({
   onCropComplete: (cropped: string) => void
   onCloseCropModal: () => void
   labels: Record<string, string>
+  allDAOs: { daoId: string; daoName: string }[]
   disabled: boolean
 }) => (
   <Dialog open={isOpen} onOpenChange={onClose}>
@@ -396,6 +235,25 @@ const CreateTokenModal = ({
             <option value="nft">{labels.nft}</option>
           </select>
         </label>
+        {/* <label className="text-sm font-medium text-gray-700">
+          {labels.dao || 'DAO'}
+          <select
+            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            value={form.daoId || ''}
+            onChange={(e) => onFormChange('daoId', e.target.value)}
+          >
+            <option value="" disabled>
+              {labels.selectDao || 'Select a DAO'}
+            </option>
+            {allDAOs &&
+              allDAOs.length > 0 &&
+              allDAOs.map((dao: { daoId: string; daoName: string }) => (
+                <option key={dao.daoId} value={dao.daoId}>
+                  {dao.daoName}
+                </option>
+              ))}
+          </select>
+        </label> */}
         <label className="text-sm font-medium text-gray-700">
           {labels.description}
           <Input
@@ -484,17 +342,21 @@ export default function SBTBuilderPage({
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [croppedImage, setCroppedImage] = useState<string | null>(null)
   const [isCropModalOpen, setIsCropModalOpen] = useState(false)
+
   const [cardForm, setCardForm] = useState<CardFormState>({
     name: '',
     description: '',
     votingPower: '',
     isSBT: true,
+    daoId: '',
   })
 
   const [sbtData, setSBTData] = useState<any[]>([])
   const [nftData, setNFTData] = useState<any[]>([])
   const [tokenData, setTokenData] = useState<any[]>([])
-
+  const [allDAOs, setAllDAOs] = useState<{ daoId: string; daoName: string }[]>(
+    []
+  )
   const [refetchNFTData, setRefetchNFTData] = useState(false)
   const [refetchSBTData, setRefetchSBTData] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -511,6 +373,14 @@ export default function SBTBuilderPage({
       uri: NFT_SUBGRAPH_URL[chainId || defaultChainId] as string,
     }),
   })
+
+  const studioClient = new ApolloClient({
+    cache: new InMemoryCache(),
+    link: new HttpLink({
+      uri: DAO_STUDIO_SUBGRAPH_URL[chainId || defaultChainId] as string,
+    }),
+  })
+
   const { data: hash, error, writeContractAsync } = useWriteContract()
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -527,6 +397,37 @@ export default function SBTBuilderPage({
     }
     loadDictionary()
   }, [locale])
+
+  useEffect(() => {
+    const fetchAllDAOs = async () => {
+      try {
+        setLoading(true)
+
+        const { data } = await studioClient.query({
+          query: gql`
+            query getAllDAOs {
+              daocreateds(
+                first: 100
+                orderBy: timestamp_
+                orderDirection: desc
+              ) {
+                daoId
+                daoName
+              }
+            }
+          `,
+        })
+
+        setAllDAOs(data.daocreateds)
+        setLoading(false)
+      } catch (error) {
+        console.error('Error fetching data', error)
+        setLoading(false)
+      }
+    }
+
+    fetchAllDAOs()
+  }, [chainId])
 
   const fetchSBTStatus = useCallback(
     async (_sbtData: SBTInfo[]) => {
@@ -626,12 +527,13 @@ export default function SBTBuilderPage({
 
   useEffect(() => {
     const fetchNFTData = async () => {
+      if (!address) return
       try {
         setLoading(true)
         const { data } = await nftClient.query({
           query: gql`
             query getNFTData {
-              createdTokens(first: 10, orderDirection: desc, where: {}) {
+              createdTokens(first: 10, orderDirection: desc, where: {creator: "${address.toLowerCase()}"}) {
                 tokenId
                 timestamp_
                 tokenURI
@@ -677,16 +579,18 @@ export default function SBTBuilderPage({
       }
     }
     fetchNFTData()
-  }, [refetchNFTData])
+  }, [refetchNFTData, address])
 
   useEffect(() => {
     const fetchSBTData = async () => {
+      if (!address) return
+
       try {
         setLoading(true)
         const { data } = await sbtClient.query({
           query: gql`
             query getSBTData {
-              createdTokens(first: 10, orderDirection: desc, where: {}) {
+              createdTokens(first: 10, orderDirection: desc, where: {creator: "${address.toLowerCase()}"}) {
                 tokenId
                 timestamp_
                 tokenURI
@@ -732,7 +636,7 @@ export default function SBTBuilderPage({
       }
     }
     fetchSBTData()
-  }, [refetchSBTData])
+  }, [refetchSBTData, address])
 
   useEffect(() => {
     if (isConfirmed) {
@@ -848,7 +752,13 @@ export default function SBTBuilderPage({
       } finally {
         setCroppedImage(null)
         setSelectedImage(null)
-        setCardForm({ name: '', description: '', votingPower: '', isSBT: true })
+        setCardForm({
+          name: '',
+          description: '',
+          votingPower: '',
+          isSBT: true,
+          daoId: '',
+        })
         setIsTokenTypeOpen(false)
         setIsFilterOpen(false)
       }
@@ -867,7 +777,13 @@ export default function SBTBuilderPage({
 
   const handleCreateModalClose = useCallback(() => {
     setIsCreateModalOpen(false)
-    setCardForm({ name: '', description: '', votingPower: '', isSBT: true })
+    setCardForm({
+      name: '',
+      description: '',
+      votingPower: '',
+      isSBT: true,
+      daoId: '',
+    })
     setSelectedImage(null)
     setCroppedImage(null)
   }, [])
@@ -943,13 +859,27 @@ export default function SBTBuilderPage({
             ? 'Token unrevoked successfully'
             : 'Token revoked successfully',
         })
-        await fetchSBTStatus(sbtData)
+
+        if (token.isSBT) {
+          await fetchSBTStatus(sbtData)
+        } else {
+          await fetchNFTStatus(nftData)
+        }
       } catch (error) {
         console.error('Error revoking token:', error)
         toast({ title: 'Failed to revoke token' })
       }
     },
-    [address, writeContractAsync, chainId, toast, sbtData, fetchSBTStatus]
+    [
+      address,
+      writeContractAsync,
+      chainId,
+      toast,
+      sbtData,
+      nftData,
+      fetchSBTStatus,
+      fetchNFTStatus,
+    ]
   )
 
   return (
@@ -1020,6 +950,7 @@ export default function SBTBuilderPage({
           onCloseCropModal={() => setIsCropModalOpen(false)}
           labels={currentLabels}
           disabled={!isFormValid}
+          allDAOs={allDAOs}
         />
       </div>
     </div>
