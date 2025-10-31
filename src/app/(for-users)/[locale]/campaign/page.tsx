@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { ApolloClient, gql, HttpLink, InMemoryCache } from '@apollo/client'
-import { ethers, formatEther, parseEther, ZeroAddress } from 'ethers'
+import { ethers, formatEther } from 'ethers'
 import axios from 'axios'
 import { useToast } from '~/hooks/use-toast'
 import { CopyIcon } from 'lucide-react'
@@ -16,7 +16,7 @@ import {
   useSwitchChain,
   type BaseError,
 } from 'wagmi'
-import { readContract, waitForTransactionReceipt } from '@wagmi/core'
+import { readContract } from '@wagmi/core'
 import { CAMPAIGN, Metadata } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
@@ -41,6 +41,7 @@ import {
   NFT_SUBGRAPH_URL,
   SBT_SUBGRAPH_URL,
   CAMPAIGNS_SUBGRAPH_URL,
+  DAO_STUDIO_SUBGRAPH_URL,
 } from '~/app/constants/constants'
 
 import { fetchMetadata } from '~/components/utils'
@@ -254,6 +255,12 @@ export default function ForCampaignPage({
   const [nftData, setNFTData] = useState<any[]>([])
   const [tokenData, setTokenData] = useState<any[]>([])
 
+  const [allDAOs, setAllDAOs] = useState<{ daoId: string; daoName: string }[]>(
+    []
+  )
+
+  const [searchTerm, setSearchTerm] = useState<string>('')
+
   const sbtClient = new ApolloClient({
     cache: new InMemoryCache(),
     link: new HttpLink({
@@ -264,6 +271,12 @@ export default function ForCampaignPage({
     cache: new InMemoryCache(),
     link: new HttpLink({
       uri: NFT_SUBGRAPH_URL[chainId || defaultChainId] as string,
+    }),
+  })
+  const studioClient = new ApolloClient({
+    cache: new InMemoryCache(),
+    link: new HttpLink({
+      uri: DAO_STUDIO_SUBGRAPH_URL[chainId || defaultChainId] as string,
     }),
   })
 
@@ -310,11 +323,45 @@ export default function ForCampaignPage({
   })
 
   useEffect(() => {
+    const fetchAllDAOs = async () => {
+      try {
+        setLoading(true)
+
+        const { data } = await studioClient.query({
+          query: gql`
+            query getAllDAOs {
+              daocreateds(
+                first: 100
+                orderBy: timestamp_
+                orderDirection: desc
+                where: {
+                  creator: "${address?.toLowerCase()}"
+                }
+              ) {
+                daoId
+                daoName
+              }
+            }
+          `,
+        })
+
+        setAllDAOs(data.daocreateds)
+        setLoading(false)
+      } catch (error) {
+        console.error('Error fetching data', error)
+        setLoading(false)
+      }
+    }
+
+    fetchAllDAOs()
+  }, [chainId])
+
+  useEffect(() => {
     const filteredSbtData: SBTInfo[] = sbtData.filter(
-      (token: SBTInfo) => token.tokenId !== '1'
+      (token: SBTInfo) => token.tokenId !== '1' && token.balance !== '0'
     )
     const filteredNftData: SBTInfo[] = nftData.filter(
-      (token: SBTInfo) => token.tokenId !== '1'
+      (token: SBTInfo) => token.tokenId !== '1' && token.balance !== '0'
     )
     setTokenData([...filteredSbtData, ...filteredNftData])
   }, [sbtData, nftData])
@@ -721,103 +768,6 @@ export default function ForCampaignPage({
     }
   }, [chainId, signMessageAsync])
 
-  const handleAddWhitelist = async (formData: any) => {
-    setLoading(true)
-    try {
-      const encodedGists = formData.data.map(
-        (item: { address: string; git: string }, index: number) =>
-          ethers.keccak256(ethers.toUtf8Bytes(item.git.trim()))
-      )
-      let addresses = formData.data.map(
-        (item: { address: string }) => item.address
-      )
-
-      const isVerifySignature = campaignData.data.find(
-        (campaign) => campaign.campaignId === formData.id
-      )?.validateSignatures
-
-      if (isVerifySignature) {
-        addresses = [ZeroAddress]
-      }
-
-      const tx = await writeContractAsync({
-        abi: CAMPAIGN_ABI,
-        address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
-        functionName: 'addCampWinners',
-        args: [formData.id, addresses, encodedGists],
-      })
-
-      await waitForTransactionReceipt(config, {
-        hash: tx,
-        confirmations: 1,
-      })
-
-      toast({
-        title: 'Winners added successfully',
-      })
-    } catch (error) {
-      console.error('Error adding whitelist:', error)
-      toast({
-        title: 'Failed to add whitelist',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleCreateCampaign = async (formData: any) => {
-    setDialogState((prev) => ({
-      ...prev,
-      isCreateOpen: false,
-      isAddWinnersOpen: false,
-    }))
-    setLoading(true)
-
-    try {
-      const campaign = {
-        sbtId: formData.sbtId,
-        title: formData.title,
-        description: formData.description,
-        totalAmount:
-          formData.tokenType !== 0
-            ? formData.totalAmount
-            : parseEther(formData.totalAmount),
-        claimAmount:
-          formData.tokenType !== 0
-            ? formData.claimAmount
-            : parseEther(formData.claimAmount),
-        startDate: new Date(formData.startDate).getTime() / 1000,
-        endDate: new Date(formData.endDate).getTime() / 1000,
-        validateSignatures: formData.isVerifySignature,
-        tokenType: formData.tokenType,
-      }
-
-      const tx = await writeContractAsync({
-        abi: CAMPAIGN_ABI,
-        address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
-        functionName: 'createCampaign',
-        args: [campaign],
-      })
-
-      await waitForTransactionReceipt(config, {
-        hash: tx,
-        confirmations: 2,
-      })
-
-      await fetchCampaignData()
-      toast({
-        title: 'Campaign created successfully',
-      })
-    } catch (error) {
-      console.error('Error creating campaign:', error)
-      toast({
-        title: 'Failed to create campaign',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const parseGithubUsername = useCallback(
     (gistUrl: string): string | undefined => {
       try {
@@ -896,14 +846,6 @@ export default function ForCampaignPage({
     [campaignData, parseGithubUsername, chainId, writeContract]
   )
 
-  // const handleNFTClick = useCallback(
-  //   (index: number) => {
-  //     setNftDetailIndex(index)
-  //     setIsNFTDetailOpen(true)
-  //   },
-  //   [setNftDetailIndex, setIsNFTDetailOpen]
-  // )
-
   const handleCopySignature = useCallback(() => {
     try {
       navigator.clipboard.writeText(
@@ -975,7 +917,6 @@ export default function ForCampaignPage({
           <Spinner show={true} size="large" />
         </div>
       )}
-
       <div className="mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Header Section */}
         <div className="space-y-3 sm:space-y-4">
@@ -1046,7 +987,16 @@ export default function ForCampaignPage({
           </div>
         )}
       </div>
-
+      {/* Campaign search input */}
+      <div className="mb-4 flex justify-end">
+        <input
+          type="text"
+          placeholder={campaign.searchCampaign ?? 'Search campaigns'}
+          className="border rounded px-3 py-2 w-full max-w-xs focus:outline-none focus:ring"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
       <TableComponent
         headers={campaignTableHeaders}
         campaignInfo={campaignInfo()}
@@ -1058,7 +1008,6 @@ export default function ForCampaignPage({
           }))
         }}
       />
-
       {/* Campaign Dialog */}
       <CampaignDialog
         isOpen={dialogState.isOpen}
