@@ -56,10 +56,12 @@ import {
 import { Env } from '~/env'
 import { ApolloClient, HttpLink, InMemoryCache, gql } from '@apollo/client'
 import { fetchMetadata } from '~/components/utils'
+import { shortenAddress } from '~/components/utils'
 
 // Types
 interface CardFormState {
   name: string
+  daoSearch: string
   description: string
   votingPower: string
   isSBT: boolean
@@ -235,25 +237,91 @@ const CreateTokenModal = ({
             <option value="nft">{labels.nft}</option>
           </select>
         </label>
-        {/* <label className="text-sm font-medium text-gray-700">
+        {/* DAO select with search bar */}
+        <label className="text-sm font-medium text-gray-700 flex flex-col gap-1">
           {labels.dao || 'DAO'}
-          <select
-            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            value={form.daoId || ''}
-            onChange={(e) => onFormChange('daoId', e.target.value)}
-          >
-            <option value="" disabled>
-              {labels.selectDao || 'Select a DAO'}
-            </option>
-            {allDAOs &&
-              allDAOs.length > 0 &&
-              allDAOs.map((dao: { daoId: string; daoName: string }) => (
-                <option key={dao.daoId} value={dao.daoId}>
-                  {dao.daoName}
-                </option>
-              ))}
-          </select>
-        </label> */}
+          <div className="flex flex-col gap-2">
+            {/* Custom DAO dropdown with search box */}
+            <div className="relative">
+              <Input
+                className="mb-2"
+                type="text"
+                placeholder={labels.searchDao || 'Search DAO...'}
+                value={form.daoSearch || ''}
+                onChange={(e) => {
+                  // Clear selected DAO when new search starts
+                  if (form.daoSearch !== e.target.value) {
+                    onFormChange('daoId', '')
+                  }
+                  onFormChange('daoSearch', e.target.value)
+                }}
+              />
+              {/* When searching, show dropdown; when not searching, don't show anything */}
+              {form.daoSearch !== '' && !form.daoId && (
+                <div className="border border-gray-300 rounded-md shadow-sm bg-white max-h-40 overflow-y-auto">
+                  {allDAOs &&
+                  allDAOs.length > 0 &&
+                  allDAOs.filter(
+                    (dao: { daoName: string; daoId: string }) =>
+                      dao.daoName
+                        .toLowerCase()
+                        .includes(form.daoSearch.toLowerCase()) ||
+                      dao.daoId
+                        .toLowerCase()
+                        .includes(form.daoSearch.toLowerCase())
+                  ).length > 0 ? (
+                    allDAOs
+                      .filter(
+                        (dao: { daoName: string; daoId: string }) =>
+                          dao.daoName
+                            .toLowerCase()
+                            .includes(form.daoSearch.toLowerCase()) ||
+                          dao.daoId
+                            .toLowerCase()
+                            .includes(form.daoSearch.toLowerCase())
+                      )
+                      .map((dao: { daoId: string; daoName: string }) => (
+                        <div
+                          key={dao.daoId}
+                          className={`px-3 py-2 cursor-pointer hover:bg-blue-100 ${
+                            form.daoId === dao.daoId
+                              ? 'bg-blue-50 font-semibold'
+                              : ''
+                          }`}
+                          onClick={() => {
+                            onFormChange('daoId', dao.daoId)
+                            onFormChange('daoSearch', '') // Hide the dropdown after selecting
+                          }}
+                        >
+                          {dao.daoName} &nbsp;|&nbsp;{' '}
+                          {shortenAddress(dao.daoId)}
+                        </div>
+                      ))
+                  ) : (
+                    <div className="px-3 py-2 text-blue-600">
+                      {labels.noDaoFound || 'No DAO found'}
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Only display the selected DAO if not currently searching */}
+              {form.daoId && (
+                <div className="mt-1 text-sm text-blue-600">
+                  {(() => {
+                    const selected = allDAOs.find(
+                      (dao) => dao.daoId === form.daoId
+                    )
+                    if (selected) {
+                      return `${selected.daoName} | ${shortenAddress(selected.daoId)}`
+                    } else {
+                      return ''
+                    }
+                  })()}
+                </div>
+              )}
+            </div>
+          </div>
+        </label>
         <label className="text-sm font-medium text-gray-700">
           {labels.description}
           <Input
@@ -345,6 +413,7 @@ export default function SBTBuilderPage({
 
   const [cardForm, setCardForm] = useState<CardFormState>({
     name: '',
+    daoSearch: '',
     description: '',
     votingPower: '',
     isSBT: true,
@@ -410,6 +479,9 @@ export default function SBTBuilderPage({
                 first: 100
                 orderBy: timestamp_
                 orderDirection: desc
+                where: {
+                  creator: "${address?.toLowerCase()}"
+                }
               ) {
                 daoId
                 daoName
@@ -754,6 +826,7 @@ export default function SBTBuilderPage({
         setSelectedImage(null)
         setCardForm({
           name: '',
+          daoSearch: '',
           description: '',
           votingPower: '',
           isSBT: true,
@@ -779,6 +852,7 @@ export default function SBTBuilderPage({
     setIsCreateModalOpen(false)
     setCardForm({
       name: '',
+      daoSearch: '',
       description: '',
       votingPower: '',
       isSBT: true,
