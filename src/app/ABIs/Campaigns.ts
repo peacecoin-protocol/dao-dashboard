@@ -452,6 +452,7 @@ export const CAMPAIGN_ABI = [
   { type: 'error', name: 'InvalidCommunityToken', inputs: [] },
   { type: 'error', name: 'InvalidCommunityTokenOwner', inputs: [] },
   { type: 'error', name: 'InvalidContributor', inputs: [] },
+  { type: 'error', name: 'InvalidCreator', inputs: [] },
   { type: 'error', name: 'InvalidDAOManager', inputs: [] },
   { type: 'error', name: 'InvalidGistsLength', inputs: [] },
   { type: 'error', name: 'InvalidInitialization', inputs: [] },

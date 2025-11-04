@@ -20,7 +20,6 @@ import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
 import {
   DAO_STUDIO_SUBGRAPH_URL,
   daoStudioAddress,
-  factoryAddress,
 } from '~/app/constants/constants'
 
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
@@ -385,7 +384,7 @@ export default function ForDAOPage({
 
             try {
               const timelock = await readContract(config, {
-                address: factoryAddress[
+                address: daoStudioAddress[
                   chainId || defaultChainId
                 ] as `0x${string}`,
                 abi: DAO_FACTORY_ABI,

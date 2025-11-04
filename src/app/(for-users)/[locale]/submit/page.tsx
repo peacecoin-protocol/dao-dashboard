@@ -27,7 +27,7 @@ import { getDict } from '~/i18n/get-dict'
 import {
   pceAddress,
   governorAddress,
-  factoryAddress,
+  daoStudioAddress,
   timelockAddress,
 } from '~/app/constants/constants'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
@@ -216,7 +216,7 @@ export default function ForSubmitPage({
               } else if (category === '4') {
                 _signature = 'deploy(bytes)'
                 _calldata = new ethers.AbiCoder().encode(['bytes'], [bytescode])
-                _address = factoryAddress[chainId || defaultChainId]
+                _address = daoStudioAddress[chainId || defaultChainId]
               } else if (category === '5') {
                 _address = timelockAddress[chainId || defaultChainId]
                 _signature = 'updateVariables(uint256,uint256,uint256)'

@@ -16,7 +16,7 @@ import {
   useSwitchChain,
   type BaseError,
 } from 'wagmi'
-import { readContract } from '@wagmi/core'
+import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { CAMPAIGN, Metadata } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
@@ -317,6 +317,13 @@ export default function ForCampaignPage({
     nftTokenURIs: [],
   })
 
+  const [filteredCampaignData, setFilteredCampaignData] =
+    useState<CampaignState>({
+      data: [],
+      tokenURIs: [],
+      nftTokenURIs: [],
+    })
+
   const client = new ApolloClient({
     uri: CAMPAIGNS_SUBGRAPH_URL[chainId || defaultChainId] as string,
     cache: new InMemoryCache(),
@@ -464,6 +471,8 @@ export default function ForCampaignPage({
                 timestamp_
                 tokenURI
                 votingPower
+                creator
+                daoId
               }
             }
           `,
@@ -492,6 +501,8 @@ export default function ForCampaignPage({
             votingPower: token.votingPower,
             isRevoked: false,
             isSBT: false,
+            creator: token.creator,
+            daoId: token.daoId,
           })
         }
 
@@ -519,6 +530,8 @@ export default function ForCampaignPage({
                 timestamp_
                 tokenURI
                 votingPower
+                creator
+                daoId
               }
             }
           `,
@@ -547,6 +560,8 @@ export default function ForCampaignPage({
             votingPower: token.votingPower,
             isRevoked: false,
             isSBT: true,
+            creator: token.creator,
+            daoId: token.daoId,
           })
         }
 
@@ -584,6 +599,7 @@ export default function ForCampaignPage({
               claimAmount
               token
               tokenType
+              creator
             }
           }
         `,
@@ -688,34 +704,36 @@ export default function ForCampaignPage({
 
   useEffect(() => {
     const fetchTotalClaimed = async () => {
-      if (campaignData.data.length === 0) return
+      if (filteredCampaignData.data.length === 0) return
 
       try {
-        const totalClaimedPromises = campaignData.data.map(async (campaign) => {
-          try {
-            const _claimed = (await readContract(config, {
-              abi: CAMPAIGN_ABI,
-              address: campaignAddress[
-                chainId || defaultChainId
-              ] as `0x${string}`,
-              functionName: 'totalClaimed',
-              args: [campaign.campaignId],
-            })) as unknown as string
-            return {
-              campaignId: campaign.campaignId,
-              totalClaimed: _claimed,
-            }
-          } catch (error) {
-            console.error(
-              `Error fetching total claimed for campaign ${campaign.campaignId}:`,
-              error
-            )
-            return {
-              campaignId: campaign.campaignId,
-              totalClaimed: '0',
+        const totalClaimedPromises = filteredCampaignData.data.map(
+          async (campaign) => {
+            try {
+              const _claimed = (await readContract(config, {
+                abi: CAMPAIGN_ABI,
+                address: campaignAddress[
+                  chainId || defaultChainId
+                ] as `0x${string}`,
+                functionName: 'totalClaimed',
+                args: [campaign.campaignId],
+              })) as unknown as string
+              return {
+                campaignId: campaign.campaignId,
+                totalClaimed: _claimed,
+              }
+            } catch (error) {
+              console.error(
+                `Error fetching total claimed for campaign ${campaign.campaignId}:`,
+                error
+              )
+              return {
+                campaignId: campaign.campaignId,
+                totalClaimed: '0',
+              }
             }
           }
-        })
+        )
 
         const results = await Promise.all(totalClaimedPromises)
         setTotalClaimed(results)
@@ -725,7 +743,7 @@ export default function ForCampaignPage({
     }
 
     fetchTotalClaimed()
-  }, [campaignData, chainId, isConfirmed])
+  }, [filteredCampaignData, chainId, isConfirmed])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -790,7 +808,7 @@ export default function ForCampaignPage({
       let message = '_'
       let gistUsername
 
-      const campaign = campaignData.data.find(
+      const campaign = filteredCampaignData.data.find(
         (campaign) => campaign.campaignId === campaignId
       )
       if (campaign?.validateSignatures) {
@@ -822,12 +840,17 @@ export default function ForCampaignPage({
       )
 
       try {
-        await writeContractAsync({
+        const tx = await writeContractAsync({
           abi: CAMPAIGN_ABI,
           address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
           functionName: 'claimCampaign',
           args: [campaignId, gistUsernameHash, message, signature],
           gas: BigInt(1000000),
+        })
+
+        await waitForTransactionReceipt(config, {
+          hash: tx,
+          confirmations: 1,
         })
 
         toast({
@@ -843,7 +866,7 @@ export default function ForCampaignPage({
         setLoading(false)
       }
     },
-    [campaignData, parseGithubUsername, chainId, writeContract]
+    [filteredCampaignData, parseGithubUsername, chainId, writeContract, config]
   )
 
   const handleCopySignature = useCallback(() => {
@@ -866,16 +889,22 @@ export default function ForCampaignPage({
     }
   }, [signature, address])
 
+  useEffect(() => {
+    setFilteredCampaignData(campaignData)
+  }, [campaignData])
+
   const currentCampaign = useMemo(
     () =>
-      campaignData.data.find(
+      filteredCampaignData.data.find(
         (campaign) => campaign.campaignId == dialogState.campaignId
       ),
-    [campaignData, dialogState.campaignId]
+    [filteredCampaignData, dialogState.campaignId]
   )
 
   const campaignInfo = useCallback((): CampaignInfo[] => {
-    const info: CampaignInfo[] = campaignData.data.map((campaign) => ({
+    if (filteredCampaignData.data.length == 0) return []
+
+    const info: CampaignInfo[] = filteredCampaignData.data.map((campaign) => ({
       id: campaign.campaignId.toString(),
       image:
         campaign.tokenType == 1
@@ -908,7 +937,7 @@ export default function ForCampaignPage({
     }))
 
     return info
-  }, [campaignData, sbtData, nftData, totalClaimed])
+  }, [filteredCampaignData, sbtData, nftData, totalClaimed])
 
   return (
     <div className="w-full min-h-screen bg-background container">
@@ -991,10 +1020,56 @@ export default function ForCampaignPage({
       <div className="mb-4 flex justify-end">
         <input
           type="text"
-          placeholder={campaign.searchCampaign ?? 'Search campaigns'}
+          placeholder={campaign.searchCampaign ?? 'Search campaigns by DAO ID'}
           className="border rounded px-3 py-2 w-full max-w-xs focus:outline-none focus:ring"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value
+            setSearchTerm(value)
+            try {
+              if (value.length == 0) {
+                setFilteredCampaignData({
+                  data: campaignData.data,
+                  tokenURIs: campaignData.tokenURIs,
+                  nftTokenURIs: campaignData.nftTokenURIs,
+                })
+                return
+              }
+
+              const filteredTokenData = tokenData.find((token) =>
+                token.daoId?.toLowerCase().includes(value.toLowerCase())
+              )
+
+              if (!filteredTokenData) {
+                setFilteredCampaignData({
+                  data: [],
+                  tokenURIs: [],
+                  nftTokenURIs: [],
+                })
+                return
+              }
+
+              let filteredCampaigns = []
+              if (filteredTokenData) {
+                filteredCampaigns = campaignData.data.filter(
+                  (campaign) =>
+                    ((campaign.tokenType == 2 &&
+                      filteredTokenData.isSBT == false) ||
+                      (campaign.tokenType == 1 &&
+                        filteredTokenData.isSBT == true)) &&
+                    campaign.sbtId === filteredTokenData.tokenId
+                )
+
+                setFilteredCampaignData({
+                  data: filteredCampaigns,
+                  tokenURIs: campaignData.tokenURIs,
+                  nftTokenURIs: campaignData.nftTokenURIs,
+                })
+              }
+            } catch (error) {
+              console.error('Error hashing DAO name:', error)
+            }
+          }}
         />
       </div>
       <TableComponent

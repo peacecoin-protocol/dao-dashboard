@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
+import { useAccount } from 'wagmi'
 
 export const CreateCampaignModal = ({
   isOpen,
@@ -22,14 +23,17 @@ export const CreateCampaignModal = ({
   onSubmit,
   tokenData,
   campaign,
+  setIsInvalidToken,
 }: {
   isOpen: boolean
   onClose: () => void
   onSubmit: (formData: any) => void
   tokenData: SBTInfo[]
   campaign: any
+  setIsInvalidToken: (value: boolean) => void
 }) => {
   const { toast } = useToast()
+  const { address } = useAccount()
   const [form, setForm] = useState({
     sbtId: 0,
     title: '',
@@ -201,29 +205,49 @@ export const CreateCampaignModal = ({
             )}
 
             {/* SBT Preview */}
-            {form.tokenType != 0 && form.sbtId != 0 && (
-              <div className="flex justify-center">
-                <Image
-                  src={
-                    form.tokenType == 1
-                      ? tokenData.find(
-                          (m: SBTInfo) =>
-                            m.isSBT && m.tokenId == form.sbtId.toString()
-                        )?.image || EMPTY_NFT_IMAGE
-                      : form.tokenType == 2
-                        ? tokenData.find(
-                            (m: SBTInfo) =>
-                              !m.isSBT && m.tokenId == form.sbtId.toString()
-                          )?.image || EMPTY_NFT_IMAGE
-                        : EMPTY_NFT_IMAGE
-                  }
-                  alt="SBT Preview"
-                  width={80}
-                  height={80}
-                  className="object-cover"
-                />
-              </div>
-            )}
+            {form.tokenType != 0 &&
+              form.sbtId != 0 &&
+              (() => {
+                // Memoize and calculate the found token info only once per render.
+                const isSBT = form.tokenType === 1
+                const isNFT = form.tokenType === 2
+                const sbtIdStr = form.sbtId.toString()
+                const lowerAddress = address?.toLowerCase() || ''
+                const foundToken = tokenData.find(
+                  (m: SBTInfo) =>
+                    (isSBT ? m.isSBT : !m.isSBT) && m.tokenId === sbtIdStr
+                )
+                const notOwner =
+                  !!foundToken &&
+                  foundToken.creator !== lowerAddress &&
+                  lowerAddress !== ''
+
+                if (notOwner) {
+                  setIsInvalidToken(true)
+                }
+
+                const previewImage = foundToken?.image || EMPTY_NFT_IMAGE
+                return (
+                  <div className="flex justify-center flex-col items-center">
+                    <Image
+                      src={previewImage}
+                      alt="SBT Preview"
+                      width={80}
+                      height={80}
+                      className="object-cover"
+                    />
+                    {notOwner && (
+                      <span className="text-sm text-gray-500 mt-2">
+                        {isSBT
+                          ? 'You are not the owner of this SBT'
+                          : isNFT
+                            ? 'You are not the owner of this NFT'
+                            : ''}
+                      </span>
+                    )}
+                  </div>
+                )
+              })()}
           </div>
 
           {/* Title Input */}
