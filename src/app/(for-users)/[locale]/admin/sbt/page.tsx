@@ -608,6 +608,8 @@ export default function SBTBuilderPage({
                 timestamp_
                 tokenURI
                 votingPower
+                creator
+                daoId
               }
             }
           `,
@@ -637,6 +639,7 @@ export default function SBTBuilderPage({
             isRevoked: false,
             isSBT: false,
             creator: address,
+            daoId: token.daoId,
           })
         }
 
@@ -666,6 +669,8 @@ export default function SBTBuilderPage({
                 timestamp_
                 tokenURI
                 votingPower
+                creator
+                daoId
               }
             }
           `,
@@ -695,6 +700,7 @@ export default function SBTBuilderPage({
             isRevoked: false,
             isSBT: true,
             creator: address,
+            daoId: token.daoId,
           })
         }
 
