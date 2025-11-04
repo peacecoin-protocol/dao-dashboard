@@ -229,10 +229,9 @@ export default function ForCampaignPage({
     campaignId: DEFAULT_CAMPAIGN_ID,
   })
 
-  const [signature, setSignature] = useState<string>('')
   const [loading, setLoading] = useState<boolean>(false)
   const [totalClaimed, setTotalClaimed] = useState<TotalClaimed[]>([])
-
+  const [isInvalidToken, setIsInvalidToken] = useState(false)
   const [sbtData, setSBTData] = useState<SBTInfo[]>([])
   const [nftData, setNFTData] = useState<SBTInfo[]>([])
   const [tokenData, setTokenData] = useState<SBTInfo[]>([])
@@ -304,6 +303,9 @@ export default function ForCampaignPage({
               first: 5
               orderDirection: desc
               orderBy: campaignId
+              where: {
+                creator: "${address?.toLowerCase()}"
+              }
             ) {
               campaignId
               sbtId
@@ -316,6 +318,7 @@ export default function ForCampaignPage({
               claimAmount
               token
               tokenType
+              creator
             }
           }
         `,
@@ -526,6 +529,7 @@ export default function ForCampaignPage({
                 timestamp_
                 tokenURI
                 votingPower
+                creator
               }
             }
           `,
@@ -554,6 +558,7 @@ export default function ForCampaignPage({
             votingPower: token.votingPower,
             isRevoked: false,
             isSBT: false,
+            creator: token.creator,
           })
         }
 
@@ -581,6 +586,7 @@ export default function ForCampaignPage({
                 timestamp_
                 tokenURI
                 votingPower
+                creator
               }
             }
           `,
@@ -609,6 +615,7 @@ export default function ForCampaignPage({
             votingPower: token.votingPower,
             isRevoked: false,
             isSBT: true,
+            creator: token.creator,
           })
         }
 
@@ -725,6 +732,18 @@ export default function ForCampaignPage({
   }
 
   const handleCreateCampaign = async (formData: any) => {
+    if (isInvalidToken) {
+      toast({
+        title: 'Invalid token',
+      })
+      setDialogState((prev) => ({
+        ...prev,
+        isCreateOpen: false,
+      }))
+      setIsInvalidToken(false)
+      return
+    }
+
     setDialogState((prev) => ({
       ...prev,
       isCreateOpen: false,
@@ -870,6 +889,7 @@ export default function ForCampaignPage({
           }
           tokenData={tokenData}
           onSubmit={handleCreateCampaign}
+          setIsInvalidToken={setIsInvalidToken}
           campaign={campaign}
         />
 

@@ -10,14 +10,14 @@ export const pceAddress = {
 } as Record<number, `0x${string}`>
 
 export const pceCommunity = {
-  [sepolia.id]: '0xf4b7161e885278BC1095Dc7Cf7BD65203a8770d8',
+  [sepolia.id]: '0xB39AE559A9D4D58a8FAaDf401c7F0398f879C6e7',
   [localhost.id]: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xBa9E16D096262023c50A3cCCC4f08af4b321fB21',
 } as Record<number, `0x${string}`>
 
 export const PCE_SBT_ADDRESS = {
-  [sepolia.id]: '0x91640aD1a7dDc080B7bc4d2F836eE52302f27F84',
+  [sepolia.id]: '0x9c1873CbD054b05AaCa0A17239bc6B43483bCCb6',
   [localhost.id]: '0x3d3a47670cebC45B405268BE07371F97AB408f81',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xBa9E16D096262023c50A3cCCC4f08af4b321fB21',
@@ -38,42 +38,35 @@ export const timelockAddress = {
 } as Record<number, `0x${string}`>
 
 export const governorAddress = {
-  [sepolia.id]: '0x5a1666DD74D5d78ea7D69B96e3495c8C49c2717B',
+  [sepolia.id]: '0xD8DD80201565C0890dA1d1Ade1A70203A9C869dA',
   [localhost.id]: '0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x4a1EBA4B4895b6562B8d67510FF07c95F90049d8',
 } as Record<number, `0x${string}`>
 
 export const bountyAddress = {
-  [sepolia.id]: '0xF121075EB893425BD5A14ed24607fb9246DA667e',
+  [sepolia.id]: '0xDf9DC02754FF6acd4a17e7283C4fe35D3Fa84A88',
   [localhost.id]: '0x9d4454B023096f34B160D6B654540c56A1F81688',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xEb0978C48aced59209242d677A404bBB2126413c',
 } as Record<number, `0x${string}`>
 
-export const factoryAddress = {
-  [sepolia.id]: '0xC16a87bAb8bFf45355aef8e9843cd0277B3db7f4',
-  [localhost.id]: '0x36C02dA8a0983159322a80FFE9F24b1acfF8B570',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
-  [hoodi.id]: '0xe004A0f37B2Be66e7225119F7EFF2d49C7F93629',
-} as Record<number, `0x${string}`>
-
 export const NFTAddress = {
-  [sepolia.id]: '0x550c48138BC87736A4cb05332b4716F464e902ca',
+  [sepolia.id]: '0x5EF418C929730d6727c6b9B33db84530857fcC5E',
   [localhost.id]: '0x0ce968ba1ff3035bd54679a5bc7ad6b21cca4c25',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xe004A0f37B2Be66e7225119F7EFF2d49C7F93629',
 } as Record<number, `0x${string}`>
 
 export const daoStudioAddress = {
-  [sepolia.id]: '0xC16a87bAb8bFf45355aef8e9843cd0277B3db7f4',
+  [sepolia.id]: '0x55843405c1fb4f2d872Ca80084056452f5304173',
   [localhost.id]: '0x809d550fca64d94Bd9F66E60752A544199cfAC3D',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
 export const campaignAddress = {
-  [sepolia.id]: '0x848d975e788A1c917331Cc5773de1CA39AD29340',
+  [sepolia.id]: '0x5E8c92dc989C620C24bD798574B43729d059E143',
   [localhost.id]: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',
@@ -193,10 +186,10 @@ export const campaignTableHeaders = [
   'Title',
   'Description',
   'Type',
-  'Token Id',
   'Claimed Amount/Total Amount',
   'Claim Amount',
   'Token Type',
+  'Token Id',
   'Start Time',
   'End Time',
   'Status',

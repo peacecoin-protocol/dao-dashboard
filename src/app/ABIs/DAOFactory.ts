@@ -78,6 +78,13 @@ export const DAO_FACTORY_ABI = [
   },
   {
     type: 'function',
+    name: 'daoCreators',
+    inputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'daoNames',
     inputs: [{ name: '', type: 'string', internalType: 'string' }],
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
@@ -270,13 +277,13 @@ export const DAO_FACTORY_ABI = [
       {
         name: 'daoName',
         type: 'string',
-        indexed: true,
+        indexed: false,
         internalType: 'string',
       },
       {
         name: 'creator',
         type: 'address',
-        indexed: true,
+        indexed: false,
         internalType: 'address',
       },
     ],
@@ -437,6 +444,7 @@ export const DAO_FACTORY_ABI = [
   { type: 'error', name: 'InvalidCommunityToken', inputs: [] },
   { type: 'error', name: 'InvalidCommunityTokenOwner', inputs: [] },
   { type: 'error', name: 'InvalidContributor', inputs: [] },
+  { type: 'error', name: 'InvalidCreator', inputs: [] },
   { type: 'error', name: 'InvalidDAOManager', inputs: [] },
   { type: 'error', name: 'InvalidGistsLength', inputs: [] },
   { type: 'error', name: 'InvalidMinter', inputs: [] },

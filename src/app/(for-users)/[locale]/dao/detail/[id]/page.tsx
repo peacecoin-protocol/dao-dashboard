@@ -69,7 +69,7 @@ import { TooltipComponent } from '~/components/custom/TooltipComponent'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { defaultChainId } from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
-import { factoryAddress } from '~/app/constants/constants'
+import { daoStudioAddress } from '~/app/constants/constants'
 import { useBlockNumber, useBlock } from 'wagmi'
 import { pinata } from '~/lib/config'
 import ImageCropModal from '~/components/ui/ImageCropModal'
@@ -328,7 +328,7 @@ export default function ForDaoDetailPage({
       return
     }
 
-    if (!chainId || !factoryAddress[chainId]) {
+    if (!chainId || !daoStudioAddress[chainId]) {
       toast({
         title: 'Error',
         description:
@@ -389,7 +389,7 @@ export default function ForDaoDetailPage({
 
   const { data: timelockAddress, refetch: refetchTimelockAddress } =
     useReadContract({
-      address: factoryAddress[chainId || defaultChainId] as `0x${string}`,
+      address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
       abi: DAO_FACTORY_ABI,
       functionName: 'timelock',
       args: [id],

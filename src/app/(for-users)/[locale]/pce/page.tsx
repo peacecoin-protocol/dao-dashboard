@@ -73,7 +73,7 @@ import {
   governorAddress,
   pceAddress,
   timelockAddress,
-  factoryAddress,
+  daoStudioAddress,
   PCE_SBT_ADDRESS,
 } from '~/app/constants/constants'
 
@@ -878,7 +878,7 @@ export default function PCEPage({
     } else if (category === '4') {
       _signature = 'deploy(bytes)'
       _calldata = new ethers.AbiCoder().encode(['bytes'], [bytescode])
-      _address = factoryAddress[chainId || defaultChainId]
+      _address = daoStudioAddress[chainId || defaultChainId]
     } else if (category === '5') {
       _address = timelockAddress[chainId || defaultChainId]
       _signature = 'updateVariables(uint256,uint256,uint256)'

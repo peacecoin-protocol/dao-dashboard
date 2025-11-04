@@ -17,6 +17,8 @@ import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 
 export interface SBTInfo {
   tokenId: string
+  creator: string
+  daoId: string
   name: string
   description: string
   balance: string
@@ -65,7 +67,7 @@ export function SBTTableComponent({
 
                 <TableCell className="text-center items-center flex justify-center">
                   <Image
-                    src={sbt.image === '' ? EMPTY_NFT_IMAGE : sbt.image}
+                    src={sbt.image == '' ? EMPTY_NFT_IMAGE : sbt.image}
                     alt={sbt.name}
                     width={128}
                     height={128}

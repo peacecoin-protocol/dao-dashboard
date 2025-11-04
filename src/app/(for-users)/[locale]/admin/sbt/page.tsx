@@ -553,9 +553,7 @@ export default function SBTBuilderPage({
           _nftData.map(async (token: SBTInfo) => {
             return (await readContract(config, {
               abi: SBT_ABI,
-              address: PCE_SBT_ADDRESS[
-                chainId || defaultChainId
-              ] as `0x${string}`,
+              address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
               functionName: 'isRevoked',
               args: [token.tokenId],
             })) as boolean
@@ -638,6 +636,7 @@ export default function SBTBuilderPage({
             votingPower: token.votingPower,
             isRevoked: false,
             isSBT: false,
+            creator: address,
           })
         }
 
@@ -695,6 +694,7 @@ export default function SBTBuilderPage({
             votingPower: token.votingPower,
             isRevoked: false,
             isSBT: true,
+            creator: address,
           })
         }
 
@@ -805,7 +805,7 @@ export default function SBTBuilderPage({
           abi: SBT_ABI,
           address: contractAddress as `0x${string}`,
           functionName: 'createToken',
-          args: [jsonUploadResult?.cid, cardForm.votingPower],
+          args: [jsonUploadResult?.cid, cardForm.votingPower, cardForm.daoId],
         })
         await waitForTransactionReceipt(config, {
           hash: createTokenTx,
@@ -874,7 +874,9 @@ export default function SBTBuilderPage({
     cardForm.name &&
     cardForm.description &&
     cardForm.votingPower &&
-    address
+    address &&
+    cardForm.daoId
+
   const currentLabels = {
     sbtList: localDict.sbtList ?? 'Token List',
     sbt: localDict.sbt ?? 'SBT',
@@ -997,19 +999,6 @@ export default function SBTBuilderPage({
           }}
         />
 
-        {/* <TokenTable
-          cardData={
-            tokenType == 'sbt'
-              ? sbtData
-              : tokenType == 'nft'
-                ? nftData
-                : [...sbtData, ...nftData]
-          }
-          filter={filter}
-          onViewMetadata={handleViewMetadata}
-          onRevoke={handleRevokeToken}
-          labels={currentLabels}
-        /> */}
         <CreateTokenModal
           isOpen={isCreateModalOpen}
           onClose={handleCreateModalClose}
