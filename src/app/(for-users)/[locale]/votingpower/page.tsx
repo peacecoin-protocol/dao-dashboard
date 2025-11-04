@@ -559,6 +559,8 @@ export default function StakingPage({
             (Number(sbtMetadata[i]?.timestamp) / 1000).toString() || '',
           isRevoked: false,
           isSBT: true,
+          creator: '',
+          daoId: '',
         })
       }
     }
@@ -585,6 +587,8 @@ export default function StakingPage({
             (Number(nftMetadata[i]?.timestamp) / 1000).toString() || '',
           isRevoked: false,
           isSBT: false,
+          creator: '',
+          daoId: '',
         })
       }
     }

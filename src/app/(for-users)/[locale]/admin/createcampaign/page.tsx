@@ -530,6 +530,7 @@ export default function ForCampaignPage({
                 tokenURI
                 votingPower
                 creator
+                daoId
               }
             }
           `,
@@ -559,6 +560,7 @@ export default function ForCampaignPage({
             isRevoked: false,
             isSBT: false,
             creator: token.creator,
+            daoId: token.daoId,
           })
         }
 
@@ -587,6 +589,7 @@ export default function ForCampaignPage({
                 tokenURI
                 votingPower
                 creator
+                daoId
               }
             }
           `,
@@ -616,6 +619,7 @@ export default function ForCampaignPage({
             isRevoked: false,
             isSBT: true,
             creator: token.creator,
+            daoId: token.daoId,
           })
         }
 
