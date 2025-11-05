@@ -14,6 +14,7 @@ import { useAccount, useReadContract } from 'wagmi'
 import { keccak256, toBytes } from 'viem'
 
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
+import Image from 'next/image'
 interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   isCollapsed: boolean
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
@@ -83,20 +84,24 @@ export default function Sidebar({
           sticky
           className="z-50 flex justify-between px-4 py-3 shadow-sm md:px-4 bg-white"
         >
-          <div className={`flex items-center ${!isCollapsed ? 'gap-2' : ''}`}>
-            <img
+          <div
+            className={`h-12 flex items-center ${!isCollapsed ? 'gap-2' : ''}`}
+          >
+            <Image
               src="/pce_logo.jpg"
               alt="PEACECOIN Logo"
-              className={`h-12 w-12 shrink-0 ${isCollapsed ? 'mx-auto' : ''}`}
+              width={isCollapsed ? 32 : 48}
+              height={isCollapsed ? 32 : 48}
             />
-            <div
-              className={`flex flex-col justify-end truncate ${isCollapsed ? 'invisible w-0' : 'visible w-auto'}`}
-            >
-              <span className="font-medium">{localDict.pceCoin}</span>
-              <span className="text-xs">
-                {localDict.daoStudio ?? 'DAO Studio'}
-              </span>
-            </div>
+
+            {!isCollapsed && (
+              <div className={`flex flex-col justify-end truncate`}>
+                <span className="font-medium">{localDict.pceCoin}</span>
+                <span className="text-xs">
+                  {localDict.daoStudio ?? 'DAO Studio'}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Toggle Button in mobile */}
@@ -132,7 +137,7 @@ export default function Sidebar({
         >
           <IconChevronsLeft
             stroke={1.5}
-            className={`h-5 w-5 ${isCollapsed ? 'rotate-180' : ''}`}
+            className={`h-6 w-6 ${isCollapsed ? 'rotate-180' : ''}`}
           />
         </Button>
       </Layout>

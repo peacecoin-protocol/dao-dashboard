@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
+import Image from 'next/image'
 import {
   Accordion,
   AccordionContent,
@@ -43,7 +44,12 @@ export default function ForFAQPage({
               After clicking "Create a DAO", you will first specify some basic
               parameters like DAO Name, DAO Description and DAO Logo and Some
               social links like Twitter, LinkedIn, Telegram, etc.
-              <img src="/images/daofaq/dao_settings.png" alt="DAO Settings" />
+              <Image
+                src="/images/daofaq/dao_settings.png"
+                alt="DAO Settings"
+                width={96}
+                height={96}
+              />
             </AccordionContent>
           </AccordionItem>
 
@@ -56,9 +62,11 @@ export default function ForFAQPage({
                 Threshold, etc.
               </p>
 
-              <img
+              <Image
                 src="/images/daofaq/dao_settings_votes.png"
                 alt="DAO Settings"
+                width={96}
+                height={96}
               />
             </AccordionContent>
           </AccordionItem>
