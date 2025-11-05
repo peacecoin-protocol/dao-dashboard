@@ -6,7 +6,7 @@ import * as CustomLink from '~/components/custom/Link'
 import axios from 'axios'
 
 import { useRouter } from 'next/navigation'
-
+import Image from 'next/image'
 import { Alchemy, Network } from 'alchemy-sdk'
 
 import RingLoader from 'react-spinners/RingLoader'
@@ -999,7 +999,7 @@ export default function PCEPage({
   return (
     <div className="items-center justify-center flex flex-col mx-4 sm:mx-20 gap-4">
       <div className="flex flex-row w-full items-center gap-4 mt-8">
-        <img src="/pce_logo.jpg" alt="" className="w-36 h-36" />
+        <Image src="/pce_logo.jpg" alt="PCE Logo" width={144} height={144} />
 
         <div className="flex flex-row gap-2 font-bold text-5xl">
           {localDict.title}

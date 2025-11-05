@@ -254,7 +254,7 @@ function NavLinkIconDropdown({
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
             <Button
-              variant={isChildActive ? 'secondary' : 'ghost'}
+              variant={isChildActive ? 'secondary' : 'secondary'}
               size="icon"
               className="h-12 w-12"
             >

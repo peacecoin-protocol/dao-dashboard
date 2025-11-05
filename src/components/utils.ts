@@ -32,9 +32,9 @@ export const LINKS = {
   },
 }
 
-export const shortenAddress = (address: any) => {
+export const shortenAddress = (address: any, length: number = 6) => {
   if (!address) return ''
-  return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`
+  return `${address.substring(0, length)}...${address.substring(address.length - length)}`
 }
 
 export const formatString = (str: string) => {

@@ -1,9 +1,10 @@
 'use client'
 
+import { CopyIcon } from 'lucide-react'
 import { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
-
+import Image from 'next/image'
 import RingLoader from 'react-spinners/RingLoader'
 import { ringStyle } from '~/app/constants/styles'
 import { Line } from 'rc-progress'
@@ -1152,81 +1153,19 @@ export default function ForDaoDetailPage({
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-dark_blue"></div>
             </div>
           ) : imageHash ? (
-            <img
+            <Image
               src={`${Env.PINATA_GATEWAY_URL}/ipfs/${imageHash}`}
-              alt=""
-              className="w-24 h-24"
+              alt="DAO Image"
+              width={96}
+              height={96}
             />
           ) : (
-            <img src={identicon} alt="" className="w-24 h-24 " />
+            <Image src={identicon} alt="DAO Image" width={96} height={96} />
           )}
           <div className="absolute inset-0 flex items-end justify-start opacity-0 group-hover:opacity-80 transition-opacity bg-black/50">
-            {/* <button
-              className="p-2 text-white hover:text-gray-200"
-              onClick={() => {
-                if (address != (_owner as `0x${string}`)) {
-                  toast.error('You are not the owner of this DAO')
-                  return
-                }
-                const fileInput = document.createElement('input')
-                fileInput.type = 'file'
-                fileInput.onchange = (e) => {
-                  const event =
-                    e as unknown as React.ChangeEvent<HTMLInputElement>
-                  handleFileChange(event)
-                }
-                fileInput.click()
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                />
-              </svg>
-            </button> */}
-            {/* <button
-              className="p-2 text-white hover:text-gray-200"
-              onClick={async () => {
-                if (address != (_owner as `0x${string}`)) {
-                  toast.error('You are not the owner of this DAO')
-                  return
-                }
-
-                await deleteImage()
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
-            </button> */}
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                {/* <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button> */}
-                <button className="w-full h-full bg-transparent gap-2 items-end justify-center flex p-2 hover:opacity-80 transition-opacity">
+                <button className="w-full h-full bg-gray-200 gap-2 items-end justify-center flex p-2 hover:opacity-80 transition-opacity">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="18"
@@ -1261,10 +1200,6 @@ export default function ForDaoDetailPage({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
-                    // if (address != (_owner as `0x${string}`)) {
-                    //   toast.error('You are not the owner of this DAO')
-                    //   return
-                    // }
                     await deleteImage()
                   }}
                 >
@@ -1275,7 +1210,22 @@ export default function ForDaoDetailPage({
           </div>
         </div>
 
-        <div className="flex flex-row gap-2 font-bold text-5xl">{name} </div>
+        <div className="flex flex-col gap-2 font-bold text-5xl">
+          {name}
+          <span
+            className="text-sm text-gray-500 mt-1 break-all flex flex-row items-center gap-2 cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation()
+              navigator.clipboard.writeText(id as string)
+              toast({
+                title: 'DAO ID copied!',
+              })
+            }}
+          >
+            {shortenAddress(id, 12)}
+            <CopyIcon className="h-4 w-4 text-gray-400" />
+          </span>
+        </div>
       </div>
       {selectedImage && (
         <Dialog open={!!selectedImage}>

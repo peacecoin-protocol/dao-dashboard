@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
+import Image from 'next/image'
 import { useToast } from '~/hooks/use-toast'
 
 import {
@@ -119,6 +119,8 @@ import { pinata } from '~/lib/config'
 import { DAO_FACTORY_ABI } from '~/app/ABIs/DAOFactory'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
+import { shortenAddress } from '~/components/utils'
+import { CopyIcon } from 'lucide-react'
 
 const DaoCard = ({
   dao,
@@ -155,19 +157,44 @@ const DaoCard = ({
         <div className="flex flex-row gap-4 md:gap-8 items-center border-none mx-8 md:mx-4">
           <div className="w-24 min-w-24 h-24">
             {dao.imageHash ? (
-              <img
+              <Image
                 src={`${Env.PINATA_GATEWAY_URL}/ipfs/${dao.imageHash}`}
-                alt=""
-                className="w-full h-full"
+                alt="DAO Image"
+                width={96}
+                height={96}
               />
             ) : (
-              <img src={dao.identicon} alt="" className="w-full h-full " />
+              <Image
+                src={dao.identicon}
+                alt="DAO Image"
+                width={96}
+                height={96}
+              />
             )}
           </div>
 
           <div className="flex flex-col gap-4 w-full">
-            <div className="font-bold text-xl md:text-2xl w-full flex">
+            <div className="font-bold text-xl md:text-2xl w-full flex flex-col">
               {dao.daoName}
+              <span
+                className="text-sm text-gray-500 block mt-1 break-all flex items-center gap-2"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigator.clipboard.writeText(dao.daoId)
+                  toast({
+                    title: 'DAO ID copied!',
+                  })
+                }}
+              >
+                {shortenAddress(dao.daoId, 12)}
+                <button
+                  type="button"
+                  className="ml-1 p-1 hover:bg-gray-200 rounded"
+                  title="Copy DAO ID"
+                >
+                  <CopyIcon className="h-4 w-4 text-gray-400" />
+                </button>
+              </span>
             </div>
             {/* <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-16 items-center justify-center">
             DAO
@@ -214,6 +241,7 @@ export default function ForDAOPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
   const router = useRouter()
+  const { toast } = useToast()
 
   const [dict, setDict] = useState<Dictionary | null>(null)
   const localeDict = dict?.studio ?? {}
@@ -228,8 +256,6 @@ export default function ForDAOPage({
       uri: DAO_STUDIO_SUBGRAPH_URL[chainId || defaultChainId] as string,
     }),
   })
-
-  const { toast } = useToast()
 
   const showConnectWalletAlert = () => {
     toast({ title: 'Please connect wallet' })
@@ -597,9 +623,6 @@ export default function ForDAOPage({
               onChange={(e) => setSearch(e.target.value)}
             />
             <DropdownMenu>
-              {/* <DropdownMenuTrigger className="flex items-center">
-                Filter
-              </DropdownMenuTrigger> */}
               <DropdownMenuContent>
                 <DropdownMenuItem>Sort Dao</DropdownMenuItem>
                 <DropdownMenuItem>Date of Creation</DropdownMenuItem>
@@ -629,38 +652,6 @@ export default function ForDAOPage({
                 />
               ))}
           </TabsContent>
-
-          {/* <TabsContent
-            value="my"
-            className="flex flex-col w-full items-center justify-center"
-          >
-            {daos.filter(
-              (dao) =>
-                dao.votes > 0 &&
-                dao.name.toLowerCase().includes(search.toLowerCase())
-            ).length === 0 ? (
-              <div className="text-gray-500 py-8">
-                {localeDict.noDaosToDisplay ?? 'No Daos to display'}
-              </div>
-            ) : (
-              daos
-                .filter(
-                  (dao) =>
-                    dao.votes > 0 &&
-                    dao.name.toLowerCase().includes(search.toLowerCase())
-                )
-                .map((dao) => (
-                  <DaoCard
-                    key={dao.id}
-                    dao={dao}
-                    locale={locale}
-                    localeDict={localeDict}
-                    router={router}
-                    chainId={chainId || 0}
-                  />
-                ))
-            )}
-          </TabsContent> */}
         </Tabs>
       </div>
 
