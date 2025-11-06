@@ -40,6 +40,7 @@ import {
   campaignTableHeaders,
   NFT_SUBGRAPH_URL,
   SBT_SUBGRAPH_URL,
+  GAS_LIMIT,
 } from '~/app/constants/constants'
 
 import { CAMPAIGN_ABI } from '~/app/ABIs/Campaigns'
@@ -677,19 +678,14 @@ export default function ForCampaignPage({
   }, [campaignData, chainId, isConfirmed])
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (isConfirmed) {
-        toast({
-          title: 'Transaction Succeeded! Data refreshed.',
-        })
-      } else if (error) {
-        toast({
-          title: (error as BaseError).shortMessage,
-        })
-      }
+    if (isConfirmed) {
+      toast({ title: 'Transaction Succeeded!' })
+    } else if (isConfirming) {
+      toast({ title: 'Transaction Pending, Please Wait...' })
+    } else if (error) {
+      toast({ title: (error as BaseError).shortMessage })
     }
-    fetchData()
-  }, [isConfirmed, error])
+  }, [isConfirmed, isConfirming, error, toast])
 
   const handleAddWhitelist = async (formData: any) => {
     setLoading(true)
@@ -809,7 +805,7 @@ export default function ForCampaignPage({
         address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
         functionName: 'createCampaign',
         args: [campaign],
-        gas: BigInt(1000000),
+        gas: BigInt(GAS_LIMIT),
       })
 
       await waitForTransactionReceipt(config, {

@@ -194,3 +194,5 @@ export const campaignTableHeaders = [
   'End Time',
   'Status',
 ]
+
+export const GAS_LIMIT = 1000000

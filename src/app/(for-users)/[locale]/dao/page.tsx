@@ -12,7 +12,7 @@ import {
   type BaseError,
 } from 'wagmi'
 
-import { readContract } from '@wagmi/core'
+import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 import { ringStyle } from '~/app/constants/styles'
 
@@ -162,6 +162,7 @@ const DaoCard = ({
                 alt="DAO Image"
                 width={96}
                 height={96}
+                priority
               />
             ) : (
               <Image
@@ -242,6 +243,7 @@ export default function ForDAOPage({
 }: PagePropsWithLocale<{}>) {
   const router = useRouter()
   const { toast } = useToast()
+  const { data: hash, error, writeContractAsync } = useWriteContract()
 
   const [dict, setDict] = useState<Dictionary | null>(null)
   const localeDict = dict?.studio ?? {}
@@ -261,7 +263,6 @@ export default function ForDAOPage({
     toast({ title: 'Please connect wallet' })
   }
 
-  const { data: hash, error, writeContract } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
@@ -307,7 +308,7 @@ export default function ForDAOPage({
   const handleCreateDao = async () => {
     setIsDialogOpened(false)
 
-    writeContract({
+    const tx = await writeContractAsync({
       abi: DAO_STUDIO_ABI,
       address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
       functionName: 'createDAO',
@@ -321,6 +322,12 @@ export default function ForDAOPage({
         daoForm.timelockDelay,
         parseEther(daoForm.quorumVotes),
       ],
+      gas: BigInt(1000000),
+    })
+
+    await waitForTransactionReceipt(config, {
+      hash: tx,
+      confirmations: 2,
     })
   }
 
@@ -336,20 +343,14 @@ export default function ForDAOPage({
   }
 
   useEffect(() => {
-    const notify = async () => {
-      if (isConfirmed) {
-        toast({
-          title: 'Transaction Succeed!',
-        })
-      } else if (isConfirming) {
-        toast({ title: 'TX is Pending, Please Wait...' })
-      } else if (error) {
-        toast({ title: (error as BaseError).shortMessage })
-      }
+    if (isConfirmed) {
+      toast({ title: 'Transaction Succeeded!' })
+    } else if (isConfirming) {
+      toast({ title: 'Transaction Pending, Please Wait...' })
+    } else if (error) {
+      toast({ title: (error as BaseError).shortMessage })
     }
-
-    notify()
-  }, [isConfirmed, isConfirming, error, hash])
+  }, [isConfirmed, isConfirming, error, toast])
 
   useEffect(() => {
     const fetchDict = async () => {
