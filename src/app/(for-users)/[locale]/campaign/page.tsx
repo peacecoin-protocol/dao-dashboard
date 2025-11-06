@@ -42,6 +42,7 @@ import {
   SBT_SUBGRAPH_URL,
   CAMPAIGNS_SUBGRAPH_URL,
   DAO_STUDIO_SUBGRAPH_URL,
+  GAS_LIMIT,
 } from '~/app/constants/constants'
 
 import { fetchMetadata } from '~/components/utils'
@@ -746,19 +747,14 @@ export default function ForCampaignPage({
   }, [filteredCampaignData, chainId, isConfirmed])
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (isConfirmed) {
-        toast({
-          title: 'Transaction Succeeded! Data refreshed.',
-        })
-      } else if (error) {
-        toast({
-          title: (error as BaseError).shortMessage,
-        })
-      }
+    if (isConfirmed) {
+      toast({ title: 'Transaction Succeeded!' })
+    } else if (isConfirming) {
+      toast({ title: 'Transaction Pending, Please Wait...' })
+    } else if (error) {
+      toast({ title: (error as BaseError).shortMessage })
     }
-    fetchData()
-  }, [isConfirmed, error])
+  }, [isConfirmed, isConfirming, error, toast])
 
   // Handlers
   const signMessage = useCallback(async () => {
@@ -845,7 +841,7 @@ export default function ForCampaignPage({
           address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
           functionName: 'claimCampaign',
           args: [campaignId, gistUsernameHash, message, signature],
-          gas: BigInt(1000000),
+          gas: BigInt(GAS_LIMIT),
         })
 
         await waitForTransactionReceipt(config, {

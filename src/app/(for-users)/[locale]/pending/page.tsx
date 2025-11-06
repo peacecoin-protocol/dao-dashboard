@@ -99,20 +99,14 @@ export default function ForPendingPage({
     })
 
   useEffect(() => {
-    const notify = async () => {
-      if (isConfirmed) {
-        toast({
-          title: 'Transaction Succeed!',
-        })
-      } else if (isConfirming) {
-        toast({ title: 'TX is Pending, Please Wait...' })
-      } else if (error) {
-        toast({ title: (error as BaseError).shortMessage })
-      }
+    if (isConfirmed) {
+      toast({ title: 'Transaction Succeeded!' })
+    } else if (isConfirming) {
+      toast({ title: 'Transaction Pending, Please Wait...' })
+    } else if (error) {
+      toast({ title: (error as BaseError).shortMessage })
     }
-
-    notify()
-  }, [isConfirmed, isConfirming, error, hash])
+  }, [isConfirmed, isConfirming, error, toast])
 
   const { data: votingDelay, refetch: refetchVotingDelay } = useReadContract({
     address: governorAddress[chainId || defaultChainId] as `0x${string}`,

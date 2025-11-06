@@ -77,15 +77,13 @@ export default function ForClosedPage({
 
   useEffect(() => {
     if (isConfirmed) {
-      toast({
-        title: 'Transaction Succeed!',
-      })
+      toast({ title: 'Transaction Succeeded!' })
     } else if (isConfirming) {
-      toast({ title: 'TX is Pending, Please Wait...' })
+      toast({ title: 'Transaction Pending, Please Wait...' })
     } else if (error) {
       toast({ title: (error as BaseError).shortMessage })
     }
-  }, [isConfirmed, isConfirming, error, hash])
+  }, [isConfirmed, isConfirming, error, toast])
 
   const fetchData = async (count: number) => {
     if (count == 0) return

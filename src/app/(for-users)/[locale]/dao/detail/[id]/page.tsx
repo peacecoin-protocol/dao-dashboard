@@ -355,11 +355,12 @@ export default function ForDaoDetailPage({
 
       const hash = await writeContractAsync(contractConfig)
 
-      toast({
-        title: 'Transaction Submitted',
-        description:
-          'Your transaction is being processed. Please wait for confirmation.',
+      await waitForTransactionReceipt(config, {
+        hash,
+        confirmations: 1,
       })
+
+      await refetchSocialConfig()
     } catch (error) {
       console.error('Error updating social links:', error)
 
@@ -446,6 +447,13 @@ export default function ForDaoDetailPage({
       functionName: 'balanceOf',
       args: [address],
     }) as { data?: string; refetch: () => void }
+
+  const { data: daoCreator } = useReadContract({
+    address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
+    abi: DAO_FACTORY_ABI,
+    functionName: 'daoCreators',
+    args: [id],
+  }) as { data?: string; refetch: () => void }
 
   const { data: proposalThreshold, refetch: refetchProposalThreshold } =
     useReadContract({
@@ -1009,30 +1017,14 @@ export default function ForDaoDetailPage({
   }
 
   useEffect(() => {
-    const notify = async () => {
-      // Only show toast if state has actually changed
-      if (isConfirmed) {
-        toast({
-          title: 'Transaction Succeed!',
-        })
-
-        setDelegateAddr('')
-        await refetchVotes()
-        await getTreasuryBalances(timelockAddress as `0x${string}`)
-        await refetchProposalCount()
-      } else if (isConfirming) {
-        toast({
-          title: 'TX is Pending, Please Wait...',
-        })
-      } else if (error) {
-        toast({
-          title: (error as BaseError).shortMessage,
-        })
-      }
+    if (isConfirmed) {
+      toast({ title: 'Transaction Succeeded!' })
+    } else if (isConfirming) {
+      toast({ title: 'Transaction Pending, Please Wait...' })
+    } else if (error) {
+      toast({ title: (error as BaseError).shortMessage })
     }
-
-    notify()
-  }, [isConfirmed, isConfirming, error, hash])
+  }, [isConfirmed, isConfirming, error, toast])
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -1157,10 +1149,15 @@ export default function ForDaoDetailPage({
               src={`${Env.PINATA_GATEWAY_URL}/ipfs/${imageHash}`}
               alt="DAO Image"
               width={96}
+              priority
               height={96}
             />
           ) : (
-            <Image src={identicon} alt="DAO Image" width={96} height={96} />
+            <>
+              {identicon && (
+                <Image src={identicon} alt="DAO Image" width={96} height={96} />
+              )}
+            </>
           )}
           <div className="absolute inset-0 flex items-end justify-start opacity-0 group-hover:opacity-80 transition-opacity bg-black/50">
             <DropdownMenu>
@@ -1186,6 +1183,14 @@ export default function ForDaoDetailPage({
               <DropdownMenuContent>
                 <DropdownMenuItem
                   onClick={() => {
+                    if (daoCreator !== address) {
+                      toast({
+                        title: 'You are not the creator of this DAO',
+                        variant: 'destructive',
+                      })
+                      return
+                    }
+
                     const fileInput = document.createElement('input')
                     fileInput.type = 'file'
                     fileInput.onchange = (e) => {
@@ -1200,6 +1205,13 @@ export default function ForDaoDetailPage({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
+                    if (daoCreator !== address) {
+                      toast({
+                        title: 'You are not the creator of this DAO',
+                        variant: 'destructive',
+                      })
+                      return
+                    }
                     await deleteImage()
                   }}
                 >
