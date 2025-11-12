@@ -46,7 +46,7 @@ const CampaignCard = ({
       <CardContent className="p-4 space-y-4">
         {/* Header with Image and Basic Info */}
         <div className="flex items-start gap-4">
-          <Image
+          {/* <Image
             src={
               campaign.tokenType == 1
                 ? sbtMetadata?.find((m) => m.token_id == campaign.sbtId)
@@ -59,7 +59,7 @@ const CampaignCard = ({
             alt={`Campaign ${campaign.campaignId}`}
             width={64}
             height={64}
-          />
+          /> */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
@@ -287,11 +287,13 @@ export const CampaignsTable = ({
                               src={
                                 campaign.tokenType == 1
                                   ? sbtMetadata?.find(
-                                      (m) => m.token_id == campaign.sbtId
+                                      (m) =>
+                                        m.tokenId == campaign.sbtId.toString()
                                     )?.image || EMPTY_NFT_IMAGE
                                   : campaign.tokenType == 2
                                     ? nftMetadata?.find(
-                                        (m) => m.token_id == campaign.sbtId
+                                        (m) =>
+                                          m.tokenId == campaign.sbtId.toString()
                                       )?.image || EMPTY_NFT_IMAGE
                                     : PCE_LOGO
                               }

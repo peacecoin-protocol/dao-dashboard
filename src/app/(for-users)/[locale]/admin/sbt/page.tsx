@@ -16,7 +16,6 @@ import {
 } from '~/app/constants/constants'
 import { Button } from '~/components/ui/button'
 import { getDict } from '~/i18n/get-dict'
-import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import { useToast } from '~/hooks/use-toast'
 import { Input } from '~/components/ui/input'
 import { DialogContent, DialogTitle, Dialog } from '~/components/ui/dialog'
@@ -53,9 +52,7 @@ import {
   SBTInfo,
   SBTTableComponent,
 } from '~/components/custom/sbt-tableComponent'
-import { Env } from '~/env'
 import { ApolloClient, HttpLink, InMemoryCache, gql } from '@apollo/client'
-import { fetchMetadata } from '~/components/utils'
 import { shortenAddress } from '~/components/utils'
 
 // Types
@@ -455,7 +452,7 @@ export default function SBTBuilderPage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
-      confirmations: 1,
+      confirmations: 2,
     })
 
   // Effects
@@ -592,8 +589,29 @@ export default function SBTBuilderPage({
     const filteredNftData: SBTInfo[] = nftData.filter(
       (token: SBTInfo) => token.tokenId !== '1'
     )
-    setTokenData([...filteredSbtData, ...filteredNftData])
-  }, [sbtData, nftData])
+
+    const filteredData: SBTInfo[] = []
+
+    if (tokenType == 'all') {
+      filteredData.push(...filteredSbtData, ...filteredNftData)
+    } else if (tokenType == 'sbt') {
+      filteredData.push(...filteredSbtData)
+    } else if (tokenType == 'nft') {
+      filteredData.push(...filteredNftData)
+    }
+
+    if (filter == 'all') {
+      setTokenData([...filteredData])
+    } else if (filter == 'revoked') {
+      setTokenData([
+        ...filteredData.filter((token: SBTInfo) => token.isRevoked),
+      ])
+    } else if (filter == 'unrevoked') {
+      setTokenData([
+        ...filteredData.filter((token: SBTInfo) => !token.isRevoked),
+      ])
+    }
+  }, [sbtData, nftData, filter, tokenType])
 
   useEffect(() => {
     const fetchNFTData = async () => {
@@ -603,7 +621,7 @@ export default function SBTBuilderPage({
         const { data } = await nftClient.query({
           query: gql`
             query getNFTData {
-              createdTokens(first: 10, orderDirection: desc, where: {creator: "${address.toLowerCase()}"}) {
+              createdTokens(first: 20, orderDirection: desc, where: {creator: "${address.toLowerCase()}"}) {
                 tokenId
                 timestamp_
                 tokenURI
@@ -617,23 +635,10 @@ export default function SBTBuilderPage({
 
         let _nftData: SBTInfo[] = []
         for (const token of data.createdTokens) {
-          let _metadata: any = {}
-          try {
-            _metadata = await fetchMetadata(
-              `${Env.PINATA_GATEWAY_URL}/ipfs/${token.tokenURI}`
-            )
-          } catch (error) {
-            console.error('Error fetching NFT data:', error)
-          }
-
           _nftData.push({
             tokenId: token.tokenId,
+            tokenURI: token.tokenURI,
             createdAt: Number(token.timestamp_).toString(),
-            image: _metadata.image
-              ? `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`
-              : EMPTY_NFT_IMAGE,
-            name: _metadata.name,
-            description: _metadata.description,
             balance: '0',
             votingPower: token.votingPower,
             isRevoked: false,
@@ -664,7 +669,7 @@ export default function SBTBuilderPage({
         const { data } = await sbtClient.query({
           query: gql`
             query getSBTData {
-              createdTokens(first: 10, orderDirection: desc, where: {creator: "${address.toLowerCase()}"}) {
+              createdTokens(first: 20, orderDirection: desc, where: {creator: "${address.toLowerCase()}"}) {
                 tokenId
                 timestamp_
                 tokenURI
@@ -676,25 +681,14 @@ export default function SBTBuilderPage({
           `,
         })
 
+        console.log(data, '>>>data')
+
         let _sbtData: SBTInfo[] = []
         for (const token of data.createdTokens) {
-          let _metadata: any = {}
-          try {
-            _metadata = await fetchMetadata(
-              `${Env.PINATA_GATEWAY_URL}/ipfs/${token.tokenURI}`
-            )
-          } catch (error) {
-            console.error('Error fetching SBT data:', error)
-          }
-
           _sbtData.push({
             tokenId: token.tokenId,
+            tokenURI: token.tokenURI,
             createdAt: Number(token.timestamp_).toString(),
-            image: _metadata.image
-              ? `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`
-              : EMPTY_NFT_IMAGE,
-            name: _metadata.name,
-            description: _metadata.description,
             balance: '0',
             votingPower: token.votingPower,
             isRevoked: false,
@@ -713,6 +707,7 @@ export default function SBTBuilderPage({
         console.error('Error:', error)
       }
     }
+
     fetchSBTData()
   }, [refetchSBTData, address])
 
@@ -815,7 +810,7 @@ export default function SBTBuilderPage({
         })
         await waitForTransactionReceipt(config, {
           hash: createTokenTx,
-          confirmations: 1,
+          confirmations: 2,
         })
         toast({ title: 'Token created successfully!' })
 
@@ -933,7 +928,7 @@ export default function SBTBuilderPage({
 
         await waitForTransactionReceipt(config, {
           hash: revokeTx,
-          confirmations: 1,
+          confirmations: 2,
         })
 
         toast({

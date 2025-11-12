@@ -252,6 +252,8 @@ export default function ForDAOPage({
 
   const { address, chainId } = useAccount()
 
+  const [refetchDaos, setRefetchDaos] = useState(false)
+
   const client = new ApolloClient({
     cache: new InMemoryCache(),
     link: new HttpLink({
@@ -266,7 +268,7 @@ export default function ForDAOPage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
-      confirmations: 1,
+      confirmations: 2,
     })
 
   const { chains, switchChain } = useSwitchChain()
@@ -305,6 +307,7 @@ export default function ForDAOPage({
 
   const [isDialogOpened, setIsDialogOpened] = useState(false)
   const [search, setSearch] = useState('')
+
   const handleCreateDao = async () => {
     setIsDialogOpened(false)
 
@@ -329,6 +332,8 @@ export default function ForDAOPage({
       hash: tx,
       confirmations: 2,
     })
+
+    setRefetchDaos(!refetchDaos)
   }
 
   const updateDaoForm = (field: keyof DaoFormState, value: string) => {
@@ -382,6 +387,8 @@ export default function ForDAOPage({
   useEffect(() => {
     const fetchData = async () => {
       try {
+        if (address == undefined || address == null) return
+
         setLoading(true)
 
         const { data } = await client.query({
@@ -472,7 +479,7 @@ export default function ForDAOPage({
     }
 
     fetchData()
-  }, [isConfirmed, chainId])
+  }, [refetchDaos, address])
 
   return (
     <div className="items-center justify-center flex flex-col mx-10 md:mx-20 gap-4">

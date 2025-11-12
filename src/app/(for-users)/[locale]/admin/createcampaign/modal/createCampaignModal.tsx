@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '~/components/ui/select'
 import { useAccount } from 'wagmi'
+import { Metadata } from '~/i18n/types'
 
 export const CreateCampaignModal = ({
   isOpen,
@@ -24,6 +25,8 @@ export const CreateCampaignModal = ({
   tokenData,
   campaign,
   setIsInvalidToken,
+  sbtMetadata,
+  nftMetadata,
 }: {
   isOpen: boolean
   onClose: () => void
@@ -31,6 +34,8 @@ export const CreateCampaignModal = ({
   tokenData: SBTInfo[]
   campaign: any
   setIsInvalidToken: (value: boolean) => void
+  sbtMetadata: Metadata[]
+  nftMetadata: Metadata[]
 }) => {
   const { toast } = useToast()
   const { address } = useAccount()
@@ -204,13 +209,11 @@ export const CreateCampaignModal = ({
               />
             )}
 
-            {/* SBT Preview */}
             {form.tokenType != 0 &&
               form.sbtId != 0 &&
               (() => {
-                // Memoize and calculate the found token info only once per render.
-                const isSBT = form.tokenType === 1
-                const isNFT = form.tokenType === 2
+                const isSBT = form.tokenType == 1
+                const isNFT = form.tokenType == 2
                 const sbtIdStr = form.sbtId.toString()
                 const lowerAddress = address?.toLowerCase() || ''
                 const foundToken = tokenData.find(
@@ -222,16 +225,31 @@ export const CreateCampaignModal = ({
                   foundToken.creator !== lowerAddress &&
                   lowerAddress !== ''
 
-                if (notOwner) {
-                  setIsInvalidToken(true)
-                }
-
-                const previewImage = foundToken?.image || EMPTY_NFT_IMAGE
                 return (
                   <div className="flex justify-center flex-col items-center">
                     <Image
-                      src={previewImage}
-                      alt="SBT Preview"
+                      src={
+                        form.tokenType == 1
+                          ? sbtMetadata.find(
+                              (m) => m.tokenId == form.sbtId.toString()
+                            )?.image || EMPTY_NFT_IMAGE
+                          : form.tokenType == 2
+                            ? nftMetadata.find(
+                                (m) => m.tokenId == form.sbtId.toString()
+                              )?.image || EMPTY_NFT_IMAGE
+                            : EMPTY_NFT_IMAGE
+                      }
+                      alt={
+                        form.tokenType == 1
+                          ? sbtMetadata.find(
+                              (m) => m.tokenId == form.sbtId.toString()
+                            )?.name || ''
+                          : form.tokenType == 2
+                            ? nftMetadata.find(
+                                (m) => m.tokenId == form.sbtId.toString()
+                              )?.name || ''
+                            : ''
+                      }
                       width={80}
                       height={80}
                       className="object-cover"

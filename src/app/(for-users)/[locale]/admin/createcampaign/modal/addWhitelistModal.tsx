@@ -36,6 +36,8 @@ export const AddWhitelistModal = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     if (name === 'id') {
+      if (value.length == 0) return
+
       const campaign = campaignData.find(
         (campaign) => campaign.campaignId == Number(value)
       )

@@ -84,18 +84,10 @@ export interface TOKEN {
 }
 
 export interface Metadata {
+  tokenId: string
   image: string
   name: string
   description: string
-  attributes?: {
-    key: string
-    trait_type: string
-    value: string
-  }[]
-  external_url?: string
-  token_id: number
-  timestamp: string
-  votingPower?: string
 }
 
 export interface PIP {

@@ -35,8 +35,8 @@ export default function AddDynamicInputFields({
   return (
     <div className="space-y-4">
       {inputs.map((item, index) => (
-        <div key={index} className="space-y-3">
-          <div className="flex flex-col sm:flex-row gap-3">
+        <div key={index} className="space-y-3 w-full">
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
             <div className="flex-1">
               {!isVerifySignature && (
                 <Input
@@ -62,7 +62,7 @@ export default function AddDynamicInputFields({
             {inputs.length > 1 && (
               <Button
                 variant="outline"
-                className="bg-red-500 hover:bg-red-600 text-white border-red-500 hover:border-red-600 rounded-md px-3 py-2 text-sm"
+                className="bg-red-500 hover:bg-red-600 text-white border-red-500 hover:border-red-600 rounded-md px-3 py-2 text-sm w-14"
                 onClick={() => handleDeleteInput(index)}
               >
                 Delete
