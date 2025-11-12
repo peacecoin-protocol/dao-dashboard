@@ -255,7 +255,7 @@ export default function PCEPage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
-      confirmations: 1,
+      confirmations: 2,
     })
 
   const { data: quorum, refetch: refetchQuorum } = useReadContract({
@@ -429,14 +429,10 @@ export default function PCEPage({
           } catch (error) {
             console.error('Error fetching NFT metadata:', error)
             const metadata: Metadata = {
+              tokenId: i.toString(),
               image: '/images/empty-nft.svg',
               name: '',
               description: '',
-              attributes: [],
-              external_url: '',
-              token_id: 0,
-              timestamp: '0',
-              votingPower: '0',
             }
             _nftMetadata.push(metadata)
           }

@@ -88,6 +88,7 @@ import { DAO_FACTORY_ABI } from '~/app/ABIs/DAOFactory'
 import { DialogTrigger } from '~/components/ui/dialog'
 import { AmountInput } from '~/components/custom/amount-input'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
+
 type Dao = {
   id: string
   daoId: string
@@ -258,12 +259,21 @@ export default function ForDaoDetailPage({
           setIsImageLoading(true)
           const _image = await fetchImage(id)
 
-          setImageHash(_image ? (_image?.cid as string) : '')
-          toast({
-            title:
-              localDict.imageFetchedSuccessfully ??
-              'Image fetched successfully',
-          })
+          console.log(_image, '>>>_image')
+
+          if (_image) {
+            setImageHash(_image?.cid as string)
+
+            toast({
+              title:
+                localDict.imageFetchedSuccessfully ??
+                'Image fetched successfully',
+            })
+          } else {
+            toast({
+              title: 'Failed to load image',
+            })
+          }
         } catch (error) {
           console.error('Error loading image:', error)
           toast({
@@ -357,7 +367,7 @@ export default function ForDaoDetailPage({
 
       await waitForTransactionReceipt(config, {
         hash,
-        confirmations: 1,
+        confirmations: 2,
       })
 
       await refetchSocialConfig()
@@ -386,7 +396,7 @@ export default function ForDaoDetailPage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
-      confirmations: 1,
+      confirmations: 2,
     })
 
   const { data: timelockAddress, refetch: refetchTimelockAddress } =
@@ -934,7 +944,7 @@ export default function ForDaoDetailPage({
       }
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 1,
+        confirmations: 2,
       })
     }
 
@@ -949,7 +959,7 @@ export default function ForDaoDetailPage({
 
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 1,
+        confirmations: 2,
       })
     } catch (error) {
       console.error('Error depositing tokens:', error)
@@ -980,7 +990,7 @@ export default function ForDaoDetailPage({
 
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 1,
+        confirmations: 2,
       })
       await refetchGovTokenBalance()
       await refetchCommunityTokenBalance()
@@ -1007,7 +1017,7 @@ export default function ForDaoDetailPage({
 
         await waitForTransactionReceipt(config, {
           hash: tx,
-          confirmations: 1,
+          confirmations: 2,
         })
       } catch (error) {
         console.error('Error delegating tokens:', error)

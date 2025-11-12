@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import Image from 'next/image'
 import { timestampToDate } from '../utils'
 
 export interface SBTInfo {
@@ -50,12 +49,12 @@ export function SBTTableComponent({ headers, sbtInfo }: SBTTableProps) {
                 </TableCell>
 
                 <TableCell className="text-center items-center flex justify-center">
-                  <Image
+                  {/* <Image
                     src={sbt.image}
                     alt={sbt.name}
                     width={128}
                     height={128}
-                  />
+                  /> */}
                 </TableCell>
                 <TableCell className="text-center">{sbt.name}</TableCell>
                 <TableCell className="text-center">{sbt.description}</TableCell>

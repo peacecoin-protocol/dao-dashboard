@@ -77,7 +77,7 @@ export default function ForDelegatePage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
-      confirmations: 1,
+      confirmations: 2,
     })
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
@@ -130,7 +130,7 @@ export default function ForDelegatePage({
       }
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 1,
+        confirmations: 2,
       })
     }
 
@@ -146,7 +146,7 @@ export default function ForDelegatePage({
       setStakingAmount('')
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 1,
+        confirmations: 2,
       })
     } catch (error) {
       console.error('Error depositing tokens:', error)
@@ -172,7 +172,7 @@ export default function ForDelegatePage({
 
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 1,
+        confirmations: 2,
       })
     } catch (error) {
       console.error('Error withdrawing tokens:', error)

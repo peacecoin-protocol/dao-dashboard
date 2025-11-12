@@ -15,7 +15,7 @@ import {
   type BaseError,
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
-import { CAMPAIGN } from '~/i18n/types'
+import { CAMPAIGN, Metadata } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
@@ -27,9 +27,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '~/components/ui/dialog'
-import { timestampToDate } from '~/components/utils'
-import { fetchMetadata } from '~/components/utils'
-import { Env } from '~/env'
+import { fetchMetadata, timestampToDate } from '~/components/utils'
 
 import {
   PCE_SBT_ADDRESS,
@@ -52,27 +50,19 @@ import { SBT_ABI } from '~/app/ABIs/SBT'
 import { Spinner } from '~/components/ui/Spinner'
 import { CreateCampaignModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/createCampaignModal'
 import { AddWhitelistModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/addWhitelistModal'
-import {
-  CampaignInfo,
-  TableComponent,
-} from '~/components/custom/tableComponent'
+import { TableComponent } from '~/components/custom/tableComponent'
 import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 import { erc20Abi } from 'viem'
+import { Env } from '~/env'
+import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 
 // Constants
 const PCE_LOGO = '/pce_logo.jpg'
 const CLAIM_MESSAGE = 'Claim Bounty for dApp.xyz'
 const DEFAULT_CAMPAIGN_ID = -1
 const DEFAULT_NFT_DETAIL_INDEX = -1
-const EMPTY_NFT_IMAGE = '/images/empty-nft.svg'
 
 // Types
-interface CampaignState {
-  data: CAMPAIGN[]
-  tokenURIs: { internal_id: number; uri: string }[]
-  nftTokenURIs: { internal_id: number; uri: string }[]
-}
-
 interface DialogState {
   isOpen: boolean
   isCreateOpen: boolean
@@ -236,8 +226,8 @@ export default function ForCampaignPage({
   const [sbtData, setSBTData] = useState<SBTInfo[]>([])
   const [nftData, setNFTData] = useState<SBTInfo[]>([])
   const [tokenData, setTokenData] = useState<SBTInfo[]>([])
-  const [refetchNFTData, setRefetchNFTData] = useState(false)
-  const [refetchSBTData, setRefetchSBTData] = useState(false)
+  const [nftMetadata, setNFTMetadata] = useState<Metadata[]>([])
+  const [sbtMetadata, setSBTMetadata] = useState<Metadata[]>([])
 
   const sbtClient = new ApolloClient({
     cache: new InMemoryCache(),
@@ -263,7 +253,7 @@ export default function ForCampaignPage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
-      confirmations: 1,
+      confirmations: 2,
     })
 
   const { data: uri_ } = useReadContract({
@@ -283,11 +273,7 @@ export default function ForCampaignPage({
       chainId: chainId || defaultChainId,
     })
 
-  const [campaignData, setCampaignData] = useState<CampaignState>({
-    data: [],
-    tokenURIs: [],
-    nftTokenURIs: [],
-  })
+  const [campaignData, setCampaignData] = useState<CAMPAIGN[]>([])
 
   const client = new ApolloClient({
     uri: CAMPAIGNS_SUBGRAPH_URL[chainId || defaultChainId] as string,
@@ -325,11 +311,7 @@ export default function ForCampaignPage({
         `,
       })
 
-      setCampaignData({
-        data: data.campaignCreateds,
-        tokenURIs: [],
-        nftTokenURIs: [],
-      })
+      setCampaignData(data.campaignCreateds)
     } catch (error) {
     } finally {
       setLoading(false)
@@ -539,23 +521,10 @@ export default function ForCampaignPage({
 
         let _nftData: SBTInfo[] = []
         for (const token of data.createdTokens) {
-          let _metadata: any = {}
-          try {
-            _metadata = await fetchMetadata(
-              `${Env.PINATA_GATEWAY_URL}/ipfs/${token.tokenURI}`
-            )
-          } catch (error) {
-            console.error('Error fetching NFT data:', error)
-          }
-
           _nftData.push({
             tokenId: token.tokenId,
+            tokenURI: token.tokenURI,
             createdAt: Number(token.timestamp_).toString(),
-            image: _metadata.image
-              ? `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`
-              : EMPTY_NFT_IMAGE,
-            name: _metadata.name,
-            description: _metadata.description,
             balance: '0',
             votingPower: token.votingPower,
             isRevoked: false,
@@ -575,7 +544,7 @@ export default function ForCampaignPage({
       }
     }
     fetchNFTData()
-  }, [refetchNFTData])
+  }, [])
 
   useEffect(() => {
     const fetchSBTData = async () => {
@@ -598,23 +567,10 @@ export default function ForCampaignPage({
 
         let _sbtData: SBTInfo[] = []
         for (const token of data.createdTokens) {
-          let _metadata: any = {}
-          try {
-            _metadata = await fetchMetadata(
-              `${Env.PINATA_GATEWAY_URL}/ipfs/${token.tokenURI}`
-            )
-          } catch (error) {
-            console.error('Error fetching SBT data:', error)
-          }
-
           _sbtData.push({
             tokenId: token.tokenId,
+            tokenURI: token.tokenURI,
             createdAt: Number(token.timestamp_).toString(),
-            image: _metadata.image
-              ? `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`
-              : EMPTY_NFT_IMAGE,
-            name: _metadata.name,
-            description: _metadata.description,
             balance: '0',
             votingPower: token.votingPower,
             isRevoked: false,
@@ -634,38 +590,100 @@ export default function ForCampaignPage({
       }
     }
     fetchSBTData()
-  }, [refetchSBTData])
+  }, [])
+
+  useEffect(() => {
+    const fetchNFTMetadata = async () => {
+      let _nftMetadata: Metadata[] = []
+      for (const nft of nftData) {
+        try {
+          const _metadata = await fetchMetadata(
+            `${Env.PINATA_GATEWAY_URL}/ipfs/${nft.tokenURI}`
+          )
+          _nftMetadata.push({
+            tokenId: nft.tokenId,
+            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`,
+            name: _metadata.name,
+            description: _metadata.description,
+          })
+        } catch (error) {
+          console.error('Error fetching NFT metadata:', error)
+          _nftMetadata.push({
+            tokenId: nft.tokenId,
+            image: EMPTY_NFT_IMAGE,
+            name: '',
+            description: '',
+          })
+        }
+      }
+      setNFTMetadata(_nftMetadata)
+    }
+    fetchNFTMetadata()
+  }, [nftData])
+
+  useEffect(() => {
+    const fetchSBTMetadata = async () => {
+      let _sbtMetadata: Metadata[] = []
+      if (sbtData.length === 0) return
+      for (const sbt of sbtData) {
+        try {
+          const _metadata = await fetchMetadata(
+            `${Env.PINATA_GATEWAY_URL}/ipfs/${sbt.tokenURI}`
+          )
+          console.log(_metadata, '>>>_metadata!!!')
+          _sbtMetadata.push({
+            tokenId: sbt.tokenId,
+            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`,
+            name: _metadata.name,
+            description: _metadata.description,
+          })
+        } catch (error) {
+          console.error('Error fetching SBT metadata:', error)
+          _sbtMetadata.push({
+            tokenId: sbt.tokenId,
+            image: EMPTY_NFT_IMAGE,
+            name: '',
+            description: '',
+          })
+        }
+      }
+      setSBTMetadata(_sbtMetadata)
+    }
+    fetchSBTMetadata()
+  }, [sbtData])
 
   useEffect(() => {
     const fetchTotalClaimed = async () => {
-      if (campaignData.data.length === 0) return
+      if (campaignData.length === 0) return
 
       try {
-        const totalClaimedPromises = campaignData.data.map(async (campaign) => {
-          try {
-            const _claimed = (await readContract(config, {
-              abi: CAMPAIGN_ABI,
-              address: campaignAddress[
-                chainId || defaultChainId
-              ] as `0x${string}`,
-              functionName: 'totalClaimed',
-              args: [campaign.campaignId],
-            })) as unknown as string
-            return {
-              campaignId: campaign.campaignId,
-              totalClaimed: _claimed,
-            }
-          } catch (error) {
-            console.error(
-              `Error fetching total claimed for campaign ${campaign.campaignId}:`,
-              error
-            )
-            return {
-              campaignId: campaign.campaignId,
-              totalClaimed: '0',
+        const totalClaimedPromises = campaignData.map(
+          async (campaign: CAMPAIGN) => {
+            try {
+              const _claimed = (await readContract(config, {
+                abi: CAMPAIGN_ABI,
+                address: campaignAddress[
+                  chainId || defaultChainId
+                ] as `0x${string}`,
+                functionName: 'totalClaimed',
+                args: [campaign.campaignId],
+              })) as unknown as string
+              return {
+                campaignId: campaign.campaignId,
+                totalClaimed: _claimed,
+              }
+            } catch (error) {
+              console.error(
+                `Error fetching total claimed for campaign ${campaign.campaignId}:`,
+                error
+              )
+              return {
+                campaignId: campaign.campaignId,
+                totalClaimed: '0',
+              }
             }
           }
-        })
+        )
 
         const results = await Promise.all(totalClaimedPromises)
         setTotalClaimed(results)
@@ -698,7 +716,7 @@ export default function ForCampaignPage({
         (item: { address: string }) => item.address
       )
 
-      const isVerifySignature = campaignData.data.find(
+      const isVerifySignature = campaignData.find(
         (campaign) => campaign.campaignId === formData.id
       )?.validateSignatures
 
@@ -715,7 +733,7 @@ export default function ForCampaignPage({
 
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 1,
+        confirmations: 2,
       })
 
       toast({
@@ -775,7 +793,7 @@ export default function ForCampaignPage({
 
           await waitForTransactionReceipt(config, {
             hash: hash,
-            confirmations: 1,
+            confirmations: 2,
           })
         }
       }
@@ -810,7 +828,7 @@ export default function ForCampaignPage({
 
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 1,
+        confirmations: 2,
       })
 
       await fetchCampaignData()
@@ -826,41 +844,6 @@ export default function ForCampaignPage({
       setLoading(false)
     }
   }
-
-  const campaignInfo = useCallback((): CampaignInfo[] => {
-    const info: CampaignInfo[] = campaignData.data.map((campaign) => ({
-      id: campaign.campaignId.toString(),
-      image:
-        campaign.tokenType == 1
-          ? sbtData?.find((m) => m.tokenId == campaign.sbtId.toString())
-              ?.image || EMPTY_NFT_IMAGE
-          : campaign.tokenType == 2
-            ? nftData?.find((m) => m.tokenId == campaign.sbtId.toString())
-                ?.image || EMPTY_NFT_IMAGE
-            : PCE_LOGO,
-      tokenId: campaign.sbtId.toString(),
-      title: campaign.title,
-      description: campaign.description,
-      isValidateSignatures: campaign.validateSignatures,
-      totalClaimAmount: campaign.totalAmount.toString() || '0',
-      claimedAmount:
-        totalClaimed
-          .find((t) => t.campaignId == campaign.campaignId)
-          ?.totalClaimed.toString() ?? '0',
-      claimAmount: campaign.claimAmount.toString(),
-      totalClaimedAmount: campaign.totalAmount.toString(),
-      tokenType:
-        campaign.tokenType == 1
-          ? 'SBT'
-          : campaign.tokenType == 2
-            ? 'NFT'
-            : 'ERC20',
-      startTime: campaign.startDate,
-      endTime: campaign.endDate,
-      isEnded: Number(campaign.endDate) < new Date().getTime() / 1000,
-    }))
-    return info
-  }, [campaignData, sbtData, nftData, totalClaimed])
 
   return (
     <div className="w-full min-h-screen bg-background container">
@@ -891,6 +874,8 @@ export default function ForCampaignPage({
           onSubmit={handleCreateCampaign}
           setIsInvalidToken={setIsInvalidToken}
           campaign={campaign}
+          sbtMetadata={sbtMetadata}
+          nftMetadata={nftMetadata}
         />
 
         <AddWhitelistModal
@@ -898,7 +883,7 @@ export default function ForCampaignPage({
           onClose={() =>
             setDialogState((prev) => ({ ...prev, isAddWinnersOpen: false }))
           }
-          campaignData={campaignData.data}
+          campaignData={campaignData}
           onSubmit={handleAddWhitelist}
           campaign={campaign}
         />
@@ -934,7 +919,9 @@ export default function ForCampaignPage({
 
       <TableComponent
         headers={campaignTableHeaders}
-        campaignInfo={campaignInfo()}
+        campaignInfo={campaignData}
+        nftMetadata={nftMetadata}
+        sbtMetadata={sbtMetadata}
       />
     </div>
   )

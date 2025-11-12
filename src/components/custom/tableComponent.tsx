@@ -9,38 +9,48 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import Image from 'next/image'
+import { CAMPAIGN } from '~/i18n/types'
 import { timestampToDate } from '../utils'
 import { formatEther } from 'ethers'
+import { Metadata } from '~/i18n/types'
+import Image from 'next/image'
 
-export interface CampaignInfo {
-  id: string
-  image: string
-  tokenId: string
-  title: string
-  description: string
-  isValidateSignatures: boolean
-  totalClaimAmount: string
-  claimedAmount: string
-  claimAmount: string
-  totalClaimedAmount: string
-  tokenType: string
-  startTime: string
-  endTime: string
-  isEnded: boolean
-}
+const EMPTY_NFT_IMAGE = '/images/empty-nft.svg'
+
+// export interface CampaignInfo {
+//   id: string
+//   image: string
+//   tokenId: string
+//   title: string
+//   description: string
+//   isValidateSignatures: boolean
+//   totalClaimAmount: string
+//   claimedAmount: string
+//   claimAmount: string
+//   totalClaimedAmount: string
+//   tokenType: string
+//   startTime: string
+//   endTime: string
+//   isEnded: boolean
+// }
 
 interface CampaignTableProps {
   headers: string[]
-  campaignInfo: CampaignInfo[]
+  campaignInfo: CAMPAIGN[]
   onCampaignClick?: (campaignId: string) => void
+  nftMetadata: Metadata[]
+  sbtMetadata: Metadata[]
 }
 
 export function TableComponent({
   headers,
   campaignInfo,
   onCampaignClick,
+  nftMetadata,
+  sbtMetadata,
 }: CampaignTableProps) {
+  console.log(sbtMetadata, '>>>sbtMetadata')
+  console.log(nftMetadata, '>>>nftMetadata')
   return (
     <div className="border rounded-xl">
       <Table>
@@ -54,18 +64,46 @@ export function TableComponent({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {campaignInfo &&
+          {campaignInfo.length > 0 &&
+            sbtMetadata &&
+            nftMetadata &&
+            sbtMetadata.length > 0 &&
+            nftMetadata.length > 0 &&
             campaignInfo.map((campaign, index) => (
               <TableRow
                 key={index}
-                onClick={() => onCampaignClick?.(campaign.id)}
+                onClick={() =>
+                  onCampaignClick?.(campaign.campaignId.toString())
+                }
               >
-                <TableCell className="text-center">{campaign.id}</TableCell>
+                <TableCell className="text-center">
+                  {campaign.campaignId}
+                </TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center">
                     <Image
-                      src={campaign.image}
-                      alt={campaign.title}
+                      src={
+                        campaign.tokenType == 1
+                          ? sbtMetadata.find(
+                              (m) => m.tokenId == campaign.sbtId.toString()
+                            )?.image || EMPTY_NFT_IMAGE
+                          : campaign.tokenType == 2
+                            ? nftMetadata.find(
+                                (m) => m.tokenId == campaign.sbtId.toString()
+                              )?.image || EMPTY_NFT_IMAGE
+                            : EMPTY_NFT_IMAGE
+                      }
+                      alt={
+                        campaign.tokenType == 1
+                          ? sbtMetadata.find(
+                              (m) => m.tokenId == campaign.sbtId.toString()
+                            )?.name || ''
+                          : campaign.tokenType == 2
+                            ? nftMetadata.find(
+                                (m) => m.tokenId == campaign.sbtId.toString()
+                              )?.name || ''
+                            : ''
+                      }
                       width={128}
                       height={128}
                     />
@@ -76,47 +114,47 @@ export function TableComponent({
                   {campaign.description}
                 </TableCell>
                 <TableCell className="text-center">
-                  {campaign.isValidateSignatures
+                  {campaign.validateSignatures
                     ? 'Whitelist + Verify Signature'
                     : 'Whitelist'}
                 </TableCell>
                 <TableCell className="text-center">
-                  {campaign.tokenType !== 'ERC20'
+                  {campaign.tokenType != 0
                     ? (campaign.claimedAmount ?? '0')
                     : formatEther(campaign.claimedAmount ?? '0')}{' '}
-                  /
-                  {campaign.tokenType !== 'ERC20'
-                    ? campaign.totalClaimAmount
-                    : formatEther(campaign.totalClaimAmount ?? '0')}
+                  /{' '}
+                  {campaign.tokenType != 0
+                    ? campaign.totalAmount
+                    : formatEther(campaign.totalAmount ?? '0')}
                 </TableCell>
 
                 <TableCell className="text-center">
-                  {campaign.tokenType !== 'ERC20'
+                  {campaign.tokenType != 0
                     ? campaign.claimAmount
                     : formatEther(campaign.claimAmount ?? '0')}
                 </TableCell>
                 <TableCell className="text-center">
                   {campaign.tokenType}
                 </TableCell>
+                <TableCell className="text-center">{campaign.sbtId}</TableCell>
                 <TableCell className="text-center">
-                  {campaign.tokenId}
+                  {timestampToDate(Number(campaign.startDate))}
                 </TableCell>
                 <TableCell className="text-center">
-                  {timestampToDate(Number(campaign.startTime))}
-                </TableCell>
-                <TableCell className="text-center">
-                  {timestampToDate(Number(campaign.endTime))}
+                  {timestampToDate(Number(campaign.endDate))}
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex justify-center">
                     <span
                       className={`px-3 py-1 rounded-full text-white text-sm font-medium ${
-                        campaign.isEnded
+                        Number(campaign.endDate) < new Date().getTime() / 1000
                           ? 'bg-red-500 hover:bg-red-600'
                           : 'bg-green-500 hover:bg-green-600'
                       }`}
                     >
-                      {campaign.isEnded ? 'Ended' : 'Active'}
+                      {Number(campaign.endDate) < new Date().getTime() / 1000
+                        ? 'Ended'
+                        : 'Active'}
                     </span>
                   </div>
                 </TableCell>
