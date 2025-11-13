@@ -491,7 +491,6 @@ export default function StakingPage({
           const _metadata = await fetchMetadata(
             `${Env.PINATA_GATEWAY_URL}/ipfs/${sbt.tokenURI}`
           )
-          console.log(_metadata, '>>>_metadata!!!')
           _sbtMetadata.push({
             tokenId: sbt.tokenId,
             image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`,

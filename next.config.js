@@ -7,6 +7,7 @@ const nextConfig = {
       'api.github.com',
       'kite.mypinata.cloud',
       'peacecoin-dao.mypinata.cloud',
+      'ipfs-dao-studio.peace-coin.org',
     ],
   },
   webpack: (config) => {

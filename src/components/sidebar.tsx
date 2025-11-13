@@ -9,11 +9,9 @@ import { Locale } from '~/i18n/types'
 import { useSideLinks } from '~/data/sidelinks'
 import { getDict } from '~/i18n/get-dict'
 import { Dictionary } from '~/i18n/types'
-import { daoStudioAddress, defaultChainId } from '~/app/constants/constants'
-import { useAccount, useReadContract } from 'wagmi'
-import { keccak256, toBytes } from 'viem'
 
-import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
+import { useHasDaoManagerRole } from '~/hooks/use-has-role'
+
 import Image from 'next/image'
 interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   isCollapsed: boolean
@@ -28,19 +26,11 @@ export default function Sidebar({
   locale,
 }: SidebarProps) {
   const [dict, setDict] = useState<Dictionary | null>(null)
-  const { address, chainId } = useAccount()
   const [navOpened, setNavOpened] = useState(false)
 
   const localDict = dict?.sidebar ?? {}
 
-  const DAO_MANAGER_ROLE = keccak256(toBytes('DAO_MANAGER_ROLE'))
-
-  const { data: hasRole } = useReadContract({
-    address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
-    abi: DAO_STUDIO_ABI,
-    functionName: 'hasRole',
-    args: [DAO_MANAGER_ROLE, address],
-  }) as { data?: boolean; refetch: () => void }
+  const { hasRole } = useHasDaoManagerRole()
 
   const sideLinks = useSideLinks(locale, hasRole ?? false)
 

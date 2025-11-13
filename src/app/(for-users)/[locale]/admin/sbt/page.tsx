@@ -583,21 +583,14 @@ export default function SBTBuilderPage({
   )
 
   useEffect(() => {
-    const filteredSbtData: SBTInfo[] = sbtData.filter(
-      (token: SBTInfo) => token.tokenId !== '1'
-    )
-    const filteredNftData: SBTInfo[] = nftData.filter(
-      (token: SBTInfo) => token.tokenId !== '1'
-    )
-
     const filteredData: SBTInfo[] = []
 
     if (tokenType == 'all') {
-      filteredData.push(...filteredSbtData, ...filteredNftData)
+      filteredData.push(...sbtData, ...nftData)
     } else if (tokenType == 'sbt') {
-      filteredData.push(...filteredSbtData)
+      filteredData.push(...sbtData)
     } else if (tokenType == 'nft') {
-      filteredData.push(...filteredNftData)
+      filteredData.push(...nftData)
     }
 
     if (filter == 'all') {
