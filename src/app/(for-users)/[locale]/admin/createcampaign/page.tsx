@@ -599,6 +599,7 @@ export default function ForCampaignPage({
             image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`,
             name: _metadata.name,
             description: _metadata.description,
+            daoId: nft.daoId,
           })
         } catch (error) {
           console.error('Error fetching NFT metadata:', error)
@@ -607,6 +608,7 @@ export default function ForCampaignPage({
             image: EMPTY_NFT_IMAGE,
             name: '',
             description: '',
+            daoId: nft.daoId,
           })
         }
       }
@@ -629,6 +631,7 @@ export default function ForCampaignPage({
             image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`,
             name: _metadata.name,
             description: _metadata.description,
+            daoId: sbt.daoId,
           })
         } catch (error) {
           console.error('Error fetching SBT metadata:', error)
@@ -637,6 +640,7 @@ export default function ForCampaignPage({
             image: EMPTY_NFT_IMAGE,
             name: '',
             description: '',
+            daoId: sbt.daoId,
           })
         }
       }

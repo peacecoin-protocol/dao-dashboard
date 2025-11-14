@@ -433,6 +433,7 @@ export default function PCEPage({
               image: '/images/empty-nft.svg',
               name: '',
               description: '',
+              daoId: '',
             }
             _nftMetadata.push(metadata)
           }

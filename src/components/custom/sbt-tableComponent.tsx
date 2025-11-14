@@ -16,7 +16,7 @@ import { Env } from '~/env'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
-
+import { shortenAddress } from '../utils'
 export interface SBTInfo {
   tokenId: string
   tokenURI: string
@@ -63,6 +63,7 @@ export function SBTTableComponent({
             image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`,
             name: _metadata.name,
             description: _metadata.description,
+            daoId: sbt.daoId,
           })
         } catch (error) {
           metadata.push({
@@ -70,6 +71,7 @@ export function SBTTableComponent({
             image: EMPTY_NFT_IMAGE,
             name: '',
             description: '',
+            daoId: sbt.daoId,
           })
         }
       }
@@ -102,7 +104,7 @@ export function SBTTableComponent({
 
                 <TableCell className="text-center items-center flex justify-center">
                   <Image
-                    src={metadata[index]?.image || '/images/empty-nft.svg'}
+                    src={metadata[index]?.image || EMPTY_NFT_IMAGE}
                     alt={metadata[index]?.name || ''}
                     width={128}
                     height={128}
@@ -117,6 +119,9 @@ export function SBTTableComponent({
                 <TableCell className="text-center">{sbt.tokenId}</TableCell>
                 <TableCell className="text-center">{sbt.balance}</TableCell>
                 <TableCell className="text-center">{sbt.votingPower}</TableCell>
+                <TableCell className="text-center">
+                  {shortenAddress(sbt.daoId)}
+                </TableCell>
                 <TableCell className="text-center">
                   {timestampToDate(Number(sbt.createdAt))}
                 </TableCell>
