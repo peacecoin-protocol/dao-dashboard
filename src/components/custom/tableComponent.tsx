@@ -49,8 +49,6 @@ export function TableComponent({
   nftMetadata,
   sbtMetadata,
 }: CampaignTableProps) {
-  console.log(sbtMetadata, '>>>sbtMetadata')
-  console.log(nftMetadata, '>>>nftMetadata')
   return (
     <div className="border rounded-xl">
       <Table>

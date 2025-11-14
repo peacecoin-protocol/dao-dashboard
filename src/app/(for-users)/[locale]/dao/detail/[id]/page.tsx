@@ -405,11 +405,11 @@ export default function ForDaoDetailPage({
       args: [id],
     }) as { data?: string; refetch: () => void }
 
-  useEffect(() => {
-    if (timelockAddress) {
-      getTreasuryBalances(timelockAddress as `0x${string}`)
-    }
-  }, [timelockAddress])
+  // useEffect(() => {
+  //   if (timelockAddress) {
+  //     getTreasuryBalances(timelockAddress as `0x${string}`)
+  //   }
+  // }, [timelockAddress])
 
   const { data: governorAddress, refetch: refetchGovernorAddress } =
     useReadContract({
