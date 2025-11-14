@@ -674,8 +674,6 @@ export default function SBTBuilderPage({
           `,
         })
 
-        console.log(data, '>>>data')
-
         let _sbtData: SBTInfo[] = []
         for (const token of data.createdTokens) {
           _sbtData.push({

@@ -25,6 +25,7 @@ export interface CAMPAIGN {
   totalAmount: BigNumberish
   claimAmount: BigNumberish
   claimedAmount: BigNumberish
+  totalClaimed: string
   title: string
   description: string
   startDate: string
