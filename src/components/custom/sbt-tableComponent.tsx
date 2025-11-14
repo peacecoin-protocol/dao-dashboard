@@ -55,12 +55,12 @@ export function SBTTableComponent({
       for (const sbt of sbtInfo) {
         try {
           const _metadata: Metadata = await fetchMetadata(
-            `${Env.PINATA_GATEWAY_URL}/ipfs/${sbt.tokenURI}`
+            `${Env.PINATA_GATEWAY_URL}/ipfs/${sbt.tokenURI}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
           )
 
           metadata.push({
             tokenId: sbt.tokenId,
-            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`,
+            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`,
             name: _metadata.name,
             description: _metadata.description,
           })

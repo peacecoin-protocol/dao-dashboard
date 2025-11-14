@@ -1157,7 +1157,7 @@ export default function ForDaoDetailPage({
             </div>
           ) : imageHash ? (
             <Image
-              src={`${Env.PINATA_GATEWAY_URL}/ipfs/${imageHash}`}
+              src={`${Env.PINATA_GATEWAY_URL}/ipfs/${imageHash}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`}
               alt="DAO Image"
               width={96}
               priority

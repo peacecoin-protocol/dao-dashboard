@@ -491,13 +491,7 @@ export default function ForCampaignPage({
   )
 
   useEffect(() => {
-    const filteredSbtData: SBTInfo[] = sbtData.filter(
-      (token: SBTInfo) => token.tokenId !== '1'
-    )
-    const filteredNftData: SBTInfo[] = nftData.filter(
-      (token: SBTInfo) => token.tokenId !== '1'
-    )
-    setTokenData([...filteredSbtData, ...filteredNftData])
+    setTokenData([...sbtData, ...nftData])
   }, [sbtData, nftData])
 
   useEffect(() => {
@@ -598,11 +592,11 @@ export default function ForCampaignPage({
       for (const nft of nftData) {
         try {
           const _metadata = await fetchMetadata(
-            `${Env.PINATA_GATEWAY_URL}/ipfs/${nft.tokenURI}`
+            `${Env.PINATA_GATEWAY_URL}/ipfs/${nft.tokenURI}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
           )
           _nftMetadata.push({
             tokenId: nft.tokenId,
-            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`,
+            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`,
             name: _metadata.name,
             description: _metadata.description,
           })
@@ -628,11 +622,11 @@ export default function ForCampaignPage({
       for (const sbt of sbtData) {
         try {
           const _metadata = await fetchMetadata(
-            `${Env.PINATA_GATEWAY_URL}/ipfs/${sbt.tokenURI}`
+            `${Env.PINATA_GATEWAY_URL}/ipfs/${sbt.tokenURI}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
           )
           _sbtMetadata.push({
             tokenId: sbt.tokenId,
-            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`,
+            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`,
             name: _metadata.name,
             description: _metadata.description,
           })

@@ -159,7 +159,7 @@ const DaoCard = ({
           <div className="w-24 min-w-24 h-24">
             {dao.imageHash ? (
               <Image
-                src={`${Env.PINATA_GATEWAY_URL}/ipfs/${dao.imageHash}`}
+                src={`${Env.PINATA_GATEWAY_URL}/ipfs/${dao.imageHash}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`}
                 alt="DAO Image"
                 width={96}
                 height={96}

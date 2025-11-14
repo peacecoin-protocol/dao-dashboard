@@ -94,11 +94,6 @@ interface CampaignStatus {
   status: number
 }
 
-interface TotalClaimed {
-  campaignId: number
-  totalClaimed: string
-}
-
 // Components
 
 const CampaignDialog = ({
@@ -240,7 +235,6 @@ export default function ForCampaignPage({
 
   const [signature, setSignature] = useState<string>('')
   const [loading, setLoading] = useState<boolean>(false)
-  const [totalClaimed, setTotalClaimed] = useState<TotalClaimed[]>([])
   const [refetchNFTData, setRefetchNFTData] = useState(false)
   const [refetchSBTData, setRefetchSBTData] = useState(false)
   const [sbtData, setSBTData] = useState<SBTInfo[]>([])
@@ -352,10 +346,10 @@ export default function ForCampaignPage({
 
   useEffect(() => {
     const filteredSbtData: SBTInfo[] = sbtData.filter(
-      (token: SBTInfo) => token.tokenId !== '1' && token.balance !== '0'
+      (token: SBTInfo) => token.balance !== '0'
     )
     const filteredNftData: SBTInfo[] = nftData.filter(
-      (token: SBTInfo) => token.tokenId !== '1' && token.balance !== '0'
+      (token: SBTInfo) => token.balance !== '0'
     )
     setTokenData([...filteredSbtData, ...filteredNftData])
   }, [sbtData, nftData])
@@ -499,11 +493,11 @@ export default function ForCampaignPage({
       for (const sbt of sbtData) {
         try {
           const _metadata = await fetchMetadata(
-            `${Env.PINATA_GATEWAY_URL}/ipfs/${sbt.tokenURI}`
+            `${Env.PINATA_GATEWAY_URL}/ipfs/${sbt.tokenURI}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
           )
           _sbtMetadata.push({
             tokenId: sbt.tokenId,
-            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`,
+            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`,
             name: _metadata.name,
             description: _metadata.description,
           })
@@ -529,11 +523,11 @@ export default function ForCampaignPage({
       for (const nft of nftData) {
         try {
           const _metadata = await fetchMetadata(
-            `${Env.PINATA_GATEWAY_URL}/ipfs/${nft.tokenURI}`
+            `${Env.PINATA_GATEWAY_URL}/ipfs/${nft.tokenURI}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
           )
           _nftMetadata.push({
             tokenId: nft.tokenId,
-            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`,
+            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`,
             name: _metadata.name,
             description: _metadata.description,
           })
@@ -600,6 +594,7 @@ export default function ForCampaignPage({
 
   const fetchCampaignData = async () => {
     setLoading(true)
+
     try {
       const { data } = await client.query({
         query: gql`
@@ -626,9 +621,25 @@ export default function ForCampaignPage({
         `,
       })
 
-      setCampaignData(data.campaignCreateds)
-      setFilteredCampaignData(data.campaignCreateds)
+      let _campaignData: CAMPAIGN[] = []
+      for (let i = 0; i < data.campaignCreateds.length; i++) {
+        const _claimed = (await readContract(config, {
+          abi: CAMPAIGN_ABI,
+          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
+          functionName: 'totalClaimed',
+          args: [data.campaignCreateds[i].campaignId],
+        })) as unknown as string
+
+        _campaignData.push({
+          ...data.campaignCreateds[i],
+          totalClaimed: _claimed.toString() ?? '0',
+        })
+      }
+
+      setCampaignData(_campaignData)
+      setFilteredCampaignData(_campaignData)
     } catch (error) {
+      console.error('Error fetching campaign data:', error)
     } finally {
       setLoading(false)
     }
@@ -663,7 +674,7 @@ export default function ForCampaignPage({
 
   useEffect(() => {
     fetchCampaignData()
-  }, [])
+  }, [chainId, address])
 
   useEffect(() => {
     if (!dialogState.isOpen) {
@@ -719,49 +730,6 @@ export default function ForCampaignPage({
 
     checkCampaignStatus()
   }, [dialogState.campaignId, address, chainId])
-
-  useEffect(() => {
-    const fetchTotalClaimed = async () => {
-      if (filteredCampaignData.length === 0) return
-
-      try {
-        const totalClaimedPromises = filteredCampaignData.map(
-          async (campaign) => {
-            try {
-              const _claimed = (await readContract(config, {
-                abi: CAMPAIGN_ABI,
-                address: campaignAddress[
-                  chainId || defaultChainId
-                ] as `0x${string}`,
-                functionName: 'totalClaimed',
-                args: [campaign.campaignId],
-              })) as unknown as string
-              return {
-                campaignId: campaign.campaignId,
-                totalClaimed: _claimed,
-              }
-            } catch (error) {
-              console.error(
-                `Error fetching total claimed for campaign ${campaign.campaignId}:`,
-                error
-              )
-              return {
-                campaignId: campaign.campaignId,
-                totalClaimed: '0',
-              }
-            }
-          }
-        )
-
-        const results = await Promise.all(totalClaimedPromises)
-        setTotalClaimed(results)
-      } catch (error) {
-        console.error('Error fetching total claimed data:', error)
-      }
-    }
-
-    fetchTotalClaimed()
-  }, [filteredCampaignData, chainId, isConfirmed])
 
   useEffect(() => {
     if (isConfirmed) {

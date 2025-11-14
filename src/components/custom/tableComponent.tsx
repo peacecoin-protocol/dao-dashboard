@@ -116,8 +116,8 @@ export function TableComponent({
                 </TableCell>
                 <TableCell className="text-center">
                   {campaign.tokenType != 0
-                    ? (campaign.claimedAmount ?? '0')
-                    : formatEther(campaign.claimedAmount ?? '0')}{' '}
+                    ? (campaign.totalClaimed ?? '0')
+                    : formatEther(campaign.totalClaimed ?? '0')}{' '}
                   /{' '}
                   {campaign.tokenType != 0
                     ? campaign.totalAmount
@@ -130,7 +130,11 @@ export function TableComponent({
                     : formatEther(campaign.claimAmount ?? '0')}
                 </TableCell>
                 <TableCell className="text-center">
-                  {campaign.tokenType}
+                  {campaign.tokenType == 1
+                    ? 'SBT'
+                    : campaign.tokenType == 2
+                      ? 'NFT'
+                      : 'ERC20'}
                 </TableCell>
                 <TableCell className="text-center">{campaign.sbtId}</TableCell>
                 <TableCell className="text-center">
