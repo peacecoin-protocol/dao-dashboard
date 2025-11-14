@@ -177,6 +177,7 @@ export const sbtTableHeaders = [
   'Token ID',
   'Balance',
   'Voting Power',
+  'Dao ID',
   'Created At',
 ]
 
@@ -190,6 +191,7 @@ export const campaignTableHeaders = [
   'Claim Amount',
   'Token Type',
   'Token Id',
+  'Dao ID',
   'Start Time',
   'End Time',
   'Status',

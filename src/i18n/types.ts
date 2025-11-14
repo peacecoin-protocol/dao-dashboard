@@ -89,6 +89,7 @@ export interface Metadata {
   image: string
   name: string
   description: string
+  daoId: string
 }
 
 export interface PIP {

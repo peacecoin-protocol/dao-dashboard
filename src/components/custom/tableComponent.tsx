@@ -10,7 +10,7 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { CAMPAIGN } from '~/i18n/types'
-import { timestampToDate } from '../utils'
+import { shortenAddress, timestampToDate } from '../utils'
 import { formatEther } from 'ethers'
 import { Metadata } from '~/i18n/types'
 import Image from 'next/image'
@@ -137,6 +137,19 @@ export function TableComponent({
                       : 'ERC20'}
                 </TableCell>
                 <TableCell className="text-center">{campaign.sbtId}</TableCell>
+                <TableCell className="text-center">
+                  {shortenAddress(
+                    campaign.tokenType == 1
+                      ? sbtMetadata.find(
+                          (m) => m.tokenId == campaign.sbtId.toString()
+                        )?.daoId || ''
+                      : campaign.tokenType == 2
+                        ? nftMetadata.find(
+                            (m) => m.tokenId == campaign.sbtId.toString()
+                          )?.daoId || ''
+                        : ''
+                  )}
+                </TableCell>
                 <TableCell className="text-center">
                   {timestampToDate(Number(campaign.startDate))}
                 </TableCell>
