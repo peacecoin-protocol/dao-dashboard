@@ -501,7 +501,6 @@ export default function ForCampaignPage({
           const _metadata = await fetchMetadata(
             `${Env.PINATA_GATEWAY_URL}/ipfs/${sbt.tokenURI}`
           )
-          console.log(_metadata, '>>>_metadata!!!')
           _sbtMetadata.push({
             tokenId: sbt.tokenId,
             image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}`,
@@ -870,10 +869,6 @@ export default function ForCampaignPage({
         toast({
           title: 'Campaign claimed successfully',
         })
-
-        console.log(campaign?.tokenType, '>>>campaign?.tokenType')
-        console.log(campaign?.tokenType == 1, '>>>campaign?.tokenType == 1')
-        console.log(campaign?.tokenType == 2, '>>>campaign?.tokenType == 2')
 
         if (campaign?.tokenType == 1) {
           setRefetchSBTData(!refetchSBTData)

@@ -48,9 +48,6 @@ export function SBTTableComponent({
 
   const [metadata, setMetadata] = useState<Metadata[]>([])
 
-  console.log(sbtInfo, '>>>sbtInfo!!!')
-  console.log(metadata, '>>>metadata!!!')
-
   useEffect(() => {
     const loadMetadata = async () => {
       const metadata: Metadata[] = []

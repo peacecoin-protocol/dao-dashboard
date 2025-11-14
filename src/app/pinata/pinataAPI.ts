@@ -1,12 +1,10 @@
 import { PinataSDK, UpdateGroupFilesResponse } from 'pinata'
 import { Env } from '~/env'
 
-export const SBT_GROUP_ID = '809d7dd1-4439-4d9b-86df-e229f203c5f2'
-export const NFT_GROUP_ID = 'e0cb6bac-4881-4330-8e90-890ab82662b4'
-export const DAO_GROUP_ID = '0ff0fbd6-9171-4ed3-9816-da30e9a58891'
-export const JSON_GROUP_ID = 'bb530602-5a43-43fa-8a4c-98833d15ef9b'
-export const DAO_IMAGE_JSON_FILE_CID =
-  'bafkreigkhuldxkyfkoaye4rgcqcwr45667vkygd45plwq6hawy7j4rbdky'
+export const SBT_GROUP_ID = 'ec1ac640-dd34-4da3-b7f9-9ca9826dcb50'
+export const NFT_GROUP_ID = '12757d64-9c40-48d1-b2b2-616d0fe9708f'
+export const DAO_GROUP_ID = '3f83ddff-6587-4430-b4d9-da5c8ef56985'
+export const JSON_GROUP_ID = 'e9cea556-1e9d-4d16-a247-feb8d32e7de5'
 
 export const pinata = new PinataSDK({
   pinataJwt: Env.PINATA_JWT,

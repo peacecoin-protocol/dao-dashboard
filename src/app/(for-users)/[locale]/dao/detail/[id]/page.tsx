@@ -259,8 +259,6 @@ export default function ForDaoDetailPage({
           setIsImageLoading(true)
           const _image = await fetchImage(id)
 
-          console.log(_image, '>>>_image')
-
           if (_image) {
             setImageHash(_image?.cid as string)
 
@@ -407,11 +405,11 @@ export default function ForDaoDetailPage({
       args: [id],
     }) as { data?: string; refetch: () => void }
 
-  useEffect(() => {
-    if (timelockAddress) {
-      getTreasuryBalances(timelockAddress as `0x${string}`)
-    }
-  }, [timelockAddress])
+  // useEffect(() => {
+  //   if (timelockAddress) {
+  //     getTreasuryBalances(timelockAddress as `0x${string}`)
+  //   }
+  // }, [timelockAddress])
 
   const { data: governorAddress, refetch: refetchGovernorAddress } =
     useReadContract({
@@ -1073,7 +1071,10 @@ export default function ForDaoDetailPage({
         })
         const upload = await pinata.upload.public.file(_file, {
           metadata: {
-            name: id,
+            name: Date.now().toString(),
+            keyvalues: {
+              timestamp: Date.now().toString(),
+            },
           },
         })
         if (upload.cid) {

@@ -121,6 +121,7 @@ import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 import { shortenAddress } from '~/components/utils'
 import { CopyIcon } from 'lucide-react'
+import { useHasDaoManagerRole } from '~/hooks/use-has-role'
 
 const DaoCard = ({
   dao,
@@ -245,6 +246,7 @@ export default function ForDAOPage({
   const { toast } = useToast()
   const { data: hash, error, writeContractAsync } = useWriteContract()
 
+  const { hasRole, refetchHasRole } = useHasDaoManagerRole()
   const [dict, setDict] = useState<Dictionary | null>(null)
   const localeDict = dict?.studio ?? {}
 
@@ -334,6 +336,7 @@ export default function ForDAOPage({
     })
 
     setRefetchDaos(!refetchDaos)
+    refetchHasRole()
   }
 
   const updateDaoForm = (field: keyof DaoFormState, value: string) => {

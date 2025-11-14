@@ -49,8 +49,6 @@ export function TableComponent({
   nftMetadata,
   sbtMetadata,
 }: CampaignTableProps) {
-  console.log(sbtMetadata, '>>>sbtMetadata')
-  console.log(nftMetadata, '>>>nftMetadata')
   return (
     <div className="border rounded-xl">
       <Table>
@@ -67,8 +65,6 @@ export function TableComponent({
           {campaignInfo.length > 0 &&
             sbtMetadata &&
             nftMetadata &&
-            sbtMetadata.length > 0 &&
-            nftMetadata.length > 0 &&
             campaignInfo.map((campaign, index) => (
               <TableRow
                 key={index}
