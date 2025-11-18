@@ -46,79 +46,179 @@ export function SBTTableComponent({
   const handleRevoke = (token: SBTInfo) => {
     onRevoke?.(token)
   }
-  return (
-    <div className="border rounded-xl w-full">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {headers.map((header, index) => (
-              <TableHead key={index} className="text-center">
-                {header}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sbtInfo &&
-            sbtInfo.map((sbt, index) => (
-              <TableRow key={index}>
-                <TableCell className="text-center">
-                  {sbt.isSBT ? 'SBT' : 'NFT'}
-                </TableCell>
 
-                <TableCell className="text-center items-center flex justify-center">
-                  <Image
-                    src={
-                      `${Env.PINATA_GATEWAY_URL}/ipfs/${sbt.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}` ||
-                      EMPTY_NFT_IMAGE
-                    }
-                    alt={sbt.name || ''}
-                    width={128}
-                    height={128}
-                  />
-                </TableCell>
-                <TableCell className="text-center">{sbt.name}</TableCell>
-                <TableCell className="text-center">{sbt.description}</TableCell>
-                <TableCell className="text-center">{sbt.tokenId}</TableCell>
-                <TableCell className="text-center">
-                  {sbt.balance ? sbt.balance : '0'}
-                </TableCell>
-                <TableCell className="text-center">{sbt.votingPower}</TableCell>
-                <TableCell className="text-center">
-                  {shortenAddress(sbt.daoId)}
-                </TableCell>
-                <TableCell className="text-center">
-                  {sbt.created_at
-                    ? new Date(sbt.created_at).toLocaleString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : '-'}
-                </TableCell>
-                {action && (
+  const getImageSrc = (image?: string) => {
+    if (!image) return EMPTY_NFT_IMAGE
+    return `${Env.PINATA_GATEWAY_URL}/ipfs/${image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
+  }
+
+  return (
+    <div className="w-full space-y-6">
+      <div className="hidden border rounded-xl w-full lg:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {headers.map((header, index) => (
+                <TableHead key={index} className="text-center">
+                  {header}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sbtInfo &&
+              sbtInfo.map((sbt, index) => (
+                <TableRow key={index}>
                   <TableCell className="text-center">
-                    <Button onClick={() => handleRevoke(sbt)}>
-                      {sbt.isRevoked ? 'Unrevoke' : 'Revoke'}
-                    </Button>
+                    {sbt.isSBT ? 'SBT' : 'NFT'}
                   </TableCell>
-                )}
-              </TableRow>
-            ))}
-        </TableBody>
-        <TableFooter>
-          <TableRow>
-            <TableCell
-              colSpan={headers.length}
-              className="text-center font-medium"
+
+                  <TableCell className="text-center items-center flex justify-center">
+                    <Image
+                      src={getImageSrc(sbt.image)}
+                      alt={sbt.name || ''}
+                      width={128}
+                      height={128}
+                    />
+                  </TableCell>
+                  <TableCell className="text-center">{sbt.name}</TableCell>
+                  <TableCell className="text-center">
+                    {sbt.description}
+                  </TableCell>
+                  <TableCell className="text-center">{sbt.tokenId}</TableCell>
+                  <TableCell className="text-center">
+                    {sbt.balance ? sbt.balance : '0'}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {sbt.votingPower}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {shortenAddress(sbt.daoId)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {sbt.created_at
+                      ? new Date(sbt.created_at).toLocaleString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : '-'}
+                  </TableCell>
+                  {action && (
+                    <TableCell className="text-center">
+                      <Button onClick={() => handleRevoke(sbt)}>
+                        {sbt.isRevoked
+                          ? action.title.unrevoke
+                          : action.title.revoke}
+                      </Button>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell
+                colSpan={headers.length}
+                className="text-center font-medium"
+              >
+                Total: {(sbtInfo && sbtInfo.length) ?? '0'}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </div>
+
+      <div className="space-y-4 lg:hidden">
+        {sbtInfo && sbtInfo.length > 0 ? (
+          sbtInfo.map((sbt, index) => (
+            <div
+              key={index}
+              className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/70 p-4 shadow-sm"
             >
-              Total: {(sbtInfo && sbtInfo.length) ?? '0'}
-            </TableCell>
-          </TableRow>
-        </TableFooter>
-      </Table>
+              <div className="flex items-start gap-4">
+                <div className="shrink-0 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
+                  <Image
+                    src={getImageSrc(sbt.image)}
+                    alt={sbt.name || ''}
+                    width={96}
+                    height={96}
+                    className="h-24 w-24 object-cover"
+                    sizes="(max-width: 768px) 96px, 128px"
+                  />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-300">
+                    {sbt.isSBT ? 'SBT' : 'NFT'}
+                  </span>
+                  <p className="text-base font-semibold text-gray-900 dark:text-white">
+                    {sbt.name}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+                    {sbt.description}
+                  </p>
+                </div>
+              </div>
+
+              <dl className="mt-4 grid grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-300">
+                <div>
+                  <dt className="font-semibold text-gray-800 dark:text-white">
+                    Token ID
+                  </dt>
+                  <dd>{sbt.tokenId}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-800 dark:text-white">
+                    Balance
+                  </dt>
+                  <dd>{sbt.balance ?? '0'}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-800 dark:text-white">
+                    Voting Power
+                  </dt>
+                  <dd>{sbt.votingPower}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-800 dark:text-white">
+                    DAO
+                  </dt>
+                  <dd>{shortenAddress(sbt.daoId)}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-800 dark:text-white">
+                    Created At
+                  </dt>
+                  <dd>
+                    {sbt.created_at
+                      ? new Date(sbt.created_at).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: '2-digit',
+                        })
+                      : '-'}
+                  </dd>
+                </div>
+              </dl>
+
+              {action && (
+                <Button
+                  onClick={() => handleRevoke(sbt)}
+                  className="mt-4 w-full"
+                >
+                  {sbt.isRevoked ? action.title.unrevoke : action.title.revoke}
+                </Button>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-4 text-center text-sm text-gray-600 dark:text-gray-300">
+            No tokens available
+          </div>
+        )}
+      </div>
     </div>
   )
 }

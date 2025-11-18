@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Octokit } from 'octokit'
 
 import {
@@ -180,17 +180,32 @@ export default function ForPage({
     setOpen(!open)
   }
 
+  const filteredPips = useMemo(() => {
+    return pipContents
+      .filter((pip) => {
+        return (
+          filteredStatus.length === 0 || filteredStatus.includes(pip.status)
+        )
+      })
+      .filter((pip) => {
+        return (
+          filteredCategory.length === 0 ||
+          filteredCategory.includes(pip.category)
+        )
+      })
+  }, [pipContents, filteredStatus, filteredCategory])
+
   return (
-    <div className="w-full gap-4 flex flex-col">
-      <div className="gap-4 flex flex-col m-8">
-        <h2 className="text-4xl font-bold tracking-tight mt-6">
+    <div className="w-full gap-4 flex flex-col px-4 sm:px-6">
+      <div className="w-full max-w-6xl mx-auto gap-6 flex flex-col px-0 py-6 sm:px-4">
+        <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mt-4 sm:mt-2">
           {dict?.pipAll?.title || 'ALL Proposals'}
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground">
           {dict?.pipAll?.description || 'ALL Peacecoin Improvement Proposals'}
         </p>
 
-        <div className="flex flex-row gap-4 justify-end">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
           <Popover
             open={isStatusFilterOpen}
             onOpenChange={setIsStatusFilterOpen}
@@ -200,7 +215,7 @@ export default function ForPage({
                 variant="outline"
                 role="combobox"
                 className={cn(
-                  'w-[200px] justify-between',
+                  'w-full sm:w-[220px] justify-between',
                   filteredStatus && 'text-muted-foreground'
                 )}
               >
@@ -258,47 +273,35 @@ export default function ForPage({
             </PopoverContent>
           </Popover>
         </div>
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray94 border-2 border-gray87 border-solid">
-              <TableHead className="w-[100px] border-2 border-gray87 border-solid	">
-                {dict?.pipAll?.number || 'Number'}
-              </TableHead>
-              <TableHead className="border-2 border-gray87 border-solid	">
-                {dict?.pipAll?.tableTitle || 'Title'}
-              </TableHead>
-              <TableHead className="border-2 border-gray87 border-solid	">
-                {dict?.pipAll?.author || 'Author'}
-              </TableHead>
-              <TableHead className="border-2 border-gray87 border-solid	">
-                {dict?.pipAll?.state || 'State'}
-              </TableHead>
-              <TableHead className="border-2 border-gray87 border-solid	">
-                {dict?.pipAll?.types || 'Types'}
-              </TableHead>
-              <TableHead className="border-2 border-gray87 border-solid	">
-                {dict?.pipAll?.createdAt || 'Created At'}
-              </TableHead>
-              <TableHead className="border-2 border-gray87 border-solid	">
-                {dict?.pipAll?.github || 'GitHub'}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pipContents
-              .filter((pip) => {
-                return (
-                  filteredStatus.length === 0 ||
-                  filteredStatus.includes(pip.status)
-                )
-              })
-              .filter((pip) => {
-                return (
-                  filteredCategory.length === 0 ||
-                  filteredCategory.includes(pip.category)
-                )
-              })
-              .map((pip, index) => (
+        <div className="w-full overflow-x-auto hidden sm:block">
+          <Table className="min-w-[720px]">
+            <TableHeader>
+              <TableRow className="bg-gray94 border-2 border-gray87 border-solid">
+                <TableHead className="w-[100px] border-2 border-gray87 border-solid text-xs sm:text-sm">
+                  {dict?.pipAll?.number || 'Number'}
+                </TableHead>
+                <TableHead className="border-2 border-gray87 border-solid text-xs sm:text-sm">
+                  {dict?.pipAll?.tableTitle || 'Title'}
+                </TableHead>
+                <TableHead className="border-2 border-gray87 border-solid text-xs sm:text-sm">
+                  {dict?.pipAll?.author || 'Author'}
+                </TableHead>
+                <TableHead className="border-2 border-gray87 border-solid text-xs sm:text-sm">
+                  {dict?.pipAll?.state || 'State'}
+                </TableHead>
+                <TableHead className="border-2 border-gray87 border-solid text-xs sm:text-sm">
+                  {dict?.pipAll?.types || 'Types'}
+                </TableHead>
+                <TableHead className="border-2 border-gray87 border-solid text-xs sm:text-sm">
+                  {dict?.pipAll?.createdAt || 'Created At'}
+                </TableHead>
+                <TableHead className="border-2 border-gray87 border-solid text-xs sm:text-sm">
+                  {dict?.pipAll?.github || 'GitHub'}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPips.map((pip, index) => (
                 <TableRow
                   key={`${pip.number}-${pip.title}-${index}`}
                   className="border-2 border-gray87 border-solid cursor-pointer"
@@ -307,26 +310,26 @@ export default function ForPage({
                     setOpen(true)
                   }}
                 >
-                  <TableCell className="font-medium border-2 border-gray87 border-solid	">
+                  <TableCell className="font-medium border-2 border-gray87 border-solid text-xs sm:text-sm break-words">
                     {pip.number}
                   </TableCell>
-                  <TableCell className="border-2 border-gray87 border-solid	">
+                  <TableCell className="border-2 border-gray87 border-solid text-xs sm:text-sm break-words">
                     {pip.title}
                   </TableCell>
-                  <TableCell className="border-2 border-gray87 border-solid	">
+                  <TableCell className="border-2 border-gray87 border-solid text-xs sm:text-sm break-words">
                     {pip.proposer}
                   </TableCell>
-                  <TableCell className="border-2 border-gray87 border-solid	">
+                  <TableCell className="border-2 border-gray87 border-solid text-xs sm:text-sm">
                     {pip.status}
                   </TableCell>
-                  <TableCell className="border-2 border-gray87 border-solid	">
+                  <TableCell className="border-2 border-gray87 border-solid text-xs sm:text-sm">
                     {pip.type}
                   </TableCell>
-                  <TableCell className="border-2 border-gray87 border-solid	">
+                  <TableCell className="border-2 border-gray87 border-solid text-xs sm:text-sm break-words">
                     {new Date(pip.created).toLocaleString()}
                   </TableCell>
                   <TableCell
-                    className="border-2 border-gray87 border-solid text-blue-800"
+                    className="border-2 border-gray87 border-solid text-blue-800 text-xs sm:text-sm"
                     onClick={(e) => {
                       e.stopPropagation()
                       window.open(pip.path, '_blank')
@@ -336,8 +339,57 @@ export default function ForPage({
                   </TableCell>
                 </TableRow>
               ))}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="flex flex-col gap-4 sm:hidden">
+          {filteredPips.map((pip, index) => (
+            <button
+              key={`${pip.number}-${pip.title}-${index}-card`}
+              className="text-left rounded-xl border border-gray87 bg-white shadow-sm p-4 space-y-2"
+              onClick={() => {
+                setPip(pip)
+                setOpen(true)
+              }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-semibold">
+                  #{pip.number || '-'}
+                </div>
+                <span className="inline-flex items-center rounded-full bg-gray100 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-gray-700">
+                  {pip.status || dict?.pipAll?.state}
+                </span>
+              </div>
+              <div className="text-base font-semibold text-gray-900">
+                {pip.title || dict?.pipAll?.tableTitle}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {dict?.pipAll?.author || 'Author'}: {pip.proposer || '-'}
+              </div>
+              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                <span>
+                  {dict?.pipAll?.types || 'Types'}: {pip.type || '-'}
+                </span>
+                <span>
+                  {dict?.pipAll?.createdAt || 'Created'}:{' '}
+                  {pip.created
+                    ? new Date(pip.created).toLocaleDateString()
+                    : '-'}
+                </span>
+              </div>
+              <div
+                className="text-xs font-medium text-blue-700 underline"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.open(pip.path, '_blank')
+                }}
+              >
+                {dict?.pipAll?.viewOnGitHub || 'View on GitHub'}
+              </div>
+            </button>
+          ))}
+        </div>
         <DialogGithub
           open={open}
           pip={pip}

@@ -47,10 +47,7 @@ import { erc20Abi } from 'viem'
 import { createClient } from '~/utils/supabase/client'
 
 // Constants
-const PCE_LOGO = '/pce_logo.jpg'
-const CLAIM_MESSAGE = 'Claim Bounty for dApp.xyz'
 const DEFAULT_CAMPAIGN_ID = -1
-const DEFAULT_NFT_DETAIL_INDEX = -1
 
 // Types
 interface DialogState {
@@ -208,7 +205,11 @@ export default function ForCampaignPage({
 
   useEffect(() => {
     const fetchCampaignData = async () => {
-      const { data: campaignData } = await supabase.from('Campaign').select()
+      const { data: campaignData } = await supabase
+        .from('Campaign')
+        .select()
+        .eq('creator', address as `0x${string}`)
+        .order('campaignId', { ascending: true })
       if (campaignData && campaignData.length > 0) {
         const _tokenData = await Promise.all(
           campaignData.map(async (campaign, index) => {

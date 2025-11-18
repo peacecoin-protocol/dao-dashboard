@@ -16,7 +16,6 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   type BaseError,
-  useBlockNumber,
 } from 'wagmi'
 
 import { getDict } from '~/i18n/get-dict'
@@ -30,7 +29,6 @@ import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { config } from '~/lib/config'
 
 import { waitForTransactionReceipt } from '@wagmi/core'
-import { useBlock } from 'wagmi'
 import {
   PCE_SBT_ADDRESS,
   pceAddress,
@@ -56,11 +54,11 @@ export default function StakingPage({
   const { toast } = useToast()
   const votingPowerDict = dict?.votingPower ?? {}
   const supabase = createClient()
+  const transactionSuccessMessage =
+    votingPowerDict.transactionSucceed ?? 'Transaction Succeed!'
+  const transactionPendingMessage =
+    votingPowerDict.txPending ?? 'TX is Pending, Please Wait...'
 
-  const { data: blockNumber } = useBlockNumber()
-  const { data: block } = useBlock({
-    blockNumber,
-  })
   let [loading, setLoading] = useState(true)
 
   const [stakingAmount, setStakingAmount] = useState('')
@@ -112,7 +110,7 @@ export default function StakingPage({
       }
     }
     fetchStakedBalance()
-  }, [wPCEBalance])
+  }, [wPCEBalance, chainId])
 
   const { data: rewardBalance, refetch: refetchRewardBalance } =
     useReadContract({
@@ -286,14 +284,15 @@ export default function StakingPage({
     const notify = async () => {
       if (isConfirmed) {
         toast({
-          title: votingPowerDict.transactionSucceed ?? 'Transaction Succeed!',
+          title: transactionSuccessMessage,
         })
 
         await refetchWPCEBalance()
         await refetchPCEBalance()
+        await refetchGetTokenVote()
       } else if (isConfirming) {
         toast({
-          title: votingPowerDict.txPending ?? 'TX is Pending, Please Wait...',
+          title: transactionPendingMessage,
         })
       } else if (error) {
         toast({ title: (error as BaseError).shortMessage })
@@ -303,11 +302,15 @@ export default function StakingPage({
     notify()
   }, [
     isConfirmed,
+    isConfirming,
     error,
     hash,
     refetchWPCEBalance,
     refetchPCEBalance,
     refetchGetTokenVote,
+    toast,
+    transactionPendingMessage,
+    transactionSuccessMessage,
   ])
 
   useEffect(() => {
@@ -394,11 +397,11 @@ export default function StakingPage({
 
             <div className="space-y-4">
               {/* PCE Balance */}
-              <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 w-full">
                   {votingPowerDict.pceBalance ?? 'PCE Balance'}
                 </span>
-                <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 w-full">
                   {pceBalance
                     ? formatNumber(
                         parseFloat(formatEther(pceBalance as string))
@@ -409,11 +412,11 @@ export default function StakingPage({
               </div>
 
               {/* Amount Staked */}
-              <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 w-full">
                   {votingPowerDict.amountStaked ?? 'Amount Staked'}
                 </span>
-                <span className="text-lg font-semibold text-purple-600 dark:text-purple-400">
+                <span className="text-lg font-semibold text-purple-600 dark:text-purple-400 w-full">
                   {wPCEBalance
                     ? formatNumber(
                         wPCEBalance
@@ -441,15 +444,27 @@ export default function StakingPage({
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-3 gap-4 pt-4">
-                <Button variant="default" onClick={handleStake}>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
+                <Button
+                  className="w-full"
+                  variant="default"
+                  onClick={handleStake}
+                >
                   {votingPowerDict.stake ?? 'Stake'}
                 </Button>
-                <Button variant="default" onClick={handleWithdraw}>
+                <Button
+                  className="w-full"
+                  variant="default"
+                  onClick={handleWithdraw}
+                >
                   {votingPowerDict.withdraw ?? 'Withdraw'}
                 </Button>
 
-                <Button variant="default" onClick={handleDelegate}>
+                <Button
+                  className="w-full"
+                  variant="default"
+                  onClick={handleDelegate}
+                >
                   {votingPowerDict.delegate ?? 'Delegate'}
                 </Button>
               </div>
@@ -471,11 +486,11 @@ export default function StakingPage({
               </div>
 
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
+                  <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
                     {votingPowerDict.stakedAmount ?? 'Staked Amount'}
                   </span>
-                  <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white">
+                  <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full">
                     {stakedBalance
                       ? formatNumber(
                           parseFloat(formatEther(stakedBalance as string))
@@ -484,11 +499,11 @@ export default function StakingPage({
                   </span>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
+                  <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
                     {votingPowerDict.delegationPower ?? 'Delegation Power'}
                   </span>
-                  <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white">
+                  <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full">
                     {getTokenVote
                       ? formatNumber(
                           parseFloat(formatEther(stakedBalance as string))
@@ -497,11 +512,11 @@ export default function StakingPage({
                   </span>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
+                  <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
                     {votingPowerDict.sbtVotingPower ?? 'SBT & NFT Voting Power'}
                   </span>
-                  <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white">
+                  <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full">
                     {totalSBTVotingPower
                       ? formatNumber(totalSBTVotingPower)
                       : '0'}
@@ -510,8 +525,8 @@ export default function StakingPage({
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-4 my-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 my-6 text-center sm:text-left">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white w-full">
                 {votingPowerDict.votingPowerAndInfo ?? 'Voting Power & Info'}
               </h2>
               <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-xs font-medium px-2.5 py-0.5 rounded-full">
@@ -521,39 +536,51 @@ export default function StakingPage({
 
             {/* Voting Power Features */}
             <div className="space-y-3 my-4">
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                -{' '}
-                {votingPowerDict.votingPowerFeature1 ??
-                  'Your total voting power is the sum of your staked amount'}
-              </p>
+              <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                <span className="font-semibold text-gray-800 dark:text-white">
+                  •
+                </span>
+                <p>
+                  {votingPowerDict.votingPowerFeature1 ??
+                    'Your total voting power is the sum of your staked amount'}
+                </p>
+              </div>
 
-              <div className="flex items-start space-x-3">
-                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                  -{' '}
+              <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                <span className="font-semibold text-gray-800 dark:text-white">
+                  •
+                </span>
+                <p>
                   {votingPowerDict.votingPowerFeature2 ??
                     'Participate in governance decisions and earn more from staking rewards'}
                 </p>
               </div>
 
-              <div className="flex items-start space-x-3">
-                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                  -{' '}
+              <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                <span className="font-semibold text-gray-800 dark:text-white">
+                  •
+                </span>
+                <p>
                   {votingPowerDict.votingPowerFeature3 ??
                     "For 99% of you that don't like voting power, use it to influence rewards for other community members"}
                 </p>
               </div>
 
-              <div className="flex items-start space-x-3">
-                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                  -{' '}
+              <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                <span className="font-semibold text-gray-800 dark:text-white">
+                  •
+                </span>
+                <p>
                   {votingPowerDict.votingPowerFeature4 ??
                     'You can delegate voting power to any network participant'}
                 </p>
               </div>
 
-              <div className="flex items-start space-x-3">
-                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                  -{' '}
+              <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                <span className="font-semibold text-gray-800 dark:text-white">
+                  •
+                </span>
+                <p>
                   {votingPowerDict.votingPowerFeature5 ??
                     'You can also delegate voting power to our fund to publish governance decisions'}
                 </p>
@@ -569,7 +596,14 @@ export default function StakingPage({
               {votingPowerDict.mySBTs ?? 'My Tokens'} ({tokenData.length})
             </h2>
 
-            <SBTTableComponent headers={sbtTableHeaders} sbtInfo={tokenData} />
+            <div className="-mx-4 sm:mx-0">
+              <div className="px-4 sm:px-0">
+                <SBTTableComponent
+                  headers={sbtTableHeaders}
+                  sbtInfo={tokenData}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -841,23 +841,6 @@ export default function PCEPage({
     await refetchProposalCount()
   }
 
-  const handleDelegate = async () => {
-    setIsDelegateDialogOpened(false)
-
-    let tx
-    try {
-      tx = await writeContractAsync({
-        abi: SBT_ABI,
-        address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-        functionName: 'delegate',
-        args: [delegateAddr],
-      })
-    } catch (error) {
-      console.error('Error delegating tokens:', error)
-      return
-    }
-  }
-
   const handleUpdateSocials = async () => {
     setIsUpdatingSocials(true)
     try {
@@ -927,18 +910,29 @@ export default function PCEPage({
   }, [locale])
 
   return (
-    <div className="items-center justify-center flex flex-col mx-4 sm:mx-20 gap-4">
-      <div className="flex flex-row w-full items-center gap-4 mt-8">
-        <Image src="/pce_logo.jpg" alt="PCE Logo" width={144} height={144} />
-
-        <div className="flex flex-row gap-2 font-bold text-5xl">
+    <div className="sm:items-center justify-center flex flex-col mx-4 sm:mx-20 gap-4">
+      <div className="flex w-full items-center justify-center gap-2 mt-4 sm:gap-4 sm:mt-8">
+        <Image
+          src="/pce_logo.jpg"
+          alt="PCE Logo"
+          width={96}
+          height={96}
+          className="w-12 h-12 sm:w-24 sm:h-24"
+          priority={true}
+          quality={100}
+        />
+        <div className="flex flex-row gap-1 font-bold text-xl sm:text-5xl justify-center items-center">
           {localDict.title}
         </div>
       </div>
 
       <div className="flex flex-row w-full items-center">
-        <Tabs defaultValue="about" className="w-full" value={tabContent}>
-          <TabsList>
+        <Tabs
+          defaultValue="about"
+          className="w-full sm:justify-start justify-center"
+          value={tabContent}
+        >
+          <TabsList className="max-sm:flex max-sm:justify-center justify-start">
             <TabsTrigger value="about" onClick={() => setTabContent('about')}>
               {localDict.aboutDao}
             </TabsTrigger>
@@ -949,7 +943,7 @@ export default function PCEPage({
               Holds
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="about" className="">
+          <TabsContent value="about" className="w-full">
             <div className="flex sm:flex-row flex-col w-full gap-8">
               <div className="flex flex-col w-full mt-4 gap-4">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-2">
@@ -1145,30 +1139,6 @@ export default function PCEPage({
                     {votes ? votes.toString() : '0'}
                   </div>
                 </div>
-
-                {/* <div className="flex bg-gray-100 rounded-xl items-center justify-between cursor-pointer">
-                  <div className="flex flex-row gap-4 w-full items-center p-4 justify-center">
-                    <div className="flex flex-col gap-2 w-full justify-center">
-                      <div className="text-heavy_white text-sm flex justify-center items-center">
-                        TVL
-                      </div>
-
-                      <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-full items-center justify-center text-sm">
-                        $0
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2 w-full">
-                      <div className="text-heavy_white text-sm flex justify-center items-center">
-                        Memebers
-                      </div>
-                      <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-full items-center justify-center text-sm">
-                        0%
-                      </div>
-                    </div>
-                  </div>
-                </div> */}
-
                 <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
                   <h1 className="font-bold rounded-xl  flex">
                     {localDict.createdAt ?? 'Created at'}{' '}
@@ -1177,7 +1147,7 @@ export default function PCEPage({
                     ).toLocaleString()}
                   </h1>
                 </div>
-                <div className="flex flex-col  border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
+                <div className="flex flex-col border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
                   <div className="flex flex-row justify-between items-center mb-2">
                     <h1 className="font-bold">PCE Socials</h1>
                     <Button
@@ -1338,9 +1308,9 @@ export default function PCEPage({
             </div>
           </TabsContent>
           <TabsContent value="all">
-            <div className="flex flex-row w-full items-center">
+            <div className="flex flex-row w-full items-center sm:justify-start justify-center">
               <Tabs defaultValue="all" className="gap-0 w-full">
-                <TabsList>
+                <TabsList className="flex flex-row w-full sm:justify-start justify-center">
                   <TabsTrigger className="w-20" value="all">
                     {localDict.all ?? 'All'}
                   </TabsTrigger>
@@ -1462,9 +1432,9 @@ export default function PCEPage({
             </div>
           </TabsContent>
           <TabsContent value="holds">
-            <div className="flex flex-col sm:flex-row mt-4 gap-4 ">
+            <div className="flex flex-col sm:flex-row mt-4 gap-4 sm:items-start items-center">
               <div className="flex flex-col w-full">
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-2xl font-bold text-center sm:text-left">
                   {localDict.treasury ?? 'Treasury'}
                 </h1>
                 <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
@@ -1498,7 +1468,7 @@ export default function PCEPage({
                 </div>
               </div>
               <div className="flex flex-col w-full sm:w-[40%]">
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-2xl font-bold text-center sm:text-left">
                   {localDict.daoBalance ?? 'DAO Balance'}
                 </h1>
 
@@ -1591,56 +1561,6 @@ export default function PCEPage({
                     </DialogContent>
                   </Dialog>
                 </div>
-
-                {/* <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
-                  <h1 className="font-bold rounded-xl flex">DAO Delegated</h1>
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      DAO Delegated to
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      Historical Rewards Earned
-                    </h1>
-                    <h1 className="font-bold rounded-xl flex">$0</h1>
-                  </div>
-
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl flex">
-                      Available to claim
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-                </div>
-
-                <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
-                  <h1 className="font-bold rounded-xl flex">
-                    Delegated to DAO
-                  </h1>
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      Delegated to DAO
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      Historical Rewards Earned
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      Available to claim
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-                </div> */}
               </div>
             </div>
           </TabsContent>

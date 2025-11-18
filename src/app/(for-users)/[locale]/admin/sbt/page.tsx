@@ -72,17 +72,6 @@ interface FilterOption {
 }
 
 // Constants
-const FILTER_OPTIONS: FilterOption[] = [
-  { value: 'all', label: 'All' },
-  { value: 'revoked', label: 'Revoked' },
-  { value: 'unrevoked', label: 'Unrevoked' },
-]
-
-const TOKEN_TYPE_OPTIONS: FilterOption[] = [
-  { value: 'all', label: 'All' },
-  { value: 'sbt', label: 'SBT' },
-  { value: 'nft', label: 'NFT' },
-]
 
 const MAX_NAME_LENGTH = 64
 const MAX_DESCRIPTION_LENGTH = 256
@@ -96,7 +85,7 @@ const LoadingOverlay = () => (
 )
 
 const PageHeader = ({ title }: { title: string }) => (
-  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <h1 className="text-3xl font-extrabold text-gray-900">{title}</h1>
   </div>
 )
@@ -121,14 +110,14 @@ const FilterDropdown = ({
       <Button
         variant="outline"
         role="combobox"
-        className="w-[200px] justify-between bg-white"
+        className="w-full sm:w-[200px] justify-between bg-white"
       >
         {filterOptions.find((option) => option.value === filter)?.label ||
           labels.all}
         <ChevronsUpDown className="opacity-50" />
       </Button>
     </PopoverTrigger>
-    <PopoverContent className="w-[200px] p-0">
+    <PopoverContent className="w-full sm:w-[200px] p-0">
       <Command>
         <CommandList>
           <CommandGroup>
@@ -162,7 +151,7 @@ const CreateButton = ({
 }) => (
   <Button
     variant="default"
-    className="flex ml-auto w-60"
+    className="flex w-full sm:w-60 sm:ml-auto justify-center"
     onClick={onClick}
     disabled={disabled}
   >
@@ -207,7 +196,7 @@ const CreateTokenModal = ({
   <Dialog open={isOpen} onOpenChange={onClose}>
     <DialogContent className="flex flex-col gap-4 max-w-md mx-auto bg-white rounded-xl shadow-2xl p-6">
       <DialogTitle className="text-xl font-bold text-gray-900 mb-2">
-        {labels.createToken}
+        {labels.createCard}
       </DialogTitle>
 
       <div className="flex flex-col gap-3">
@@ -383,7 +372,7 @@ const CreateTokenModal = ({
         >
           <span className="flex items-center gap-1">
             <Plus className="w-4 h-4" />
-            {labels.createToken}
+            {labels.createCard}
           </span>
         </Button>
       </div>
@@ -427,6 +416,11 @@ export default function SBTBuilderPage({
   const [refetchTokenData, setRefetchTokenData] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  const [FILTER_OPTIONS, setFILTER_OPTIONS] = useState<FilterOption[]>([])
+  const [TOKEN_TYPE_OPTIONS, setTOKEN_TYPE_OPTIONS] = useState<FilterOption[]>(
+    []
+  )
+
   const { data: hash, error, writeContractAsync } = useWriteContract()
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -437,7 +431,10 @@ export default function SBTBuilderPage({
 
   useEffect(() => {
     const fetchAllDAOs = async () => {
-      const { data: daos } = await supabase.from('DAO').select()
+      const { data: daos } = await supabase
+        .from('DAO')
+        .select()
+        .eq('creator', address as `0x${string}`)
       setAllDAOs(daos as SupabaseDao[])
     }
     fetchAllDAOs()
@@ -451,6 +448,20 @@ export default function SBTBuilderPage({
     }
     loadDictionary()
   }, [locale])
+
+  useEffect(() => {
+    setFILTER_OPTIONS([
+      { value: 'all', label: dict?.sbt.all ?? 'All' },
+      { value: 'revoked', label: dict?.sbt.revoked ?? 'Revoked' },
+      { value: 'unrevoked', label: dict?.sbt.unrevoked ?? 'Unrevoked' },
+    ])
+
+    setTOKEN_TYPE_OPTIONS([
+      { value: 'all', label: dict?.sbt.all ?? 'All' },
+      { value: 'sbt', label: dict?.sbt.sbt ?? 'SBT' },
+      { value: 'nft', label: dict?.sbt.nft ?? 'NFT' },
+    ])
+  }, [dict])
 
   useEffect(() => {
     const filteredData: SBTInfo[] = []
@@ -631,18 +642,13 @@ export default function SBTBuilderPage({
           confirmations: 1,
         })
 
-        if (cardForm.isSBT == true) {
-          await refetchSbtCurrentTokenId()
-        } else {
-          await refetchNftCurrentTokenId()
-        }
         const currentTokenId = cardForm.isSBT
           ? sbtCurrentTokenId
           : nftCurrentTokenId
         const tokenId = currentTokenId ? currentTokenId.toString() : '0'
 
         await supabase.from('Token').insert({
-          tokenId: tokenId,
+          tokenId: Number(tokenId) + 1,
           name: cardForm.name,
           description: cardForm.description,
           votingPower: cardForm.votingPower,
@@ -684,8 +690,6 @@ export default function SBTBuilderPage({
     nftCurrentTokenId,
     supabase,
     refetchTokenData,
-    refetchSbtCurrentTokenId,
-    refetchNftCurrentTokenId,
   ])
 
   const handleCreateModalOpen = useCallback(() => {
@@ -750,7 +754,7 @@ export default function SBTBuilderPage({
     votingPower: localDict.votingPower ?? 'Voting Power',
     preview: localDict.preview ?? 'Preview',
     selectImage: localDict.selectImage ?? 'Select Image',
-    createToken: localDict.createSBT_NFT ?? 'Create SBT/NFT',
+    addAnother: localDict.addAnother ?? 'Add Another',
   }
 
   const handleRevokeToken = useCallback(
@@ -796,45 +800,54 @@ export default function SBTBuilderPage({
         toast({ title: 'Failed to revoke token' })
       }
     },
-    [address, writeContractAsync, chainId, toast, refetchTokenData]
+    [address, chainId, refetchTokenData, supabase, toast, writeContractAsync]
   )
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gray-50 px-4 py-8 md:px-20 md:py-16 gap-4">
+    <div className="flex flex-col items-center min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-20 gap-6">
       {loading && <LoadingOverlay />}
 
-      <div className="w-full gap-4 flex flex-col">
+      <div className="w-full max-w-6xl flex flex-col gap-6">
         <PageHeader title={currentLabels.sbtList} />
-        <div className="flex flex-row gap-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <CreateButton
             onClick={handleCreateModalOpen}
             label={currentLabels.createCard}
           />
-          <div className="flex flex-row mb-4 justify-end w-full gap-4">
-            <FilterDropdown
-              filter={filter}
-              onFilterChange={setFilter}
-              isOpen={isFilterOpen}
-              onOpenChange={setIsFilterOpen}
-              filterOptions={FILTER_OPTIONS}
-              labels={currentLabels}
-            />
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap md:justify-end md:items-center w-full md:w-auto">
+            <div className="w-full sm:w-auto">
+              <FilterDropdown
+                filter={filter}
+                onFilterChange={setFilter}
+                isOpen={isFilterOpen}
+                onOpenChange={setIsFilterOpen}
+                filterOptions={FILTER_OPTIONS}
+                labels={currentLabels}
+              />
+            </div>
 
-            <FilterDropdown
-              filter={tokenType}
-              onFilterChange={setTokenType}
-              isOpen={isTokenTypeOpen}
-              onOpenChange={setIsTokenTypeOpen}
-              filterOptions={TOKEN_TYPE_OPTIONS}
-              labels={currentLabels}
-            />
+            <div className="w-full sm:w-auto">
+              <FilterDropdown
+                filter={tokenType}
+                onFilterChange={setTokenType}
+                isOpen={isTokenTypeOpen}
+                onOpenChange={setIsTokenTypeOpen}
+                filterOptions={TOKEN_TYPE_OPTIONS}
+                labels={currentLabels}
+              />
+            </div>
           </div>
         </div>
 
         <SBTTableComponent
           headers={[...sbtTableHeaders, 'Action']}
           sbtInfo={filteredTokenData}
-          action={{ title: 'Revoke' }}
+          action={{
+            title: {
+              revoke: currentLabels.revoked,
+              unrevoke: currentLabels.unrevoked,
+            },
+          }}
           onRevoke={(token: SBTInfo) => {
             handleRevokeToken(token)
           }}

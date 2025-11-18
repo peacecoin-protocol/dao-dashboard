@@ -43,10 +43,6 @@ export const AddWhitelistModal = ({
       )
       if (campaign) {
         setIsVerifySignature(campaign.validateSignatures)
-      } else {
-        toast({
-          title: 'Campaign not found',
-        })
       }
     }
 
@@ -60,6 +56,18 @@ export const AddWhitelistModal = ({
       })
       return
     }
+
+    const campaign = campaignData.find(
+      (campaign) => campaign.campaignId == Number(form.id)
+    )
+
+    if (!campaign) {
+      toast({
+        title: 'Campaign not found',
+      })
+      return
+    }
+
     onSubmit(form)
     setForm({
       id: '',
@@ -101,6 +109,7 @@ export const AddWhitelistModal = ({
               inputs={form.data}
               setInputs={(data) => setForm({ ...form, data })}
               isVerifySignature={isVerifySignature}
+              dict={campaign}
             />
           </div>
 
