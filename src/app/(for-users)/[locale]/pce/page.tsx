@@ -2,11 +2,10 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
+
 import * as CustomLink from '~/components/custom/Link'
-import axios from 'axios'
 
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { Alchemy, Network } from 'alchemy-sdk'
 
 import RingLoader from 'react-spinners/RingLoader'
@@ -58,7 +57,7 @@ import {
 
 import { getDict } from '~/i18n/get-dict'
 
-import { PagePropsWithLocale, Dictionary, Metadata } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 
 import { formatString, shortenAddress } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
@@ -81,28 +80,7 @@ import { createdAt } from '~/app/constants/constants'
 import { Env } from '~/env'
 import { timestampToDate } from '~/components/utils'
 import { SBT_ABI } from '~/app/ABIs/SBT'
-
-type Dao = {
-  id: string
-  daoId: string
-  name: string
-  governor: string
-  blockTimestamp: string
-  website: string
-  linkedin: string
-  twitter: string
-  telegram: string
-  governanceToken: string
-  timelock: string
-  communityToken: string
-  communityTokenSymbol: string
-}
-
-type Proposal = {
-  id: number
-  description: string
-  status: string
-}
+import Image from 'next/image'
 
 type TokenBalance = {
   contractAddress: string
@@ -151,7 +129,6 @@ export default function PCEPage({
   const [identicon, setIdenticon] = useState('')
 
   const [nftBalances, setNftBalances] = useState<number[]>([])
-  const [nftMetadata, setNftMetadata] = useState<Metadata[]>([])
   const [votingPower, setVotingPower] = useState<number[]>([])
 
   const [tabContent, setTabContent] = useState('about')
@@ -255,7 +232,7 @@ export default function PCEPage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
-      confirmations: 2,
+      confirmations: 1,
     })
 
   const { data: quorum, refetch: refetchQuorum } = useReadContract({
@@ -400,50 +377,6 @@ export default function PCEPage({
 
     fetchVotingPower()
   }, [chainId, currentTokenId, isConfirmed])
-
-  useEffect(() => {
-    const fetchNFTMetadata = async () => {
-      if (currentTokenId && Number(currentTokenId) > 0) {
-        toast({ title: 'Loading Metadata...' })
-
-        const _nftMetadata: Metadata[] = []
-        for (let i = 1; i <= (currentTokenId as number); i++) {
-          try {
-            const _uri = await readContract(config, {
-              abi: SBT_ABI,
-              address: PCE_SBT_ADDRESS[
-                chainId || defaultChainId
-              ] as `0x${string}`,
-              functionName: 'tokenURIs',
-              args: [i],
-            })
-
-            const response = await axios.get(`/api/get-nft-metadata`, {
-              params: {
-                metadata: uri_ + (_uri as string),
-              },
-            })
-            const data = response.data
-            data.token_id = i
-            _nftMetadata.push(data)
-          } catch (error) {
-            console.error('Error fetching NFT metadata:', error)
-            const metadata: Metadata = {
-              tokenId: i.toString(),
-              image: '/images/empty-nft.svg',
-              name: '',
-              description: '',
-              daoId: '',
-            }
-            _nftMetadata.push(metadata)
-          }
-        }
-        setNftMetadata(_nftMetadata)
-      }
-    }
-
-    fetchNFTMetadata()
-  }, [uri_, currentTokenId, chainId])
 
   const ProposalCard = ({
     proposal,

@@ -1,12 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Modal from '~/components/custom/Modal'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 import { useToast } from '~/hooks/use-toast'
 import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 
-import Image from 'next/image'
-import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import { Label } from '~/components/ui/label'
 import {
   Select,
@@ -16,29 +14,28 @@ import {
   SelectValue,
 } from '~/components/ui/select'
 import { useAccount } from 'wagmi'
-import { Metadata } from '~/i18n/types'
+import { createClient } from '~/utils/supabase/client'
+import { Env } from '~/env'
+import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
+import Image from 'next/image'
 
 export const CreateCampaignModal = ({
   isOpen,
   onClose,
   onSubmit,
-  tokenData,
   campaign,
   setIsInvalidToken,
-  sbtMetadata,
-  nftMetadata,
 }: {
   isOpen: boolean
   onClose: () => void
   onSubmit: (formData: any) => void
-  tokenData: SBTInfo[]
   campaign: any
   setIsInvalidToken: (value: boolean) => void
-  sbtMetadata: Metadata[]
-  nftMetadata: Metadata[]
 }) => {
   const { toast } = useToast()
   const { address } = useAccount()
+  const supabase = createClient()
+  const [tokenInfo, setTokenInfo] = useState<SBTInfo | null>(null)
   const [form, setForm] = useState({
     sbtId: 0,
     title: '',
@@ -51,6 +48,23 @@ export const CreateCampaignModal = ({
     tokenType: 0,
     tokenAddress: '',
   })
+
+  useEffect(() => {
+    const fetchTokenData = async () => {
+      const { data } = await supabase
+        .from('Token')
+        .select()
+        .eq('isSBT', form.tokenType == 1 ? true : false)
+        .eq('tokenId', form.sbtId.toString())
+
+      if (data && data.length > 0) {
+        setTokenInfo(data[0])
+      } else {
+        setTokenInfo(null)
+      }
+    }
+    fetchTokenData()
+  }, [address, form.tokenType, form.sbtId, supabase])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -212,55 +226,25 @@ export const CreateCampaignModal = ({
             {form.tokenType != 0 &&
               form.sbtId != 0 &&
               (() => {
-                const isSBT = form.tokenType == 1
-                const isNFT = form.tokenType == 2
-                const sbtIdStr = form.sbtId.toString()
-                const lowerAddress = address?.toLowerCase() || ''
-                const foundToken = tokenData.find(
-                  (m: SBTInfo) =>
-                    (isSBT ? m.isSBT : !m.isSBT) && m.tokenId === sbtIdStr
-                )
-                const notOwner =
-                  !!foundToken &&
-                  foundToken.creator !== lowerAddress &&
-                  lowerAddress !== ''
+                const isOwner = tokenInfo?.creator == address
+                setIsInvalidToken(!isOwner)
 
                 return (
                   <div className="flex justify-center flex-col items-center">
                     <Image
                       src={
-                        form.tokenType == 1
-                          ? sbtMetadata.find(
-                              (m) => m.tokenId == form.sbtId.toString()
-                            )?.image || EMPTY_NFT_IMAGE
-                          : form.tokenType == 2
-                            ? nftMetadata.find(
-                                (m) => m.tokenId == form.sbtId.toString()
-                              )?.image || EMPTY_NFT_IMAGE
-                            : EMPTY_NFT_IMAGE
+                        tokenInfo
+                          ? `${Env.PINATA_GATEWAY_URL}/ipfs/${tokenInfo?.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
+                          : EMPTY_NFT_IMAGE
                       }
-                      alt={
-                        form.tokenType == 1
-                          ? sbtMetadata.find(
-                              (m) => m.tokenId == form.sbtId.toString()
-                            )?.name || ''
-                          : form.tokenType == 2
-                            ? nftMetadata.find(
-                                (m) => m.tokenId == form.sbtId.toString()
-                              )?.name || ''
-                            : ''
-                      }
+                      alt={tokenInfo?.name || ''}
                       width={80}
                       height={80}
                       className="object-cover"
                     />
-                    {notOwner && (
+                    {!isOwner && tokenInfo && (
                       <span className="text-sm text-gray-500 mt-2">
-                        {isSBT
-                          ? 'You are not the owner of this SBT'
-                          : isNFT
-                            ? 'You are not the owner of this NFT'
-                            : ''}
+                        You are not the owner of this Token
                       </span>
                     )}
                   </div>

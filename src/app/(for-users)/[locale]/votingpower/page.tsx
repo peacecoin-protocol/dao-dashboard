@@ -1,8 +1,6 @@
 'use client'
 
-import Image from 'next/image'
-
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '~/components/ui/button'
 
@@ -23,14 +21,10 @@ import {
 
 import { getDict } from '~/i18n/get-dict'
 
-import { PagePropsWithLocale, Dictionary, Metadata } from '~/i18n/types'
-import {
-  defaultChainId,
-  SBT_SUBGRAPH_URL,
-  NFT_SUBGRAPH_URL,
-} from '~/app/constants/constants'
+import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { defaultChainId } from '~/app/constants/constants'
 
-import { formatNumber, formatString } from '~/components/utils'
+import { formatNumber } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
 import { config } from '~/lib/config'
@@ -48,16 +42,12 @@ import {
 
 import { STAKING_ABI } from '~/app/ABIs/Staking'
 import { SBT_ABI } from '~/app/ABIs/SBT'
-import { fetchMetadata } from '~/components/utils'
-import { Env } from '~/env'
+
 import { PCE_GOV_TOKEN_ABI } from '~/app/ABIs/PCEGovToken'
 import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
 import { SBTInfo } from '~/components/custom/sbt-tableComponent'
-import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
-import { HttpLink } from '@apollo/client/link/http'
-import { InMemoryCache } from '@apollo/client'
-import { ApolloClient } from '@apollo/client'
-import { gql } from '@apollo/client'
+
+import { createClient } from '~/utils/supabase/client'
 
 export default function StakingPage({
   params: { locale },
@@ -65,6 +55,7 @@ export default function StakingPage({
   const [dict, setDict] = useState<Dictionary | null>(null)
   const { toast } = useToast()
   const votingPowerDict = dict?.votingPower ?? {}
+  const supabase = createClient()
 
   const { data: blockNumber } = useBlockNumber()
   const { data: block } = useBlock({
@@ -73,17 +64,11 @@ export default function StakingPage({
   let [loading, setLoading] = useState(true)
 
   const [stakingAmount, setStakingAmount] = useState('')
-  const [sbtBalances, setSBTBalances] = useState<number[]>([])
-  const [sbtMetadata, setSBTMetadata] = useState<Metadata[]>([])
-  const [nftBalances, setNFTBalances] = useState<number[]>([])
-  const [nftMetadata, setNFTMetadata] = useState<Metadata[]>([])
-  const [sbtVotingPower, setSBTVotingPower] = useState<number[]>([])
-  const [nftVotingPower, setNFTVotingPower] = useState<number[]>([])
   const [totalSBTVotingPower, setTotalSBTVotingPower] = useState<number>(0)
   const [stakedBalance, setStakedBalance] = useState<string>('0')
-  const [sbtData, setSBTData] = useState<SBTInfo[]>([])
-  const [nftData, setNFTData] = useState<SBTInfo[]>([])
+
   const [tokenData, setTokenData] = useState<SBTInfo[]>([])
+  const [refetchTokenData, setRefetchTokenData] = useState(false)
   const { address, chainId } = useAccount()
 
   const {
@@ -155,27 +140,6 @@ export default function StakingPage({
       ],
     })
 
-  const { data: currentTokenId, refetch: refetchCurrentTokenId } =
-    useReadContract({
-      address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-      abi: SBT_ABI,
-      functionName: 'currentTokenId',
-    })
-
-  const { data: currentNFTTokenId, refetch: refetchCurrentNFTTokenId } =
-    useReadContract({
-      address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
-      abi: SBT_ABI,
-      functionName: 'currentTokenId',
-    })
-
-  const { data: uri_, refetch: refetchUri } = useReadContract({
-    abi: SBT_ABI,
-    address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-    functionName: 'uri_',
-    args: [],
-  })
-
   const { data: getTokenVote, refetch: refetchGetTokenVote } = useReadContract({
     abi: PCE_GOV_TOKEN_ABI,
     address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
@@ -184,367 +148,41 @@ export default function StakingPage({
   })
 
   useEffect(() => {
-    const fetchSBTBalances = async () => {
-      if (!chainId) {
-        return
-      }
-      if (currentTokenId && Number(currentTokenId) > 0) {
-        toast({
-          title: votingPowerDict.loadingSBTNFTs ?? 'Loading SBT NFTs...',
-        })
-
-        let _sbtBalances: number[] = []
-        for (let i = 1; i <= (currentTokenId as number); i++) {
-          const _balance = (await readContract(config, {
-            abi: SBT_ABI,
-            address: PCE_SBT_ADDRESS[
-              chainId || defaultChainId
-            ] as `0x${string}`,
-            functionName: 'balanceOf',
-            args: [address, i],
-          })) as number
-
-          _sbtBalances.push(_balance)
-        }
-
-        setSBTBalances(_sbtBalances)
-      }
-    }
-
-    fetchSBTBalances()
-    refetchGetTokenVote()
-  }, [chainId, currentTokenId, isConfirmed])
-
-  const sbtClient = new ApolloClient({
-    cache: new InMemoryCache(),
-    link: new HttpLink({
-      uri: SBT_SUBGRAPH_URL[chainId || defaultChainId] as string,
-    }),
-  })
-  const nftClient = new ApolloClient({
-    cache: new InMemoryCache(),
-    link: new HttpLink({
-      uri: NFT_SUBGRAPH_URL[chainId || defaultChainId] as string,
-    }),
-  })
-
-  useEffect(() => {
-    const fetchNFTBalances = async () => {
-      if (!chainId) {
-        return
-      }
-      if (currentNFTTokenId && Number(currentNFTTokenId) > 0) {
-        toast({
-          title: votingPowerDict.loadingSBTNFTs ?? 'Loading SBT NFTs...',
-        })
-
-        let _nftBalances: number[] = []
-        for (let i = 1; i <= (currentNFTTokenId as number); i++) {
-          const _balance = (await readContract(config, {
-            abi: SBT_ABI,
-            address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
-            functionName: 'balanceOf',
-            args: [address, i],
-          })) as number
-
-          _nftBalances.push(_balance)
-        }
-
-        setNFTBalances(_nftBalances)
-      }
-    }
-
-    fetchNFTBalances()
-    refetchGetTokenVote()
-  }, [chainId, currentTokenId, isConfirmed])
-
-  useEffect(() => {
-    const fetchVotingPower = async () => {
-      if (!chainId) {
-        return
-      }
-      if (currentTokenId && Number(currentTokenId) > 0) {
-        toast({
-          title:
-            votingPowerDict.loadingVotingPower ?? 'Loading Voting Power...',
-        })
-
-        let _votingSBTPower: number[] = []
-        for (let i = 1; i <= (currentTokenId as number); i++) {
-          const _balance = (await readContract(config, {
-            abi: SBT_ABI,
-            address: PCE_SBT_ADDRESS[
-              chainId || defaultChainId
-            ] as `0x${string}`,
-            functionName: 'votingPowerPerId',
-            args: [i],
-          })) as number
-
-          _votingSBTPower.push(_balance)
-        }
-        setSBTVotingPower(_votingSBTPower)
-      }
-    }
-
-    fetchVotingPower()
-  }, [chainId, currentTokenId, isConfirmed])
-
-  useEffect(() => {
-    const fetchNFTVotingPower = async () => {
-      if (!chainId) {
-        return
-      }
-      if (currentNFTTokenId && Number(currentNFTTokenId) > 0) {
-        toast({
-          title:
-            votingPowerDict.loadingVotingPower ?? 'Loading Voting Power...',
-        })
-
-        let _votingNFTPower: number[] = []
-        for (let i = 1; i <= (currentNFTTokenId as number); i++) {
-          const _balance = (await readContract(config, {
-            abi: SBT_ABI,
-            address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
-            functionName: 'votingPowerPerId',
-            args: [i],
-          })) as number
-
-          _votingNFTPower.push(_balance)
-        }
-        setNFTVotingPower(_votingNFTPower)
-      }
-    }
-
-    fetchNFTVotingPower()
-  }, [chainId, currentNFTTokenId, isConfirmed])
-
-  useEffect(() => {
-    if (sbtBalances.length > 0 && sbtVotingPower.length > 0) {
-      let _SBTPower = 0
-      for (let i = 0; i < sbtBalances.length; i++) {
-        _SBTPower += Number(sbtBalances?.[i]) * Number(sbtVotingPower?.[i])
-      }
-
-      for (let i = 0; i < nftBalances.length; i++) {
-        _SBTPower += Number(nftBalances?.[i]) * Number(nftVotingPower?.[i])
-      }
-      setTotalSBTVotingPower(_SBTPower)
-    }
-  }, [sbtBalances, sbtVotingPower, nftBalances, nftVotingPower])
-
-  const fetchSBTStatus = useCallback(
-    async (_sbtData: SBTInfo[]) => {
-      if (!chainId || !address || !_sbtData.length) return
-      try {
-        const balances = await Promise.all(
-          _sbtData.map(async (token: SBTInfo) => {
-            return (await readContract(config, {
-              abi: SBT_ABI,
-              address: PCE_SBT_ADDRESS[
-                chainId || defaultChainId
-              ] as `0x${string}`,
-              functionName: 'balanceOf',
-              args: [address, token.tokenId],
-            })) as BigInt
-          })
-        )
-
-        setSBTData(
-          _sbtData.map((token: SBTInfo, index: number) => ({
-            ...token,
-            balance: balances[index]?.toString() || '0',
-          }))
-        )
-      } catch (error) {
-        console.error('Error fetching SBT status:', error)
-      }
-    },
-    [chainId, address, sbtData]
-  )
-
-  const fetchNFTStatus = useCallback(
-    async (_nftData: SBTInfo[]) => {
-      if (!chainId || !address || !_nftData.length) return
-      try {
-        const balances = await Promise.all(
-          _nftData.map(async (token: SBTInfo) => {
-            return (await readContract(config, {
-              abi: SBT_ABI,
-              address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
-              functionName: 'balanceOf',
-              args: [address, token.tokenId],
-            })) as BigInt
-          })
-        )
-
-        setNFTData(
-          _nftData.map((token: SBTInfo, index: number) => ({
-            ...token,
-            balance: balances[index]?.toString() || '0',
-          }))
-        )
-      } catch (error) {
-        console.error('Error fetching SBT status:', error)
-      }
-    },
-    [chainId, address, sbtData]
-  )
-
-  useEffect(() => {
-    const fetchSBTData = async () => {
+    const fetchTokenData = async () => {
       try {
         setLoading(true)
-        const { data } = await sbtClient.query({
-          query: gql`
-            query getSBTData {
-              createdTokens(first: 10, orderDirection: desc, where: {}) {
-                tokenId
-                timestamp_
-                tokenURI
-                votingPower
-                creator
-                daoId
-              }
-            }
-          `,
+        const { data: tokens } = await supabase.from('Token').select()
+
+        const _tokenData = tokens as SBTInfo[]
+
+        const tokenBalances = await Promise.all(
+          _tokenData.map(async (token: SBTInfo) => {
+            const balance = (await readContract(config, {
+              abi: SBT_ABI,
+              address: token.isSBT
+                ? (PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`)
+                : (NFTAddress[chainId || defaultChainId] as `0x${string}`),
+              functionName: 'balanceOf',
+              args: [address, token.tokenId],
+            })) as number
+            return balance
+          })
+        )
+
+        _tokenData.forEach((token: SBTInfo, index: number) => {
+          token.balance = tokenBalances[index]?.toString() ?? '0'
         })
-
-        let _sbtData: SBTInfo[] = []
-        for (const token of data.createdTokens) {
-          _sbtData.push({
-            tokenId: token.tokenId,
-            createdAt: Number(token.timestamp_).toString(),
-            tokenURI: token.tokenURI,
-            balance: '0',
-            votingPower: token.votingPower,
-            isRevoked: false,
-            isSBT: true,
-            creator: address as string,
-            daoId: token.daoId,
-          })
-        }
-
-        setSBTData([..._sbtData])
-        await fetchSBTStatus(_sbtData)
-
-        setLoading(false)
+        setTokenData(
+          _tokenData.filter((token: SBTInfo) => Number(token.balance) > 0)
+        )
       } catch (error) {
+        console.error('Error fetching token data:', error)
+      } finally {
         setLoading(false)
-        console.error('Error:', error)
       }
     }
-    fetchSBTData()
-  }, [])
-
-  useEffect(() => {
-    const fetchNFTData = async () => {
-      try {
-        setLoading(true)
-        const { data } = await nftClient.query({
-          query: gql`
-            query getNFTData {
-              createdTokens(first: 10, orderDirection: desc, where: {}) {
-                tokenId
-                timestamp_
-                tokenURI
-                votingPower
-                creator
-                daoId
-              }
-            }
-          `,
-        })
-
-        let _nftData: SBTInfo[] = []
-        for (const token of data.createdTokens) {
-          _nftData.push({
-            tokenId: token.tokenId,
-            tokenURI: token.tokenURI,
-            createdAt: Number(token.timestamp_).toString(),
-            balance: '0',
-            votingPower: token.votingPower,
-            isRevoked: false,
-            isSBT: false,
-            creator: address as string,
-            daoId: token.daoId,
-          })
-        }
-
-        setNFTData([..._nftData])
-        await fetchNFTStatus(_nftData)
-
-        setLoading(false)
-      } catch (error) {
-        setLoading(false)
-        console.error('Error:', error)
-      }
-    }
-    fetchNFTData()
-  }, [])
-
-  useEffect(() => {
-    const fetchSBTMetadata = async () => {
-      let _sbtMetadata: Metadata[] = []
-      if (sbtData.length === 0) return
-      for (const sbt of sbtData) {
-        try {
-          const _metadata = await fetchMetadata(
-            `${Env.PINATA_GATEWAY_URL}/ipfs/${sbt.tokenURI}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
-          )
-          _sbtMetadata.push({
-            tokenId: sbt.tokenId,
-            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`,
-            name: _metadata.name,
-            description: _metadata.description,
-            daoId: sbt.daoId,
-          })
-        } catch (error) {
-          console.error('Error fetching SBT metadata:', error)
-          _sbtMetadata.push({
-            tokenId: sbt.tokenId,
-            image: EMPTY_NFT_IMAGE,
-            name: '',
-            description: '',
-            daoId: sbt.daoId,
-          })
-        }
-      }
-      setSBTMetadata(_sbtMetadata)
-    }
-    fetchSBTMetadata()
-  }, [sbtData])
-
-  useEffect(() => {
-    const fetchNFTMetadata = async () => {
-      let _nftMetadata: Metadata[] = []
-      if (nftData.length === 0) return
-      for (const nft of nftData) {
-        try {
-          const _metadata = await fetchMetadata(
-            `${Env.PINATA_GATEWAY_URL}/ipfs/${nft.tokenURI}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
-          )
-          _nftMetadata.push({
-            tokenId: nft.tokenId,
-            image: `${Env.PINATA_GATEWAY_URL}/ipfs/${_metadata.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`,
-            name: _metadata.name,
-            description: _metadata.description,
-            daoId: nft.daoId,
-          })
-        } catch (error) {
-          console.error('Error fetching NFT metadata:', error)
-          _nftMetadata.push({
-            tokenId: nft.tokenId,
-            image: EMPTY_NFT_IMAGE,
-            name: '',
-            description: '',
-            daoId: nft.daoId,
-          })
-        }
-      }
-      setNFTMetadata(_nftMetadata)
-    }
-    fetchNFTMetadata()
-  }, [nftData])
+    fetchTokenData()
+  }, [address, refetchTokenData, supabase, chainId])
 
   const handleStake = async () => {
     if (stakingAmount === '' || stakingAmount === '0') {
@@ -684,10 +322,6 @@ export default function StakingPage({
     fetchDict()
   }, [locale])
 
-  useEffect(() => {
-    setTokenData([...sbtData, ...nftData])
-  }, [sbtData, nftData])
-
   const votingPower = useMemo(() => {
     return (
       totalSBTVotingPower +
@@ -712,6 +346,22 @@ export default function StakingPage({
     await refetchGetTokenVote()
   }
 
+  useEffect(() => {
+    const fetchSBTVotingPower = async () => {
+      let _SBTPower = 0
+      if (tokenData && tokenData.length > 0) {
+        for (let i = 0; i < tokenData.length; i++) {
+          if (tokenData[i]?.balance && tokenData[i]?.votingPower) {
+            _SBTPower +=
+              Number(tokenData[i]?.balance) * Number(tokenData[i]?.votingPower)
+          }
+        }
+      }
+
+      setTotalSBTVotingPower(_SBTPower)
+    }
+    fetchSBTVotingPower()
+  }, [tokenData])
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -918,68 +568,6 @@ export default function StakingPage({
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-6">
               {votingPowerDict.mySBTs ?? 'My Tokens'} ({tokenData.length})
             </h2>
-
-            {/* Mobile Card View */}
-            <div className="lg:hidden space-y-4">
-              {tokenData.map((balance, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      {votingPowerDict.id ?? 'ID'}
-                    </span>
-                    <span className="text-sm font-semibold text-gray-800 dark:text-white">
-                      {index + 1}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      {votingPowerDict.image ?? 'Image'}
-                    </span>
-                    <Image
-                      src={
-                        tokenData[index]?.isSBT
-                          ? sbtMetadata.find(
-                              (m) => m.tokenId == tokenData[index]?.tokenId
-                            )?.image || EMPTY_NFT_IMAGE
-                          : nftMetadata.find(
-                              (m) => m.tokenId == tokenData[index]?.tokenId
-                            )?.image || EMPTY_NFT_IMAGE
-                      }
-                      alt={`SBT #${index}`}
-                      className="rounded-lg object-cover"
-                      width={60}
-                      height={60}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      {votingPowerDict.amount ?? 'Amount'}
-                    </span>
-                    <span className="text-sm font-semibold text-gray-800 dark:text-white">
-                      {formatString(balance.toString())}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      {votingPowerDict.votingPower ?? 'Voting Power'}
-                    </span>
-                    <span className="text-sm font-semibold text-gray-800 dark:text-white">
-                      {sbtVotingPower?.[index]
-                        ? formatString(
-                            sbtVotingPower?.[index]?.toString() || '0'
-                          )
-                        : '0'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
 
             <SBTTableComponent headers={sbtTableHeaders} sbtInfo={tokenData} />
           </div>

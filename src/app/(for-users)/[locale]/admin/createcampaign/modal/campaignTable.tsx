@@ -7,10 +7,9 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import { CAMPAIGN, Metadata } from '~/i18n/types'
+import { CAMPAIGN } from '~/i18n/types'
 import { formatEther, parseEther } from 'ethers'
 import { timestampToDate } from '~/components/utils'
-import Image from 'next/image'
 import { Badge } from '~/components/ui/badge'
 const PCE_LOGO = '/pce_logo.jpg'
 
@@ -19,16 +18,14 @@ const EMPTY_NFT_IMAGE = '/images/empty-nft.svg'
 // Mobile Campaign Card Component
 const CampaignCard = ({
   campaign,
-  sbtMetadata,
-  nftMetadata,
+
   onCampaignClick,
   totalClaimed,
   index,
   campaignDict,
 }: {
   campaign: CAMPAIGN
-  sbtMetadata: Metadata[]
-  nftMetadata: Metadata[]
+
   onCampaignClick: (index: number) => void
   totalClaimed: { campaignId: number; totalClaimed: string }[]
   index: number
@@ -176,15 +173,11 @@ const CampaignCard = ({
 
 export const CampaignsTable = ({
   campaigns,
-  sbtMetadata,
-  nftMetadata,
   onCampaignClick,
   totalClaimed,
   campaign,
 }: {
   campaigns: CAMPAIGN[]
-  sbtMetadata: Metadata[]
-  nftMetadata: Metadata[]
   onCampaignClick: (index: number) => void
   totalClaimed: { campaignId: number; totalClaimed: string }[]
   campaign: any
@@ -206,8 +199,6 @@ export const CampaignsTable = ({
             <CampaignCard
               key={index}
               campaign={campaign}
-              sbtMetadata={sbtMetadata}
-              nftMetadata={nftMetadata}
               onCampaignClick={onCampaignClick}
               totalClaimed={totalClaimed}
               index={index}
@@ -283,7 +274,7 @@ export const CampaignsTable = ({
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex justify-center">
-                            <Image
+                            {/* <Image
                               src={
                                 campaign.tokenType == 1
                                   ? sbtMetadata?.find(
@@ -300,7 +291,7 @@ export const CampaignsTable = ({
                               alt={`NFT #${index}`}
                               width={128}
                               height={128}
-                            />
+                            /> */}
                           </div>
                         </TableCell>
                         <TableCell className="text-center">

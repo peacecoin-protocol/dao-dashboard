@@ -10,44 +10,25 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { CAMPAIGN } from '~/i18n/types'
-import { shortenAddress, timestampToDate } from '../utils'
+import { timestampToDate } from '../utils'
 import { formatEther } from 'ethers'
-import { Metadata } from '~/i18n/types'
 import Image from 'next/image'
-
-const EMPTY_NFT_IMAGE = '/images/empty-nft.svg'
-
-// export interface CampaignInfo {
-//   id: string
-//   image: string
-//   tokenId: string
-//   title: string
-//   description: string
-//   isValidateSignatures: boolean
-//   totalClaimAmount: string
-//   claimedAmount: string
-//   claimAmount: string
-//   totalClaimedAmount: string
-//   tokenType: string
-//   startTime: string
-//   endTime: string
-//   isEnded: boolean
-// }
+import { Env } from '~/env'
+import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
+import { shortenAddress } from '../utils'
 
 interface CampaignTableProps {
   headers: string[]
   campaignInfo: CAMPAIGN[]
   onCampaignClick?: (campaignId: string) => void
-  nftMetadata: Metadata[]
-  sbtMetadata: Metadata[]
+  searchTerm?: string
 }
 
 export function TableComponent({
   headers,
   campaignInfo,
   onCampaignClick,
-  nftMetadata,
-  sbtMetadata,
+  searchTerm,
 }: CampaignTableProps) {
   return (
     <div className="border rounded-xl">
@@ -62,9 +43,8 @@ export function TableComponent({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {campaignInfo.length > 0 &&
-            sbtMetadata &&
-            nftMetadata &&
+          {campaignInfo &&
+            campaignInfo.length > 0 &&
             campaignInfo.map((campaign, index) => (
               <TableRow
                 key={index}
@@ -79,27 +59,11 @@ export function TableComponent({
                   <div className="flex justify-center">
                     <Image
                       src={
-                        campaign.tokenType == 1
-                          ? sbtMetadata.find(
-                              (m) => m.tokenId == campaign.sbtId.toString()
-                            )?.image || EMPTY_NFT_IMAGE
-                          : campaign.tokenType == 2
-                            ? nftMetadata.find(
-                                (m) => m.tokenId == campaign.sbtId.toString()
-                              )?.image || EMPTY_NFT_IMAGE
-                            : EMPTY_NFT_IMAGE
+                        campaign.image
+                          ? `${Env.PINATA_GATEWAY_URL}/ipfs/${campaign.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
+                          : EMPTY_NFT_IMAGE
                       }
-                      alt={
-                        campaign.tokenType == 1
-                          ? sbtMetadata.find(
-                              (m) => m.tokenId == campaign.sbtId.toString()
-                            )?.name || ''
-                          : campaign.tokenType == 2
-                            ? nftMetadata.find(
-                                (m) => m.tokenId == campaign.sbtId.toString()
-                              )?.name || ''
-                            : ''
-                      }
+                      alt={campaign.title || ''}
                       width={128}
                       height={128}
                     />
@@ -116,7 +80,7 @@ export function TableComponent({
                 </TableCell>
                 <TableCell className="text-center">
                   {campaign.tokenType != 0
-                    ? (campaign.totalClaimed ?? '0')
+                    ? (campaign.claimedAmount ?? '0')
                     : formatEther(campaign.totalClaimed ?? '0')}{' '}
                   /{' '}
                   {campaign.tokenType != 0
@@ -138,17 +102,7 @@ export function TableComponent({
                 </TableCell>
                 <TableCell className="text-center">{campaign.sbtId}</TableCell>
                 <TableCell className="text-center">
-                  {shortenAddress(
-                    campaign.tokenType == 1
-                      ? sbtMetadata.find(
-                          (m) => m.tokenId == campaign.sbtId.toString()
-                        )?.daoId || ''
-                      : campaign.tokenType == 2
-                        ? nftMetadata.find(
-                            (m) => m.tokenId == campaign.sbtId.toString()
-                          )?.daoId || ''
-                        : ''
-                  )}
+                  {shortenAddress(campaign.daoId || '')}
                 </TableCell>
                 <TableCell className="text-center">
                   {timestampToDate(Number(campaign.startDate))}
