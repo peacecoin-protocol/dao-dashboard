@@ -260,6 +260,7 @@ export default function ForCampaignPage({
           .from('DAO')
           .select()
           .eq('creator', address as string)
+          .order('id', { ascending: true })
 
         setAllDAOs(data as SupabaseDao[])
         setLoading(false)
@@ -275,18 +276,26 @@ export default function ForCampaignPage({
   useEffect(() => {
     if (searchTerm.length > 0) {
       setFilteredCampaignData(
-        campaignData.filter((campaign) =>
-          campaign.daoId.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+        campaignData
+          .filter((campaign) =>
+            campaign.daoId.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+          .sort((a, b) => Number(a.campaignId) - Number(b.campaignId))
       )
     } else {
-      setFilteredCampaignData(campaignData)
+      setFilteredCampaignData(
+        campaignData.sort((a, b) => Number(a.campaignId) - Number(b.campaignId))
+      )
     }
   }, [campaignData, searchTerm])
 
   useEffect(() => {
     const fetchCampaignData = async () => {
-      const { data: campaignData } = await supabase.from('Campaign').select()
+      const { data: campaignData } = await supabase
+        .from('Campaign')
+        .select()
+        .order('campaignId', { ascending: true })
+
       if (campaignData && campaignData.length > 0) {
         const _tokenData = await Promise.all(
           campaignData.map(async (campaign, index) => {
@@ -533,6 +542,7 @@ export default function ForCampaignPage({
           .from('Campaign')
           .select()
           .eq('campaignId', campaignId)
+          .order('campaignId', { ascending: true })
 
         if (_campaignData && _campaignData.length > 0) {
           await supabase
@@ -567,6 +577,7 @@ export default function ForCampaignPage({
       config,
       refetchCampaignData,
       refetchTokenData,
+      supabase,
     ]
   )
 
@@ -599,13 +610,13 @@ export default function ForCampaignPage({
   )
 
   return (
-    <div className="w-full min-h-screen bg-background container">
+    <div className="min-h-screen bg-background">
       {loading && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
           <Spinner show={true} size="large" />
         </div>
       )}
-      <div className="mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <div className="container mx-auto space-y-6 px-4 py-4 sm:space-y-8 sm:py-6 lg:px-8">
         {/* Header Section */}
         <div className="space-y-3 sm:space-y-4">
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
@@ -674,32 +685,38 @@ export default function ForCampaignPage({
             <SBTTableComponent headers={sbtTableHeaders} sbtInfo={tokenData} />
           </div>
         )}
-      </div>
-      {/* Campaign search input */}
-      <div className="mb-4 flex justify-end">
-        <input
-          type="text"
-          placeholder={campaign.searchCampaign ?? 'Search campaigns by DAO ID'}
-          className="border rounded px-3 py-2 w-full max-w-xs focus:outline-none focus:ring"
-          value={searchTerm}
-          onChange={(e) => {
-            const value = e.target.value
-            setSearchTerm(value)
+        {/* Campaign search input */}
+        <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-muted/60 bg-background/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm font-medium text-muted-foreground">
+            {campaign.searchCampaignLabel ?? 'Filter campaigns by DAO ID'}
+          </div>
+          <Input
+            type="text"
+            placeholder={
+              campaign.searchCampaign ?? 'Search campaigns by DAO ID'
+            }
+            aria-label="Search campaigns by DAO ID"
+            className="w-full sm:max-w-xs"
+            value={searchTerm}
+            onChange={(e) => {
+              const value = e.target.value
+              setSearchTerm(value)
+            }}
+          />
+        </div>
+
+        <TableComponent
+          headers={campaignTableHeaders}
+          campaignInfo={filteredCampaignData}
+          onCampaignClick={(campaignId) => {
+            setDialogState((prev) => ({
+              ...prev,
+              isOpen: true,
+              campaignId: Number(campaignId),
+            }))
           }}
         />
       </div>
-      <TableComponent
-        headers={campaignTableHeaders}
-        campaignInfo={filteredCampaignData}
-        onCampaignClick={(campaignId) => {
-          setDialogState((prev) => ({
-            ...prev,
-            isOpen: true,
-            campaignId: Number(campaignId),
-          }))
-        }}
-        searchTerm={searchTerm}
-      />
       {/* Campaign Dialog */}
       <CampaignDialog
         isOpen={dialogState.isOpen}

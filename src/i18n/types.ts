@@ -109,5 +109,8 @@ export interface SupabaseDao {
 }
 
 export interface ActionInfo {
-  title: string
+  title: {
+    revoke: string
+    unrevoke: string
+  }
 }

@@ -5,10 +5,12 @@ export default function AddDynamicInputFields({
   inputs,
   setInputs,
   isVerifySignature,
+  dict,
 }: {
   inputs: { address: string; git: string }[]
   setInputs: (inputs: { address: string; git: string }[]) => void
   isVerifySignature: boolean
+  dict: any
 }) {
   const handleAddInput = () => {
     setInputs([...inputs, { address: '', git: '' }])
@@ -41,7 +43,7 @@ export default function AddDynamicInputFields({
               {!isVerifySignature && (
                 <Input
                   name="address"
-                  placeholder="Wallet Address"
+                  placeholder={dict.walletAddress ?? 'Wallet Address'}
                   type="text"
                   className="w-full"
                   value={item.address}
@@ -51,7 +53,7 @@ export default function AddDynamicInputFields({
               {isVerifySignature && (
                 <Input
                   name="git"
-                  placeholder="Gist Username"
+                  placeholder={dict.enterGithubGist ?? 'Gist Username'}
                   type="text"
                   className="w-full"
                   value={item.git}
@@ -65,7 +67,7 @@ export default function AddDynamicInputFields({
                 className="bg-red-500 hover:bg-red-600 text-white border-red-500 hover:border-red-600 rounded-md px-3 py-2 text-sm w-14"
                 onClick={() => handleDeleteInput(index)}
               >
-                Delete
+                {dict.delete}
               </Button>
             )}
           </div>
@@ -75,7 +77,7 @@ export default function AddDynamicInputFields({
               className="bg-green-500 hover:bg-green-600 text-white border-green-500 hover:border-green-600 rounded-md px-3 py-2 text-sm w-full sm:w-auto"
               onClick={() => handleAddInput()}
             >
-              Add Another
+              {dict.addAnother ?? 'Add Another'}
             </Button>
           )}
         </div>

@@ -1927,8 +1927,8 @@ export default function ForDaoDetailPage({
               </div>
             </div>
           </TabsContent>
-          <TabsContent value="holders">
-            <div className="flex flex-row mt-4 gap-4">
+          <TabsContent value="holders" className="w-full">
+            <div className="flex flex-col mt-4 gap-4">
               <div className="flex flex-col w-full gap-4">
                 <div className="flex flex-col md:flex-row w-full gap-4 items-center justify-between">
                   <div className="flex flex-col gap-4">
@@ -1938,10 +1938,12 @@ export default function ForDaoDetailPage({
                     </h1>
                   </div>
                 </div>
-                <div className="flex flex-row gap-4">
+
+                {/* Responsive buttons/input row */}
+                <div className="flex flex-col sm:flex-row gap-4 w-full">
                   <AmountInput
                     localDict={localDict}
-                    className="w-60 bg-dark_blue"
+                    className="w-full sm:w-60 bg-dark_blue"
                     setStakingAmount={setStakingAmount}
                     handleStake={handleStake}
                     maxAmount={
@@ -1951,14 +1953,14 @@ export default function ForDaoDetailPage({
                     }
                   />
                   <Button
-                    className="w-60 bg-dark_blue"
+                    className="w-full sm:w-60 bg-dark_blue"
                     onClick={handleWithdraw}
                   >
                     {localDict.withdraw ?? 'Withdraw'}
                   </Button>
 
                   <Button
-                    className="w-60 bg-dark_blue"
+                    className="w-full sm:w-60 bg-dark_blue"
                     onClick={async () => {
                       setIsDelegateDialogOpened(true)
                     }}
@@ -1966,7 +1968,8 @@ export default function ForDaoDetailPage({
                     {localDict.delegate ?? 'Delegate'}
                   </Button>
                 </div>
-                <div className="rounded-xl flex border mt-4 flex-row w-full gap-4">
+                {/* Responsive table container */}
+                <div className="rounded-xl flex border mt-4 w-full overflow-x-auto">
                   <Table className="w-full">
                     <TableHeader>
                       <TableRow>
@@ -1990,9 +1993,9 @@ export default function ForDaoDetailPage({
                       <TableRow>
                         <TableCell>
                           <div className="flex flex-row gap-2 items-center">
-                            <h1 className="text-md text-dark_blue font-bold">
+                            <h1 className="text-md text-dark_blue font-bold break-all">
                               {communityTokenAddress
-                                ? communityTokenAddress
+                                ? shortenAddress(communityTokenAddress, 4)
                                 : '-'}
                             </h1>
                           </div>
