@@ -77,7 +77,7 @@ export default function ForDelegatePage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
-      confirmations: 2,
+      confirmations: 1,
     })
 
   const { data: votes, refetch: refetchVotes } = useReadContract({

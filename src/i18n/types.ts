@@ -33,6 +33,8 @@ export interface CAMPAIGN {
   validateSignatures: boolean
   tokenType: number
   token: string
+  daoId: string
+  image: string
 }
 
 export interface BOUNTY_PROPOSAL {
@@ -84,14 +86,6 @@ export interface TOKEN {
   swapToLocalAllowance: number
 }
 
-export interface Metadata {
-  tokenId: string
-  image: string
-  name: string
-  description: string
-  daoId: string
-}
-
 export interface PIP {
   number: string
   title: string
@@ -102,6 +96,16 @@ export interface PIP {
   category: string
   type: string
   path: string
+}
+
+export interface SupabaseDao {
+  id: string
+  daoId: string
+  daoName: string
+  creator: string
+  image: string
+  created_at: string
+  updated_at: string
 }
 
 export interface ActionInfo {

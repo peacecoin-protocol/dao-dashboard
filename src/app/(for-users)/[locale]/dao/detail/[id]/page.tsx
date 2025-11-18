@@ -57,6 +57,13 @@ import {
 
 // import { AmountInput } from '~/components/custom/amount-input'
 
+// You cannot use `createClient` from '~/utils/supabase/server' or `cookies` from 'next/headers' on the client-side.
+// Instead, if you need to interact with Supabase on the client side, use the "supabase-js" client:
+
+import { createClient } from '~/utils/supabase/client'
+
+// Example usage (inside your component or hook):
+
 import { getDict } from '~/i18n/get-dict'
 
 import { Dictionary, Locale } from '~/i18n/types'
@@ -88,6 +95,11 @@ import { DAO_FACTORY_ABI } from '~/app/ABIs/DAOFactory'
 import { DialogTrigger } from '~/components/ui/dialog'
 import { AmountInput } from '~/components/custom/amount-input'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
+import {
+  addFilesToGroupPublic,
+  DAO_GROUP_ID,
+  getFilesFromGroup,
+} from '~/app/pinata/pinataAPI'
 
 type Dao = {
   id: string
@@ -163,6 +175,8 @@ export default function ForDaoDetailPage({
 
   const [treasuryBalances, setTreasuryBalances] = useState<TokenBalance[]>([])
 
+  const supabase = createClient()
+
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [croppedImage, setCroppedImage] = useState<string | null>(null)
   const [isImageLoading, setIsImageLoading] = useState(false)
@@ -231,8 +245,8 @@ export default function ForDaoDetailPage({
 
   const fetchImage = async (name: string) => {
     try {
-      const files = await pinata.files.public.list()
-      const pceFiles = files.files.filter((file) => file.name == name)
+      const files = await getFilesFromGroup(DAO_GROUP_ID)
+      const pceFiles = files.filter((file: any) => file.name == name)
 
       if (pceFiles.length > 0) {
         return pceFiles[0]
@@ -245,46 +259,28 @@ export default function ForDaoDetailPage({
   }
 
   useEffect(() => {
+    const fetchDAO = async () => {
+      if (!id) return
+
+      const { data: dao } = await supabase
+        .from('DAO')
+        .select()
+        .eq('daoId', id)
+        .single()
+
+      if (dao) {
+        setImageHash(dao.image)
+      }
+    }
+    fetchDAO()
+  }, [id, supabase])
+
+  useEffect(() => {
     const fullPath =
       typeof window !== 'undefined' ? window.location.pathname : ''
     const id = fullPath.split('/').pop()
     setId(id as string)
   }, [])
-
-  useEffect(() => {
-    const loadImage = async () => {
-      if (id && localDict && !imageLoadedRef.current) {
-        try {
-          imageLoadedRef.current = true
-          setIsImageLoading(true)
-          const _image = await fetchImage(id)
-
-          if (_image) {
-            setImageHash(_image?.cid as string)
-
-            toast({
-              title:
-                localDict.imageFetchedSuccessfully ??
-                'Image fetched successfully',
-            })
-          } else {
-            toast({
-              title: 'Failed to load image',
-            })
-          }
-        } catch (error) {
-          console.error('Error loading image:', error)
-          toast({
-            title: 'Failed to load image',
-          })
-        } finally {
-          setIsImageLoading(false)
-        }
-      }
-    }
-
-    loadImage()
-  }, [id, localDict])
 
   const DelegateDialog = ({
     isOpen,
@@ -394,7 +390,7 @@ export default function ForDaoDetailPage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
-      confirmations: 2,
+      confirmations: 1,
     })
 
   const { data: timelockAddress, refetch: refetchTimelockAddress } =
@@ -1059,26 +1055,22 @@ export default function ForDaoDetailPage({
         toast({
           title: localDict.updatingImage ?? 'Updating image...',
         })
-        const prevImages = await fetchImage(id)
-        if (prevImages) {
-          const res = await pinata.files.public.delete([prevImages.id])
-        }
 
         const response = await fetch(croppedImage as string)
         const blob = await response.blob()
         const _file = new File([blob], id || 'dao-image', {
           type: 'image/png',
         })
-        const upload = await pinata.upload.public.file(_file, {
-          metadata: {
-            name: Date.now().toString(),
-            keyvalues: {
-              timestamp: Date.now().toString(),
-            },
-          },
-        })
-        if (upload.cid) {
-          setImageHash(upload.cid)
+        const upload = await addFilesToGroupPublic(_file, DAO_GROUP_ID)
+
+        if (upload?.cid) {
+          setImageHash(upload?.cid)
+          const { data: dao } = await supabase
+            .from('DAO')
+            .update({
+              image: upload?.cid,
+            })
+            .eq('daoId', id)
 
           toast({
             title:

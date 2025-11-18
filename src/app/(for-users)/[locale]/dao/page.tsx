@@ -12,15 +12,13 @@ import {
   type BaseError,
 } from 'wagmi'
 
-import { readContract, waitForTransactionReceipt } from '@wagmi/core'
+import { simulateContract, waitForTransactionReceipt } from '@wagmi/core'
+import { SupabaseDao } from '~/i18n/types'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 import { ringStyle } from '~/app/constants/styles'
 
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
-import {
-  DAO_STUDIO_SUBGRAPH_URL,
-  daoStudioAddress,
-} from '~/app/constants/constants'
+import { daoStudioAddress } from '~/app/constants/constants'
 
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { Input } from '~/components/ui/input'
@@ -31,8 +29,6 @@ import {
   DropdownMenuItem,
 } from '~/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogTitle } from '~/components/ui/dialog'
-
-import { ApolloClient, gql, HttpLink, InMemoryCache } from '@apollo/client'
 
 import { useRouter } from 'next/navigation'
 
@@ -80,16 +76,6 @@ async function getHolders(chainId: number, tokenAddress: string) {
   return countHolders
 }
 
-type Dao = {
-  id: string
-  daoId: string
-  daoName: string
-  creator: string
-  imageHash: string
-  identicon: string
-  blockTimestamp: string
-}
-
 type DaoMetadata = {
   description: string
   website: string
@@ -114,14 +100,13 @@ import RingLoader from 'react-spinners/RingLoader'
 import { config } from '~/lib/config'
 import { sepolia } from 'wagmi/chains'
 import { defaultChainId } from '~/app/constants/constants'
-import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
-import { pinata } from '~/lib/config'
-import { DAO_FACTORY_ABI } from '~/app/ABIs/DAOFactory'
-import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
-import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 import { shortenAddress } from '~/components/utils'
 import { CopyIcon } from 'lucide-react'
 import { useHasDaoManagerRole } from '~/hooks/use-has-role'
+
+import { createClient } from '~/utils/supabase/client'
+
+const supabase = createClient()
 
 const DaoCard = ({
   dao,
@@ -130,12 +115,21 @@ const DaoCard = ({
   chainId,
   localeDict,
 }: {
-  dao: Dao
+  dao: SupabaseDao
   locale: string
   localeDict: any
   router: any
   chainId: number
 }) => {
+  const [identicon, setIdenticon] = useState<string>('')
+  useEffect(() => {
+    const generateIdenticon = async () => {
+      const identicon = await generateIdenteapot(dao.daoId)
+      setIdenticon(identicon)
+    }
+    generateIdenticon()
+  }, [dao.daoId])
+
   const { toast } = useToast()
 
   const showConnectWalletAlert = () => {
@@ -157,21 +151,16 @@ const DaoCard = ({
       <div className="flex flex-row w-full items-center ">
         <div className="flex flex-row gap-4 md:gap-8 items-center border-none mx-8 md:mx-4">
           <div className="w-24 min-w-24 h-24">
-            {dao.imageHash ? (
+            {dao.image && dao.image.length > 0 ? (
               <Image
-                src={`${Env.PINATA_GATEWAY_URL}/ipfs/${dao.imageHash}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`}
+                src={`${Env.PINATA_GATEWAY_URL}/ipfs/${dao.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`}
                 alt="DAO Image"
                 width={96}
                 height={96}
                 priority
               />
             ) : (
-              <Image
-                src={dao.identicon}
-                alt="DAO Image"
-                width={96}
-                height={96}
-              />
+              <img src={identicon} alt="DAO Icon" width={96} height={96} />
             )}
           </div>
 
@@ -247,21 +236,24 @@ export default function ForDAOPage({
   const { data: hash, error, writeContractAsync } = useWriteContract()
 
   const { hasRole, refetchHasRole } = useHasDaoManagerRole()
+
   const [dict, setDict] = useState<Dictionary | null>(null)
   const localeDict = dict?.studio ?? {}
 
-  const [daos, setDaos] = useState<any[]>([])
-
   const { address, chainId } = useAccount()
 
+  const [daos, setDaos] = useState<SupabaseDao[]>([])
   const [refetchDaos, setRefetchDaos] = useState(false)
 
-  const client = new ApolloClient({
-    cache: new InMemoryCache(),
-    link: new HttpLink({
-      uri: DAO_STUDIO_SUBGRAPH_URL[chainId || defaultChainId] as string,
-    }),
-  })
+  useEffect(() => {
+    const fetchDAO = async () => {
+      const { data: dao } = await supabase.from('DAO').select()
+
+      setDaos(dao as SupabaseDao[])
+      setLoading(false)
+    }
+    fetchDAO()
+  }, [supabase, refetchDaos])
 
   const showConnectWalletAlert = () => {
     toast({ title: 'Please connect wallet' })
@@ -270,7 +262,7 @@ export default function ForDAOPage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
-      confirmations: 2,
+      confirmations: 1,
     })
 
   const { chains, switchChain } = useSwitchChain()
@@ -313,6 +305,23 @@ export default function ForDAOPage({
   const handleCreateDao = async () => {
     setIsDialogOpened(false)
 
+    const { result: daoId } = await simulateContract(config, {
+      abi: DAO_STUDIO_ABI,
+      address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
+      functionName: 'createDAO',
+      args: [
+        daoForm.name,
+        daoForm.metadata,
+        daoForm.tokenAddress,
+        daoForm.votingDelay,
+        daoForm.votingPeriod,
+        parseEther(daoForm.proposalThreshold),
+        daoForm.timelockDelay,
+        parseEther(daoForm.quorumVotes),
+      ],
+      gas: BigInt(1000000),
+    })
+
     const tx = await writeContractAsync({
       abi: DAO_STUDIO_ABI,
       address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
@@ -332,11 +341,20 @@ export default function ForDAOPage({
 
     await waitForTransactionReceipt(config, {
       hash: tx,
-      confirmations: 2,
+      confirmations: 1,
     })
 
-    setRefetchDaos(!refetchDaos)
+    await supabase.from('DAO').insert({
+      daoId: daoId,
+      daoName: daoForm.name,
+      creator: address,
+      image: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+
     refetchHasRole()
+    setRefetchDaos(!refetchDaos)
   }
 
   const updateDaoForm = (field: keyof DaoFormState, value: string) => {
@@ -371,118 +389,6 @@ export default function ForDAOPage({
     }
     fetchDict()
   }, [locale])
-
-  const fetchImage = async (name: string) => {
-    try {
-      const files = await pinata.files.public.list()
-      const pceFiles = files.files.filter((file) => file.name == name)
-
-      if (pceFiles.length > 0) {
-        return pceFiles[0]?.cid as string
-      }
-      return ''
-    } catch (error) {
-      console.error('Error fetching image from Pinata:', error)
-      return ''
-    }
-  }
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (address == undefined || address == null) return
-
-        setLoading(true)
-
-        const { data } = await client.query({
-          query: gql`
-            query totalDaos {
-              daocreateds(
-                first: 100
-                orderBy: timestamp_
-                orderDirection: desc
-              ) {
-                id
-                daoId
-                daoName
-                creator
-                timestamp_
-              }
-            }
-          `,
-        })
-
-        let updatedDaos = []
-        for (let i = 0; i < data.daocreateds.length; i++) {
-          const dao = data.daocreateds[i]
-          try {
-            let votes = 0
-            let holders = 0
-
-            try {
-              const timelock = await readContract(config, {
-                address: daoStudioAddress[
-                  chainId || defaultChainId
-                ] as `0x${string}`,
-                abi: DAO_FACTORY_ABI,
-                functionName: 'timelock',
-                args: [dao.daoId],
-              })
-
-              const admin = await readContract(config, {
-                address: timelock as `0x${string}`,
-                abi: TIMELOCK_ABI,
-                functionName: 'admin',
-                args: [],
-              })
-
-              const token = await readContract(config, {
-                address: admin as `0x${string}`,
-                abi: GOVERNOR_ABI,
-                functionName: 'token',
-                args: [],
-              })
-
-              votes = (await readContract(config, {
-                address: token as `0x${string}`,
-                abi: PCE_C_GOV_TOKEN_ABI,
-                functionName: 'getVotes',
-                args: [address],
-              })) as unknown as number
-
-              holders = await getHolders(
-                chainId == undefined ? defaultChainId : chainId,
-                dao.governanceToken as string
-              )
-            } catch (error) {
-              console.error('Error fetching votes:', error)
-            }
-            const identicon = await generateIdenteapot(dao.daoId, '')
-            const imageHash = await fetchImage(dao.daoId)
-
-            updatedDaos.push({
-              ...dao,
-              votes,
-              identicon,
-              holders: holders,
-              imageHash,
-            })
-          } catch (error) {
-            const identicon = await generateIdenteapot(dao.governor, '')
-            updatedDaos.push({ ...dao, votes: 0, identicon, imageHash: '' })
-          }
-        }
-
-        setDaos(updatedDaos)
-        setLoading(false)
-      } catch (error) {
-        console.error('Error fetching data', error)
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [refetchDaos, address])
 
   return (
     <div className="items-center justify-center flex flex-col mx-10 md:mx-20 gap-4">
@@ -650,7 +556,7 @@ export default function ForDAOPage({
           >
             {daos
               .filter((dao) =>
-                dao.daoName.toLowerCase().includes(search.toLowerCase())
+                dao.daoName?.toLowerCase().includes(search.toLowerCase())
               )
               .map((dao) => (
                 <DaoCard
