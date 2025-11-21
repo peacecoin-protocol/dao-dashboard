@@ -405,8 +405,8 @@ export default function ForBountyPage({
   const proposal = dict?.proposal ?? {}
 
   return (
-    <div className="w-full">
-      <div className="flex flex-col gap-4 mx-8">
+    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+      <div className="w-[95%] mx-auto flex flex-col gap-4">
         <h2 className="text-2xl font-bold tracking-tight mt-6">
           {bounty.title ?? ''}
         </h2>
@@ -570,35 +570,78 @@ export default function ForBountyPage({
                 </Button>
               </div>
               <div className="rounded-xl border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead> {bounty.contributor ?? ''}</TableHead>
-                      <TableHead> {bounty.totalAmount ?? ''}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contributorData &&
-                      contributorData.map(
-                        (contributor: BOUNTY_CONTRIBUTOR, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{contributor.contributor}</TableCell>
-                            <TableCell>
-                              {formatEther(contributor.amount)}
-                            </TableCell>
-                          </TableRow>
-                        )
-                      )}
-                  </TableBody>{' '}
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell colSpan={1}>{bounty.total ?? ''}</TableCell>
-                      <TableCell>
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead> {bounty.contributor ?? ''}</TableHead>
+                        <TableHead> {bounty.totalAmount ?? ''}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {contributorData &&
+                        contributorData.map(
+                          (contributor: BOUNTY_CONTRIBUTOR, index) => (
+                            <TableRow key={index}>
+                              <TableCell>{contributor.contributor}</TableCell>
+                              <TableCell>
+                                {formatEther(contributor.amount)}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        )}
+                    </TableBody>{' '}
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={1}>{bounty.total ?? ''}</TableCell>
+                        <TableCell>
+                          {contributorData ? contributorData.length : '0'}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </div>
+
+                <div className="md:hidden space-y-3 p-4">
+                  {contributorData && contributorData.length > 0 ? (
+                    contributorData.map(
+                      (contributor: BOUNTY_CONTRIBUTOR, index) => (
+                        <div
+                          key={`contributor-card-${index}`}
+                          className="rounded-lg border p-4 shadow-sm space-y-2"
+                        >
+                          <div className="text-xs text-muted-foreground">
+                            {bounty.contributor ?? 'Contributor'}
+                          </div>
+                          <div className="text-base font-semibold break-all">
+                            {contributor.contributor}
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">
+                              {bounty.totalAmount ?? 'Total Amount'}:{' '}
+                            </span>
+                            <span className="font-semibold">
+                              {formatEther(contributor.amount)} PCE
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    )
+                  ) : (
+                    <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+                      {bounty.noContributor ?? 'No contributors yet'}
+                    </div>
+                  )}
+
+                  <div className="rounded-lg border p-3 text-sm font-medium">
+                    <div className="flex items-center justify-between">
+                      <span>{bounty.total ?? 'Total'}</span>
+                      <span>
                         {contributorData ? contributorData.length : '0'}
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
-                </Table>
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </TabsContent>
@@ -647,35 +690,78 @@ export default function ForBountyPage({
               </div>
 
               <div className="rounded-xl border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{bounty.proposalID ?? ''}</TableHead>
-                      <TableHead>{bounty.totalAmount ?? ''}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {proposalBountyData &&
-                      proposalBountyData.map(
-                        (proposal: BOUNTY_PROPOSAL, index: number) => (
-                          <TableRow key={index}>
-                            <TableCell>{proposal.proposalId}</TableCell>
-                            <TableCell>
-                              {formatString(formatEther(proposal.amount))}
-                            </TableCell>
-                          </TableRow>
-                        )
-                      )}
-                  </TableBody>{' '}
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell colSpan={1}>{proposal.total ?? ''}</TableCell>
-                      <TableCell>
-                        {proposalData ? proposalData.length : '0'}
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
-                </Table>
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{bounty.proposalID ?? ''}</TableHead>
+                        <TableHead>{bounty.totalAmount ?? ''}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {proposalBountyData &&
+                        proposalBountyData.map(
+                          (proposal: BOUNTY_PROPOSAL, index: number) => (
+                            <TableRow key={index}>
+                              <TableCell>{proposal.proposalId}</TableCell>
+                              <TableCell>
+                                {formatString(formatEther(proposal.amount))}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        )}
+                    </TableBody>{' '}
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={1}>
+                          {proposal.total ?? ''}
+                        </TableCell>
+                        <TableCell>
+                          {proposalData ? proposalData.length : '0'}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </div>
+
+                <div className="md:hidden space-y-3 p-4">
+                  {proposalBountyData && proposalBountyData.length > 0 ? (
+                    proposalBountyData.map(
+                      (proposal: BOUNTY_PROPOSAL, index: number) => (
+                        <div
+                          key={`proposal-card-${index}`}
+                          className="rounded-lg border p-4 shadow-sm space-y-2"
+                        >
+                          <div className="text-xs text-muted-foreground">
+                            {bounty.proposalID ?? 'Proposal ID'}
+                          </div>
+                          <div className="text-base font-semibold">
+                            {proposal.proposalId}
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">
+                              {bounty.totalAmount ?? 'Total Amount'}:{' '}
+                            </span>
+                            <span className="font-semibold">
+                              {formatString(formatEther(proposal.amount))} PCE
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    )
+                  ) : (
+                    <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+                      {proposal.noProposal ?? 'No proposal bounties yet'}
+                    </div>
+                  )}
+
+                  <div className="rounded-lg border p-3 text-sm font-medium">
+                    <div className="flex items-center justify-between">
+                      <span>{proposal.total ?? 'Total'}</span>
+                      <span>{proposalData ? proposalData.length : '0'}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </TabsContent>

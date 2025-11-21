@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Modal from '~/components/custom/Modal'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
@@ -14,12 +14,14 @@ export const AddWhitelistModal = ({
   onSubmit,
   campaignData,
   campaign,
+  initialCampaignId,
 }: {
   isOpen: boolean
   onClose: () => void
   onSubmit: (formData: any) => void
   campaignData: CAMPAIGN[]
   campaign: any
+  initialCampaignId?: number | string
 }) => {
   const { toast } = useToast()
   const [form, setForm] = useState({
@@ -27,6 +29,28 @@ export const AddWhitelistModal = ({
     data: [{ address: '', git: '' }],
   })
   const [isVerifySignature, setIsVerifySignature] = useState(false)
+
+  // Auto-fill campaign ID when modal opens with initialCampaignId
+  useEffect(() => {
+    if (isOpen && initialCampaignId !== undefined) {
+      const campaignIdStr = String(initialCampaignId)
+      setForm((prev) => ({ ...prev, id: campaignIdStr }))
+
+      const campaign = campaignData.find(
+        (campaign) => campaign.campaignId == Number(initialCampaignId)
+      )
+      if (campaign) {
+        setIsVerifySignature(campaign.validateSignatures)
+      }
+    } else if (!isOpen) {
+      // Reset form when modal closes
+      setForm({
+        id: '',
+        data: [{ address: '', git: '' }],
+      })
+      setIsVerifySignature(false)
+    }
+  }, [isOpen, initialCampaignId, campaignData])
 
   // web3 keccak value
   // Example: encode all gists as keccak256 hashes
@@ -97,8 +121,9 @@ export const AddWhitelistModal = ({
               name="id"
               placeholder={campaign.enterCampaignId ?? 'Enter campaign ID'}
               value={form.id}
-              onChange={handleChange}
+              onChange={undefined}
               className="w-full"
+              disabled
             />
           </div>
 

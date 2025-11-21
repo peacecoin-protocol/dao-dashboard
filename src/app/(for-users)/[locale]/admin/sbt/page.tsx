@@ -804,16 +804,18 @@ export default function SBTBuilderPage({
   )
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-20 gap-6">
+    <div className="flex flex-col min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       {loading && <LoadingOverlay />}
 
-      <div className="w-full max-w-6xl flex flex-col gap-6">
+      <div className="w-[95%] mx-auto flex flex-col gap-6">
         <PageHeader title={currentLabels.sbtList} />
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <CreateButton
-            onClick={handleCreateModalOpen}
-            label={currentLabels.createCard}
-          />
+          <div className="self-start">
+            <CreateButton
+              onClick={handleCreateModalOpen}
+              label={currentLabels.createCard}
+            />
+          </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap md:justify-end md:items-center w-full md:w-auto">
             <div className="w-full sm:w-auto">
               <FilterDropdown

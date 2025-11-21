@@ -111,155 +111,160 @@ export default function ForSubmitPage({
   const submit = dict?.submit ?? {}
 
   return (
-    <div className="flex flex-row w-full items-center justify-center content-center">
-      <div className="flex flex-col w-full items-center justify-center max-xl:mx-10 mx-80 my-20 max-xl:my-0">
-        <h2 className="text-2xl font-bold tracking-tight my-4">
-          {submit.title ?? ''}
-        </h2>
-        <Select onValueChange={(value) => handleSelect(value)}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={submit.select ?? ''} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">{submit.category1 ?? ''}</SelectItem>
-            <SelectItem value="2">{submit.category2 ?? ''}</SelectItem>
-            <SelectItem value="3">{submit.category3 ?? ''}</SelectItem>
-            <SelectItem value="4">{submit.category4 ?? ''}</SelectItem>
-            <SelectItem value="5">{submit.category5 ?? ''}</SelectItem>
-            <SelectItem value="6">{submit.category6 ?? ''}</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+      <div className="w-[95%] mx-auto flex flex-row w-full items-center justify-center content-center">
+        <div className="flex flex-col w-full items-center justify-center">
+          <h2 className="text-2xl font-bold tracking-tight my-4">
+            {submit.title ?? ''}
+          </h2>
+          <Select onValueChange={(value) => handleSelect(value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={submit.select ?? ''} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">{submit.category1 ?? ''}</SelectItem>
+              <SelectItem value="2">{submit.category2 ?? ''}</SelectItem>
+              <SelectItem value="3">{submit.category3 ?? ''}</SelectItem>
+              <SelectItem value="4">{submit.category4 ?? ''}</SelectItem>
+              <SelectItem value="5">{submit.category5 ?? ''}</SelectItem>
+              <SelectItem value="6">{submit.category6 ?? ''}</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <div className="w-full">
-          <Input
-            className={`mt-5 ${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
-            type="number"
-            min="0"
-            step="0.1"
-            placeholder={submit.amount ?? ''}
-            name="values"
-            onChange={handleChange}
-          />
+          <div className="w-full">
+            <Input
+              className={`mt-5 ${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+              type="number"
+              min="0"
+              step="0.1"
+              placeholder={submit.amount ?? ''}
+              name="values"
+              onChange={handleChange}
+            />
 
-          <Input
-            className={`mt-5 ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
-            type="number"
-            min="0"
-            step="0.1"
-            placeholder={
-              category === '5' ? submit.gracePeriod : submit.quorum_votes
-            }
-            name="variable1"
-            onChange={handleChange}
-          />
-
-          <Input
-            className={`mt-5 ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
-            type="number"
-            min="0"
-            step="0.1"
-            placeholder={
-              category === '5' ? submit.min_delay : submit.proposal_threshold
-            }
-            name="variable2"
-            onChange={handleChange}
-          />
-
-          <Input
-            className={`mt-5 ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
-            type="number"
-            min="0"
-            step="0.1"
-            placeholder={
-              category === '5'
-                ? submit.max_delay
-                : submit.proposal_maxOperations
-            }
-            name="variable3"
-            onChange={handleChange}
-          />
-
-          <Textarea
-            className="mt-5 max-md:h-60 h-60 w-full align-center p-2 rounded-md border-[1px] border-gray94 focus:outline-none"
-            placeholder={submit.description ?? ''}
-            value={description}
-            name="description"
-            onChange={handleChange}
-          />
-
-          <Textarea
-            className={`mt-5 max-md:h-60 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94 focus:outline-none ${category != '4' ? 'hidden' : ''}`}
-            placeholder={submit.bytescode ?? ''}
-            name="byescode"
-            onChange={handleChange}
-          />
-
-          <Button
-            className="mt-5 w-full"
-            variant="outline"
-            onClick={() => {
-              if (category.length == 0) {
-                toast({ title: 'Please Select Category' })
-                return
+            <Input
+              className={`mt-5 ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+              type="number"
+              min="0"
+              step="0.1"
+              placeholder={
+                category === '5' ? submit.gracePeriod : submit.quorum_votes
               }
+              name="variable1"
+              onChange={handleChange}
+            />
 
-              let _signature = 'approve(address,uint256)'
-              let _value = '0'
-              let _calldata = ''
-              let _address = pceAddress[chainId || defaultChainId]
-              if (category === '2') {
-                _calldata = new ethers.AbiCoder().encode(
-                  ['address', 'uint256'],
-                  [address, values]
-                )
-                _signature = 'transfer(address,uint256)'
-              } else if (category === '4') {
-                _signature = 'deploy(bytes)'
-                _calldata = new ethers.AbiCoder().encode(['bytes'], [bytescode])
-                _address = daoStudioAddress[chainId || defaultChainId]
-              } else if (category === '5') {
-                _address = timelockAddress[chainId || defaultChainId]
-                _signature = 'updateVariables(uint256,uint256,uint256)'
-                _calldata = new ethers.AbiCoder().encode(
-                  ['uint256', 'uint256', 'uint256'],
-                  [variable1, variable2, variable3]
-                )
-              } else if (category === '6') {
-                _address = governorAddress[chainId || defaultChainId]
-                _signature = 'updateVariables(uint256,uint256,uint256)'
-                _calldata = new ethers.AbiCoder().encode(
-                  ['uint256', 'uint256', 'uint256'],
-                  [
-                    parseEther(variable1),
-                    parseEther(variable2),
-                    parseEther(variable3),
-                  ]
-                )
-              } else {
-                _calldata = new ethers.AbiCoder().encode(
-                  ['address', 'uint256'],
-                  [address, values]
-                )
+            <Input
+              className={`mt-5 ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+              type="number"
+              min="0"
+              step="0.1"
+              placeholder={
+                category === '5' ? submit.min_delay : submit.proposal_threshold
               }
+              name="variable2"
+              onChange={handleChange}
+            />
 
-              writeContract({
-                abi: GOVERNOR_ABI,
-                address: governorAddress[
-                  chainId || defaultChainId
-                ] as `0x${string}`,
-                functionName: 'propose',
-                args: [
-                  [_address],
-                  [_value],
-                  [_signature],
-                  [_calldata],
-                  description,
-                ],
-              })
-            }}
-          >
-            {submit.propose ?? ''}
-          </Button>
+            <Input
+              className={`mt-5 ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+              type="number"
+              min="0"
+              step="0.1"
+              placeholder={
+                category === '5'
+                  ? submit.max_delay
+                  : submit.proposal_maxOperations
+              }
+              name="variable3"
+              onChange={handleChange}
+            />
+
+            <Textarea
+              className="mt-5 max-md:h-60 h-60 w-full align-center p-2 rounded-md border-[1px] border-gray94 focus:outline-none"
+              placeholder={submit.description ?? ''}
+              value={description}
+              name="description"
+              onChange={handleChange}
+            />
+
+            <Textarea
+              className={`mt-5 max-md:h-60 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94 focus:outline-none ${category != '4' ? 'hidden' : ''}`}
+              placeholder={submit.bytescode ?? ''}
+              name="byescode"
+              onChange={handleChange}
+            />
+
+            <Button
+              className="mt-5 w-full"
+              variant="outline"
+              onClick={() => {
+                if (category.length == 0) {
+                  toast({ title: 'Please Select Category' })
+                  return
+                }
+
+                let _signature = 'approve(address,uint256)'
+                let _value = '0'
+                let _calldata = ''
+                let _address = pceAddress[chainId || defaultChainId]
+                if (category === '2') {
+                  _calldata = new ethers.AbiCoder().encode(
+                    ['address', 'uint256'],
+                    [address, values]
+                  )
+                  _signature = 'transfer(address,uint256)'
+                } else if (category === '4') {
+                  _signature = 'deploy(bytes)'
+                  _calldata = new ethers.AbiCoder().encode(
+                    ['bytes'],
+                    [bytescode]
+                  )
+                  _address = daoStudioAddress[chainId || defaultChainId]
+                } else if (category === '5') {
+                  _address = timelockAddress[chainId || defaultChainId]
+                  _signature = 'updateVariables(uint256,uint256,uint256)'
+                  _calldata = new ethers.AbiCoder().encode(
+                    ['uint256', 'uint256', 'uint256'],
+                    [variable1, variable2, variable3]
+                  )
+                } else if (category === '6') {
+                  _address = governorAddress[chainId || defaultChainId]
+                  _signature = 'updateVariables(uint256,uint256,uint256)'
+                  _calldata = new ethers.AbiCoder().encode(
+                    ['uint256', 'uint256', 'uint256'],
+                    [
+                      parseEther(variable1),
+                      parseEther(variable2),
+                      parseEther(variable3),
+                    ]
+                  )
+                } else {
+                  _calldata = new ethers.AbiCoder().encode(
+                    ['address', 'uint256'],
+                    [address, values]
+                  )
+                }
+
+                writeContract({
+                  abi: GOVERNOR_ABI,
+                  address: governorAddress[
+                    chainId || defaultChainId
+                  ] as `0x${string}`,
+                  functionName: 'propose',
+                  args: [
+                    [_address],
+                    [_value],
+                    [_signature],
+                    [_calldata],
+                    description,
+                  ],
+                })
+              }}
+            >
+              {submit.propose ?? ''}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

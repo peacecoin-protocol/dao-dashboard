@@ -35,8 +35,8 @@ export default function ForPendingPage({
   }, [locale])
 
   return (
-    <div className="w-full gap-4 flex flex-col">
-      <div className="gap-4 flex flex-col m-8">
+    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8 gap-4 flex flex-col">
+      <div className="w-[95%] mx-auto gap-4 flex flex-col">
         <h2 className="text-4xl font-bold tracking-tight mt-6 text-center">
           {'PEACE COIN IMPROVEMENT PROPOSAL'}
         </h2>

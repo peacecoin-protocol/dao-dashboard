@@ -157,8 +157,8 @@ export default function ForUsersIndexPage({
   const proposal = dict?.proposal ?? {}
   return (
     <>
-      <div className="w-full">
-        <div className="m-8 gap-4 flex flex-col">
+      <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+        <div className="w-[95%] mx-auto gap-4 flex flex-col">
           <h2 className="text-2xl font-bold tracking-tight mt-6">
             {navigation.dashboard ?? ''}
           </h2>
@@ -256,7 +256,7 @@ export default function ForUsersIndexPage({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="border rounded-xl">
+                <div className="border rounded-xl hidden md:block">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -294,6 +294,65 @@ export default function ForUsersIndexPage({
                       </TableRow>
                     </TableFooter>
                   </Table>
+                </div>
+
+                <div className="space-y-3 md:hidden">
+                  {proposals && proposals.length > 0 ? (
+                    proposals.map((proposal, index) => (
+                      <div
+                        key={`proposal-card-${proposal[0]}`}
+                        className="rounded-xl border p-4 shadow-sm space-y-3"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                            {dict?.proposal?.proposalId ?? 'Proposal ID'}
+                          </span>
+                          <span className="font-semibold">
+                            {formatString(proposal[0])}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">
+                              {dict?.proposal?.forVote ?? 'For Votes'}
+                            </p>
+                            <p className="font-semibold">
+                              {formatString(formatEther(proposal[5]))}
+                            </p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">
+                              {dict?.proposal?.againstVote ?? 'Against Votes'}
+                            </p>
+                            <p className="font-semibold">
+                              {formatString(formatEther(proposal[6]))}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
+                          <span className="text-muted-foreground">
+                            {dict?.proposal?.status ?? 'Status'}
+                          </span>
+                          <span className="font-semibold">
+                            {proposalStatus[index]}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
+                      {dict?.proposal?.noProposals ?? 'No proposals available'}
+                    </div>
+                  )}
+
+                  <div className="rounded-xl border p-4 text-sm font-medium">
+                    <div className="flex items-center justify-between">
+                      <span>{proposal.total ?? 'Total'}</span>
+                      <span>{proposals.length}</span>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

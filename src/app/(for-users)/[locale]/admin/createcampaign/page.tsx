@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
-import { ethers, formatEther, parseEther, ZeroAddress } from 'ethers'
+import { useEffect, useState } from 'react'
+import { ethers, parseEther, ZeroAddress } from 'ethers'
 import { useToast } from '~/hooks/use-toast'
 
 import {
@@ -15,18 +15,7 @@ import {
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { CAMPAIGN } from '~/i18n/types'
 
-import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '~/components/ui/dialog'
-import { timestampToDate } from '~/components/utils'
-
 import {
   campaignAddress,
   defaultChainId,
@@ -55,137 +44,6 @@ interface DialogState {
   isCreateOpen: boolean
   isAddWinnersOpen: boolean
   campaignId: number
-}
-
-interface CampaignStatus {
-  isWinner: boolean
-  isClaimed: boolean
-  status: number
-}
-
-interface TotalClaimed {
-  campaignId: number
-  totalClaimed: string
-}
-
-// Components
-
-const CampaignDialog = ({
-  isOpen,
-  onOpenChange,
-  campaign,
-  status,
-  onClaim,
-  isConnected,
-  campaignDict,
-}: {
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
-  campaign: CAMPAIGN | undefined
-  status: CampaignStatus
-  onClaim: (gistUrl: string) => void
-  isConnected: boolean
-  campaignDict: any
-}) => {
-  const [gistUrl, setGistUrl] = useState('')
-
-  const isActive = useMemo(() => {
-    if (!campaign) return false
-    const now = new Date()
-    const endDate = new Date(Number(campaign.endDate) * 1000)
-    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000)
-    return oneHourFromNow <= endDate
-  }, [campaign])
-
-  const handleClaim = () => {
-    onClaim(gistUrl)
-    setGistUrl('')
-  }
-
-  if (!campaign) return null
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-md sm:max-w-lg md:max-w-xl mx-auto p-4 sm:p-6 gap-4">
-        <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl md:text-2xl font-bold my-2 sm:my-4 break-words">
-            {campaign.title}
-          </DialogTitle>
-          <DialogDescription className="text-sm sm:text-base break-words">
-            {campaign.description}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col gap-3 sm:gap-4 text-muted-foreground text-sm sm:text-base">
-          <p className="break-words">
-            <span className="font-semibold">
-              {campaignDict.reward ?? 'Reward'}:
-            </span>{' '}
-            {campaign.tokenType == 1
-              ? `${campaign.totalAmount} Contributor SBTs`
-              : campaign.tokenType == 2
-                ? `${campaign.totalAmount} Contributor NFTs`
-                : `${formatEther(campaign.totalAmount ?? '0')} ${campaignDict.pce ?? 'PCE'}`}
-          </p>
-          {isActive && (
-            <>
-              <p className="break-words">
-                <span className="font-semibold">
-                  {campaignDict.startTime ?? 'Start Time'}:
-                </span>
-                {timestampToDate(parseInt(campaign.startDate ?? '0'))}
-              </p>
-              <p className="break-words">
-                <span className="font-semibold">
-                  {campaignDict.endTime ?? 'End Time'}:
-                </span>
-                {timestampToDate(parseInt(campaign.endDate ?? '0'))}
-              </p>
-            </>
-          )}
-          {!campaign.validateSignatures && (
-            <p className="break-words">
-              {status.isWinner
-                ? (campaignDict.youAreWhitelisted ??
-                  'You are whitelisted as a winner')
-                : (campaignDict.youAreNotWhitelisted ??
-                  'You are not whitelisted as a winner')}
-            </p>
-          )}
-          {status.isClaimed && (
-            <p>
-              {campaignDict.alreadyClaimed ??
-                'You have already claimed this campaign'}
-            </p>
-          )}
-          {campaign.validateSignatures &&
-            !status.isClaimed &&
-            status.status != 2 && (
-              <Input
-                type="text"
-                placeholder={
-                  campaignDict.enterGithubGist ?? 'Enter Github Gist URL'
-                }
-                value={gistUrl}
-                onChange={(e) => setGistUrl(e.target.value)}
-                className="w-full"
-              />
-            )}
-          <Button
-            onClick={handleClaim}
-            disabled={
-              status.isClaimed ||
-              status.status == 2 ||
-              (!status.isWinner && !campaign.validateSignatures) ||
-              !isConnected
-            }
-            className="w-full"
-          >
-            {campaignDict.claim ?? 'Claim'}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
 }
 
 // Main component
@@ -240,6 +98,9 @@ export default function ForCampaignPage({
 
   const [loading, setLoading] = useState<boolean>(false)
   const [isInvalidToken, setIsInvalidToken] = useState(false)
+  const [selectedCampaignId, setSelectedCampaignId] = useState<
+    number | undefined
+  >(undefined)
 
   // Contract hooks
   const {
@@ -453,14 +314,14 @@ export default function ForCampaignPage({
   }
 
   return (
-    <div className="w-full min-h-screen bg-background container">
+    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8">
       {loading && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
           <Spinner show={true} size="large" />
         </div>
       )}
 
-      <div className="mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <div className="w-full mx-auto space-y-4 sm:space-y-6">
         {/* Header Section */}
         <div className="space-y-3 sm:space-y-4">
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
@@ -484,18 +345,20 @@ export default function ForCampaignPage({
 
         <AddWhitelistModal
           isOpen={dialogState.isAddWinnersOpen}
-          onClose={() =>
+          onClose={() => {
             setDialogState((prev) => ({ ...prev, isAddWinnersOpen: false }))
-          }
+            setSelectedCampaignId(undefined)
+          }}
           campaignData={campaignData}
           onSubmit={handleAddWhitelist}
           campaign={campaign}
+          initialCampaignId={selectedCampaignId}
         />
 
         {/* Campaigns Section */}
         <div className="space-y-4 sm:space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4">
               <Button
                 onClick={() =>
                   setDialogState((prev) => ({ ...prev, isCreateOpen: true }))
@@ -503,18 +366,6 @@ export default function ForCampaignPage({
                 className="w-full sm:w-auto"
               >
                 {campaign.createCampaign ?? 'Create Campaign'}
-              </Button>
-              <Button
-                onClick={() =>
-                  setDialogState((prev) => ({
-                    ...prev,
-                    isAddWinnersOpen: true,
-                  }))
-                }
-                variant="outline"
-                className="w-full sm:w-auto"
-              >
-                {campaign.addWinners ?? 'Add Winners'}
               </Button>
             </div>
           </div>
@@ -524,6 +375,10 @@ export default function ForCampaignPage({
       <TableComponent
         headers={campaignTableHeaders}
         campaignInfo={campaignData}
+        onCellClick={(campaignId) => {
+          setSelectedCampaignId(campaignId)
+          setDialogState((prev) => ({ ...prev, isAddWinnersOpen: true }))
+        }}
       />
     </div>
   )

@@ -42,8 +42,8 @@ export default function ForProposalPage({
   const vote = dict?.vote ?? {}
 
   return (
-    <div>
-      <div className="links flex flex-row gap-10 items-center justify-center h-[50vh]">
+    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+      <div className="w-[95%] mx-auto links flex flex-row gap-10 items-center justify-center h-[50vh]">
         <Button className="w-40 py-6" variant="outline" asChild>
           <Link className="py-4" locale={locale} href="/pending">
             {vote.pending ?? ''}

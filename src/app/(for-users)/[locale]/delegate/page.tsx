@@ -208,61 +208,65 @@ export default function ForDelegatePage({
   const localDict = dict?.delegate ?? {}
 
   return (
-    <div className="items-center justify-center flex w-full">
-      <div className="flex flex-col max-xl:mx-10 mx-80 max-xl:my-0 my-20 gap-4">
-        <h2 className="text-2xl font-bold tracking-tight my-4 text-center">
-          {localDict.title ?? ''}
-        </h2>
+    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+      <div className="w-[95%] mx-auto items-center justify-center flex w-full">
+        <div className="flex flex-col gap-4">
+          <h2 className="text-2xl font-bold tracking-tight my-4 text-center">
+            {localDict.title ?? ''}
+          </h2>
 
-        <div className="text-muted-foreground">
-          {localDict.peaceCoin ?? 'PEACECOIN'}:
-          {pceBalance
-            ? formatString(formatEther(BigInt(pceBalance as string)))
-            : '0'}
-        </div>
+          <div className="text-muted-foreground">
+            {localDict.peaceCoin ?? 'PEACECOIN'}:
+            {pceBalance
+              ? formatString(formatEther(BigInt(pceBalance as string)))
+              : '0'}
+          </div>
 
-        <div className="text-muted-foreground">
-          {localDict.votingPower ?? ''} :{' '}
-          {votes ? formatString(formatEther(BigInt(votes as string))) : '0'}
-        </div>
+          <div className="text-muted-foreground">
+            {localDict.votingPower ?? ''} :{' '}
+            {votes ? formatString(formatEther(BigInt(votes as string))) : '0'}
+          </div>
 
-        <div className="text-muted-foreground">
-          Governance Token:
-          {pceGovBalance
-            ? formatString(formatEther(BigInt(pceGovBalance as string)))
-            : '0'}
-        </div>
+          <div className="text-muted-foreground">
+            Governance Token:
+            {pceGovBalance
+              ? formatString(formatEther(BigInt(pceGovBalance as string)))
+              : '0'}
+          </div>
 
-        <div className="text-muted-foreground">
-          {localDict.description ?? ''}
-        </div>
+          <div className="text-muted-foreground">
+            {localDict.description ?? ''}
+          </div>
 
-        <div className="flex gap-2 w-full items-center justify-center flex-row">
-          <AmountInput
-            localDict={localDict}
-            className="w-60 w-full"
-            setStakingAmount={setStakingAmount}
-            handleStake={handleStake}
-            maxAmount={
-              pceBalance ? Number(formatEther(BigInt(pceBalance as string))) : 0
-            }
-          />
+          <div className="flex gap-2 w-full items-center justify-center flex-row">
+            <AmountInput
+              localDict={localDict}
+              className="w-60 w-full"
+              setStakingAmount={setStakingAmount}
+              handleStake={handleStake}
+              maxAmount={
+                pceBalance
+                  ? Number(formatEther(BigInt(pceBalance as string)))
+                  : 0
+              }
+            />
 
-          <Button
-            className="w-full"
-            variant="outline"
-            onClick={() => {
-              handleWithdraw()
-            }}
-          >
-            Withdraw
-          </Button>
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={() => {
+                handleWithdraw()
+              }}
+            >
+              Withdraw
+            </Button>
 
-          <DelegateInput
-            className="w-60 w-full"
-            setDelegateAddr={setDelegateAddr}
-            handleDelegate={handleDelegate}
-          />
+            <DelegateInput
+              className="w-60 w-full"
+              setDelegateAddr={setDelegateAddr}
+              handleDelegate={handleDelegate}
+            />
+          </div>
         </div>
       </div>
     </div>

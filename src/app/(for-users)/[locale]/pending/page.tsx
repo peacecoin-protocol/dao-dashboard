@@ -167,8 +167,8 @@ export default function ForPendingPage({
   const pending = dict?.pending ?? {}
 
   return (
-    <div className="w-full">
-      <div className="mx-8 gap-4 flex-col flex">
+    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+      <div className="w-[95%] mx-auto gap-4 flex-col flex">
         <h2 className="text-2xl font-bold tracking-tight mt-6">
           {pending.title ?? ''}
         </h2>

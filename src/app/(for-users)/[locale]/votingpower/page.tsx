@@ -367,7 +367,7 @@ export default function StakingPage({
   }, [tokenData])
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-[95%] mx-auto">
         {/* Header Section */}
         <div className="text-center mb-8 sm:mb-12">
           <div className="flex items-center justify-center mb-4">

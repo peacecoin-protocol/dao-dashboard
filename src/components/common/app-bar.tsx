@@ -116,20 +116,20 @@ function AppBar({ locale }: { locale: Locale }) {
             )}
           </DropdownMenu>
           <Link
-            className="max-md:hidden"
+            className="max-sm:hidden"
             href={LINKS.TWITTER.link}
             target="_blank"
           >
             <TwitterIcon colorClass="fill-oil" />
           </Link>
           <Link
-            className="max-md:hidden"
+            className="max-sm:hidden"
             href={LINKS.DISCORD.link}
             target="_blank"
           >
             <DiscordIcon colorClass="fill-oil" />
           </Link>
-          <div className="max-md:hidden">
+          <div className="max-sm:hidden">
             <UserNav locale={locale}></UserNav>
           </div>
         </div>
