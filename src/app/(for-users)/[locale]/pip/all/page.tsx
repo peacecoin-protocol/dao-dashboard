@@ -3,14 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Octokit } from 'octokit'
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '~/components/ui/table'
 import { Button } from '~/components/ui/button'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import {
