@@ -8,7 +8,7 @@
     "connect": "连接钱包",
     "disconnect": "断开连接",
     "menu": "菜单",
-    "dashboard": "仪表板"
+    "myActivity": "我的活动"
   },
   "dashboard": {
     "totalproposals": "提案总数",
@@ -344,7 +344,7 @@
     "youAreWhitelisted": "您已被列入获胜者白名单",
     "youAreNotWhitelisted": "您未被列入获胜者白名单",
     "alreadyClaimed": "您已经领取了此活动",
-    "enterGithubGist": "输入Github Gist URL",
+    "enterGithubGist": "输入Github Gist ID",
     "claim": "领取",
     "campaignIdHeader": "活动ID",
     "image": "图片",
@@ -368,7 +368,7 @@
     "winnersAddedSuccessfully": "获胜者添加成功",
     "campaignCreatedSuccessfully": "活动创建成功",
     "campaignClaimedSuccessfully": "活动领取成功",
-    "invalidGithubGistUrl": "无效的Github Gist URL",
+    "invalidGithubGistUrl": "无效的Github Gist ID",
     "failedToFetchGistData": "获取Gist数据失败",
     "signatureCopiedToClipboard": "签名已复制到剪贴板",
     "failedToCopySignature": "复制签名失败",

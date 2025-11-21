@@ -405,8 +405,8 @@ export default function ForBountyPage({
   const proposal = dict?.proposal ?? {}
 
   return (
-    <div className="w-full">
-      <div className="flex flex-col gap-4 mx-8">
+    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+      <div className="w-[95%] mx-auto flex flex-col gap-4">
         <h2 className="text-2xl font-bold tracking-tight mt-6">
           {bounty.title ?? ''}
         </h2>

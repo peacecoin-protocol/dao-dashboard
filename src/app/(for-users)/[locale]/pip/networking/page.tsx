@@ -31,8 +31,8 @@ export default function ForPage({
     fetchDict()
   }, [locale])
   return (
-    <div className="w-full gap-4 flex flex-col">
-      <div className="gap-4 flex flex-col m-8">
+    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8 gap-4 flex flex-col">
+      <div className="w-[95%] mx-auto gap-4 flex flex-col">
         <h2 className="text-4xl font-bold tracking-tight mt-6">Networking</h2>
         <p className="text-muted-foreground">Living</p>
         <Table className="border-2 border-gray87 border-solid	">

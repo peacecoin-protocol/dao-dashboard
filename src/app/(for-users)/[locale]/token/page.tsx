@@ -485,8 +485,8 @@ export default function ForTokenPage({
   const token = dict?.token ?? {}
 
   return (
-    <div className="w-full gap-4 flex flex-col">
-      <div className="flex flex-col mx-8 gap-2">
+    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8 gap-4 flex flex-col">
+      <div className="w-[95%] mx-auto flex flex-col gap-2">
         <h2 className="text-2xl font-bold tracking-tight mt-6">
           {token.title ?? ''}
         </h2>

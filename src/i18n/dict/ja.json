@@ -8,7 +8,7 @@
     "connect": "接続",
     "disconnect": "切断",
     "menu": "メニュー",
-    "dashboard": "ダッシュボード"
+    "myActivity": "私の活動"
   },
   "dashboard": {
     "totalproposals": "提案総数",
@@ -344,7 +344,7 @@
     "youAreWhitelisted": "あなたは勝者としてホワイトリストに登録されています",
     "youAreNotWhitelisted": "あなたは勝者としてホワイトリストに登録されていません",
     "alreadyClaimed": "このキャンペーンは既に請求済みです",
-    "enterGithubGist": "Github Gist URLを入力",
+    "enterGithubGist": "Github Gist IDを入力",
     "claim": "請求",
     "campaignIdHeader": "キャンペーンID",
     "image": "画像",
@@ -368,7 +368,7 @@
     "winnersAddedSuccessfully": "勝者の追加に成功しました",
     "campaignCreatedSuccessfully": "キャンペーンの作成に成功しました",
     "campaignClaimedSuccessfully": "キャンペーンの請求に成功しました",
-    "invalidGithubGistUrl": "無効なGithub Gist URL",
+    "invalidGithubGistUrl": "無効なGithub Gist ID",
     "failedToFetchGistData": "Gistデータの取得に失敗しました",
     "signatureCopiedToClipboard": "署名がクリップボードにコピーされました",
     "failedToCopySignature": "署名のコピーに失敗しました",

@@ -173,7 +173,7 @@ const CampaignDialog = ({
               <Input
                 type="text"
                 placeholder={
-                  campaignDict.enterGithubGist ?? 'Enter Github Gist URL'
+                  campaignDict.enterGithubGist ?? 'Enter Github Gist ID'
                 }
                 value={gistUrl}
                 onChange={(e) => setGistUrl(e.target.value)}
@@ -226,6 +226,7 @@ export default function ForCampaignPage({
   const [tokenData, setTokenData] = useState<SBTInfo[]>([])
 
   const [allDAOs, setAllDAOs] = useState<SupabaseDao[]>([])
+  const [daoNames, setDaoNames] = useState<Record<string, string>>({})
 
   const [searchTerm, setSearchTerm] = useState<string>('')
 
@@ -277,9 +278,10 @@ export default function ForCampaignPage({
     if (searchTerm.length > 0) {
       setFilteredCampaignData(
         campaignData
-          .filter((campaign) =>
-            campaign.daoId.toLowerCase().includes(searchTerm.toLowerCase())
-          )
+          .filter((campaign) => {
+            const daoName = daoNames[campaign.daoId] || ''
+            return daoName.toLowerCase().includes(searchTerm.toLowerCase())
+          })
           .sort((a, b) => Number(a.campaignId) - Number(b.campaignId))
       )
     } else {
@@ -287,7 +289,7 @@ export default function ForCampaignPage({
         campaignData.sort((a, b) => Number(a.campaignId) - Number(b.campaignId))
       )
     }
-  }, [campaignData, searchTerm])
+  }, [campaignData, searchTerm, daoNames])
 
   useEffect(() => {
     const fetchCampaignData = async () => {
@@ -309,6 +311,29 @@ export default function ForCampaignPage({
             campaignData[index].image = data?.[0]?.image
           })
         )
+
+        // Fetch DAO names for all unique DAO IDs
+        const uniqueDaoIds = [
+          ...new Set(campaignData.map((c) => c.daoId).filter(Boolean)),
+        ]
+        if (uniqueDaoIds.length > 0) {
+          try {
+            const { data: daoData, error } = await supabase
+              .from('DAO')
+              .select('daoId, daoName')
+              .in('daoId', uniqueDaoIds)
+
+            if (!error && daoData) {
+              const daoNameMap: Record<string, string> = {}
+              daoData.forEach((dao) => {
+                daoNameMap[dao.daoId] = dao.daoName
+              })
+              setDaoNames(daoNameMap)
+            }
+          } catch (error) {
+            console.error('Error fetching DAO names:', error)
+          }
+        }
 
         setCampaignData(campaignData as CAMPAIGN[])
       }
@@ -501,7 +526,7 @@ export default function ForCampaignPage({
           gistUsername = parseGithubUsername(gistUrl)
           if (!gistUsername) {
             toast({
-              title: 'Invalid Github Gist URL',
+              title: 'Invalid Github Gist ID',
             })
             return
           }
@@ -610,13 +635,13 @@ export default function ForCampaignPage({
   )
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
       {loading && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
           <Spinner show={true} size="large" />
         </div>
       )}
-      <div className="container mx-auto space-y-6 px-4 py-4 sm:space-y-8 sm:py-6 lg:px-8">
+      <div className="w-[95%] mx-auto space-y-6 sm:space-y-8">
         {/* Header Section */}
         <div className="space-y-3 sm:space-y-4">
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
@@ -688,14 +713,14 @@ export default function ForCampaignPage({
         {/* Campaign search input */}
         <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-muted/60 bg-background/60 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm font-medium text-muted-foreground">
-            {campaign.searchCampaignLabel ?? 'Filter campaigns by DAO ID'}
+            {campaign.searchCampaignLabel ?? 'Filter campaigns by DAO Name'}
           </div>
           <Input
             type="text"
             placeholder={
-              campaign.searchCampaign ?? 'Search campaigns by DAO ID'
+              campaign.searchCampaign ?? 'Search campaigns by DAO Name'
             }
-            aria-label="Search campaigns by DAO ID"
+            aria-label="Search campaigns by DAO Name"
             className="w-full sm:max-w-xs"
             value={searchTerm}
             onChange={(e) => {

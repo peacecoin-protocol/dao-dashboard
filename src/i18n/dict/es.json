@@ -8,7 +8,7 @@
     "connect": "CONECTAR",
     "disconnect": "DESCONECTAR",
     "menu": "MENÚ",
-    "dashboard": "Panel"
+    "myActivity": "Mi Actividad"
   },
   "dashboard": {
     "totalproposals": "Propuestas Totales",

@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import {
   Table,
   TableBody,
@@ -17,19 +18,66 @@ import { Env } from '~/env'
 import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import { shortenAddress } from '../utils'
 import { Badge } from '~/components/ui/badge'
+import { createClient } from '~/utils/supabase/client'
+import { Button } from '~/components/ui/button'
 
 interface CampaignTableProps {
   headers: string[]
   campaignInfo: CAMPAIGN[]
   onCampaignClick?: (campaignId: string) => void
+  onCellClick?: (campaignId: number) => void
 }
 
 export function TableComponent({
   headers,
   campaignInfo,
   onCampaignClick,
+  onCellClick,
 }: CampaignTableProps) {
+  const [daoNames, setDaoNames] = useState<Record<string, string>>({})
+  const supabase = createClient()
   const hasCampaigns = campaignInfo && campaignInfo.length > 0
+
+  useEffect(() => {
+    const fetchDaoNames = async () => {
+      if (!campaignInfo || campaignInfo.length === 0) return
+
+      // Get unique DAO IDs
+      const uniqueDaoIds = [
+        ...new Set(
+          campaignInfo.map((campaign) => campaign.daoId).filter(Boolean)
+        ),
+      ]
+
+      if (uniqueDaoIds.length === 0) return
+
+      // Fetch DAO names for all unique DAO IDs
+      try {
+        const { data, error } = await supabase
+          .from('DAO')
+          .select('daoId, daoName')
+          .in('daoId', uniqueDaoIds)
+
+        if (error) {
+          console.error('Error fetching DAO names:', error)
+          return
+        }
+
+        // Create a map of daoId -> daoName
+        const daoNameMap: Record<string, string> = {}
+        if (data) {
+          data.forEach((dao) => {
+            daoNameMap[dao.daoId] = dao.daoName
+          })
+        }
+        setDaoNames(daoNameMap)
+      } catch (error) {
+        console.error('Error fetching DAO names:', error)
+      }
+    }
+
+    fetchDaoNames()
+  }, [campaignInfo, supabase])
 
   const getRewardType = (tokenType: number) => {
     if (tokenType === 1) return 'SBT'
@@ -39,6 +87,15 @@ export function TableComponent({
 
   const getAccessType = (campaign: CAMPAIGN) =>
     campaign.validateSignatures ? 'Whitelist + Signature' : 'Whitelist'
+
+  const getDaoDisplay = (daoId: string) => {
+    if (!daoId) return '-'
+    const daoName = daoNames[daoId]
+    if (daoName) {
+      return `${daoName} (${shortenAddress(daoId)})`
+    }
+    return shortenAddress(daoId)
+  }
 
   return (
     <div className="w-full space-y-6">
@@ -62,14 +119,27 @@ export function TableComponent({
                 <TableRow
                   key={index}
                   className="cursor-pointer"
-                  onClick={() =>
+                  onClick={() => {
                     onCampaignClick?.(campaign.campaignId.toString())
-                  }
+                    onCellClick?.(campaign.campaignId)
+                  }}
                 >
-                  <TableCell className="text-center">
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
                     {campaign.campaignId}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
                     <div className="flex justify-center">
                       <Image
                         src={
@@ -84,16 +154,40 @@ export function TableComponent({
                       />
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
                     {campaign.title}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
                     {campaign.description}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
                     {getAccessType(campaign)}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
                     {campaign.tokenType != 0
                       ? (campaign.claimedAmount ?? '0')
                       : formatEther(campaign.totalClaimed ?? '0')}{' '}
@@ -103,27 +197,69 @@ export function TableComponent({
                       : formatEther(campaign.totalAmount ?? '0')}
                   </TableCell>
 
-                  <TableCell className="text-center">
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
                     {campaign.tokenType != 0
                       ? campaign.claimAmount
                       : formatEther(campaign.claimAmount ?? '0')}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
                     {getRewardType(campaign.tokenType ?? 0)}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
                     {campaign.sbtId}
                   </TableCell>
-                  <TableCell className="text-center">
-                    {shortenAddress(campaign.daoId || '')}
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
+                    {getDaoDisplay(campaign.daoId || '')}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
                     {timestampToDate(Number(campaign.startDate))}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
                     {timestampToDate(Number(campaign.endDate))}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCellClick?.(campaign.campaignId)
+                    }}
+                  >
                     <div className="flex justify-center">
                       <span
                         className={`px-3 py-1 rounded-full text-white text-sm font-medium ${
@@ -137,6 +273,23 @@ export function TableComponent({
                           : 'Active'}
                       </span>
                     </div>
+                  </TableCell>
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                    }}
+                  >
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onCellClick?.(campaign.campaignId)
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Whitelist
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -175,9 +328,10 @@ export function TableComponent({
               <button
                 key={index}
                 type="button"
-                onClick={() =>
+                onClick={() => {
                   onCampaignClick?.(campaign.campaignId.toString())
-                }
+                  onCellClick?.(campaign.campaignId)
+                }}
                 className="w-full rounded-2xl border border-gray-200 bg-white/90 p-4 text-left shadow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-gray-900/70"
               >
                 <div className="flex flex-col gap-4">
@@ -260,7 +414,7 @@ export function TableComponent({
                     </div>
                     <div>
                       <dt className="font-medium text-foreground">DAO</dt>
-                      <dd>{shortenAddress(campaign.daoId || '')}</dd>
+                      <dd>{getDaoDisplay(campaign.daoId || '')}</dd>
                     </div>
                     <div>
                       <dt className="font-medium text-foreground">
@@ -277,6 +431,18 @@ export function TableComponent({
                       <dd>{timestampToDate(Number(campaign.endDate))}</dd>
                     </div>
                   </dl>
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onCellClick?.(campaign.campaignId)
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Whitelist
+                    </Button>
+                  </div>
                 </div>
               </button>
             )

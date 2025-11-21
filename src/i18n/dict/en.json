@@ -8,7 +8,7 @@
     "connect": "CONNECT",
     "disconnect": "DISCONNECT",
     "menu": "MENU",
-    "dashboard": "Dashboard"
+    "myActivity": "My Activity"
   },
   "dashboard": {
     "totalproposals": "Total Proposals",
@@ -344,7 +344,7 @@
     "youAreWhitelisted": "You are whitelisted as a winner",
     "youAreNotWhitelisted": "You are not whitelisted as a winner",
     "alreadyClaimed": "You have already claimed this campaign",
-    "enterGithubGist": "Enter Github Gist URL",
+    "enterGithubGist": "Enter Github Gist ID",
     "claim": "Claim",
     "campaignIdHeader": "Campaign ID",
     "image": "Image",
@@ -368,7 +368,7 @@
     "winnersAddedSuccessfully": "Winners added successfully",
     "campaignCreatedSuccessfully": "Campaign created successfully",
     "campaignClaimedSuccessfully": "Campaign claimed successfully",
-    "invalidGithubGistUrl": "Invalid Github Gist URL",
+    "invalidGithubGistUrl": "Invalid Github Gist ID",
     "failedToFetchGistData": "Failed to fetch gist data",
     "signatureCopiedToClipboard": "Signature copied to clipboard",
     "failedToCopySignature": "Failed to copy signature",

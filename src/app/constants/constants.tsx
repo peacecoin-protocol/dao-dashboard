@@ -177,7 +177,7 @@ export const sbtTableHeaders = [
   'Token ID',
   'Balance',
   'Voting Power',
-  'Dao ID',
+  'Dao Name',
   'Created At',
 ]
 
@@ -191,10 +191,11 @@ export const campaignTableHeaders = [
   'Claim Amount',
   'Token Type',
   'Token Id',
-  'Dao ID',
+  'Dao Name',
   'Start Time',
   'End Time',
   'Status',
+  'Whitelist',
 ]
 
 export const GAS_LIMIT = 1000000

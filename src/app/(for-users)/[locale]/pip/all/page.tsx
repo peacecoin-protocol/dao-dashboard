@@ -196,8 +196,8 @@ export default function ForPage({
   }, [pipContents, filteredStatus, filteredCategory])
 
   return (
-    <div className="w-full gap-4 flex flex-col px-4 sm:px-6">
-      <div className="w-full max-w-6xl mx-auto gap-6 flex flex-col px-0 py-6 sm:px-4">
+    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8 gap-4 flex flex-col">
+      <div className="w-[95%] mx-auto gap-6 flex flex-col">
         <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mt-4 sm:mt-2">
           {dict?.pipAll?.title || 'ALL Proposals'}
         </h2>

@@ -1140,768 +1140,786 @@ export default function ForDaoDetailPage({
   }
 
   return (
-    <div className="items-center justify-center flex flex-col mx-4 md:mx-20 gap-4">
-      <div className="flex flex-row w-full items-center gap-4 mt-8">
-        <div className="relative group">
-          {isImageLoading ? (
-            <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-dark_blue"></div>
-            </div>
-          ) : imageHash ? (
-            <Image
-              src={`${Env.PINATA_GATEWAY_URL}/ipfs/${imageHash}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`}
-              alt="DAO Image"
-              width={96}
-              priority
-              height={96}
-            />
-          ) : (
-            <>
-              {identicon && (
-                <Image src={identicon} alt="DAO Image" width={96} height={96} />
-              )}
-            </>
-          )}
-          <div className="absolute inset-0 flex items-end justify-start opacity-0 group-hover:opacity-80 transition-opacity bg-black/50">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="w-full h-full bg-gray-200 gap-2 items-end justify-center flex p-2 hover:opacity-80 transition-opacity">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                    <path d="m15 5 4 4" />
-                  </svg>
-                  {localDict.edit ?? 'Edit'}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (daoCreator !== address) {
-                      toast({
-                        title: 'You are not the creator of this DAO',
-                        variant: 'destructive',
-                      })
-                      return
-                    }
-
-                    const fileInput = document.createElement('input')
-                    fileInput.type = 'file'
-                    fileInput.onchange = (e) => {
-                      const event =
-                        e as unknown as React.ChangeEvent<HTMLInputElement>
-                      handleFileChange(event)
-                    }
-                    fileInput.click()
-                  }}
-                >
-                  {localDict.edit ?? 'Edit'}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={async () => {
-                    if (daoCreator !== address) {
-                      toast({
-                        title: 'You are not the creator of this DAO',
-                        variant: 'destructive',
-                      })
-                      return
-                    }
-                    await deleteImage()
-                  }}
-                >
-                  {localDict.delete ?? 'Delete'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 font-bold text-5xl">
-          {name}
-          <span
-            className="text-sm text-gray-500 mt-1 break-all flex flex-row items-center gap-2 cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation()
-              navigator.clipboard.writeText(id as string)
-              toast({
-                title: 'DAO ID copied!',
-              })
-            }}
-          >
-            {shortenAddress(id, 12)}
-            <CopyIcon className="h-4 w-4 text-gray-400" />
-          </span>
-        </div>
-      </div>
-      {selectedImage && (
-        <Dialog open={!!selectedImage}>
-          <DialogContent>
-            <ImageCropModal
-              localDict={localDict}
-              imageSrc={selectedImage}
-              onClose={() => setSelectedImage(null)}
-              onCropComplete={(cropped) => setCroppedImage(cropped)}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-      <div className="flex flex-row w-full items-center">
-        <Tabs defaultValue="about" className="w-full" value={tabContent}>
-          <TabsList>
-            <TabsTrigger value="about" onClick={() => setTabContent('about')}>
-              {localDict.aboutDao}
-            </TabsTrigger>
-            <TabsTrigger value="all" onClick={() => setTabContent('all')}>
-              {localDict.allProposals}
-            </TabsTrigger>
-            <TabsTrigger
-              value="balance"
-              onClick={() => setTabContent('balance')}
-            >
-              {localDict.balance}
-            </TabsTrigger>
-            <TabsTrigger
-              value="holders"
-              onClick={() => setTabContent('holders')}
-            >
-              {localDict.holders}
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="about" className="">
-            <div className="flex md:flex-row flex-col w-full gap-8">
-              <div className="flex flex-col w-full mt-4 gap-4">
-                <div className="flex flex-col md:flex-row md:justify-between md:items-center w-full gap-2">
-                  <h1 className="text-2xl font-bold">
-                    {localDict.lastProposal}
-                  </h1>
-                  <div className="flex flex-row gap-4">
-                    <Button
-                      className="w-full bg-dark_blue"
-                      onClick={() => {
-                        setIsCreateProposalDialogOpened(true)
-                      }}
-                    >
-                      {localDict.createNewProposal}
-                    </Button>
-                  </div>
-                </div>
-
-                {[...proposals]
-                  .reverse()
-                  .slice(0, 2)
-                  .map((proposal, index) => (
-                    <ProposalCard
-                      key={index}
-                      proposal={proposal}
-                      status={[...proposalStatus].reverse()[index]}
-                      index={index}
-                    />
-                  ))}
-
-                {proposals.length === 0 && (
-                  <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                    {localDict.noProposals}
-                  </div>
-                )}
+    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+      <div className="w-[95%] mx-auto items-center justify-center flex flex-col gap-4">
+        <div className="flex flex-row w-full items-center gap-4 mt-8">
+          <div className="relative group">
+            {isImageLoading ? (
+              <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-dark_blue"></div>
               </div>
-              <div className="flex flex-col md:w-[40%] gap-4">
-                <h1 className="text-2xl font-bold mt-4">{localDict.daoInfo}</h1>
-
-                <div className="flex flex-col border rounded-xl p-4 mt-2 bg-gray-100 gap-2">
-                  <div className="flex flex-row justify-between items-center rounded-xl mt-2 w-full">
-                    <TooltipComponent
-                      title={localDict.govenorToken ?? 'Governor Token'}
-                      tooltipText="A token that represents voting power in the DAO. Holders can vote on proposals and participate in governance decisions."
-                      className="font-bold rounded-xl flex"
-                    />
-                    <CustomLink.default
-                      chainId={chainId}
-                      type="address"
-                      address={governanceTokenAddress}
-                      message={shortenAddress(governanceTokenAddress)}
-                    ></CustomLink.default>
-                  </div>
-
-                  <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
-                    <TooltipComponent
-                      title={localDict.timelock ?? 'Timelock'}
-                      tooltipText="A smart contract that adds a delay between when a proposal passes and when it can be executed. This delay gives token holders time to review and react to approved proposals before they take effect."
-                      className="font-bold rounded-xl flex"
-                    />
-                    <CustomLink.default
-                      chainId={chainId}
-                      type="address"
-                      address={timelockAddress}
-                      message={shortenAddress(timelockAddress)}
-                    ></CustomLink.default>
-                  </div>
-
-                  <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
-                    <TooltipComponent
-                      title={localDict.governor ?? 'Governor'}
-                      tooltipText="The core contract that manages the DAO's governance process. It handles proposal creation, voting, and execution of approved proposals. This contract implements the rules and parameters for how governance works."
-                      className="font-bold rounded-xl flex"
-                    />
-                    <CustomLink.default
-                      chainId={chainId}
-                      type="address"
-                      address={governorAddress}
-                      message={shortenAddress(governorAddress)}
-                    ></CustomLink.default>
-                  </div>
-                </div>
-
-                <div className="flex flex-col border rounded-xl p-4 bg-gray-100 gap-4">
-                  <div className="flex flex-row justify-between items-center">
-                    <TooltipComponent
-                      title={localDict.voteDelay ?? 'Vote Delay'}
-                      tooltipText="The number of blocks that must pass between when a proposal is created and when voting begins. This delay gives token holders time to research and discuss the proposal before voting starts."
-                      className="font-bold rounded-xl flex"
-                    />
-                    <div className="text-dark_blue">
-                      {votingDelay ? formatString(votingDelay as string) : '0'}
-                    </div>
-                  </div>
-                  <div className="flex flex-row justify-between items-center">
-                    <TooltipComponent
-                      title={localDict.votingPeriod ?? 'Voting Period'}
-                      tooltipText="The duration (in blocks) during which token holders can cast their votes on a proposal. Once this period ends, no more votes can be cast and the proposal's outcome is determined based on the votes received."
-                      className="font-bold rounded-xl flex"
-                    />
-                    <div className="text-dark_blue">
-                      {votingPeriod
-                        ? formatString(votingPeriod as string)
-                        : '0'}
-                    </div>
-                  </div>
-                  <div className="flex flex-row justify-between items-center">
-                    <TooltipComponent
-                      title={localDict.timelockDelay ?? 'Timelock Delay'}
-                      tooltipText="The mandatory waiting period between when a proposal passes and when it can be executed. This delay gives token holders time to prepare for the changes and exit the protocol if they disagree with a passed proposal. Longer delays provide more security but reduce governance agility."
-                      className="font-bold rounded-xl flex"
-                    />
-
-                    <div className="text-dark_blue">
-                      {timelockDelay
-                        ? formatString(timelockDelay as string)
-                        : '0'}
-                    </div>
-                  </div>
-                  <div className="flex flex-row justify-between items-center">
-                    <TooltipComponent
-                      title={
-                        localDict.proposalThreshold ?? 'Proposal Threshold'
-                      }
-                      tooltipText="The minimum number of votes a delegate must have to create a proposal. This threshold ensures that only members with sufficient stake in the DAO can initiate governance actions."
-                      className="font-bold rounded-xl flex"
-                    />
-
-                    <div className="text-dark_blue">
-                      {proposalThreshold
-                        ? formatString(formatEther(proposalThreshold as string))
-                        : '0'}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-row gap-4 justify-between items-center">
-                    <TooltipComponent
-                      title={localDict.quorum ?? 'Quorum Votes'}
-                      tooltipText="The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
-                      className="font-bold rounded-xl flex"
-                    />
-                    <div className="text-dark_blue">
-                      {quorum
-                        ? formatString(formatEther(BigInt(quorum as string)))
-                        : '0'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-row justify-between items-center border rounded-xl p-4 bg-gray-100">
-                  <TooltipComponent
-                    title={localDict.myPower ?? 'My Power'}
-                    tooltipText={
-                      'Your current voting power in this DAO, ' +
-                      'determined by the number of governance tokens you hold ' +
-                      'or have been delegated. This power allows you to vote on proposals ' +
-                      'and create new ones if you meet the proposal threshold.'
-                    }
-                    className="font-bold rounded-xl flex"
+            ) : imageHash ? (
+              <Image
+                src={`${Env.PINATA_GATEWAY_URL}/ipfs/${imageHash}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`}
+                alt="DAO Image"
+                width={96}
+                priority
+                height={96}
+              />
+            ) : (
+              <>
+                {identicon && (
+                  <Image
+                    src={identicon}
+                    alt="DAO Image"
+                    width={96}
+                    height={96}
                   />
-                  <div className="text-dark_blue">
-                    {votes ? formatString(formatEther(votes as string)) : '0'}
-                  </div>
-                </div>
-
-                <div className="flex bg-gray-100 rounded-xl items-center justify-between cursor-pointer">
-                  <div className="flex flex-row gap-4 w-full items-center p-4 justify-center">
-                    <div className="flex flex-col gap-2 w-full justify-center">
-                      <div className="text-heavy_white text-sm flex justify-center items-center">
-                        TVL
-                      </div>
-
-                      <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-full items-center justify-center text-sm">
-                        $0
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2 w-full">
-                      <div className="text-heavy_white text-sm flex justify-center items-center">
-                        Memebers
-                      </div>
-                      <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-full items-center justify-center text-sm">
-                        0%
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
-                  <h1 className="font-bold rounded-xl  flex">
-                    {localDict.createdAt ?? 'Created at'}{' '}
-                    {new Date(Number(172839000) * 1000).toLocaleString()}
-                  </h1>
-                </div>
-                <div className="flex flex-col border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
-                  <div className="flex flex-row justify-between items-center mb-2">
-                    <h1 className="font-bold">DAO Socials</h1>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setIsEditingSocials(!isEditingSocials)
-                        setEditingSocials(socials)
-                      }}
+                )}
+              </>
+            )}
+            <div className="absolute inset-0 flex items-end justify-start opacity-0 group-hover:opacity-80 transition-opacity bg-black/50">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="w-full h-full bg-gray-200 gap-2 items-end justify-center flex p-2 hover:opacity-80 transition-opacity">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     >
-                      {isEditingSocials ? 'Cancel' : 'Edit'}
-                    </Button>
-                  </div>
-
-                  {isEditingSocials ? (
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium">
-                          DAO Website
-                        </label>
-                        <Input
-                          value={editingSocials.website}
-                          onChange={(e) =>
-                            setEditingSocials((prev) => ({
-                              ...prev,
-                              website: e.target.value,
-                            }))
-                          }
-                          placeholder="https://website.com"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium">LinkedIn</label>
-                        <Input
-                          value={editingSocials.linkedin}
-                          onChange={(e) =>
-                            setEditingSocials((prev) => ({
-                              ...prev,
-                              linkedin: e.target.value,
-                            }))
-                          }
-                          placeholder="https://www.linkedin.com/"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium">Twitter</label>
-                        <Input
-                          value={editingSocials.twitter}
-                          onChange={(e) =>
-                            setEditingSocials((prev) => ({
-                              ...prev,
-                              twitter: e.target.value,
-                            }))
-                          }
-                          placeholder="https://twitter.com"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium">Telegram</label>
-                        <Input
-                          value={editingSocials.telegram}
-                          onChange={(e) =>
-                            setEditingSocials((prev) => ({
-                              ...prev,
-                              telegram: e.target.value,
-                            }))
-                          }
-                          placeholder="https://t.me/"
-                        />
-                      </div>
-
-                      <div className="flex flex-row gap-2 mt-2">
-                        <Button
-                          onClick={handleUpdateSocials}
-                          className="flex-1"
-                        >
-                          {isEditingSocials ? 'Saving...' : 'Save Changes'}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setIsEditingSocials(false)
-                            setEditingSocials({
-                              website: socials.website,
-                              linkedin: socials.linkedin,
-                              twitter: socials.twitter,
-                              telegram: socials.telegram,
-                            })
-                          }}
-                          className="flex-1"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-row justify-between items-center">
-                        <span className="font-medium">DAO Site:</span>
-                        <Link
-                          href={
-                            socials.website
-                              ? socials.website
-                              : 'https://website.com'
-                          }
-                          className="text-dark_blue hover:underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {socials.website ? socials.website : 'Not set'}
-                        </Link>
-                      </div>
-
-                      <div className="flex flex-row justify-between items-center">
-                        <span className="font-medium">LinkedIn:</span>
-                        <Link
-                          href={
-                            socials.linkedin
-                              ? socials.linkedin
-                              : 'https://www.linkedin.com/'
-                          }
-                          className="text-dark_blue hover:underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {socials.linkedin ? socials.linkedin : 'Not set'}
-                        </Link>
-                      </div>
-
-                      <div className="flex flex-row justify-between items-center">
-                        <span className="font-medium">Twitter:</span>
-                        <Link
-                          href={
-                            socials.twitter
-                              ? socials.twitter
-                              : 'https://twitter.com'
-                          }
-                          className="text-dark_blue hover:underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {socials.twitter ? socials.twitter : 'Not set'}
-                        </Link>
-                      </div>
-
-                      <div className="flex flex-row justify-between items-center">
-                        <span className="font-medium">Telegram:</span>
-                        <Link
-                          href={
-                            socials.telegram
-                              ? socials.telegram
-                              : 'https://t.me/'
-                          }
-                          className="text-dark_blue hover:underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {socials.telegram ? socials.telegram : 'Not set'}
-                        </Link>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="all">
-            <div className="flex flex-row w-full items-center">
-              <Tabs defaultValue="all" className="gap-0 w-full">
-                <TabsList>
-                  <TabsTrigger className="w-20" value="all">
-                    {localDict.all}
-                  </TabsTrigger>
-                  <TabsTrigger className="w-20" value="active">
-                    {localDict.active}
-                  </TabsTrigger>
-                  <TabsTrigger className="w-20" value="executed">
-                    {localDict.executed}
-                  </TabsTrigger>
-                  <TabsTrigger className="w-20" value="defeated">
-                    {localDict.defeated}
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent
-                  value="all"
-                  className="flex w-full flex-col gap-4 mt-4"
-                >
-                  {proposals.length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      return (
-                        <ProposalCard
-                          key={index}
-                          proposal={proposal}
-                          status={proposalStatus[index]}
-                          index={index}
-                        />
-                      )
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ?? 'No proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-                <TabsContent
-                  value="active"
-                  className="flex w-full flex-col mt-0"
-                >
-                  {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Active'
-                  ).length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Active') {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
+                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                      <path d="m15 5 4 4" />
+                    </svg>
+                    {localDict.edit ?? 'Edit'}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (daoCreator !== address) {
+                        toast({
+                          title: 'You are not the creator of this DAO',
+                          variant: 'destructive',
+                        })
+                        return
                       }
-                      return null
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ??
-                        'No active proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
 
-                <TabsContent
-                  value="executed"
-                  className="flex w-full flex-col mt-0"
-                >
-                  {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Executed'
-                  ).length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Executed') {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
+                      const fileInput = document.createElement('input')
+                      fileInput.type = 'file'
+                      fileInput.onchange = (e) => {
+                        const event =
+                          e as unknown as React.ChangeEvent<HTMLInputElement>
+                        handleFileChange(event)
                       }
-                      return null
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ??
-                        'No succeeded proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent
-                  value="defeated"
-                  className="flex w-full flex-col gap-4 mt-0"
-                >
-                  {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Defeated'
-                  ).length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Defeated') {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
-                      }
-                      return null
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ??
-                        'No defeated proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-            </div>
-          </TabsContent>
-          <TabsContent value="balance">
-            <div className="flex flex-col md:flex-row mt-4 gap-4 ">
-              <div className="flex flex-col w-full">
-                <h1 className="text-2xl font-bold">
-                  {localDict.treasury ?? 'Treasury'}
-                </h1>
-                <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="font-bold">
-                          {localDict.token ?? 'Token'}
-                        </TableHead>
-                        <TableHead className="font-bold">
-                          {localDict.amount ?? 'Amount'}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {treasuryBalances.length > 0 ? (
-                        treasuryBalances.map((token, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-bold">
-                              {token.name === '' ? 'PCE TEST' : token.name}
-                            </TableCell>
-                            <TableCell className="font-bold">
-                              {formatString(
-                                formatEther(
-                                  BigInt(token.tokenBalance).toString()
-                                )
-                              )}{' '}
-                              {token.symbol === '' ? 'PCE TEST' : token.symbol}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={2} className="text-center">
-                            No tokens found
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-              <div className="flex flex-col w-full md:w-[40%]">
-                <h1 className="text-2xl font-bold">
-                  {localDict.daoBalance ?? 'DAO Balance'}
-                </h1>
-
-                <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
-                  <h1 className="font-bold rounded-xl flex">
-                    {localDict.daoTreasury ?? 'DAO Treasury'}
-                  </h1>
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      {localDict.totalValue ?? 'Total Value'}
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      {localDict.numberOfTokens ?? 'Number of Tokens'}
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">
-                      {treasuryBalances.length}
-                    </h1>
-                  </div>
-
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      {localDict.numberOfNfts ?? 'Number of NFTs'}
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-
-                  <Dialog
-                    open={isDepositDialogOpened}
-                    onOpenChange={() => {
-                      setIsDepositDialogOpened(!isDepositDialogOpened)
+                      fileInput.click()
                     }}
                   >
-                    <DialogTrigger asChild>
-                      <Button className="w-full bg-dark_blue">
-                        {localDict.depositToDaoTreasury ??
-                          'Deposit to DAO Treasury'}
+                    {localDict.edit ?? 'Edit'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      if (daoCreator !== address) {
+                        toast({
+                          title: 'You are not the creator of this DAO',
+                          variant: 'destructive',
+                        })
+                        return
+                      }
+                      await deleteImage()
+                    }}
+                  >
+                    {localDict.delete ?? 'Delete'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 font-bold text-5xl">
+            {name}
+            <span
+              className="text-sm text-gray-500 mt-1 break-all flex flex-row items-center gap-2 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation()
+                navigator.clipboard.writeText(id as string)
+                toast({
+                  title: 'DAO ID copied!',
+                })
+              }}
+            >
+              {shortenAddress(id, 12)}
+              <CopyIcon className="h-4 w-4 text-gray-400" />
+            </span>
+          </div>
+        </div>
+        {selectedImage && (
+          <Dialog open={!!selectedImage}>
+            <DialogContent>
+              <ImageCropModal
+                localDict={localDict}
+                imageSrc={selectedImage}
+                onClose={() => setSelectedImage(null)}
+                onCropComplete={(cropped) => setCroppedImage(cropped)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+        <div className="flex flex-row w-full items-center">
+          <Tabs defaultValue="about" className="w-full" value={tabContent}>
+            <TabsList>
+              <TabsTrigger value="about" onClick={() => setTabContent('about')}>
+                {localDict.aboutDao}
+              </TabsTrigger>
+              <TabsTrigger value="all" onClick={() => setTabContent('all')}>
+                {localDict.allProposals}
+              </TabsTrigger>
+              <TabsTrigger
+                value="balance"
+                onClick={() => setTabContent('balance')}
+              >
+                {localDict.balance}
+              </TabsTrigger>
+              <TabsTrigger
+                value="holders"
+                onClick={() => setTabContent('holders')}
+              >
+                {localDict.holders}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="about" className="">
+              <div className="flex md:flex-row flex-col w-full gap-8">
+                <div className="flex flex-col w-full mt-4 gap-4">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center w-full gap-2">
+                    <h1 className="text-2xl font-bold">
+                      {localDict.lastProposal}
+                    </h1>
+                    <div className="flex flex-row gap-4">
+                      <Button
+                        className="w-full bg-dark_blue"
+                        onClick={() => {
+                          setIsCreateProposalDialogOpened(true)
+                        }}
+                      >
+                        {localDict.createNewProposal}
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader className="flex flex-col gap-2">
-                        <DialogTitle>Address</DialogTitle>
-                        <DialogDescription>
-                          {localDict.tokenAddressToDeposit ??
-                            'Token address to deposit'}
-                        </DialogDescription>
-                        <Input
-                          onChange={(e) => setTokenAddress(e.target.value)}
-                          placeholder={localDict.address ?? 'Address'}
-                        />
-                        <DialogTitle>
-                          {localDict.amount ?? 'Amount'}
-                        </DialogTitle>
-                        <DialogDescription>
-                          {localDict.amountToDeposit ?? 'Amount to deposit'}
-                        </DialogDescription>
-                        <Input
-                          onChange={(e) => setTransferAmount(e.target.value)}
-                          placeholder={localDict.amount ?? 'Amount'}
-                        />
-                        <Button
-                          className="w-full bg-dark_blue"
-                          onClick={async () => {
-                            await writeContract({
-                              abi: PCE_ABI,
-                              address: tokenAddress as `0x${string}`,
-                              functionName: 'transfer',
-                              args: [
-                                timelockAddress as `0x${string}`,
-                                parseEther(transferAmount),
-                              ],
-                            })
+                    </div>
+                  </div>
 
-                            setTokenAddress('')
-                            setTransferAmount('')
-                            setIsDepositDialogOpened(!isDepositDialogOpened)
-                          }}
-                        >
-                          {localDict.deposit ?? 'Deposit'}
-                        </Button>
-                      </DialogHeader>
-                    </DialogContent>
-                  </Dialog>
+                  {[...proposals]
+                    .reverse()
+                    .slice(0, 2)
+                    .map((proposal, index) => (
+                      <ProposalCard
+                        key={index}
+                        proposal={proposal}
+                        status={[...proposalStatus].reverse()[index]}
+                        index={index}
+                      />
+                    ))}
+
+                  {proposals.length === 0 && (
+                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                      {localDict.noProposals}
+                    </div>
+                  )}
                 </div>
+                <div className="flex flex-col md:w-[40%] gap-4">
+                  <h1 className="text-2xl font-bold mt-4">
+                    {localDict.daoInfo}
+                  </h1>
 
-                {/* <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
+                  <div className="flex flex-col border rounded-xl p-4 mt-2 bg-gray-100 gap-2">
+                    <div className="flex flex-row justify-between items-center rounded-xl mt-2 w-full">
+                      <TooltipComponent
+                        title={localDict.govenorToken ?? 'Governor Token'}
+                        tooltipText="A token that represents voting power in the DAO. Holders can vote on proposals and participate in governance decisions."
+                        className="font-bold rounded-xl flex"
+                      />
+                      <CustomLink.default
+                        chainId={chainId}
+                        type="address"
+                        address={governanceTokenAddress}
+                        message={shortenAddress(governanceTokenAddress)}
+                      ></CustomLink.default>
+                    </div>
+
+                    <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
+                      <TooltipComponent
+                        title={localDict.timelock ?? 'Timelock'}
+                        tooltipText="A smart contract that adds a delay between when a proposal passes and when it can be executed. This delay gives token holders time to review and react to approved proposals before they take effect."
+                        className="font-bold rounded-xl flex"
+                      />
+                      <CustomLink.default
+                        chainId={chainId}
+                        type="address"
+                        address={timelockAddress}
+                        message={shortenAddress(timelockAddress)}
+                      ></CustomLink.default>
+                    </div>
+
+                    <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
+                      <TooltipComponent
+                        title={localDict.governor ?? 'Governor'}
+                        tooltipText="The core contract that manages the DAO's governance process. It handles proposal creation, voting, and execution of approved proposals. This contract implements the rules and parameters for how governance works."
+                        className="font-bold rounded-xl flex"
+                      />
+                      <CustomLink.default
+                        chainId={chainId}
+                        type="address"
+                        address={governorAddress}
+                        message={shortenAddress(governorAddress)}
+                      ></CustomLink.default>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col border rounded-xl p-4 bg-gray-100 gap-4">
+                    <div className="flex flex-row justify-between items-center">
+                      <TooltipComponent
+                        title={localDict.voteDelay ?? 'Vote Delay'}
+                        tooltipText="The number of blocks that must pass between when a proposal is created and when voting begins. This delay gives token holders time to research and discuss the proposal before voting starts."
+                        className="font-bold rounded-xl flex"
+                      />
+                      <div className="text-dark_blue">
+                        {votingDelay
+                          ? formatString(votingDelay as string)
+                          : '0'}
+                      </div>
+                    </div>
+                    <div className="flex flex-row justify-between items-center">
+                      <TooltipComponent
+                        title={localDict.votingPeriod ?? 'Voting Period'}
+                        tooltipText="The duration (in blocks) during which token holders can cast their votes on a proposal. Once this period ends, no more votes can be cast and the proposal's outcome is determined based on the votes received."
+                        className="font-bold rounded-xl flex"
+                      />
+                      <div className="text-dark_blue">
+                        {votingPeriod
+                          ? formatString(votingPeriod as string)
+                          : '0'}
+                      </div>
+                    </div>
+                    <div className="flex flex-row justify-between items-center">
+                      <TooltipComponent
+                        title={localDict.timelockDelay ?? 'Timelock Delay'}
+                        tooltipText="The mandatory waiting period between when a proposal passes and when it can be executed. This delay gives token holders time to prepare for the changes and exit the protocol if they disagree with a passed proposal. Longer delays provide more security but reduce governance agility."
+                        className="font-bold rounded-xl flex"
+                      />
+
+                      <div className="text-dark_blue">
+                        {timelockDelay
+                          ? formatString(timelockDelay as string)
+                          : '0'}
+                      </div>
+                    </div>
+                    <div className="flex flex-row justify-between items-center">
+                      <TooltipComponent
+                        title={
+                          localDict.proposalThreshold ?? 'Proposal Threshold'
+                        }
+                        tooltipText="The minimum number of votes a delegate must have to create a proposal. This threshold ensures that only members with sufficient stake in the DAO can initiate governance actions."
+                        className="font-bold rounded-xl flex"
+                      />
+
+                      <div className="text-dark_blue">
+                        {proposalThreshold
+                          ? formatString(
+                              formatEther(proposalThreshold as string)
+                            )
+                          : '0'}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-row gap-4 justify-between items-center">
+                      <TooltipComponent
+                        title={localDict.quorum ?? 'Quorum Votes'}
+                        tooltipText="The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
+                        className="font-bold rounded-xl flex"
+                      />
+                      <div className="text-dark_blue">
+                        {quorum
+                          ? formatString(formatEther(BigInt(quorum as string)))
+                          : '0'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-row justify-between items-center border rounded-xl p-4 bg-gray-100">
+                    <TooltipComponent
+                      title={localDict.myPower ?? 'My Power'}
+                      tooltipText={
+                        'Your current voting power in this DAO, ' +
+                        'determined by the number of governance tokens you hold ' +
+                        'or have been delegated. This power allows you to vote on proposals ' +
+                        'and create new ones if you meet the proposal threshold.'
+                      }
+                      className="font-bold rounded-xl flex"
+                    />
+                    <div className="text-dark_blue">
+                      {votes ? formatString(formatEther(votes as string)) : '0'}
+                    </div>
+                  </div>
+
+                  <div className="flex bg-gray-100 rounded-xl items-center justify-between cursor-pointer">
+                    <div className="flex flex-row gap-4 w-full items-center p-4 justify-center">
+                      <div className="flex flex-col gap-2 w-full justify-center">
+                        <div className="text-heavy_white text-sm flex justify-center items-center">
+                          TVL
+                        </div>
+
+                        <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-full items-center justify-center text-sm">
+                          $0
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 w-full">
+                        <div className="text-heavy_white text-sm flex justify-center items-center">
+                          Memebers
+                        </div>
+                        <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-full items-center justify-center text-sm">
+                          0%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
+                    <h1 className="font-bold rounded-xl  flex">
+                      {localDict.createdAt ?? 'Created at'}{' '}
+                      {new Date(Number(172839000) * 1000).toLocaleString()}
+                    </h1>
+                  </div>
+                  <div className="flex flex-col border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
+                    <div className="flex flex-row justify-between items-center mb-2">
+                      <h1 className="font-bold">DAO Socials</h1>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsEditingSocials(!isEditingSocials)
+                          setEditingSocials(socials)
+                        }}
+                      >
+                        {isEditingSocials ? 'Cancel' : 'Edit'}
+                      </Button>
+                    </div>
+
+                    {isEditingSocials ? (
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-medium">
+                            DAO Website
+                          </label>
+                          <Input
+                            value={editingSocials.website}
+                            onChange={(e) =>
+                              setEditingSocials((prev) => ({
+                                ...prev,
+                                website: e.target.value,
+                              }))
+                            }
+                            placeholder="https://website.com"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-medium">
+                            LinkedIn
+                          </label>
+                          <Input
+                            value={editingSocials.linkedin}
+                            onChange={(e) =>
+                              setEditingSocials((prev) => ({
+                                ...prev,
+                                linkedin: e.target.value,
+                              }))
+                            }
+                            placeholder="https://www.linkedin.com/"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-medium">Twitter</label>
+                          <Input
+                            value={editingSocials.twitter}
+                            onChange={(e) =>
+                              setEditingSocials((prev) => ({
+                                ...prev,
+                                twitter: e.target.value,
+                              }))
+                            }
+                            placeholder="https://twitter.com"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-medium">
+                            Telegram
+                          </label>
+                          <Input
+                            value={editingSocials.telegram}
+                            onChange={(e) =>
+                              setEditingSocials((prev) => ({
+                                ...prev,
+                                telegram: e.target.value,
+                              }))
+                            }
+                            placeholder="https://t.me/"
+                          />
+                        </div>
+
+                        <div className="flex flex-row gap-2 mt-2">
+                          <Button
+                            onClick={handleUpdateSocials}
+                            className="flex-1"
+                          >
+                            {isEditingSocials ? 'Saving...' : 'Save Changes'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setIsEditingSocials(false)
+                              setEditingSocials({
+                                website: socials.website,
+                                linkedin: socials.linkedin,
+                                twitter: socials.twitter,
+                                telegram: socials.telegram,
+                              })
+                            }}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-row justify-between items-center">
+                          <span className="font-medium">DAO Site:</span>
+                          <Link
+                            href={
+                              socials.website
+                                ? socials.website
+                                : 'https://website.com'
+                            }
+                            className="text-dark_blue hover:underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {socials.website ? socials.website : 'Not set'}
+                          </Link>
+                        </div>
+
+                        <div className="flex flex-row justify-between items-center">
+                          <span className="font-medium">LinkedIn:</span>
+                          <Link
+                            href={
+                              socials.linkedin
+                                ? socials.linkedin
+                                : 'https://www.linkedin.com/'
+                            }
+                            className="text-dark_blue hover:underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {socials.linkedin ? socials.linkedin : 'Not set'}
+                          </Link>
+                        </div>
+
+                        <div className="flex flex-row justify-between items-center">
+                          <span className="font-medium">Twitter:</span>
+                          <Link
+                            href={
+                              socials.twitter
+                                ? socials.twitter
+                                : 'https://twitter.com'
+                            }
+                            className="text-dark_blue hover:underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {socials.twitter ? socials.twitter : 'Not set'}
+                          </Link>
+                        </div>
+
+                        <div className="flex flex-row justify-between items-center">
+                          <span className="font-medium">Telegram:</span>
+                          <Link
+                            href={
+                              socials.telegram
+                                ? socials.telegram
+                                : 'https://t.me/'
+                            }
+                            className="text-dark_blue hover:underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {socials.telegram ? socials.telegram : 'Not set'}
+                          </Link>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="all">
+              <div className="flex flex-row w-full items-center">
+                <Tabs defaultValue="all" className="gap-0 w-full">
+                  <TabsList>
+                    <TabsTrigger className="w-20" value="all">
+                      {localDict.all}
+                    </TabsTrigger>
+                    <TabsTrigger className="w-20" value="active">
+                      {localDict.active}
+                    </TabsTrigger>
+                    <TabsTrigger className="w-20" value="executed">
+                      {localDict.executed}
+                    </TabsTrigger>
+                    <TabsTrigger className="w-20" value="defeated">
+                      {localDict.defeated}
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent
+                    value="all"
+                    className="flex w-full flex-col gap-4 mt-4"
+                  >
+                    {proposals.length > 0 ? (
+                      proposals.map((proposal, index) => {
+                        return (
+                          <ProposalCard
+                            key={index}
+                            proposal={proposal}
+                            status={proposalStatus[index]}
+                            index={index}
+                          />
+                        )
+                      })
+                    ) : (
+                      <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                        {localDict.noProposals ?? 'No proposals at the moment'}
+                      </div>
+                    )}
+                  </TabsContent>
+                  <TabsContent
+                    value="active"
+                    className="flex w-full flex-col mt-0"
+                  >
+                    {proposals.filter(
+                      (_, index) => proposalStatus[index] === 'Active'
+                    ).length > 0 ? (
+                      proposals.map((proposal, index) => {
+                        if (proposalStatus[index] === 'Active') {
+                          return (
+                            <ProposalCard
+                              key={index}
+                              proposal={proposal}
+                              status={proposalStatus[index]}
+                              index={index}
+                            />
+                          )
+                        }
+                        return null
+                      })
+                    ) : (
+                      <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                        {localDict.noProposals ??
+                          'No active proposals at the moment'}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent
+                    value="executed"
+                    className="flex w-full flex-col mt-0"
+                  >
+                    {proposals.filter(
+                      (_, index) => proposalStatus[index] === 'Executed'
+                    ).length > 0 ? (
+                      proposals.map((proposal, index) => {
+                        if (proposalStatus[index] === 'Executed') {
+                          return (
+                            <ProposalCard
+                              key={index}
+                              proposal={proposal}
+                              status={proposalStatus[index]}
+                              index={index}
+                            />
+                          )
+                        }
+                        return null
+                      })
+                    ) : (
+                      <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                        {localDict.noProposals ??
+                          'No succeeded proposals at the moment'}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent
+                    value="defeated"
+                    className="flex w-full flex-col gap-4 mt-0"
+                  >
+                    {proposals.filter(
+                      (_, index) => proposalStatus[index] === 'Defeated'
+                    ).length > 0 ? (
+                      proposals.map((proposal, index) => {
+                        if (proposalStatus[index] === 'Defeated') {
+                          return (
+                            <ProposalCard
+                              key={index}
+                              proposal={proposal}
+                              status={proposalStatus[index]}
+                              index={index}
+                            />
+                          )
+                        }
+                        return null
+                      })
+                    ) : (
+                      <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                        {localDict.noProposals ??
+                          'No defeated proposals at the moment'}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </TabsContent>
+            <TabsContent value="balance">
+              <div className="flex flex-col md:flex-row mt-4 gap-4 ">
+                <div className="flex flex-col w-full">
+                  <h1 className="text-2xl font-bold">
+                    {localDict.treasury ?? 'Treasury'}
+                  </h1>
+                  <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="font-bold">
+                            {localDict.token ?? 'Token'}
+                          </TableHead>
+                          <TableHead className="font-bold">
+                            {localDict.amount ?? 'Amount'}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {treasuryBalances.length > 0 ? (
+                          treasuryBalances.map((token, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-bold">
+                                {token.name === '' ? 'PCE TEST' : token.name}
+                              </TableCell>
+                              <TableCell className="font-bold">
+                                {formatString(
+                                  formatEther(
+                                    BigInt(token.tokenBalance).toString()
+                                  )
+                                )}{' '}
+                                {token.symbol === ''
+                                  ? 'PCE TEST'
+                                  : token.symbol}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={2} className="text-center">
+                              No tokens found
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+                <div className="flex flex-col w-full md:w-[40%]">
+                  <h1 className="text-2xl font-bold">
+                    {localDict.daoBalance ?? 'DAO Balance'}
+                  </h1>
+
+                  <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
+                    <h1 className="font-bold rounded-xl flex">
+                      {localDict.daoTreasury ?? 'DAO Treasury'}
+                    </h1>
+                    <div className="flex flex-row justify-between">
+                      <h1 className="font-bold rounded-xl  flex">
+                        {localDict.totalValue ?? 'Total Value'}
+                      </h1>
+                      <h1 className="font-bold rounded-xl  flex">$0</h1>
+                    </div>
+
+                    <div className="flex flex-row justify-between">
+                      <h1 className="font-bold rounded-xl  flex">
+                        {localDict.numberOfTokens ?? 'Number of Tokens'}
+                      </h1>
+                      <h1 className="font-bold rounded-xl  flex">
+                        {treasuryBalances.length}
+                      </h1>
+                    </div>
+
+                    <div className="flex flex-row justify-between">
+                      <h1 className="font-bold rounded-xl  flex">
+                        {localDict.numberOfNfts ?? 'Number of NFTs'}
+                      </h1>
+                      <h1 className="font-bold rounded-xl  flex">$0</h1>
+                    </div>
+
+                    <Dialog
+                      open={isDepositDialogOpened}
+                      onOpenChange={() => {
+                        setIsDepositDialogOpened(!isDepositDialogOpened)
+                      }}
+                    >
+                      <DialogTrigger asChild>
+                        <Button className="w-full bg-dark_blue">
+                          {localDict.depositToDaoTreasury ??
+                            'Deposit to DAO Treasury'}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader className="flex flex-col gap-2">
+                          <DialogTitle>Address</DialogTitle>
+                          <DialogDescription>
+                            {localDict.tokenAddressToDeposit ??
+                              'Token address to deposit'}
+                          </DialogDescription>
+                          <Input
+                            onChange={(e) => setTokenAddress(e.target.value)}
+                            placeholder={localDict.address ?? 'Address'}
+                          />
+                          <DialogTitle>
+                            {localDict.amount ?? 'Amount'}
+                          </DialogTitle>
+                          <DialogDescription>
+                            {localDict.amountToDeposit ?? 'Amount to deposit'}
+                          </DialogDescription>
+                          <Input
+                            onChange={(e) => setTransferAmount(e.target.value)}
+                            placeholder={localDict.amount ?? 'Amount'}
+                          />
+                          <Button
+                            className="w-full bg-dark_blue"
+                            onClick={async () => {
+                              await writeContract({
+                                abi: PCE_ABI,
+                                address: tokenAddress as `0x${string}`,
+                                functionName: 'transfer',
+                                args: [
+                                  timelockAddress as `0x${string}`,
+                                  parseEther(transferAmount),
+                                ],
+                              })
+
+                              setTokenAddress('')
+                              setTransferAmount('')
+                              setIsDepositDialogOpened(!isDepositDialogOpened)
+                            }}
+                          >
+                            {localDict.deposit ?? 'Deposit'}
+                          </Button>
+                        </DialogHeader>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
+                  {/* <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
                   <h1 className="font-bold rounded-xl flex">DAO Delegated</h1>
                   <div className="flex flex-row justify-between">
                     <h1 className="font-bold rounded-xl  flex">
@@ -1924,236 +1942,243 @@ export default function ForDaoDetailPage({
                     <h1 className="font-bold rounded-xl  flex">$0</h1>
                   </div>
                 </div> */}
+                </div>
               </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="holders" className="w-full">
-            <div className="flex flex-col mt-4 gap-4">
-              <div className="flex flex-col w-full gap-4">
-                <div className="flex flex-col md:flex-row w-full gap-4 items-center justify-between">
-                  <div className="flex flex-col gap-4">
-                    <h1 className="flex flex-row text-2xl font-bold gap-4">
-                      {localDict.votingPowerBreakdown ??
-                        'Voting Power Breakdown'}
-                    </h1>
+            </TabsContent>
+            <TabsContent value="holders" className="w-full">
+              <div className="flex flex-col mt-4 gap-4">
+                <div className="flex flex-col w-full gap-4">
+                  <div className="flex flex-col md:flex-row w-full gap-4 items-center justify-between">
+                    <div className="flex flex-col gap-4">
+                      <h1 className="flex flex-row text-2xl font-bold gap-4">
+                        {localDict.votingPowerBreakdown ??
+                          'Voting Power Breakdown'}
+                      </h1>
+                    </div>
+                  </div>
+
+                  {/* Responsive buttons/input row */}
+                  <div className="flex flex-col sm:flex-row gap-4 w-full">
+                    <AmountInput
+                      localDict={localDict}
+                      className="w-full sm:w-60 bg-dark_blue"
+                      setStakingAmount={setStakingAmount}
+                      handleStake={handleStake}
+                      maxAmount={
+                        communityTokenBalance
+                          ? Number(formatEther(BigInt(communityTokenBalance)))
+                          : 0
+                      }
+                    />
+                    <Button
+                      className="w-full sm:w-60 bg-dark_blue"
+                      onClick={handleWithdraw}
+                    >
+                      {localDict.withdraw ?? 'Withdraw'}
+                    </Button>
+
+                    <Button
+                      className="w-full sm:w-60 bg-dark_blue"
+                      onClick={async () => {
+                        setIsDelegateDialogOpened(true)
+                      }}
+                    >
+                      {localDict.delegate ?? 'Delegate'}
+                    </Button>
+                  </div>
+                  {/* Responsive table container */}
+                  <div className="rounded-xl flex border mt-4 w-full overflow-x-auto">
+                    <Table className="w-full">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>
+                            <div className="flex flex-row gap-4">
+                              {localDict.address ?? 'Address'}
+                            </div>
+                          </TableHead>
+                          <TableHead>
+                            {localDict.communityToken ?? 'Community Token'}
+                          </TableHead>
+                          <TableHead>
+                            {localDict.governanceToken ?? 'Governance Token'}
+                          </TableHead>
+                          <TableHead>
+                            {localDict.delegatedAmount ?? 'Delegated Amount'}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell>
+                            <div className="flex flex-row gap-2 items-center">
+                              <h1 className="text-md text-dark_blue font-bold break-all">
+                                {communityTokenAddress
+                                  ? shortenAddress(communityTokenAddress, 4)
+                                  : '-'}
+                              </h1>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-bold font-md text-dark_blue">
+                            {communityTokenBalance
+                              ? formatString(
+                                  formatEther(
+                                    BigInt(communityTokenBalance as string)
+                                  )
+                                )
+                              : '0'}{' '}
+                            {communityTokenSymbol}
+                          </TableCell>
+                          <TableCell className="font-bold font-md text-dark_blue">
+                            {governanceTokenBalance
+                              ? formatString(
+                                  formatEther(
+                                    BigInt(governanceTokenBalance as string)
+                                  )
+                                )
+                              : '0'}{' '}
+                            {communityTokenSymbol}
+                          </TableCell>
+                          <TableCell className="font-bold font-md text-dark_blue">
+                            {votes
+                              ? formatString(
+                                  formatEther(BigInt(votes as string))
+                                )
+                              : '0'}{' '}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
-
-                {/* Responsive buttons/input row */}
-                <div className="flex flex-col sm:flex-row gap-4 w-full">
-                  <AmountInput
-                    localDict={localDict}
-                    className="w-full sm:w-60 bg-dark_blue"
-                    setStakingAmount={setStakingAmount}
-                    handleStake={handleStake}
-                    maxAmount={
-                      communityTokenBalance
-                        ? Number(formatEther(BigInt(communityTokenBalance)))
-                        : 0
-                    }
-                  />
-                  <Button
-                    className="w-full sm:w-60 bg-dark_blue"
-                    onClick={handleWithdraw}
-                  >
-                    {localDict.withdraw ?? 'Withdraw'}
-                  </Button>
-
-                  <Button
-                    className="w-full sm:w-60 bg-dark_blue"
-                    onClick={async () => {
-                      setIsDelegateDialogOpened(true)
-                    }}
-                  >
-                    {localDict.delegate ?? 'Delegate'}
-                  </Button>
-                </div>
-                {/* Responsive table container */}
-                <div className="rounded-xl flex border mt-4 w-full overflow-x-auto">
-                  <Table className="w-full">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>
-                          <div className="flex flex-row gap-4">
-                            {localDict.address ?? 'Address'}
-                          </div>
-                        </TableHead>
-                        <TableHead>
-                          {localDict.communityToken ?? 'Community Token'}
-                        </TableHead>
-                        <TableHead>
-                          {localDict.governanceToken ?? 'Governance Token'}
-                        </TableHead>
-                        <TableHead>
-                          {localDict.delegatedAmount ?? 'Delegated Amount'}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <div className="flex flex-row gap-2 items-center">
-                            <h1 className="text-md text-dark_blue font-bold break-all">
-                              {communityTokenAddress
-                                ? shortenAddress(communityTokenAddress, 4)
-                                : '-'}
-                            </h1>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-bold font-md text-dark_blue">
-                          {communityTokenBalance
-                            ? formatString(
-                                formatEther(
-                                  BigInt(communityTokenBalance as string)
-                                )
-                              )
-                            : '0'}{' '}
-                          {communityTokenSymbol}
-                        </TableCell>
-                        <TableCell className="font-bold font-md text-dark_blue">
-                          {governanceTokenBalance
-                            ? formatString(
-                                formatEther(
-                                  BigInt(governanceTokenBalance as string)
-                                )
-                              )
-                            : '0'}{' '}
-                          {communityTokenSymbol}
-                        </TableCell>
-                        <TableCell className="font-bold font-md text-dark_blue">
-                          {votes
-                            ? formatString(formatEther(BigInt(votes as string)))
-                            : '0'}{' '}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
               </div>
-            </div>
 
-            <DelegateDialog
-              isOpen={isDelegateDialogOpened}
-              onOpenChange={setIsDelegateDialogOpened}
-              delegateAddr={delegateAddr}
-              localDict={localDict}
-              handleDelegate={handleDelegate}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
-      <Dialog
-        open={isCreateProposalDialogOpened}
-        onOpenChange={setIsCreateProposalDialogOpened}
-      >
-        <DialogContent>
-          <DialogTitle>
-            {localDict.createProposal ?? 'Create a Proposal'}
-          </DialogTitle>
-          <DialogDescription>
-            Configure the proposal details below
-          </DialogDescription>
-          <div className="flex flex-col gap-4 mt-4">
-            <Select onValueChange={handleSelect}>
-              <SelectTrigger className="w-full">
-                <SelectValue
-                  placeholder={localDict.selectACategory ?? 'Select a category'}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">
-                  {localDict.transferTokens ?? 'Transfer Tokens'}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input
-              placeholder={localDict.enterTokenAddress ?? 'Enter Token Address'}
-              value={tokenAddress}
-              onChange={(e) => setTokenAddress(e.target.value)}
-            />
-
-            <Input
-              placeholder={localDict.enterAmount ?? 'Enter amount'}
-              value={transferAmount}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setTransferAmount(e.target.value)
-              }
-            />
-
-            <Input
-              placeholder={
-                localDict.enterAddressToTransferTo ??
-                'Enter Address To Transfer To'
-              }
-              value={transferAddr}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setTransferAddr(e.target.value)
-              }
-            />
-
-            <Textarea
-              placeholder={localDict.enterDescription ?? 'Enter description'}
-              value={description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setDescription(e.target.value)
-              }
-            />
-
-            <Button onClick={handleCreateProposal}>
-              {localDict.create ?? 'Create'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Proposal Detail Dialog - Single shared instance */}
-      <Dialog
-        open={isProposalDetailDialogOpened}
-        onOpenChange={(open) => {
-          setIsProposalDetailDialogOpened(open)
-          if (!open) {
-            setSelectedProposalIndex(null)
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
+              <DelegateDialog
+                isOpen={isDelegateDialogOpened}
+                onOpenChange={setIsDelegateDialogOpened}
+                delegateAddr={delegateAddr}
+                localDict={localDict}
+                handleDelegate={handleDelegate}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+        <Dialog
+          open={isCreateProposalDialogOpened}
+          onOpenChange={setIsCreateProposalDialogOpened}
+        >
+          <DialogContent>
             <DialogTitle>
-              {localDict.proposalDetails ?? 'Proposal Details'}
+              {localDict.createProposal ?? 'Create a Proposal'}
             </DialogTitle>
             <DialogDescription>
-              {selectedProposalIndex !== null &&
-              proposals[selectedProposalIndex] ? (
-                <div className="flex flex-col gap-2">
-                  <h1>
-                    {localDict.proposalId ?? 'Proposal ID'}:{' '}
-                    {selectedProposalIndex + 1}
-                  </h1>
-                  <h1>
-                    {localDict.proposalDescription ?? 'Proposal Description'}:{' '}
-                    {proposals[selectedProposalIndex][9]}
-                  </h1>
-                </div>
-              ) : null}
+              Configure the proposal details below
             </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
+            <div className="flex flex-col gap-4 mt-4">
+              <Select onValueChange={handleSelect}>
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      localDict.selectACategory ?? 'Select a category'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">
+                    {localDict.transferTokens ?? 'Transfer Tokens'}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
 
-      <RingLoader
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 9999,
-        }}
-        color={'#000000'}
-        loading={loading}
-        cssOverride={ringStyle}
-        size={50}
-      />
+              <Input
+                placeholder={
+                  localDict.enterTokenAddress ?? 'Enter Token Address'
+                }
+                value={tokenAddress}
+                onChange={(e) => setTokenAddress(e.target.value)}
+              />
+
+              <Input
+                placeholder={localDict.enterAmount ?? 'Enter amount'}
+                value={transferAmount}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setTransferAmount(e.target.value)
+                }
+              />
+
+              <Input
+                placeholder={
+                  localDict.enterAddressToTransferTo ??
+                  'Enter Address To Transfer To'
+                }
+                value={transferAddr}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setTransferAddr(e.target.value)
+                }
+              />
+
+              <Textarea
+                placeholder={localDict.enterDescription ?? 'Enter description'}
+                value={description}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setDescription(e.target.value)
+                }
+              />
+
+              <Button onClick={handleCreateProposal}>
+                {localDict.create ?? 'Create'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Proposal Detail Dialog - Single shared instance */}
+        <Dialog
+          open={isProposalDetailDialogOpened}
+          onOpenChange={(open) => {
+            setIsProposalDetailDialogOpened(open)
+            if (!open) {
+              setSelectedProposalIndex(null)
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {localDict.proposalDetails ?? 'Proposal Details'}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedProposalIndex !== null &&
+                proposals[selectedProposalIndex] ? (
+                  <div className="flex flex-col gap-2">
+                    <h1>
+                      {localDict.proposalId ?? 'Proposal ID'}:{' '}
+                      {selectedProposalIndex + 1}
+                    </h1>
+                    <h1>
+                      {localDict.proposalDescription ?? 'Proposal Description'}:{' '}
+                      {proposals[selectedProposalIndex][9]}
+                    </h1>
+                  </div>
+                ) : null}
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+
+        <RingLoader
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999,
+          }}
+          color={'#000000'}
+          loading={loading}
+          cssOverride={ringStyle}
+          size={50}
+        />
+      </div>
     </div>
   )
 }

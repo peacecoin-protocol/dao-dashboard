@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import {
   Table,
   TableBody,
@@ -15,6 +16,7 @@ import Image from 'next/image'
 import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import { shortenAddress } from '../utils'
 import { Env } from '~/env'
+import { createClient } from '~/utils/supabase/client'
 export interface SBTInfo {
   tokenId: string
   creator: string
@@ -43,6 +45,44 @@ export function SBTTableComponent({
   action,
   onRevoke,
 }: SBTTableProps) {
+  const [daoNames, setDaoNames] = useState<Record<string, string>>({})
+  const supabase = createClient()
+
+  useEffect(() => {
+    const fetchDaoNames = async () => {
+      if (!sbtInfo || sbtInfo.length === 0) return
+
+      // Get unique DAO IDs
+      const uniqueDaoIds = [...new Set(sbtInfo.map((sbt) => sbt.daoId))]
+
+      // Fetch DAO names for all unique DAO IDs
+      try {
+        const { data, error } = await supabase
+          .from('DAO')
+          .select('daoId, daoName')
+          .in('daoId', uniqueDaoIds)
+
+        if (error) {
+          console.error('Error fetching DAO names:', error)
+          return
+        }
+
+        // Create a map of daoId -> daoName
+        const daoNameMap: Record<string, string> = {}
+        if (data) {
+          data.forEach((dao) => {
+            daoNameMap[dao.daoId] = dao.daoName
+          })
+        }
+        setDaoNames(daoNameMap)
+      } catch (error) {
+        console.error('Error fetching DAO names:', error)
+      }
+    }
+
+    fetchDaoNames()
+  }, [sbtInfo, supabase])
+
   const handleRevoke = (token: SBTInfo) => {
     onRevoke?.(token)
   }
@@ -52,6 +92,13 @@ export function SBTTableComponent({
     return `${Env.PINATA_GATEWAY_URL}/ipfs/${image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
   }
 
+  const getDaoDisplay = (daoId: string) => {
+    const daoName = daoNames[daoId]
+    if (daoName) {
+      return `${daoName} (${shortenAddress(daoId)})`
+    }
+    return shortenAddress(daoId)
+  }
   return (
     <div className="w-full space-y-6">
       <div className="hidden border rounded-xl w-full lg:block">
@@ -93,7 +140,7 @@ export function SBTTableComponent({
                     {sbt.votingPower}
                   </TableCell>
                   <TableCell className="text-center">
-                    {shortenAddress(sbt.daoId)}
+                    {getDaoDisplay(sbt.daoId)}
                   </TableCell>
                   <TableCell className="text-center">
                     {sbt.created_at
@@ -185,7 +232,7 @@ export function SBTTableComponent({
                   <dt className="font-semibold text-gray-800 dark:text-white">
                     DAO
                   </dt>
-                  <dd>{shortenAddress(sbt.daoId)}</dd>
+                  <dd>{getDaoDisplay(sbt.daoId)}</dd>
                 </div>
                 <div>
                   <dt className="font-semibold text-gray-800 dark:text-white">

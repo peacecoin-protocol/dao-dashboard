@@ -910,782 +910,797 @@ export default function PCEPage({
   }, [locale])
 
   return (
-    <div className="sm:items-center justify-center flex flex-col mx-4 sm:mx-20 gap-4">
-      <div className="flex w-full items-center justify-center gap-2 mt-4 sm:gap-4 sm:mt-8">
-        <Image
-          src="/pce_logo.jpg"
-          alt="PCE Logo"
-          width={96}
-          height={96}
-          className="w-12 h-12 sm:w-24 sm:h-24"
-          priority={true}
-          quality={100}
-        />
-        <div className="flex flex-row gap-1 font-bold text-xl sm:text-5xl justify-center items-center">
-          {localDict.title}
+    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+      <div className="w-[95%] mx-auto sm:items-center justify-center flex flex-col gap-4">
+        <div className="flex w-full items-center justify-center gap-2 mt-4 sm:gap-4 sm:mt-8">
+          <Image
+            src="/pce_logo.jpg"
+            alt="PCE Logo"
+            width={96}
+            height={96}
+            className="w-12 h-12 sm:w-24 sm:h-24"
+            priority={true}
+            quality={100}
+          />
+          <div className="flex flex-row gap-1 font-bold text-xl sm:text-5xl justify-center items-center">
+            {localDict.title}
+          </div>
         </div>
-      </div>
 
-      <div className="flex flex-row w-full items-center">
-        <Tabs
-          defaultValue="about"
-          className="w-full sm:justify-start justify-center"
-          value={tabContent}
-        >
-          <TabsList className="max-sm:flex max-sm:justify-center justify-start">
-            <TabsTrigger value="about" onClick={() => setTabContent('about')}>
-              {localDict.aboutDao}
-            </TabsTrigger>
-            <TabsTrigger value="all" onClick={() => setTabContent('all')}>
-              {localDict.allProposals}
-            </TabsTrigger>
-            <TabsTrigger value="holds" onClick={() => setTabContent('holds')}>
-              Holds
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="about" className="w-full">
-            <div className="flex sm:flex-row flex-col w-full gap-8">
-              <div className="flex flex-col w-full mt-4 gap-4">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-2">
-                  <h1 className="text-2xl font-bold">
-                    {localDict.latestProposals}
-                  </h1>
-                  <div className="flex flex-row gap-4">
-                    <Button
-                      className="w-full bg-dark_blue"
-                      onClick={() => {
-                        setIsCreateProposalDialogOpened(true)
-                      }}
-                    >
-                      {localDict.createNewProposal}
-                    </Button>
+        <div className="flex flex-row w-full items-center">
+          <Tabs
+            defaultValue="about"
+            className="w-full sm:justify-start justify-center"
+            value={tabContent}
+          >
+            <TabsList className="max-sm:flex max-sm:justify-center justify-start">
+              <TabsTrigger value="about" onClick={() => setTabContent('about')}>
+                {localDict.aboutDao}
+              </TabsTrigger>
+              <TabsTrigger value="all" onClick={() => setTabContent('all')}>
+                {localDict.allProposals}
+              </TabsTrigger>
+              <TabsTrigger value="holds" onClick={() => setTabContent('holds')}>
+                Holds
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="about" className="w-full">
+              <div className="flex sm:flex-row flex-col w-full gap-8">
+                <div className="flex flex-col w-full mt-4 gap-4">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-2">
+                    <h1 className="text-2xl font-bold">
+                      {localDict.latestProposals}
+                    </h1>
+                    <div className="flex flex-row gap-4">
+                      <Button
+                        className="w-full bg-dark_blue"
+                        onClick={() => {
+                          setIsCreateProposalDialogOpened(true)
+                        }}
+                      >
+                        {localDict.createNewProposal}
+                      </Button>
+                    </div>
                   </div>
+
+                  {[...proposals]
+                    .reverse()
+                    .slice(0, 2)
+                    .map((proposal, index) => (
+                      <ProposalCard
+                        key={index}
+                        proposal={proposal}
+                        status={[...proposalStatus].reverse()[index]}
+                        index={index}
+                      />
+                    ))}
+
+                  {proposals.length === 0 && (
+                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                      {localDict.noProposals}
+                    </div>
+                  )}
                 </div>
+                <div className="flex flex-col sm:w-[40%] gap-4">
+                  <h1 className="text-2xl font-bold mt-4">{localDict.about}</h1>
 
-                {[...proposals]
-                  .reverse()
-                  .slice(0, 2)
-                  .map((proposal, index) => (
-                    <ProposalCard
-                      key={index}
-                      proposal={proposal}
-                      status={[...proposalStatus].reverse()[index]}
-                      index={index}
-                    />
-                  ))}
+                  <div className="flex flex-col border rounded-xl p-4 mt-2 bg-gray-100 gap-2">
+                    <div className="flex flex-row justify-between items-center rounded-xl mt-2 w-full">
+                      <TooltipComponent
+                        title={localDict.govenorToken ?? 'Governor Token'}
+                        tooltipText="A token that represents voting power in the DAO. Holders can vote on proposals and participate in governance decisions."
+                        className="font-bold rounded-xl flex"
+                      />
+                      <CustomLink.default
+                        chainId={chainId}
+                        type="address"
+                        address={
+                          PCE_SBT_ADDRESS[
+                            chainId || defaultChainId
+                          ] as `0x${string}`
+                        }
+                        message={shortenAddress(
+                          PCE_SBT_ADDRESS[
+                            chainId || defaultChainId
+                          ] as `0x${string}`
+                        )}
+                      ></CustomLink.default>
+                    </div>
 
-                {proposals.length === 0 && (
-                  <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                    {localDict.noProposals}
+                    <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
+                      <TooltipComponent
+                        title={localDict.timelock ?? 'Timelock'}
+                        tooltipText="A smart contract that adds a delay between when a proposal passes and when it can be executed. This delay gives token holders time to review and react to approved proposals before they take effect."
+                        className="font-bold rounded-xl flex"
+                      />
+                      <CustomLink.default
+                        chainId={chainId}
+                        type="address"
+                        address={
+                          timelockAddress[
+                            chainId || defaultChainId
+                          ] as `0x${string}`
+                        }
+                        message={shortenAddress(
+                          timelockAddress[
+                            chainId || defaultChainId
+                          ] as `0x${string}`
+                        )}
+                      ></CustomLink.default>
+                    </div>
+
+                    <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
+                      <TooltipComponent
+                        title={localDict.governor ?? 'Governor'}
+                        tooltipText="The core contract that manages the DAO's governance process. It handles proposal creation, voting, and execution of approved proposals. This contract implements the rules and parameters for how governance works."
+                        className="font-bold rounded-xl flex"
+                      />
+                      <CustomLink.default
+                        chainId={chainId}
+                        type="address"
+                        address={
+                          governorAddress[
+                            chainId || defaultChainId
+                          ] as `0x${string}`
+                        }
+                        message={shortenAddress(
+                          governorAddress[
+                            chainId || defaultChainId
+                          ] as `0x${string}`
+                        )}
+                      ></CustomLink.default>
+                    </div>
                   </div>
-                )}
-              </div>
-              <div className="flex flex-col sm:w-[40%] gap-4">
-                <h1 className="text-2xl font-bold mt-4">{localDict.about}</h1>
 
-                <div className="flex flex-col border rounded-xl p-4 mt-2 bg-gray-100 gap-2">
-                  <div className="flex flex-row justify-between items-center rounded-xl mt-2 w-full">
+                  <div className="flex flex-col border rounded-xl p-4 bg-gray-100 gap-4">
+                    <div className="flex flex-row justify-between items-center">
+                      <TooltipComponent
+                        title={localDict.voteDelay ?? 'Vote Delay'}
+                        tooltipText="The number of blocks that must pass between when a proposal is created and when voting begins. This delay gives token holders time to research and discuss the proposal before voting starts."
+                        className="font-bold rounded-xl flex"
+                      />
+                      <div className="text-dark_blue">
+                        {votingDelay
+                          ? formatString(votingDelay as string)
+                          : '0'}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-row justify-between items-center">
+                      <TooltipComponent
+                        title={localDict.votingPeriod ?? 'Voting Period'}
+                        tooltipText="The duration (in blocks) during which token holders can cast their votes on a proposal. Once this period ends, no more votes can be cast and the proposal's outcome is determined based on the votes received."
+                        className="font-bold rounded-xl flex"
+                      />
+                      <div className="text-dark_blue">
+                        {votingPeriod
+                          ? formatString(votingPeriod as string)
+                          : '0'}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-row justify-between items-center">
+                      <TooltipComponent
+                        title={localDict.timelockDelay ?? 'Timelock Delay'}
+                        tooltipText="The mandatory waiting period between when a proposal passes and when it can be executed. This delay gives token holders time to prepare for the changes and exit the protocol if they disagree with a passed proposal. Longer delays provide more security but reduce governance agility."
+                        className="font-bold rounded-xl flex"
+                      />
+
+                      <div className="text-dark_blue">
+                        {timelockDelay
+                          ? formatString(timelockDelay as string)
+                          : '0'}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-row justify-between items-center">
+                      <TooltipComponent
+                        title={
+                          localDict.proposalThreshold ?? 'Proposal Threshold'
+                        }
+                        tooltipText="The minimum number of votes a delegate must have to create a proposal. This threshold ensures that only members with sufficient stake in the DAO can initiate governance actions."
+                        className="font-bold rounded-xl flex"
+                      />
+
+                      <div className="text-dark_blue">
+                        {proposalThreshold
+                          ? formatString(
+                              formatEther(proposalThreshold as string)
+                            )
+                          : '0'}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-row gap-4 justify-between items-center">
+                      <TooltipComponent
+                        title={localDict.quorumVotes ?? 'Quorum Votes'}
+                        tooltipText="The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
+                        className="font-bold rounded-xl flex"
+                      />
+                      <div className="text-dark_blue">
+                        {quorum
+                          ? formatString(formatEther(quorum as string))
+                          : '0'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-row justify-between items-center border rounded-xl p-4 bg-gray-100">
                     <TooltipComponent
-                      title={localDict.govenorToken ?? 'Governor Token'}
-                      tooltipText="A token that represents voting power in the DAO. Holders can vote on proposals and participate in governance decisions."
-                      className="font-bold rounded-xl flex"
-                    />
-                    <CustomLink.default
-                      chainId={chainId}
-                      type="address"
-                      address={
-                        PCE_SBT_ADDRESS[
-                          chainId || defaultChainId
-                        ] as `0x${string}`
+                      title={localDict.myPower ?? 'My Power'}
+                      tooltipText={
+                        'Your current voting power in this DAO, ' +
+                        'determined by the number of governance tokens you hold ' +
+                        'or have been delegated. This power allows you to vote on proposals ' +
+                        'and create new ones if you meet the proposal threshold.'
                       }
-                      message={shortenAddress(
-                        PCE_SBT_ADDRESS[
-                          chainId || defaultChainId
-                        ] as `0x${string}`
-                      )}
-                    ></CustomLink.default>
-                  </div>
-
-                  <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
-                    <TooltipComponent
-                      title={localDict.timelock ?? 'Timelock'}
-                      tooltipText="A smart contract that adds a delay between when a proposal passes and when it can be executed. This delay gives token holders time to review and react to approved proposals before they take effect."
-                      className="font-bold rounded-xl flex"
-                    />
-                    <CustomLink.default
-                      chainId={chainId}
-                      type="address"
-                      address={
-                        timelockAddress[
-                          chainId || defaultChainId
-                        ] as `0x${string}`
-                      }
-                      message={shortenAddress(
-                        timelockAddress[
-                          chainId || defaultChainId
-                        ] as `0x${string}`
-                      )}
-                    ></CustomLink.default>
-                  </div>
-
-                  <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
-                    <TooltipComponent
-                      title={localDict.governor ?? 'Governor'}
-                      tooltipText="The core contract that manages the DAO's governance process. It handles proposal creation, voting, and execution of approved proposals. This contract implements the rules and parameters for how governance works."
-                      className="font-bold rounded-xl flex"
-                    />
-                    <CustomLink.default
-                      chainId={chainId}
-                      type="address"
-                      address={
-                        governorAddress[
-                          chainId || defaultChainId
-                        ] as `0x${string}`
-                      }
-                      message={shortenAddress(
-                        governorAddress[
-                          chainId || defaultChainId
-                        ] as `0x${string}`
-                      )}
-                    ></CustomLink.default>
-                  </div>
-                </div>
-
-                <div className="flex flex-col border rounded-xl p-4 bg-gray-100 gap-4">
-                  <div className="flex flex-row justify-between items-center">
-                    <TooltipComponent
-                      title={localDict.voteDelay ?? 'Vote Delay'}
-                      tooltipText="The number of blocks that must pass between when a proposal is created and when voting begins. This delay gives token holders time to research and discuss the proposal before voting starts."
                       className="font-bold rounded-xl flex"
                     />
                     <div className="text-dark_blue">
-                      {votingDelay ? formatString(votingDelay as string) : '0'}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-row justify-between items-center">
-                    <TooltipComponent
-                      title={localDict.votingPeriod ?? 'Voting Period'}
-                      tooltipText="The duration (in blocks) during which token holders can cast their votes on a proposal. Once this period ends, no more votes can be cast and the proposal's outcome is determined based on the votes received."
-                      className="font-bold rounded-xl flex"
-                    />
-                    <div className="text-dark_blue">
-                      {votingPeriod
-                        ? formatString(votingPeriod as string)
-                        : '0'}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-row justify-between items-center">
-                    <TooltipComponent
-                      title={localDict.timelockDelay ?? 'Timelock Delay'}
-                      tooltipText="The mandatory waiting period between when a proposal passes and when it can be executed. This delay gives token holders time to prepare for the changes and exit the protocol if they disagree with a passed proposal. Longer delays provide more security but reduce governance agility."
-                      className="font-bold rounded-xl flex"
-                    />
-
-                    <div className="text-dark_blue">
-                      {timelockDelay
-                        ? formatString(timelockDelay as string)
-                        : '0'}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-row justify-between items-center">
-                    <TooltipComponent
-                      title={
-                        localDict.proposalThreshold ?? 'Proposal Threshold'
-                      }
-                      tooltipText="The minimum number of votes a delegate must have to create a proposal. This threshold ensures that only members with sufficient stake in the DAO can initiate governance actions."
-                      className="font-bold rounded-xl flex"
-                    />
-
-                    <div className="text-dark_blue">
-                      {proposalThreshold
-                        ? formatString(formatEther(proposalThreshold as string))
-                        : '0'}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-row gap-4 justify-between items-center">
-                    <TooltipComponent
-                      title={localDict.quorumVotes ?? 'Quorum Votes'}
-                      tooltipText="The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
-                      className="font-bold rounded-xl flex"
-                    />
-                    <div className="text-dark_blue">
-                      {quorum
-                        ? formatString(formatEther(quorum as string))
-                        : '0'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-row justify-between items-center border rounded-xl p-4 bg-gray-100">
-                  <TooltipComponent
-                    title={localDict.myPower ?? 'My Power'}
-                    tooltipText={
-                      'Your current voting power in this DAO, ' +
-                      'determined by the number of governance tokens you hold ' +
-                      'or have been delegated. This power allows you to vote on proposals ' +
-                      'and create new ones if you meet the proposal threshold.'
-                    }
-                    className="font-bold rounded-xl flex"
-                  />
-                  <div className="text-dark_blue">
-                    {/* {votes
+                      {/* {votes
                       ? formatString(formatEther(BigInt(votes as string)))
                       : '0'} */}
 
-                    {votes ? votes.toString() : '0'}
+                      {votes ? votes.toString() : '0'}
+                    </div>
+                  </div>
+                  <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
+                    <h1 className="font-bold rounded-xl  flex">
+                      {localDict.createdAt ?? 'Created at'}{' '}
+                      {new Date(
+                        Number(createdAt[chainId || defaultChainId]) * 1000
+                      ).toLocaleString()}
+                    </h1>
+                  </div>
+                  <div className="flex flex-col border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
+                    <div className="flex flex-row justify-between items-center mb-2">
+                      <h1 className="font-bold">PCE Socials</h1>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsEditingSocials(!isEditingSocials)
+                          setEditingSocials({
+                            website: socials.website,
+                            linkedin: socials.linkedin,
+                            twitter: socials.twitter,
+                            telegram: socials.telegram,
+                          })
+                        }}
+                      >
+                        {isEditingSocials ? 'Cancel' : 'Edit'}
+                      </Button>
+                    </div>
+
+                    {isEditingSocials ? (
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-medium">
+                            PCE Website
+                          </label>
+                          <Input
+                            value={editingSocials.website}
+                            onChange={(e) =>
+                              setEditingSocials((prev) => ({
+                                ...prev,
+                                website: e.target.value,
+                              }))
+                            }
+                            placeholder="https://website.com"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-medium">
+                            LinkedIn
+                          </label>
+                          <Input
+                            value={editingSocials.linkedin}
+                            onChange={(e) =>
+                              setEditingSocials((prev) => ({
+                                ...prev,
+                                linkedin: e.target.value,
+                              }))
+                            }
+                            placeholder="https://www.linkedin.com/"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-medium">Twitter</label>
+                          <Input
+                            value={editingSocials.twitter}
+                            onChange={(e) =>
+                              setEditingSocials((prev) => ({
+                                ...prev,
+                                twitter: e.target.value,
+                              }))
+                            }
+                            placeholder="https://twitter.com"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-medium">
+                            Telegram
+                          </label>
+                          <Input
+                            value={editingSocials.telegram}
+                            onChange={(e) =>
+                              setEditingSocials((prev) => ({
+                                ...prev,
+                                telegram: e.target.value,
+                              }))
+                            }
+                            placeholder="https://t.me/"
+                          />
+                        </div>
+
+                        <div className="flex flex-row gap-2 mt-2">
+                          <Button
+                            onClick={handleUpdateSocials}
+                            className="flex-1"
+                            disabled={isUpdatingSocials}
+                          >
+                            {isUpdatingSocials ? 'Saving...' : 'Save Changes'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setIsEditingSocials(false)
+                              setSocials({
+                                website: socials.website,
+                                linkedin: socials.linkedin,
+                                twitter: socials.twitter,
+                                telegram: socials.telegram,
+                              })
+                            }}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-row justify-between items-center">
+                          <span className="font-medium">PCE Site:</span>
+                          <Link
+                            href={socials.website}
+                            className="text-dark_blue hover:underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {socials.website}
+                          </Link>
+                        </div>
+
+                        <div className="flex flex-row justify-between items-center">
+                          <span className="font-medium">LinkedIn:</span>
+                          <Link
+                            href={socials.linkedin}
+                            className="text-dark_blue hover:underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {socials.linkedin}
+                          </Link>
+                        </div>
+
+                        <div className="flex flex-row justify-between items-center">
+                          <span className="font-medium">Twitter:</span>
+                          <Link
+                            href={socials.twitter}
+                            className="text-dark_blue hover:underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {socials.twitter}
+                          </Link>
+                        </div>
+
+                        <div className="flex flex-row justify-between items-center">
+                          <span className="font-medium">Telegram:</span>
+                          <Link
+                            href={socials.telegram}
+                            className="text-dark_blue hover:underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {socials.telegram}
+                          </Link>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
-                  <h1 className="font-bold rounded-xl  flex">
-                    {localDict.createdAt ?? 'Created at'}{' '}
-                    {new Date(
-                      Number(createdAt[chainId || defaultChainId]) * 1000
-                    ).toLocaleString()}
+              </div>
+            </TabsContent>
+            <TabsContent value="all">
+              <div className="flex flex-row w-full items-center sm:justify-start justify-center">
+                <Tabs defaultValue="all" className="gap-0 w-full">
+                  <TabsList className="flex flex-row w-full sm:justify-start justify-center">
+                    <TabsTrigger className="w-20" value="all">
+                      {localDict.all ?? 'All'}
+                    </TabsTrigger>
+                    <TabsTrigger className="w-20" value="active">
+                      {localDict.active ?? 'Active'}
+                    </TabsTrigger>
+                    <TabsTrigger className="w-20" value="executed">
+                      {localDict.executed ?? 'Executed'}
+                    </TabsTrigger>
+                    <TabsTrigger className="w-20" value="defeated">
+                      {localDict.defeated ?? 'Defeated'}
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent
+                    value="all"
+                    className="flex w-full flex-col gap-4 mt-4"
+                  >
+                    {proposals.length > 0 ? (
+                      proposals.map((proposal, index) => {
+                        return (
+                          <ProposalCard
+                            key={index}
+                            proposal={proposal}
+                            status={proposalStatus[index]}
+                            index={index}
+                          />
+                        )
+                      })
+                    ) : (
+                      <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                        {localDict.noProposals ?? 'No proposals at the moment'}
+                      </div>
+                    )}
+                  </TabsContent>
+                  <TabsContent
+                    value="active"
+                    className="flex w-full flex-col mt-0"
+                  >
+                    {proposals.filter(
+                      (_, index) => proposalStatus[index] === 'Active'
+                    ).length > 0 ? (
+                      proposals.map((proposal, index) => {
+                        if (proposalStatus[index] === 'Active') {
+                          return (
+                            <ProposalCard
+                              key={index}
+                              proposal={proposal}
+                              status={proposalStatus[index]}
+                              index={index}
+                            />
+                          )
+                        }
+                        return null
+                      })
+                    ) : (
+                      <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                        {localDict.noProposals ??
+                          'No active proposals at the moment'}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent
+                    value="executed"
+                    className="flex w-full flex-col mt-0"
+                  >
+                    {proposals.filter(
+                      (_, index) => proposalStatus[index] === 'Executed'
+                    ).length > 0 ? (
+                      proposals.map((proposal, index) => {
+                        if (proposalStatus[index] === 'Executed') {
+                          return (
+                            <ProposalCard
+                              key={index}
+                              proposal={proposal}
+                              status={proposalStatus[index]}
+                              index={index}
+                            />
+                          )
+                        }
+                        return null
+                      })
+                    ) : (
+                      <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                        {localDict.noProposals ??
+                          'No succeeded proposals at the moment'}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent
+                    value="defeated"
+                    className="flex w-full flex-col gap-4 mt-0"
+                  >
+                    {proposals.filter(
+                      (_, index) => proposalStatus[index] === 'Defeated'
+                    ).length > 0 ? (
+                      proposals.map((proposal, index) => {
+                        if (proposalStatus[index] === 'Defeated') {
+                          return (
+                            <ProposalCard
+                              key={index}
+                              proposal={proposal}
+                              status={proposalStatus[index]}
+                              index={index}
+                            />
+                          )
+                        }
+                        return null
+                      })
+                    ) : (
+                      <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                        {localDict.noProposals ??
+                          'No defeated proposals at the moment'}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </TabsContent>
+            <TabsContent value="holds">
+              <div className="flex flex-col sm:flex-row mt-4 gap-4 sm:items-start items-center">
+                <div className="flex flex-col w-full">
+                  <h1 className="text-2xl font-bold text-center sm:text-left">
+                    {localDict.treasury ?? 'Treasury'}
                   </h1>
+                  <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="font-bold">
+                            {localDict.token ?? 'Token'}
+                          </TableHead>
+                          <TableHead className="font-bold">
+                            {localDict.amount ?? 'Amount'}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {treasuryBalances?.map((token, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-bold">
+                              {token.name === '' ? 'PCE TEST' : token.name}
+                            </TableCell>
+                            <TableCell className="font-bold">
+                              {formatString(
+                                formatEther(
+                                  BigInt(token.tokenBalance).toString()
+                                )
+                              )}{' '}
+                              {token.symbol === '' ? 'PCE TEST' : token.symbol}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-                <div className="flex flex-col border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
-                  <div className="flex flex-row justify-between items-center mb-2">
-                    <h1 className="font-bold">PCE Socials</h1>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setIsEditingSocials(!isEditingSocials)
-                        setEditingSocials({
-                          website: socials.website,
-                          linkedin: socials.linkedin,
-                          twitter: socials.twitter,
-                          telegram: socials.telegram,
-                        })
+                <div className="flex flex-col w-full sm:w-[40%]">
+                  <h1 className="text-2xl font-bold text-center sm:text-left">
+                    {localDict.daoBalance ?? 'DAO Balance'}
+                  </h1>
+
+                  <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
+                    <h1 className="font-bold rounded-xl flex">
+                      {localDict.daoTreasury ?? 'DAO Treasury'}
+                    </h1>
+                    <div className="flex flex-row justify-between">
+                      <h1 className="font-bold rounded-xl  flex">
+                        {localDict.totalValue ?? 'Total Value'}
+                      </h1>
+                      <h1 className="font-bold rounded-xl  flex">$0</h1>
+                    </div>
+
+                    <div className="flex flex-row justify-between">
+                      <h1 className="font-bold rounded-xl  flex">
+                        {localDict.numberOfTokens ?? 'Number of Tokens'}
+                      </h1>
+                      <h1 className="font-bold rounded-xl  flex">
+                        {treasuryBalances.length}
+                      </h1>
+                    </div>
+
+                    <div className="flex flex-row justify-between">
+                      <h1 className="font-bold rounded-xl  flex">
+                        {localDict.numberOfNfts ?? 'Number of NFTs'}
+                      </h1>
+                      <h1 className="font-bold rounded-xl  flex">$0</h1>
+                    </div>
+
+                    <Dialog
+                      open={isDepositDialogOpened}
+                      onOpenChange={() => {
+                        setIsDepositDialogOpened(!isDepositDialogOpened)
                       }}
                     >
-                      {isEditingSocials ? 'Cancel' : 'Edit'}
-                    </Button>
+                      <DialogTrigger asChild>
+                        <Button className="w-full bg-dark_blue">
+                          {localDict.depositToDaoTreasury ??
+                            'Deposit to DAO Treasury'}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader className="flex flex-col gap-2">
+                          <DialogTitle>
+                            {localDict.address ?? 'Address'}
+                          </DialogTitle>
+                          <DialogDescription>
+                            {localDict.tokenAddress ??
+                              'Token address to deposit'}
+                          </DialogDescription>
+                          <Input
+                            onChange={(e) => setTokenAddress(e.target.value)}
+                            placeholder="Address"
+                          />
+                          <DialogTitle>
+                            {localDict.amount ?? 'Amount'}
+                          </DialogTitle>
+                          <DialogDescription>
+                            {localDict.amountToDeposit ?? 'Amount to deposit'}
+                          </DialogDescription>
+                          <Input
+                            onChange={(e) => setTransferAmount(e.target.value)}
+                            placeholder="Amount"
+                          />
+                          <Button
+                            className="w-full bg-dark_blue"
+                            onClick={async () => {
+                              await writeContract({
+                                abi: PCE_ABI,
+                                address: tokenAddress as `0x${string}`,
+                                functionName: 'transfer',
+                                args: [
+                                  timelockAddress[
+                                    chainId || defaultChainId
+                                  ] as `0x${string}`,
+                                  parseEther(transferAmount),
+                                ],
+                              })
+
+                              setTokenAddress('')
+                              setTransferAmount('')
+                              setIsDepositDialogOpened(!isDepositDialogOpened)
+                              await refetchPCEBalance()
+                              await refetchGovTokenBalance()
+                            }}
+                          >
+                            {localDict.deposit ?? 'Deposit'}
+                          </Button>
+                        </DialogHeader>
+                      </DialogContent>
+                    </Dialog>
                   </div>
-
-                  {isEditingSocials ? (
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium">
-                          PCE Website
-                        </label>
-                        <Input
-                          value={editingSocials.website}
-                          onChange={(e) =>
-                            setEditingSocials((prev) => ({
-                              ...prev,
-                              website: e.target.value,
-                            }))
-                          }
-                          placeholder="https://website.com"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium">LinkedIn</label>
-                        <Input
-                          value={editingSocials.linkedin}
-                          onChange={(e) =>
-                            setEditingSocials((prev) => ({
-                              ...prev,
-                              linkedin: e.target.value,
-                            }))
-                          }
-                          placeholder="https://www.linkedin.com/"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium">Twitter</label>
-                        <Input
-                          value={editingSocials.twitter}
-                          onChange={(e) =>
-                            setEditingSocials((prev) => ({
-                              ...prev,
-                              twitter: e.target.value,
-                            }))
-                          }
-                          placeholder="https://twitter.com"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium">Telegram</label>
-                        <Input
-                          value={editingSocials.telegram}
-                          onChange={(e) =>
-                            setEditingSocials((prev) => ({
-                              ...prev,
-                              telegram: e.target.value,
-                            }))
-                          }
-                          placeholder="https://t.me/"
-                        />
-                      </div>
-
-                      <div className="flex flex-row gap-2 mt-2">
-                        <Button
-                          onClick={handleUpdateSocials}
-                          className="flex-1"
-                          disabled={isUpdatingSocials}
-                        >
-                          {isUpdatingSocials ? 'Saving...' : 'Save Changes'}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setIsEditingSocials(false)
-                            setSocials({
-                              website: socials.website,
-                              linkedin: socials.linkedin,
-                              twitter: socials.twitter,
-                              telegram: socials.telegram,
-                            })
-                          }}
-                          className="flex-1"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-row justify-between items-center">
-                        <span className="font-medium">PCE Site:</span>
-                        <Link
-                          href={socials.website}
-                          className="text-dark_blue hover:underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {socials.website}
-                        </Link>
-                      </div>
-
-                      <div className="flex flex-row justify-between items-center">
-                        <span className="font-medium">LinkedIn:</span>
-                        <Link
-                          href={socials.linkedin}
-                          className="text-dark_blue hover:underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {socials.linkedin}
-                        </Link>
-                      </div>
-
-                      <div className="flex flex-row justify-between items-center">
-                        <span className="font-medium">Twitter:</span>
-                        <Link
-                          href={socials.twitter}
-                          className="text-dark_blue hover:underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {socials.twitter}
-                        </Link>
-                      </div>
-
-                      <div className="flex flex-row justify-between items-center">
-                        <span className="font-medium">Telegram:</span>
-                        <Link
-                          href={socials.telegram}
-                          className="text-dark_blue hover:underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {socials.telegram}
-                        </Link>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="all">
-            <div className="flex flex-row w-full items-center sm:justify-start justify-center">
-              <Tabs defaultValue="all" className="gap-0 w-full">
-                <TabsList className="flex flex-row w-full sm:justify-start justify-center">
-                  <TabsTrigger className="w-20" value="all">
-                    {localDict.all ?? 'All'}
-                  </TabsTrigger>
-                  <TabsTrigger className="w-20" value="active">
-                    {localDict.active ?? 'Active'}
-                  </TabsTrigger>
-                  <TabsTrigger className="w-20" value="executed">
-                    {localDict.executed ?? 'Executed'}
-                  </TabsTrigger>
-                  <TabsTrigger className="w-20" value="defeated">
-                    {localDict.defeated ?? 'Defeated'}
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent
-                  value="all"
-                  className="flex w-full flex-col gap-4 mt-4"
-                >
-                  {proposals.length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      return (
-                        <ProposalCard
-                          key={index}
-                          proposal={proposal}
-                          status={proposalStatus[index]}
-                          index={index}
-                        />
-                      )
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ?? 'No proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-                <TabsContent
-                  value="active"
-                  className="flex w-full flex-col mt-0"
-                >
-                  {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Active'
-                  ).length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Active') {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
-                      }
-                      return null
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ??
-                        'No active proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
+            </TabsContent>
+          </Tabs>
+        </div>
+        <Dialog
+          open={isCreateProposalDialogOpened}
+          onOpenChange={setIsCreateProposalDialogOpened}
+        >
+          <DialogContent>
+            <DialogTitle>
+              {localDict.createProposal ?? 'Create a Proposal'}
+            </DialogTitle>
+            <DialogDescription>
+              Configure the proposal details below
+            </DialogDescription>
+            <div className="flex flex-col gap-4 mt-4 mb-2">
+              <Select onValueChange={(value) => handleSelect(value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      localDict.selectACategory ?? 'Select a category'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">{dict?.submit?.category1}</SelectItem>
+                  <SelectItem value="2">{dict?.submit?.category2}</SelectItem>
+                  <SelectItem value="3">{dict?.submit?.category3}</SelectItem>
+                  <SelectItem value="4">{dict?.submit?.category4}</SelectItem>
+                  <SelectItem value="5">{dict?.submit?.category5}</SelectItem>
+                  <SelectItem value="6">{dict?.submit?.category6}</SelectItem>
+                </SelectContent>
+              </Select>
 
-                <TabsContent
-                  value="executed"
-                  className="flex w-full flex-col mt-0"
-                >
-                  {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Executed'
-                  ).length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Executed') {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
-                      }
-                      return null
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ??
-                        'No succeeded proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent
-                  value="defeated"
-                  className="flex w-full flex-col gap-4 mt-0"
-                >
-                  {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Defeated'
-                  ).length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Defeated') {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
-                      }
-                      return null
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ??
-                        'No defeated proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-            </div>
-          </TabsContent>
-          <TabsContent value="holds">
-            <div className="flex flex-col sm:flex-row mt-4 gap-4 sm:items-start items-center">
-              <div className="flex flex-col w-full">
-                <h1 className="text-2xl font-bold text-center sm:text-left">
-                  {localDict.treasury ?? 'Treasury'}
-                </h1>
-                <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="font-bold">
-                          {localDict.token ?? 'Token'}
-                        </TableHead>
-                        <TableHead className="font-bold">
-                          {localDict.amount ?? 'Amount'}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {treasuryBalances?.map((token, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-bold">
-                            {token.name === '' ? 'PCE TEST' : token.name}
-                          </TableCell>
-                          <TableCell className="font-bold">
-                            {formatString(
-                              formatEther(BigInt(token.tokenBalance).toString())
-                            )}{' '}
-                            {token.symbol === '' ? 'PCE TEST' : token.symbol}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-              <div className="flex flex-col w-full sm:w-[40%]">
-                <h1 className="text-2xl font-bold text-center sm:text-left">
-                  {localDict.daoBalance ?? 'DAO Balance'}
-                </h1>
-
-                <div className="flex flex-col justify-between border rounded-xl p-4 mt-4 gap-4 bg-gray-100">
-                  <h1 className="font-bold rounded-xl flex">
-                    {localDict.daoTreasury ?? 'DAO Treasury'}
-                  </h1>
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      {localDict.totalValue ?? 'Total Value'}
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      {localDict.numberOfTokens ?? 'Number of Tokens'}
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">
-                      {treasuryBalances.length}
-                    </h1>
-                  </div>
-
-                  <div className="flex flex-row justify-between">
-                    <h1 className="font-bold rounded-xl  flex">
-                      {localDict.numberOfNfts ?? 'Number of NFTs'}
-                    </h1>
-                    <h1 className="font-bold rounded-xl  flex">$0</h1>
-                  </div>
-
-                  <Dialog
-                    open={isDepositDialogOpened}
-                    onOpenChange={() => {
-                      setIsDepositDialogOpened(!isDepositDialogOpened)
-                    }}
-                  >
-                    <DialogTrigger asChild>
-                      <Button className="w-full bg-dark_blue">
-                        {localDict.depositToDaoTreasury ??
-                          'Deposit to DAO Treasury'}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader className="flex flex-col gap-2">
-                        <DialogTitle>
-                          {localDict.address ?? 'Address'}
-                        </DialogTitle>
-                        <DialogDescription>
-                          {localDict.tokenAddress ?? 'Token address to deposit'}
-                        </DialogDescription>
-                        <Input
-                          onChange={(e) => setTokenAddress(e.target.value)}
-                          placeholder="Address"
-                        />
-                        <DialogTitle>
-                          {localDict.amount ?? 'Amount'}
-                        </DialogTitle>
-                        <DialogDescription>
-                          {localDict.amountToDeposit ?? 'Amount to deposit'}
-                        </DialogDescription>
-                        <Input
-                          onChange={(e) => setTransferAmount(e.target.value)}
-                          placeholder="Amount"
-                        />
-                        <Button
-                          className="w-full bg-dark_blue"
-                          onClick={async () => {
-                            await writeContract({
-                              abi: PCE_ABI,
-                              address: tokenAddress as `0x${string}`,
-                              functionName: 'transfer',
-                              args: [
-                                timelockAddress[
-                                  chainId || defaultChainId
-                                ] as `0x${string}`,
-                                parseEther(transferAmount),
-                              ],
-                            })
-
-                            setTokenAddress('')
-                            setTransferAmount('')
-                            setIsDepositDialogOpened(!isDepositDialogOpened)
-                            await refetchPCEBalance()
-                            await refetchGovTokenBalance()
-                          }}
-                        >
-                          {localDict.deposit ?? 'Deposit'}
-                        </Button>
-                      </DialogHeader>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-      <Dialog
-        open={isCreateProposalDialogOpened}
-        onOpenChange={setIsCreateProposalDialogOpened}
-      >
-        <DialogContent>
-          <DialogTitle>
-            {localDict.createProposal ?? 'Create a Proposal'}
-          </DialogTitle>
-          <DialogDescription>
-            Configure the proposal details below
-          </DialogDescription>
-          <div className="flex flex-col gap-4 mt-4 mb-2">
-            <Select onValueChange={(value) => handleSelect(value)}>
-              <SelectTrigger className="w-full">
-                <SelectValue
-                  placeholder={localDict.selectACategory ?? 'Select a category'}
+              <div className="w-full flex flex-col gap-4">
+                <Input
+                  className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+                  onChange={(e) => setTokenAddress(e.target.value)}
+                  placeholder={localDict.address ?? 'Address'}
                 />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">{dict?.submit?.category1}</SelectItem>
-                <SelectItem value="2">{dict?.submit?.category2}</SelectItem>
-                <SelectItem value="3">{dict?.submit?.category3}</SelectItem>
-                <SelectItem value="4">{dict?.submit?.category4}</SelectItem>
-                <SelectItem value="5">{dict?.submit?.category5}</SelectItem>
-                <SelectItem value="6">{dict?.submit?.category6}</SelectItem>
-              </SelectContent>
-            </Select>
 
-            <div className="w-full flex flex-col gap-4">
-              <Input
-                className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
-                onChange={(e) => setTokenAddress(e.target.value)}
-                placeholder={localDict.address ?? 'Address'}
-              />
+                <Input
+                  className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder={dict?.submit?.amount ?? ''}
+                  name="values"
+                  onChange={handleChange}
+                />
 
-              <Input
-                className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder={dict?.submit?.amount ?? ''}
-                name="values"
-                onChange={handleChange}
-              />
+                <Input
+                  className={`${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder={
+                    category === '5'
+                      ? dict?.submit?.gracePeriod
+                      : dict?.submit?.quorum_votes
+                  }
+                  name="variable1"
+                  onChange={handleChange}
+                />
 
-              <Input
-                className={`${category !== '5' && category !== '6' ? 'hidden' : ''}`}
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder={
-                  category === '5'
-                    ? dict?.submit?.gracePeriod
-                    : dict?.submit?.quorum_votes
-                }
-                name="variable1"
-                onChange={handleChange}
-              />
+                <Input
+                  className={`${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder={
+                    category === '5'
+                      ? dict?.submit?.min_delay
+                      : dict?.submit?.proposal_threshold
+                  }
+                  name="variable2"
+                  onChange={handleChange}
+                />
 
-              <Input
-                className={`${category !== '5' && category !== '6' ? 'hidden' : ''}`}
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder={
-                  category === '5'
-                    ? dict?.submit?.min_delay
-                    : dict?.submit?.proposal_threshold
-                }
-                name="variable2"
-                onChange={handleChange}
-              />
+                <Input
+                  className={` ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder={
+                    category === '5'
+                      ? dict?.submit?.max_delay
+                      : dict?.submit?.proposal_maxOperations
+                  }
+                  name="variable3"
+                  onChange={handleChange}
+                />
 
-              <Input
-                className={` ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder={
-                  category === '5'
-                    ? dict?.submit?.max_delay
-                    : dict?.submit?.proposal_maxOperations
-                }
-                name="variable3"
-                onChange={handleChange}
-              />
+                <Textarea
+                  className="max-sm:h-60 h-60 w-full align-center p-2 rounded-md border-[1px] border-gray94"
+                  placeholder={dict?.submit?.description ?? ''}
+                  name="description"
+                  onChange={handleChange}
+                />
 
-              <Textarea
-                className="max-sm:h-60 h-60 w-full align-center p-2 rounded-md border-[1px] border-gray94"
-                placeholder={dict?.submit?.description ?? ''}
-                name="description"
-                onChange={handleChange}
-              />
+                <Textarea
+                  className={`max-sm:h-60 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94 outline-none ${category != '4' ? 'hidden' : ''}`}
+                  placeholder={dict?.submit?.bytescode ?? ''}
+                  name="byescode"
+                  onChange={handleChange}
+                />
+              </div>
 
-              <Textarea
-                className={`max-sm:h-60 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94 outline-none ${category != '4' ? 'hidden' : ''}`}
-                placeholder={dict?.submit?.bytescode ?? ''}
-                name="byescode"
-                onChange={handleChange}
-              />
+              <Button onClick={handleCreateProposal}>Create</Button>
             </div>
+          </DialogContent>
+        </Dialog>
 
-            <Button onClick={handleCreateProposal}>Create</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <RingLoader
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 9999,
-        }}
-        color={'#000000'}
-        loading={loading}
-        cssOverride={ringStyle}
-        size={50}
-      />
+        <RingLoader
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999,
+          }}
+          color={'#000000'}
+          loading={loading}
+          cssOverride={ringStyle}
+          size={50}
+        />
+      </div>
     </div>
   )
 }

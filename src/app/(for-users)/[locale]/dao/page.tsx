@@ -391,200 +391,215 @@ export default function ForDAOPage({
   }, [locale])
 
   return (
-    <div className="items-center justify-center flex flex-col mx-10 md:mx-20 gap-4">
-      <div className="flex flex-col md:flex-row h-20 w-full justify-between items-center">
-        <h1 className="text-2xl font-bold text-dark_bg">{localeDict.title}</h1>
+    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+      <div className="w-[95%] mx-auto items-center justify-center flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row h-20 w-full justify-between items-center">
+          <h1 className="text-2xl font-bold text-dark_bg">
+            {localeDict.title}
+          </h1>
 
-        <Button
-          className="w-full sm:w-auto sm:min-w-[200px] text-sm sm:text-base"
-          onClick={() => {
-            if (chainId === 0 || chainId === undefined) {
-              showConnectWalletAlert()
-              return
-            }
-            setIsDialogOpened(!isDialogOpened)
-          }}
-        >
-          {localeDict.createDao}
-        </Button>
-
-        <Dialog
-          open={isDialogOpened}
-          onOpenChange={() => {
-            setIsDialogOpened(!isDialogOpened)
-          }}
-        >
-          <DialogContent className="flex flex-col gap-2">
-            <div className="flex flex-col gap-2">
-              <DialogTitle>DAO Settings</DialogTitle>
-            </div>
-            <div className="flex flex-col gap-2">
-              <h1>About DAO</h1>
-              <div className="flex flex-col gap-2">
-                <Input
-                  placeholder={localeDict.daoName}
-                  onChange={(e) => updateDaoForm('name', e.target.value)}
-                  value={daoForm.name}
-                />
-                <Input
-                  placeholder={localeDict.description}
-                  onChange={(e) =>
-                    updateDaoMetadata('description', e.target.value)
-                  }
-                  value={daoForm.metadata.description}
-                />
-                <Input
-                  placeholder={localeDict.website}
-                  onChange={(e) => updateDaoMetadata('website', e.target.value)}
-                  value={daoForm.metadata.website}
-                />
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <h1>Social Links</h1>
-              <div className="flex flex-col gap-2">
-                <Input
-                  placeholder={localeDict.linkedin}
-                  onChange={(e) =>
-                    updateDaoMetadata('linkedin', e.target.value)
-                  }
-                  value={daoForm.metadata.linkedin}
-                />
-                <Input
-                  placeholder={localeDict.twitter}
-                  onChange={(e) => updateDaoMetadata('twitter', e.target.value)}
-                  value={daoForm.metadata.twitter}
-                />
-                <Input
-                  placeholder={localeDict.telegram}
-                  onChange={(e) =>
-                    updateDaoMetadata('telegram', e.target.value)
-                  }
-                  value={daoForm.metadata.telegram}
-                />
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <h1>{localeDict.enterAddress}</h1>
-              <div className="flex flex-col gap-2">
-                <Input
-                  placeholder={localeDict.tokenAddress}
-                  onChange={(e) =>
-                    updateDaoForm('tokenAddress', e.target.value)
-                  }
-                  value={daoForm.tokenAddress}
-                />
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <h1>Voting Parameters</h1>
-              <div className="flex flex-col gap-2">
-                <Input
-                  placeholder={localeDict.votingDelay + ' - 1 Block'}
-                  onChange={(e) => updateDaoForm('votingDelay', e.target.value)}
-                  value={daoForm.votingDelay}
-                />
-                <Input
-                  placeholder={localeDict.votingPeriod + ' - 100 Blocks'}
-                  onChange={(e) =>
-                    updateDaoForm('votingPeriod', e.target.value)
-                  }
-                  value={daoForm.votingPeriod}
-                />
-                <Input
-                  placeholder={localeDict.proposalThreshold + ' - 1000 Power'}
-                  onChange={(e) =>
-                    updateDaoForm('proposalThreshold', e.target.value)
-                  }
-                  value={daoForm.proposalThreshold}
-                />
-                <Input
-                  placeholder={localeDict.quorum + ' - 2000 Power'}
-                  onChange={(e) => updateDaoForm('quorumVotes', e.target.value)}
-                  value={daoForm.quorumVotes}
-                />
-                <Input
-                  placeholder={localeDict.timelockDelay + ' - 86400 (1day)'}
-                  onChange={(e) =>
-                    updateDaoForm('timelockDelay', e.target.value)
-                  }
-                  value={daoForm.timelockDelay}
-                />
-              </div>
-            </div>
-            <Button
-              onClick={() => {
-                handleCreateDao()
-              }}
-            >
-              {localeDict.confirm}
-            </Button>
-          </DialogContent>
-        </Dialog>
-      </div>
-      <div className="flex flex-col w-full md:gap-4 gap-2">
-        <Tabs defaultValue="all" className="flex flex-col w-full items-center">
-          <TabsList className="flex flex-row w-full">
-            <TabsTrigger className="w-full flex" value="all">
-              {localeDict.allDaos}
-            </TabsTrigger>
-            <TabsTrigger className="w-full flex" value="my">
-              {localeDict.allActivities}
-            </TabsTrigger>
-          </TabsList>
-          <div className="flex flex-row gap-4 w-full mt-4">
-            <Input
-              placeholder={localeDict.search}
-              className="w-full"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <DropdownMenu>
-              <DropdownMenuContent>
-                <DropdownMenuItem>Sort Dao</DropdownMenuItem>
-                <DropdownMenuItem>Date of Creation</DropdownMenuItem>
-                <DropdownMenuItem>Members</DropdownMenuItem>
-                <DropdownMenuItem>Proposals</DropdownMenuItem>
-                <DropdownMenuItem>Total token delegated</DropdownMenuItem>
-                <DropdownMenuItem>Total token delegatees</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <TabsContent
-            value="all"
-            className="flex flex-col w-full items-center justify-center"
+          <Button
+            className="w-full sm:w-auto sm:min-w-[200px] text-sm sm:text-base"
+            onClick={() => {
+              if (chainId === 0 || chainId === undefined) {
+                showConnectWalletAlert()
+                return
+              }
+              setIsDialogOpened(!isDialogOpened)
+            }}
           >
-            {daos
-              .filter((dao) =>
-                dao.daoName?.toLowerCase().includes(search.toLowerCase())
-              )
-              .map((dao) => (
-                <DaoCard
-                  key={dao.id}
-                  dao={dao}
-                  locale={locale}
-                  localeDict={localeDict}
-                  router={router}
-                  chainId={chainId || 0}
-                />
-              ))}
-          </TabsContent>
-        </Tabs>
-      </div>
+            {localeDict.createDao}
+          </Button>
 
-      <RingLoader
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 9999,
-        }}
-        color={'#000000'}
-        loading={loading}
-        cssOverride={ringStyle}
-        size={50}
-      />
+          <Dialog
+            open={isDialogOpened}
+            onOpenChange={() => {
+              setIsDialogOpened(!isDialogOpened)
+            }}
+          >
+            <DialogContent className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2">
+                <DialogTitle>DAO Settings</DialogTitle>
+              </div>
+              <div className="flex flex-col gap-2">
+                <h1>About DAO</h1>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    placeholder={localeDict.daoName}
+                    onChange={(e) => updateDaoForm('name', e.target.value)}
+                    value={daoForm.name}
+                  />
+                  <Input
+                    placeholder={localeDict.description}
+                    onChange={(e) =>
+                      updateDaoMetadata('description', e.target.value)
+                    }
+                    value={daoForm.metadata.description}
+                  />
+                  <Input
+                    placeholder={localeDict.website}
+                    onChange={(e) =>
+                      updateDaoMetadata('website', e.target.value)
+                    }
+                    value={daoForm.metadata.website}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <h1>Social Links</h1>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    placeholder={localeDict.linkedin}
+                    onChange={(e) =>
+                      updateDaoMetadata('linkedin', e.target.value)
+                    }
+                    value={daoForm.metadata.linkedin}
+                  />
+                  <Input
+                    placeholder={localeDict.twitter}
+                    onChange={(e) =>
+                      updateDaoMetadata('twitter', e.target.value)
+                    }
+                    value={daoForm.metadata.twitter}
+                  />
+                  <Input
+                    placeholder={localeDict.telegram}
+                    onChange={(e) =>
+                      updateDaoMetadata('telegram', e.target.value)
+                    }
+                    value={daoForm.metadata.telegram}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <h1>{localeDict.enterAddress}</h1>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    placeholder={localeDict.tokenAddress}
+                    onChange={(e) =>
+                      updateDaoForm('tokenAddress', e.target.value)
+                    }
+                    value={daoForm.tokenAddress}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <h1>Voting Parameters</h1>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    placeholder={localeDict.votingDelay + ' - 1 Block'}
+                    onChange={(e) =>
+                      updateDaoForm('votingDelay', e.target.value)
+                    }
+                    value={daoForm.votingDelay}
+                  />
+                  <Input
+                    placeholder={localeDict.votingPeriod + ' - 100 Blocks'}
+                    onChange={(e) =>
+                      updateDaoForm('votingPeriod', e.target.value)
+                    }
+                    value={daoForm.votingPeriod}
+                  />
+                  <Input
+                    placeholder={localeDict.proposalThreshold + ' - 1000 Power'}
+                    onChange={(e) =>
+                      updateDaoForm('proposalThreshold', e.target.value)
+                    }
+                    value={daoForm.proposalThreshold}
+                  />
+                  <Input
+                    placeholder={localeDict.quorum + ' - 2000 Power'}
+                    onChange={(e) =>
+                      updateDaoForm('quorumVotes', e.target.value)
+                    }
+                    value={daoForm.quorumVotes}
+                  />
+                  <Input
+                    placeholder={localeDict.timelockDelay + ' - 86400 (1day)'}
+                    onChange={(e) =>
+                      updateDaoForm('timelockDelay', e.target.value)
+                    }
+                    value={daoForm.timelockDelay}
+                  />
+                </div>
+              </div>
+              <Button
+                onClick={() => {
+                  handleCreateDao()
+                }}
+              >
+                {localeDict.confirm}
+              </Button>
+            </DialogContent>
+          </Dialog>
+        </div>
+        <div className="flex flex-col w-full md:gap-4 gap-2">
+          <Tabs
+            defaultValue="all"
+            className="flex flex-col w-full items-center"
+          >
+            <TabsList className="flex flex-row w-full">
+              <TabsTrigger className="w-full flex" value="all">
+                {localeDict.allDaos}
+              </TabsTrigger>
+              <TabsTrigger className="w-full flex" value="my">
+                {localeDict.allActivities}
+              </TabsTrigger>
+            </TabsList>
+            <div className="flex flex-row gap-4 w-full mt-4">
+              <Input
+                placeholder={localeDict.search}
+                className="w-full"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <DropdownMenu>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>Sort Dao</DropdownMenuItem>
+                  <DropdownMenuItem>Date of Creation</DropdownMenuItem>
+                  <DropdownMenuItem>Members</DropdownMenuItem>
+                  <DropdownMenuItem>Proposals</DropdownMenuItem>
+                  <DropdownMenuItem>Total token delegated</DropdownMenuItem>
+                  <DropdownMenuItem>Total token delegatees</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <TabsContent
+              value="all"
+              className="flex flex-col w-full items-center justify-center"
+            >
+              {daos
+                .filter((dao) =>
+                  dao.daoName?.toLowerCase().includes(search.toLowerCase())
+                )
+                .map((dao) => (
+                  <DaoCard
+                    key={dao.id}
+                    dao={dao}
+                    locale={locale}
+                    localeDict={localeDict}
+                    router={router}
+                    chainId={chainId || 0}
+                  />
+                ))}
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        <RingLoader
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999,
+          }}
+          color={'#000000'}
+          loading={loading}
+          cssOverride={ringStyle}
+          size={50}
+        />
+      </div>
     </div>
   )
 }

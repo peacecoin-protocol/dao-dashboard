@@ -211,7 +211,7 @@ export const CampaignsTable = ({
       {/* Desktop View - Table */}
       <div className="hidden lg:block">
         <Card>
-          <CardContent className="">
+          <CardContent className="px-1.5">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
