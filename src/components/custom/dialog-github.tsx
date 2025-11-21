@@ -25,6 +25,21 @@ const DialogGithub = React.forwardRef<HTMLInputElement, DialogGithubProps>(
     { className, localDict, open, asChild = false, pip, setOpen, ...props },
     ref
   ) => {
+    const [isExpanded, setIsExpanded] = React.useState(false)
+    const MAX_LENGTH = 500 // Character limit before truncation
+
+    const content = pip?.content || ''
+    const isLongText = content.length > MAX_LENGTH
+    const displayContent =
+      isLongText && !isExpanded
+        ? content.substring(0, MAX_LENGTH) + '...'
+        : content
+
+    // Reset expanded state when dialog opens/closes or pip changes
+    React.useEffect(() => {
+      setIsExpanded(false)
+    }, [open, pip?.number])
+
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[80vh] max-w-[90vw] overflow-hidden">
@@ -40,7 +55,15 @@ const DialogGithub = React.forwardRef<HTMLInputElement, DialogGithubProps>(
               </div>
             </div>
             <div className="overflow-x-auto">
-              <ReactMarkdown>{pip?.content || ''}</ReactMarkdown>
+              <ReactMarkdown>{displayContent}</ReactMarkdown>
+              {isLongText && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-blue-600 hover:text-blue-800 underline text-sm mt-2"
+                >
+                  {isExpanded ? '... less' : '... more'}
+                </button>
+              )}
             </div>
           </div>
           <div className="mt-4">

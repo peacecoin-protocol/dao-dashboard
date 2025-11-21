@@ -1,15 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '~/components/ui/table'
 import { ActionInfo } from '~/i18n/types'
 import { Button } from '~/components/ui/button'
 import Image from 'next/image'
@@ -101,149 +92,75 @@ export function SBTTableComponent({
   }
   return (
     <div className="w-full space-y-6">
-      <div className="hidden border rounded-xl w-full lg:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {headers.map((header, index) => (
-                <TableHead key={index} className="text-center">
-                  {header}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sbtInfo &&
-              sbtInfo.map((sbt, index) => (
-                <TableRow key={index}>
-                  <TableCell className="text-center">
-                    {sbt.isSBT ? 'SBT' : 'NFT'}
-                  </TableCell>
-
-                  <TableCell className="text-center items-center flex justify-center">
-                    <Image
-                      src={getImageSrc(sbt.image)}
-                      alt={sbt.name || ''}
-                      width={128}
-                      height={128}
-                    />
-                  </TableCell>
-                  <TableCell className="text-center">{sbt.name}</TableCell>
-                  <TableCell className="text-center">
-                    {sbt.description}
-                  </TableCell>
-                  <TableCell className="text-center">{sbt.tokenId}</TableCell>
-                  <TableCell className="text-center">
-                    {sbt.balance ? sbt.balance : '0'}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {sbt.votingPower}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {getDaoDisplay(sbt.daoId)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {sbt.created_at
-                      ? new Date(sbt.created_at).toLocaleString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })
-                      : '-'}
-                  </TableCell>
-                  {action && (
-                    <TableCell className="text-center">
-                      <Button onClick={() => handleRevoke(sbt)}>
-                        {sbt.isRevoked
-                          ? action.title.unrevoke
-                          : action.title.revoke}
-                      </Button>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell
-                colSpan={headers.length}
-                className="text-center font-medium"
-              >
-                Total: {(sbtInfo && sbtInfo.length) ?? '0'}
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </div>
-
-      <div className="space-y-4 lg:hidden">
+      {/* Mobile/Tablet View - Card layout for all screens */}
+      <div className="space-y-4">
         {sbtInfo && sbtInfo.length > 0 ? (
           sbtInfo.map((sbt, index) => (
             <div
               key={index}
-              className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/70 p-4 shadow-sm"
+              className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/70 p-4 sm:p-6 shadow-sm"
             >
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-3 sm:gap-4">
                 <div className="shrink-0 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
                   <Image
                     src={getImageSrc(sbt.image)}
                     alt={sbt.name || ''}
                     width={96}
                     height={96}
-                    className="h-24 w-24 object-cover"
-                    sizes="(max-width: 768px) 96px, 128px"
+                    className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 object-cover aspect-square"
+                    sizes="(max-width: 640px) 80px, (max-width: 768px) 96px, 112px"
                   />
                 </div>
-                <div className="flex-1 space-y-1">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-300">
+                <div className="flex-1 space-y-1 min-w-0">
+                  <span className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-300">
                     {sbt.isSBT ? 'SBT' : 'NFT'}
                   </span>
-                  <p className="text-base font-semibold text-gray-900 dark:text-white">
+                  <p className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 dark:text-white break-words">
                     {sbt.name}
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 line-clamp-2 sm:line-clamp-3 break-words">
                     {sbt.description}
                   </p>
                 </div>
               </div>
 
-              <dl className="mt-4 grid grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-300">
-                <div>
+              <dl className="mt-4 sm:mt-5 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                <div className="flex flex-col md:flex-row md:items-center md:gap-2">
                   <dt className="font-semibold text-gray-800 dark:text-white">
-                    Token ID
+                    Token ID:
                   </dt>
-                  <dd>{sbt.tokenId}</dd>
+                  <dd className="break-all">{sbt.tokenId}</dd>
                 </div>
-                <div>
+                <div className="flex flex-col md:flex-row md:items-center md:gap-2">
                   <dt className="font-semibold text-gray-800 dark:text-white">
-                    Balance
+                    Balance:
                   </dt>
                   <dd>{sbt.balance ?? '0'}</dd>
                 </div>
-                <div>
+                <div className="flex flex-col md:flex-row md:items-center md:gap-2">
                   <dt className="font-semibold text-gray-800 dark:text-white">
-                    Voting Power
+                    Voting Power:
                   </dt>
                   <dd>{sbt.votingPower}</dd>
                 </div>
-                <div>
+                <div className="flex flex-col md:flex-row md:items-center md:gap-2">
                   <dt className="font-semibold text-gray-800 dark:text-white">
-                    DAO
+                    DAO:
                   </dt>
-                  <dd>{getDaoDisplay(sbt.daoId)}</dd>
+                  <dd className="break-words">{getDaoDisplay(sbt.daoId)}</dd>
                 </div>
-                <div>
+                <div className="flex flex-col md:flex-row md:items-center md:gap-2 md:col-span-2">
                   <dt className="font-semibold text-gray-800 dark:text-white">
-                    Created At
+                    Created At:
                   </dt>
-                  <dd>
+                  <dd className="break-words">
                     {sbt.created_at
                       ? new Date(sbt.created_at).toLocaleDateString(undefined, {
                           year: 'numeric',
                           month: 'short',
                           day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
                         })
                       : '-'}
                   </dd>
@@ -253,7 +170,7 @@ export function SBTTableComponent({
               {action && (
                 <Button
                   onClick={() => handleRevoke(sbt)}
-                  className="mt-4 w-full"
+                  className="mt-4 sm:mt-5 w-full text-sm sm:text-base"
                 >
                   {sbt.isRevoked ? action.title.unrevoke : action.title.revoke}
                 </Button>
@@ -265,6 +182,11 @@ export function SBTTableComponent({
             No tokens available
           </div>
         )}
+      </div>
+
+      {/* Total Footer */}
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/70 p-4 text-center font-medium text-sm text-gray-900 dark:text-white">
+        Total: {(sbtInfo && sbtInfo.length) ?? '0'}
       </div>
     </div>
   )

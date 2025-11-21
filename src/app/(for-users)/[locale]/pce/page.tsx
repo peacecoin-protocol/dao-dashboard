@@ -1447,35 +1447,82 @@ export default function PCEPage({
                     {localDict.treasury ?? 'Treasury'}
                   </h1>
                   <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="font-bold">
-                            {localDict.token ?? 'Token'}
-                          </TableHead>
-                          <TableHead className="font-bold">
-                            {localDict.amount ?? 'Amount'}
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {treasuryBalances?.map((token, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-bold">
-                              {token.name === '' ? 'PCE TEST' : token.name}
-                            </TableCell>
-                            <TableCell className="font-bold">
-                              {formatString(
-                                formatEther(
-                                  BigInt(token.tokenBalance).toString()
-                                )
-                              )}{' '}
-                              {token.symbol === '' ? 'PCE TEST' : token.symbol}
-                            </TableCell>
+                    <div className="hidden sm:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="font-bold">
+                              {localDict.token ?? 'Token'}
+                            </TableHead>
+                            <TableHead className="font-bold">
+                              {localDict.amount ?? 'Amount'}
+                            </TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {treasuryBalances?.map((token, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-bold">
+                                {token.name === '' ? 'PCE TEST' : token.name}
+                              </TableCell>
+                              <TableCell className="font-bold">
+                                {formatString(
+                                  formatEther(
+                                    BigInt(token.tokenBalance).toString()
+                                  )
+                                )}{' '}
+                                {token.symbol === ''
+                                  ? 'PCE TEST'
+                                  : token.symbol}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    <div className="sm:hidden space-y-3">
+                      {treasuryBalances && treasuryBalances.length > 0 ? (
+                        treasuryBalances.map((token, index) => (
+                          <div
+                            key={`treasury-card-${index}`}
+                            className="rounded-xl border p-4 shadow-sm space-y-2"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="space-y-1">
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                                  {localDict.token ?? 'Token'}
+                                </p>
+                                <p className="text-base font-semibold">
+                                  {token.name === '' ? 'PCE TEST' : token.name}
+                                </p>
+                              </div>
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {token.symbol === ''
+                                  ? 'PCE TEST'
+                                  : token.symbol}
+                              </span>
+                            </div>
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">
+                                {localDict.amount ?? 'Amount'}:{' '}
+                              </span>
+                              <span className="font-semibold">
+                                {formatString(
+                                  formatEther(
+                                    BigInt(token.tokenBalance).toString()
+                                  )
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
+                          {localDict.noTokens ?? 'No tokens in treasury'}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex flex-col w-full sm:w-[40%]">

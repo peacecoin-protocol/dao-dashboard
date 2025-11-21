@@ -321,7 +321,7 @@ export default function ForCampaignPage({
         </div>
       )}
 
-      <div className="w-full mx-auto max-w-[95%] space-y-4 sm:space-y-6">
+      <div className="w-full mx-auto space-y-4 sm:space-y-6">
         {/* Header Section */}
         <div className="space-y-3 sm:space-y-4">
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">

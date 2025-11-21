@@ -1,12 +1,4 @@
 import { Card, CardContent } from '~/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '~/components/ui/table'
 import { CAMPAIGN } from '~/i18n/types'
 import { formatEther, parseEther } from 'ethers'
 import { timestampToDate } from '~/components/utils'
@@ -185,7 +177,7 @@ export const CampaignsTable = ({
   return (
     <div className="space-y-6">
       {/* Mobile View - Cards */}
-      <div className="block lg:hidden space-y-4">
+      <div className="space-y-4">
         {campaigns.length === 0 ? (
           <Card>
             <CardContent className="p-8">
@@ -206,152 +198,6 @@ export const CampaignsTable = ({
             />
           ))
         )}
-      </div>
-
-      {/* Desktop View - Table */}
-      <div className="hidden lg:block">
-        <Card>
-          <CardContent className="px-1.5">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-center">
-                      {campaign.campaignIdHeader ?? 'Campaign ID'}
-                    </TableHead>
-                    <TableHead className="text-center">
-                      {campaign.image ?? 'Image'}
-                    </TableHead>
-                    <TableHead className="text-center">
-                      {campaign.sbtIdHeader ?? 'SBT ID'}
-                    </TableHead>
-                    <TableHead className="text-center">
-                      {campaign.titleHeader ?? 'Title'}
-                    </TableHead>
-                    <TableHead className="text-center">
-                      {campaign.typeHeader ?? 'Type'}
-                    </TableHead>
-                    <TableHead className="text-center">
-                      {campaign.totalClaimedAmount ??
-                        'Total Claimed Amount / Total Amount'}
-                    </TableHead>
-                    <TableHead className="text-center">
-                      {campaign.claimAmountHeader ?? 'Claim Amount'}
-                    </TableHead>
-                    <TableHead className="text-center">
-                      {campaign.typeHeader ?? 'Type'}
-                    </TableHead>
-                    <TableHead className="text-center">
-                      {campaign.startTimeHeader ?? 'Start Time'}
-                    </TableHead>
-                    <TableHead className="text-center">
-                      {campaign.endTimeHeader ?? 'End Time'}
-                    </TableHead>
-                    <TableHead className="text-center">
-                      {campaign.statusHeader ?? 'Status'}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {campaigns.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={11}
-                        className="text-center text-muted-foreground py-8"
-                      >
-                        {campaign.noCampaigns ?? 'No Campaigns at the moment'}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    campaigns.map((campaign, index) => (
-                      <TableRow
-                        key={index}
-                        onClick={() => onCampaignClick(index)}
-                        className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      >
-                        <TableCell className="text-center">
-                          {campaign.campaignId}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex justify-center">
-                            {/* <Image
-                              src={
-                                campaign.tokenType == 1
-                                  ? sbtMetadata?.find(
-                                      (m) =>
-                                        m.tokenId == campaign.sbtId.toString()
-                                    )?.image || EMPTY_NFT_IMAGE
-                                  : campaign.tokenType == 2
-                                    ? nftMetadata?.find(
-                                        (m) =>
-                                          m.tokenId == campaign.sbtId.toString()
-                                      )?.image || EMPTY_NFT_IMAGE
-                                    : PCE_LOGO
-                              }
-                              alt={`NFT #${index}`}
-                              width={128}
-                              height={128}
-                            /> */}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {campaign.sbtId}
-                        </TableCell>
-                        <TableCell className="text-center max-w-[200px] truncate">
-                          {campaign.title}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {campaign.validateSignatures
-                            ? 'Whitelist + Verify Signature'
-                            : 'Whitelist'}
-                        </TableCell>
-                        <TableCell className="text-center text-sm">
-                          {campaign.tokenType == 1
-                            ? `${totalClaimed.find((t) => t.campaignId === campaign.campaignId)?.totalClaimed ?? '0'} / ${campaign.totalAmount} SBTs`
-                            : campaign.tokenType == 2
-                              ? `${totalClaimed.find((t) => t.campaignId === campaign.campaignId)?.totalClaimed ?? '0'} / ${campaign.totalAmount} NFTs`
-                              : `${formatEther(totalClaimed.find((t) => t.campaignId === campaign.campaignId)?.totalClaimed ?? '0')} / ${formatEther(campaign.totalAmount ?? '0')}`}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {campaign.tokenType == 0
-                            ? formatEther(campaign.claimAmount)
-                            : campaign.claimAmount}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {campaign.tokenType == 1
-                            ? 'SBT'
-                            : campaign.tokenType == 2
-                              ? 'NFT'
-                              : 'PCE'}
-                        </TableCell>
-                        <TableCell className="text-center text-sm">
-                          {timestampToDate(parseInt(campaign.startDate))}
-                        </TableCell>
-                        <TableCell className="text-center text-sm">
-                          {timestampToDate(parseInt(campaign.endDate))}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge
-                            variant={
-                              parseInt(campaign.endDate) < Date.now() / 1000
-                                ? 'destructive'
-                                : 'outline'
-                            }
-                            className="text-xs"
-                          >
-                            {parseInt(campaign.endDate) < Date.now() / 1000
-                              ? 'Ended'
-                              : 'Active'}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )
