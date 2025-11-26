@@ -49,13 +49,13 @@ export const useSideLinks = (locale: Locale, isOwner: boolean): SideLink[] => {
     {
       title: sidebar.daoStudio ?? 'DAO Studio',
       label: '',
-      href: '/dao',
+      href: '/',
       icon: <IconBuilding size={18} />,
       sub: [
         {
           title: sidebar.studio ?? 'Studio',
           label: '',
-          href: '/dao',
+          href: '/',
           icon: <IconUsers size={18} />,
         },
         // {
@@ -181,7 +181,7 @@ export const useSideLinks = (locale: Locale, isOwner: boolean): SideLink[] => {
     {
       title: sidebar.myActivity ?? 'My Activity',
       label: '',
-      href: '/',
+      href: '/activity/',
       icon: <IconLayoutDashboard size={18} />,
     },
     // {
