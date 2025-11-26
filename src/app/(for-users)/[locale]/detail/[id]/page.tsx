@@ -45,25 +45,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  // DialogTrigger,
 } from '~/components/ui/dialog'
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from '~/components/ui/select'
-
-// import { AmountInput } from '~/components/custom/amount-input'
-
-// You cannot use `createClient` from '~/utils/supabase/server' or `cookies` from 'next/headers' on the client-side.
-// Instead, if you need to interact with Supabase on the client side, use the "supabase-js" client:
-
 import { createClient } from '~/utils/supabase/client'
-
-// Example usage (inside your component or hook):
-
 import { getDict } from '~/i18n/get-dict'
 
 import { Dictionary, Locale } from '~/i18n/types'
@@ -101,18 +84,6 @@ import {
   getFilesFromGroup,
 } from '~/app/pinata/pinataAPI'
 
-type Dao = {
-  id: string
-  daoId: string
-  name: string
-  governor: string
-  blockTimestamp: string
-  governanceToken: string
-  timelock: string
-  communityToken: string
-  communityTokenSymbol: string
-}
-
 type Proposal = {
   id: number
   description: string
@@ -135,10 +106,7 @@ export default function ForDaoDetailPage({
 }) {
   const { locale } = params
   const { toast } = useToast()
-
-  // To get the full path of the current file in a Next.js app, you can use the `window.location.pathname` in the browser.
-  // For server-side or Node.js, you can use __filename, but in a Next.js page component, you typically want the route path.
-  // Example for client-side full path:
+  const supabase = createClient()
 
   const [dict, setDict] = useState<Dictionary | null>(null)
   const localDict = useMemo(() => dict?.daoInfo ?? {}, [dict])
@@ -174,8 +142,6 @@ export default function ForDaoDetailPage({
   const [tabContent, setTabContent] = useState('about')
 
   const [treasuryBalances, setTreasuryBalances] = useState<TokenBalance[]>([])
-
-  const supabase = createClient()
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [croppedImage, setCroppedImage] = useState<string | null>(null)
@@ -867,7 +833,7 @@ export default function ForDaoDetailPage({
     )
     const _signature = 'transfer(address,uint256)'
 
-    writeContract({
+    const proposeTx = await writeContractAsync({
       abi: GOVERNOR_ABI,
       address: governorAddress as `0x${string}`,
       functionName: 'propose',
@@ -878,6 +844,27 @@ export default function ForDaoDetailPage({
         [_calldata],
         description,
       ],
+    })
+
+    await waitForTransactionReceipt(config, {
+      hash: proposeTx,
+      confirmations: 1,
+    })
+
+    const { data: proposal } = await supabase.from('Proposal').insert({
+      daoId: id,
+      category: category,
+      tokenAddress: tokenAddress,
+      amount: transferAmount,
+      description: description,
+      transferTo: transferAddr,
+      proposer: address,
+      proposalId: Number(proposalCount) + 1,
+      created_at: new Date().toISOString(),
+    })
+
+    toast({
+      title: 'Proposal created successfully',
     })
 
     await refetchProposalCount()
@@ -1013,6 +1000,8 @@ export default function ForDaoDetailPage({
           hash: tx,
           confirmations: 2,
         })
+
+        await refetchVotes()
       } catch (error) {
         console.error('Error delegating tokens:', error)
         return
