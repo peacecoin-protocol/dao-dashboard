@@ -60,7 +60,6 @@ import { PageHeaderSection } from '~/components/custom/page-header-section'
 import { PageSubHeaderSection } from '~/components/custom/page-sub-header-section'
 
 // Constants
-const PCE_LOGO = '/pce_logo.jpg'
 const CLAIM_MESSAGE = 'Claim Bounty for dApp.xyz'
 const DEFAULT_CAMPAIGN_ID = -1
 const DEFAULT_NFT_DETAIL_INDEX = -1

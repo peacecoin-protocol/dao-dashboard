@@ -3,9 +3,6 @@ import { CAMPAIGN } from '~/i18n/types'
 import { formatEther, parseEther } from 'ethers'
 import { timestampToDate } from '~/components/utils'
 import { Badge } from '~/components/ui/badge'
-const PCE_LOGO = '/pce_logo.jpg'
-
-const EMPTY_NFT_IMAGE = '/images/empty-nft.svg'
 
 // Mobile Campaign Card Component
 const CampaignCard = ({

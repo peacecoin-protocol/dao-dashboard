@@ -27,7 +27,7 @@ export default function SidebarV2({ links, locale }: SidebarV2Props) {
   return (
     <aside className="fixed top-0 left-0 h-screen w-64 bg-white border-r shadow-sm flex flex-col z-50">
       <div className="flex items-center gap-2 px-6 py-4 border-b">
-        <img src="/pce_logo.jpg" alt="PEACECOIN Logo" className="h-10 w-10" />
+        <img src="/pce_logo.png" alt="PEACECOIN Logo" className="h-10 w-10" />
         <div>
           <span className="font-bold text-lg">Peace Coin</span>
           <span className="block text-xs text-gray-500">DAO Studio</span>
