@@ -151,7 +151,7 @@ const CreateButton = ({
 }) => (
   <Button
     variant="default"
-    className="flex w-full sm:w-72 sm:ml-auto justify-center"
+    className="flex w-full sm:ml-auto justify-center"
     onClick={onClick}
     disabled={disabled}
   >

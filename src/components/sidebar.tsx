@@ -80,8 +80,8 @@ export default function Sidebar({
             <Image
               src="/pce_logo.png"
               alt="PEACECOIN Logo"
-              width={isCollapsed ? 32 : 48}
-              height={isCollapsed ? 32 : 48}
+              width={isCollapsed ? 32 : 36}
+              height={isCollapsed ? 32 : 36}
             />
 
             {!isCollapsed && (
