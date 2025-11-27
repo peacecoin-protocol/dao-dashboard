@@ -18,8 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
-
-import { TOKEN } from '~/i18n/types'
+import { usePathname } from 'next/navigation'
+import { TOKEN, Dictionary, Locale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
 import { formatString } from '~/components/utils'
 import { formatEther } from 'viem'
 import { ZeroAddress } from 'ethers'
@@ -33,6 +34,7 @@ export interface ExchangeInputProps
   exchangeRates: Record<string, bigint>
   pceBalance: bigint
   asChild?: boolean
+  dict?: Dictionary
 }
 
 const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
@@ -46,10 +48,32 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
       exchangeRates,
       className,
       asChild = false,
+      dict: dictProp,
       ...props
     },
     ref
   ) => {
+    const pathname = usePathname()
+    const [dict, setDict] = React.useState<Dictionary | null>(dictProp || null)
+
+    React.useEffect(() => {
+      if (!dictProp) {
+        const fetchDict = async () => {
+          try {
+            const locale = (pathname?.split('/')[1] || 'en') as Locale
+            const fetchedDict = await getDict(locale)
+            setDict(fetchedDict)
+          } catch (error) {
+            console.error('Error fetching dictionary:', error)
+          }
+        }
+        fetchDict()
+      }
+    }, [dictProp, pathname])
+
+    const tokenLabels = dict?.token ?? {}
+    const swapLabel = tokenLabels.swap ?? 'Swap'
+
     const PCE_TOKEN = React.useMemo(
       () => ({
         symbol: 'PCE',
@@ -87,7 +111,7 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
         }}
       >
         <DialogTrigger asChild>
-          <Button className={className}>Swap</Button>
+          <Button className={className}>{swapLabel}</Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader className="flex flex-col gap-2">
@@ -289,7 +313,7 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
                   }
                 }}
               >
-                Swap
+                {swapLabel}
               </Button>
             </DialogClose>
           </DialogHeader>

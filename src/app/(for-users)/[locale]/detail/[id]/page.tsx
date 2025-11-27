@@ -1275,8 +1275,9 @@ export default function ForDaoDetailPage({
                       title={localDict.lastProposal ?? ''}
                     />
                   </div>
+
                   <Button
-                    className="w-full sm:w-72"
+                    className="w-auto"
                     onClick={() => {
                       setIsCreateProposalDialogOpened(true)
                     }}

@@ -100,6 +100,7 @@ export function TokenTable({
                   selectedToken={tokenInfo}
                   pceBalance={balance}
                   exchangeRates={exchangeRates}
+                  dict={dict}
                 />
 
                 <TransferInput
@@ -115,6 +116,7 @@ export function TokenTable({
                       ? Number(formatEther(BigInt(tokenInfo.balance)))
                       : 0
                   }
+                  dict={dict}
                 />
               </div>
             </div>
