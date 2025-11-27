@@ -471,10 +471,7 @@ export default function StakingPage({
           <div className="text-center space-y-4">
             <PageHeaderSection
               title={votingPowerDict.myVotingPower ?? 'My Voting Power'}
-              description={
-                votingPowerDict.myVotingPowerDescription ??
-                'Your total voting power is the sum of your staked amount'
-              }
+              description={''}
             />
 
             <div className="text-3xl sm:text-4xl font-bold text-teal-600 dark:text-teal-400 mb-4">

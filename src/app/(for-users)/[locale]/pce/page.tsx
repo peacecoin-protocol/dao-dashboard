@@ -951,7 +951,6 @@ export default function PCEPage({
                     </h1>
                     <div className="flex flex-row gap-4">
                       <Button
-                        className="w-full sm:w-72 bg-dark_blue"
                         onClick={() => {
                           setIsCreateProposalDialogOpened(true)
                         }}
@@ -1152,10 +1151,10 @@ export default function PCEPage({
                   </div>
                   <div className="flex flex-col border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
                     <div className="flex flex-row justify-between items-center mb-2">
-                      <h1 className="font-bold">PCE Socials</h1>
+                      <h1 className="font-bold">Socials</h1>
                       <Button
                         variant="outline"
-                        size="sm"
+                        className="w-auto"
                         onClick={() => {
                           setIsEditingSocials(!isEditingSocials)
                           setEditingSocials({

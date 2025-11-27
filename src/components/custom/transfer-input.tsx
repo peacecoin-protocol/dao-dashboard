@@ -9,6 +9,9 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
+import { usePathname } from 'next/navigation'
+import { Dictionary, Locale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
 
 export interface TransferInputProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -18,6 +21,7 @@ export interface TransferInputProps
   maxAmount: number
   symbol: string
   asChild?: boolean
+  dict?: Dictionary
 }
 
 const TransferInput = React.forwardRef<HTMLInputElement, TransferInputProps>(
@@ -30,19 +34,41 @@ const TransferInput = React.forwardRef<HTMLInputElement, TransferInputProps>(
       symbol,
       className,
       asChild = false,
+      dict: dictProp,
       ...props
     },
     ref
   ) => {
+    const pathname = usePathname()
+    const [dict, setDict] = React.useState<Dictionary | null>(dictProp || null)
+
+    React.useEffect(() => {
+      if (!dictProp) {
+        const fetchDict = async () => {
+          try {
+            const locale = (pathname?.split('/')[1] || 'en') as Locale
+            const fetchedDict = await getDict(locale)
+            setDict(fetchedDict)
+          } catch (error) {
+            console.error('Error fetching dictionary:', error)
+          }
+        }
+        fetchDict()
+      }
+    }, [dictProp, pathname])
+
+    const tokenLabels = dict?.token ?? {}
+    const transferLabel = tokenLabels.transfer ?? 'Transfer'
+
     const [amount, setAmount] = React.useState('')
     return (
       <Dialog>
         <DialogTrigger asChild>
-          <Button className={className}>Transfer</Button>
+          <Button className={className}>{transferLabel}</Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader className="flex flex-col gap-2">
-            <DialogTitle>Transfer</DialogTitle>
+            <DialogTitle>{transferLabel}</DialogTitle>
             <div className="flex flex-col">
               <div className="flex flex-col gap-2 bg-grey p-2 px-6 rounded-t-xl">
                 <h1 className="text-sm text-[#505050]">
@@ -110,7 +136,7 @@ const TransferInput = React.forwardRef<HTMLInputElement, TransferInputProps>(
                   handleTransfer()
                 }}
               >
-                Transfer
+                {transferLabel}
               </Button>
             </DialogClose>
           </DialogHeader>

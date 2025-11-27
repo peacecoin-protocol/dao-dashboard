@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { CAMPAIGN } from '~/i18n/types'
+import { CAMPAIGN, Dictionary, Locale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
 import { timestampToDate } from '../utils'
 import { formatEther } from 'ethers'
 import Image from 'next/image'
@@ -27,10 +28,27 @@ export function TableComponent({
   onCellClick,
 }: CampaignTableProps) {
   const [daoNames, setDaoNames] = useState<Record<string, string>>({})
+  const [dict, setDict] = useState<Dictionary | null>(null)
   const supabase = createClient()
   const pathname = usePathname()
   const isCampaignPage = pathname?.toLowerCase().includes('/campaign')
   const hasCampaigns = campaignInfo && campaignInfo.length > 0
+
+  // Extract locale from pathname
+  const locale: Locale =
+    (pathname?.match(/^\/([a-z]{2})(\/|$)/)?.[1] as Locale) || 'en'
+
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
 
   useEffect(() => {
     const fetchDaoNames = async () => {
@@ -216,7 +234,7 @@ export function TableComponent({
                           onCellClick?.(campaign.campaignId)
                         }}
                       >
-                        Add Winners
+                        {dict?.campaign?.addWinners || 'Add Winners'}
                       </Button>
                     </div>
                   )}
