@@ -145,7 +145,7 @@ export const CreateCampaignModal = ({
           </h2>
         </div>
 
-        <div className="space-y-4">
+        <div className="gap-4">
           {/* Campaign Type Selection */}
           <div className="space-y-2">
             <Label htmlFor="campaign-type">

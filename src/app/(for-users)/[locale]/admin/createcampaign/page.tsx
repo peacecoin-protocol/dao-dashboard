@@ -34,6 +34,7 @@ import { AddWhitelistModal } from '~/app/(for-users)/[locale]/admin/createcampai
 import { TableComponent } from '~/components/custom/tableComponent'
 import { erc20Abi } from 'viem'
 import { createClient } from '~/utils/supabase/client'
+import { PageHeaderSection } from '~/components/custom/page-header-section'
 
 // Constants
 const DEFAULT_CAMPAIGN_ID = -1
@@ -314,23 +315,19 @@ export default function ForCampaignPage({
   }
 
   return (
-    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+    <div className="w-full">
       {loading && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
           <Spinner show={true} size="large" />
         </div>
       )}
 
-      <div className="w-full mx-auto space-y-4 sm:space-y-6">
+      <div className="w-full mx-auto space-y-4">
         {/* Header Section */}
-        <div className="space-y-3 sm:space-y-4">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
-            {campaign.title ?? ''}
-          </h1>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-4xl">
-            {campaign.description ?? ''}
-          </p>
-        </div>
+        <PageHeaderSection
+          title={campaign.title ?? ''}
+          description={campaign.description ?? ''}
+        />
 
         {/* Modals */}
         <CreateCampaignModal
@@ -356,7 +353,7 @@ export default function ForCampaignPage({
         />
 
         {/* Campaigns Section */}
-        <div className="space-y-4 sm:space-y-6">
+        <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-4">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4">
               <Button

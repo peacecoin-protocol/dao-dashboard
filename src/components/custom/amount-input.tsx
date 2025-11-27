@@ -10,7 +10,6 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
-import { cn } from '~/components/utils'
 
 export interface AmountInputProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -37,13 +36,8 @@ const AmountInput = React.forwardRef<HTMLInputElement, AmountInputProps>(
     const [amount, setAmount] = React.useState('')
     return (
       <Dialog>
-        <DialogTrigger
-          className={cn(
-            'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2',
-            className
-          )}
-        >
-          {localDict.stake ?? 'Stake'}
+        <DialogTrigger asChild>
+          <Button className={className}>{localDict.stake ?? 'Stake'}</Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader className="flex flex-col gap-2">

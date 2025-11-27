@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { CAMPAIGN } from '~/i18n/types'
 import { timestampToDate } from '../utils'
 import { formatEther } from 'ethers'
@@ -27,6 +28,8 @@ export function TableComponent({
 }: CampaignTableProps) {
   const [daoNames, setDaoNames] = useState<Record<string, string>>({})
   const supabase = createClient()
+  const pathname = usePathname()
+  const isCampaignPage = pathname?.toLowerCase().includes('/campaign')
   const hasCampaigns = campaignInfo && campaignInfo.length > 0
 
   useEffect(() => {
@@ -205,17 +208,18 @@ export function TableComponent({
                       </div>
                     </dl>
                   </div>
-                  <div className="flex items-center justify-center sm:justify-end">
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onCellClick?.(campaign.campaignId)
-                      }}
-                      size="sm"
-                    >
-                      Add Winners
-                    </Button>
-                  </div>
+                  {!isCampaignPage && (
+                    <div className="flex items-center justify-center sm:justify-end">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onCellClick?.(campaign.campaignId)
+                        }}
+                      >
+                        Add Winners
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </button>
             )

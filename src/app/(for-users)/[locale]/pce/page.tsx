@@ -81,6 +81,7 @@ import { Env } from '~/env'
 import { timestampToDate } from '~/components/utils'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import Image from 'next/image'
+import { PageHeaderSection } from '~/components/custom/page-header-section'
 
 type TokenBalance = {
   contractAddress: string
@@ -910,23 +911,20 @@ export default function PCEPage({
   }, [locale])
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="w-[95%] mx-auto sm:items-center justify-center flex flex-col gap-4">
-        <div className="flex w-full items-center justify-center gap-2 mt-4 sm:gap-4 sm:mt-8">
-          <Image
-            src="/pce_logo.jpg"
-            alt="PCE Logo"
-            width={96}
-            height={96}
-            className="w-12 h-12 sm:w-24 sm:h-24"
-            priority={true}
-            quality={100}
-          />
-          <div className="flex flex-row gap-1 font-bold text-xl sm:text-5xl justify-center items-center">
-            {localDict.title}
-          </div>
-        </div>
+    <div className="w-full flex flex-col gap-4">
+      <div className="flex flex-row items-center gap-4">
+        <Image
+          src="/pce_logo.png"
+          alt="PCE Logo"
+          width={48}
+          height={48}
+          priority={true}
+          quality={100}
+        />
+        <PageHeaderSection title={localDict.title ?? ''} />
+      </div>
 
+      <div className="flex flex-col gap-4">
         <div className="flex flex-row w-full items-center">
           <Tabs
             defaultValue="about"
@@ -953,7 +951,7 @@ export default function PCEPage({
                     </h1>
                     <div className="flex flex-row gap-4">
                       <Button
-                        className="w-full bg-dark_blue"
+                        className="w-full sm:w-72 bg-dark_blue"
                         onClick={() => {
                           setIsCreateProposalDialogOpened(true)
                         }}
@@ -1733,21 +1731,20 @@ export default function PCEPage({
             </div>
           </DialogContent>
         </Dialog>
-
-        <RingLoader
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 9999,
-          }}
-          color={'#000000'}
-          loading={loading}
-          cssOverride={ringStyle}
-          size={50}
-        />
       </div>
+      <RingLoader
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 9999,
+        }}
+        color={'#000000'}
+        loading={loading}
+        cssOverride={ringStyle}
+        size={50}
+      />
     </div>
   )
 }

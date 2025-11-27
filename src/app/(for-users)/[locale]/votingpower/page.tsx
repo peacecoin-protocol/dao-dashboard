@@ -44,6 +44,7 @@ import { SBT_ABI } from '~/app/ABIs/SBT'
 import { PCE_GOV_TOKEN_ABI } from '~/app/ABIs/PCEGovToken'
 import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
 import { SBTInfo } from '~/components/custom/sbt-tableComponent'
+import { PageHeaderSection } from '~/components/custom/page-header-section'
 
 import { createClient } from '~/utils/supabase/client'
 
@@ -366,243 +367,240 @@ export default function StakingPage({
     fetchSBTVotingPower()
   }, [tokenData])
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="w-[95%] mx-auto">
-        {/* Header Section */}
-        <div className="text-center mb-8 sm:mb-12">
-          <div className="flex items-center justify-center mb-4">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 dark:text-white ml-4">
-              {votingPowerDict.title ?? 'PACECOIN Staking Pool'}
-            </h1>
-          </div>
-          <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-4">
-            {votingPowerDict.description ??
-              'Secure your future and earn rewards by staking your PACECOIN tokens in our professional staking pool.'}
-          </p>
-        </div>
+    <div className="w-full mx-auto flex flex-col gap-4">
+      {/* Header Section */}
+      <PageHeaderSection
+        title={votingPowerDict.title ?? 'PACECOIN Staking Pool'}
+        description={
+          votingPowerDict.description ??
+          'Secure your future and earn rewards by staking your PACECOIN tokens in our professional staking pool.'
+        }
+      />
 
-        {/* Main Content - Mobile Responsive Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-          {/* Left Section - Stake your SPACECOIN */}
-          <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
-            <div className="text-center mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-2">
-                {votingPowerDict.stakeYourTokens ?? 'Stake your SPACECOIN'}
-              </h2>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                {votingPowerDict.stakeDescription ??
-                  'Start earning by staking your tokens in the pool.'}
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {/* PCE Balance */}
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 w-full">
-                  {votingPowerDict.pceBalance ?? 'PCE Balance'}
-                </span>
-                <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 w-full">
-                  {pceBalance
-                    ? formatNumber(
-                        parseFloat(formatEther(pceBalance as string))
-                      )
-                    : '0'}{' '}
-                  PCE
-                </span>
-              </div>
-
-              {/* Amount Staked */}
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 w-full">
-                  {votingPowerDict.amountStaked ?? 'Amount Staked'}
-                </span>
-                <span className="text-lg font-semibold text-purple-600 dark:text-purple-400 w-full">
-                  {wPCEBalance
-                    ? formatNumber(
-                        wPCEBalance
-                          ? parseFloat(formatEther(stakedBalance as string))
-                          : 0
-                      )
-                    : '0'}{' '}
-                  PCE
-                </span>
-              </div>
-
-              {/* Amount to Stake Input */}
-              <div className="space-y-2">
-                <label className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300">
-                  {votingPowerDict.amountToStake ?? 'Amount to Stake'}
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  placeholder={votingPowerDict.enterAmount ?? 'Enter amount'}
-                  value={stakingAmount}
-                  onChange={(e) => setStakingAmount(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
-                <Button
-                  className="w-full"
-                  variant="default"
-                  onClick={handleStake}
-                >
-                  {votingPowerDict.stake ?? 'Stake'}
-                </Button>
-                <Button
-                  className="w-full"
-                  variant="default"
-                  onClick={handleWithdraw}
-                >
-                  {votingPowerDict.withdraw ?? 'Withdraw'}
-                </Button>
-
-                <Button
-                  className="w-full"
-                  variant="default"
-                  onClick={handleDelegate}
-                >
-                  {votingPowerDict.delegate ?? 'Delegate'}
-                </Button>
-              </div>
-            </div>
+      {/* Main Content - Mobile Responsive Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
+        {/* Left Section - Stake your SPACECOIN */}
+        <div className="rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
+          <div className="text-center mb-6">
+            <PageHeaderSection
+              title={votingPowerDict.stakeYourTokens ?? 'Stake your SPACECOIN'}
+              description={
+                votingPowerDict.stakeDescription ??
+                'Start earning by staking your tokens in the pool.'
+              }
+            />
           </div>
 
-          {/* Right Section - Voting Power & Info */}
-          <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
-            {/* My Voting Power Section */}
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3 ">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white w-full text-center">
-                {votingPowerDict.myVotingPower ?? 'My Voting Power'}
-              </h3>
-
-              <div className="text-center">
-                <div className="text-3xl sm:text-4xl font-bold text-teal-600 dark:text-teal-400 mb-4">
-                  {formatNumber(votingPower)}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
-                  <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
-                    {votingPowerDict.stakedAmount ?? 'Staked Amount'}
-                  </span>
-                  <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full">
-                    {stakedBalance
-                      ? formatNumber(
-                          parseFloat(formatEther(stakedBalance as string))
-                        )
-                      : '0'}
-                  </span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
-                  <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
-                    {votingPowerDict.delegationPower ?? 'Delegation Power'}
-                  </span>
-                  <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full">
-                    {getTokenVote
-                      ? formatNumber(
-                          parseFloat(formatEther(stakedBalance as string))
-                        )
-                      : '0'}
-                  </span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
-                  <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
-                    {votingPowerDict.sbtVotingPower ?? 'SBT & NFT Voting Power'}
-                  </span>
-                  <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full">
-                    {totalSBTVotingPower
-                      ? formatNumber(totalSBTVotingPower)
-                      : '0'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 my-6 text-center sm:text-left">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white w-full">
-                {votingPowerDict.votingPowerAndInfo ?? 'Voting Power & Info'}
-              </h2>
-              <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                {votingPowerDict.active ?? 'Active'}
+          <div className="gap-4">
+            {/* PCE Balance */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 rounded-lg p-4">
+              <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 w-full">
+                {votingPowerDict.pceBalance ?? 'PCE Balance'}
+              </span>
+              <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 w-full">
+                {pceBalance
+                  ? formatNumber(parseFloat(formatEther(pceBalance as string)))
+                  : '0'}{' '}
+                PCE
               </span>
             </div>
 
-            {/* Voting Power Features */}
-            <div className="space-y-3 my-4">
-              <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                <span className="font-semibold text-gray-800 dark:text-white">
-                  •
-                </span>
-                <p>
-                  {votingPowerDict.votingPowerFeature1 ??
-                    'Your total voting power is the sum of your staked amount'}
-                </p>
-              </div>
+            {/* Amount Staked */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 rounded-lg p-4">
+              <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 w-full">
+                {votingPowerDict.amountStaked ?? 'Amount Staked'}
+              </span>
+              <span className="text-lg font-semibold text-purple-600 dark:text-purple-400 w-full">
+                {wPCEBalance
+                  ? formatNumber(
+                      wPCEBalance
+                        ? parseFloat(formatEther(stakedBalance as string))
+                        : 0
+                    )
+                  : '0'}{' '}
+                PCE
+              </span>
+            </div>
 
-              <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                <span className="font-semibold text-gray-800 dark:text-white">
-                  •
-                </span>
-                <p>
-                  {votingPowerDict.votingPowerFeature2 ??
-                    'Participate in governance decisions and earn more from staking rewards'}
-                </p>
-              </div>
+            {/* Amount to Stake Input */}
+            <div className="space-y-2">
+              <label className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300">
+                {votingPowerDict.amountToStake ?? 'Amount to Stake'}
+              </label>
+              <Input
+                type="number"
+                min="0"
+                placeholder={votingPowerDict.enterAmount ?? 'Enter amount'}
+                value={stakingAmount}
+                onChange={(e) => setStakingAmount(e.target.value)}
+                className="w-full"
+              />
+            </div>
 
-              <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                <span className="font-semibold text-gray-800 dark:text-white">
-                  •
-                </span>
-                <p>
-                  {votingPowerDict.votingPowerFeature3 ??
-                    "For 99% of you that don't like voting power, use it to influence rewards for other community members"}
-                </p>
-              </div>
+            {/* Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
+              <Button
+                className="w-full"
+                variant="default"
+                onClick={handleStake}
+              >
+                {votingPowerDict.stake ?? 'Stake'}
+              </Button>
+              <Button
+                className="w-full"
+                variant="default"
+                onClick={handleWithdraw}
+              >
+                {votingPowerDict.withdraw ?? 'Withdraw'}
+              </Button>
 
-              <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                <span className="font-semibold text-gray-800 dark:text-white">
-                  •
-                </span>
-                <p>
-                  {votingPowerDict.votingPowerFeature4 ??
-                    'You can delegate voting power to any network participant'}
-                </p>
-              </div>
-
-              <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                <span className="font-semibold text-gray-800 dark:text-white">
-                  •
-                </span>
-                <p>
-                  {votingPowerDict.votingPowerFeature5 ??
-                    'You can also delegate voting power to our fund to publish governance decisions'}
-                </p>
-              </div>
+              <Button
+                className="w-full"
+                variant="default"
+                onClick={handleDelegate}
+              >
+                {votingPowerDict.delegate ?? 'Delegate'}
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* SBTs Table Section - Mobile Responsive */}
-        <div className="mt-8 sm:mt-12">
-          <div className="bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-6">
-              {votingPowerDict.mySBTs ?? 'My Tokens'} ({tokenData.length})
-            </h2>
+        {/* Right Section - Voting Power & Info */}
+        <div className="rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
+          {/* My Voting Power Section */}
+          <div className="text-center space-y-4">
+            <PageHeaderSection
+              title={votingPowerDict.myVotingPower ?? 'My Voting Power'}
+              description={
+                votingPowerDict.myVotingPowerDescription ??
+                'Your total voting power is the sum of your staked amount'
+              }
+            />
 
-            <div className="-mx-4 sm:mx-0">
-              <div className="px-4 sm:px-0">
-                <SBTTableComponent
-                  headers={sbtTableHeaders}
-                  sbtInfo={tokenData}
-                />
+            <div className="text-3xl sm:text-4xl font-bold text-teal-600 dark:text-teal-400 mb-4">
+              {formatNumber(votingPower)}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
+                <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
+                  {votingPowerDict.stakedAmount ?? 'Staked Amount'}
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
+                  {stakedBalance
+                    ? formatNumber(
+                        parseFloat(formatEther(stakedBalance as string))
+                      )
+                    : '0'}
+                </span>
               </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
+                <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
+                  {votingPowerDict.delegationPower ?? 'Delegation Power'}
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
+                  {getTokenVote
+                    ? formatNumber(
+                        parseFloat(formatEther(stakedBalance as string))
+                      )
+                    : '0'}
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
+                <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
+                  {votingPowerDict.sbtVotingPower ?? 'SBT & NFT Voting Power'}
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
+                  {totalSBTVotingPower
+                    ? formatNumber(totalSBTVotingPower)
+                    : '0'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 my-6 text-center sm:text-left">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white w-full">
+              {votingPowerDict.votingPowerAndInfo ?? 'Voting Power & Info'}
+            </h2>
+            <span className="text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+              {votingPowerDict.active ?? 'Active'}
+            </span>
+          </div>
+
+          {/* Voting Power Features */}
+          <div className="space-y-3 my-4">
+            <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+              <span className="font-semibold text-gray-800 dark:text-white">
+                •
+              </span>
+              <p>
+                {votingPowerDict.votingPowerFeature1 ??
+                  'Your total voting power is the sum of your staked amount'}
+              </p>
+            </div>
+
+            <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+              <span className="font-semibold text-gray-800 dark:text-white">
+                •
+              </span>
+              <p>
+                {votingPowerDict.votingPowerFeature2 ??
+                  'Participate in governance decisions and earn more from staking rewards'}
+              </p>
+            </div>
+
+            <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+              <span className="font-semibold text-gray-800 dark:text-white">
+                •
+              </span>
+              <p>
+                {votingPowerDict.votingPowerFeature3 ??
+                  "For 99% of you that don't like voting power, use it to influence rewards for other community members"}
+              </p>
+            </div>
+
+            <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+              <span className="font-semibold text-gray-800 dark:text-white">
+                •
+              </span>
+              <p>
+                {votingPowerDict.votingPowerFeature4 ??
+                  'You can delegate voting power to any network participant'}
+              </p>
+            </div>
+
+            <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+              <span className="font-semibold text-gray-800 dark:text-white">
+                •
+              </span>
+              <p>
+                {votingPowerDict.votingPowerFeature5 ??
+                  'You can also delegate voting power to our fund to publish governance decisions'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SBTs Table Section - Mobile Responsive */}
+      <div className="mt-8 sm:mt-12">
+        <div className="rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700 flex flex-col gap-4">
+          <PageHeaderSection
+            title={
+              (votingPowerDict.mySBTs ?? 'My Tokens') +
+              ` (${tokenData.length ?? 0})`
+            }
+          />
+
+          <div className="-mx-4 sm:mx-0">
+            <div className="px-4 sm:px-0">
+              <SBTTableComponent
+                headers={sbtTableHeaders}
+                sbtInfo={tokenData}
+              />
             </div>
           </div>
         </div>

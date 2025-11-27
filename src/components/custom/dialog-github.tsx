@@ -42,29 +42,29 @@ const DialogGithub = React.forwardRef<HTMLInputElement, DialogGithubProps>(
 
     return (
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[80vh] max-w-[90vw] overflow-hidden">
+        <DialogContent className="max-h-[80vh] max-w-[60vw] overflow-hidden flex flex-col">
           <DialogHeader className="flex flex-col gap-2">
             <DialogTitle>{pip?.title || ''}</DialogTitle>
             <DialogDescription>Proposal details and content</DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-2 overflow-y-auto overflow-x-auto max-h-[60vh] mt-4">
+          <div className="flex flex-col gap-2 mt-4 flex-1 overflow-hidden">
             <div className="flex flex-row gap-2">
               <div className="flex flex-col gap-1">
                 <p>{pip?.proposer || ''}</p>
                 <p>{pip?.created || ''}</p>
               </div>
             </div>
-            <div className="overflow-x-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-auto pr-2">
               <ReactMarkdown>{displayContent}</ReactMarkdown>
-              {isLongText && (
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-blue-600 hover:text-blue-800 underline text-sm mt-2"
-                >
-                  {isExpanded ? '... less' : '... more'}
-                </button>
-              )}
             </div>
+            {isLongText && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-blue-600 hover:text-blue-800 underline text-sm"
+              >
+                {isExpanded ? '... less' : '... more'}
+              </button>
+            )}
           </div>
           <div className="mt-4">
             <Button onClick={() => setOpen(false)}>Close</Button>

@@ -64,7 +64,7 @@ export default function ForPCEDetailPage({
   }, [locale])
 
   return (
-    <div className="flex flex-col w-full gap-8 p-8">
+    <div className="flex flex-col w-full gap-8">
       <Tabs defaultValue="details" className="w-full" value={tabContent}>
         <TabsList>
           <TabsTrigger value="details" onClick={() => setTabContent('details')}>

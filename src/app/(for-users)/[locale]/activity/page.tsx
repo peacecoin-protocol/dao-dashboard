@@ -37,6 +37,7 @@ import { formatEther } from 'ethers'
 import { useAccount, useReadContract } from 'wagmi'
 import RingLoader from 'react-spinners/RingLoader'
 import { createClient } from '~/utils/supabase/client'
+import { PageHeaderSection } from '~/components/custom/page-header-section'
 
 export default function ForUsersIndexPage({
   params: { locale, ...params },
@@ -150,11 +151,9 @@ export default function ForUsersIndexPage({
   const proposal = dict?.proposal ?? {}
   return (
     <>
-      <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-        <div className="w-[95%] mx-auto gap-4 flex flex-col">
-          <h2 className="text-2xl font-bold tracking-tight mt-6">
-            {navigation.dashboard ?? ''}
-          </h2>
+      <div className="w-full">
+        <div className="w-full mx-auto gap-4 flex flex-col">
+          <PageHeaderSection title={navigation.dashboard ?? ''} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 w-full">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

@@ -36,7 +36,7 @@ export default function ForUsersLayout({
       <div className="flex-1 flex flex-col">
         <AppBar locale={params.locale} />
         <main
-          className={`flex-1 transition-[margin-left] duration-300 ${isCollapsed ? 'md:ml-14' : 'md:ml-64'}`}
+          className={`flex-1 transition-[margin-left] duration-300 bg-background p-4 md:p-6 ${isCollapsed ? 'md:ml-14' : 'md:ml-64'}`}
         >
           {children}
         </main>

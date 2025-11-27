@@ -128,7 +128,7 @@ export const AddWhitelistModal = ({
           </div>
 
           {/* Dynamic Input Fields */}
-          <div className="space-y-4">
+          <div className="gap-4">
             <Label>{campaign.winnerInformation ?? 'Winner Information'}</Label>
             <AddDynamicInputFields
               inputs={form.data}
