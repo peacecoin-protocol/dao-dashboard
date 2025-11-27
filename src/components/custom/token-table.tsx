@@ -2,6 +2,7 @@
 
 import { formatEther, ZeroAddress } from 'ethers'
 import { ExchangeInput } from '~/components/custom/exchange-input'
+import { TokenInfoCell } from '~/components/custom/token-info-cell'
 import { TransferInput } from '~/components/custom/transfer-input'
 import { formatString } from '~/components/utils'
 import { TOKEN } from '~/i18n/types'
@@ -54,46 +55,33 @@ export function TokenTable({
           communityTokenInfo.map((tokenInfo, index) => (
             <div
               key={`mobile-token-${index}`}
-              className="rounded-lg border p-4 shadow-sm space-y-4"
+              className="rounded-lg border p-4 shadow-sm gap-4 flex items-center justify-between"
             >
-              <div className="space-y-3 text-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <span className="text-muted-foreground">
-                    {tokenLabels.name ?? ''}
-                  </span>
-                  <span className="font-medium text-right">
-                    {tokenInfo.name}
-                  </span>
-                </div>
-                <div className="flex items-start justify-between gap-4">
-                  <span className="text-muted-foreground">
-                    {tokenLabels.symbol ?? ''}
-                  </span>
-                  <span className="font-medium text-right">
-                    {tokenInfo.symbol}
-                  </span>
-                </div>
-                <div className="flex items-start justify-between gap-4">
-                  <span className="text-muted-foreground">
-                    {tokenLabels.tokenAddress ?? ''}
-                  </span>
-                  <span className="font-medium text-right break-all">
-                    {tokenInfo.address}
-                  </span>
-                </div>
-                <div className="flex items-start justify-between gap-4">
-                  <span className="text-muted-foreground">
-                    {tokenLabels.balance ?? 'Balance'}
-                  </span>
-                  <span className="font-semibold text-right">
-                    {tokenInfo.balance
+              <div className="flex-1 flex flex-col gap-4">
+                <TokenInfoCell
+                  label={tokenLabels.name ?? 'Name'}
+                  value={tokenInfo.name}
+                />
+                <TokenInfoCell
+                  label={tokenLabels.symbol ?? 'Symbol'}
+                  value={tokenInfo.symbol}
+                />
+                <TokenInfoCell
+                  label={tokenLabels.tokenAddress ?? 'Token Address'}
+                  value={tokenInfo.address}
+                  valueClassName="break-all"
+                />
+                <TokenInfoCell
+                  label={tokenLabels.balance ?? 'Balance'}
+                  value={
+                    tokenInfo.balance
                       ? formatString(formatEther(tokenInfo.balance))
-                      : 0}
-                  </span>
-                </div>
+                      : '0'
+                  }
+                />
               </div>
 
-              <div className="space-y-3">
+              <div className="flex flex-col gap-4 items-center">
                 <ExchangeInput
                   className="w-full"
                   setSwapAmount={setSwapAmount}
@@ -137,7 +125,7 @@ export function TokenTable({
           </p>
         )}
 
-        <div className="rounded-lg border p-4 text-sm font-medium">
+        <div className="rounded-lg border p-4 text-sm font-bold">
           <div className="flex items-center justify-between">
             <span>{tokenLabels.totalToken ?? ''}</span>
             <span>{tokens ? tokens.length : 0}</span>

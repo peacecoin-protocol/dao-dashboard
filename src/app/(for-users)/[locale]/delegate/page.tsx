@@ -29,6 +29,7 @@ import { defaultChainId } from '~/app/constants/constants'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { DelegateInput } from '~/components/custom/delegate-input'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
+import { PageHeaderSection } from '~/components/custom/page-header-section'
 
 export default function ForDelegatePage({
   params: { locale, ...params },
@@ -208,65 +209,59 @@ export default function ForDelegatePage({
   const localDict = dict?.delegate ?? {}
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="w-[95%] mx-auto items-center justify-center flex w-full">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-2xl font-bold tracking-tight my-4 text-center">
-            {localDict.title ?? ''}
-          </h2>
+    <div className="w-full mx-auto items-center justify-center flex w-full">
+      <div className="flex flex-col gap-4">
+        <PageHeaderSection title={localDict.title ?? ''} />
 
-          <div className="text-muted-foreground">
-            {localDict.peaceCoin ?? 'PEACECOIN'}:
-            {pceBalance
-              ? formatString(formatEther(BigInt(pceBalance as string)))
-              : '0'}
-          </div>
+        <div className="text-muted-foreground">
+          {localDict.peaceCoin ?? 'PEACECOIN'}:
+          {pceBalance
+            ? formatString(formatEther(BigInt(pceBalance as string)))
+            : '0'}
+        </div>
 
-          <div className="text-muted-foreground">
-            {localDict.votingPower ?? ''} :{' '}
-            {votes ? formatString(formatEther(BigInt(votes as string))) : '0'}
-          </div>
+        <div className="text-muted-foreground">
+          {localDict.votingPower ?? ''} :{' '}
+          {votes ? formatString(formatEther(BigInt(votes as string))) : '0'}
+        </div>
 
-          <div className="text-muted-foreground">
-            Governance Token:
-            {pceGovBalance
-              ? formatString(formatEther(BigInt(pceGovBalance as string)))
-              : '0'}
-          </div>
+        <div className="text-muted-foreground">
+          Governance Token:
+          {pceGovBalance
+            ? formatString(formatEther(BigInt(pceGovBalance as string)))
+            : '0'}
+        </div>
 
-          <div className="text-muted-foreground">
-            {localDict.description ?? ''}
-          </div>
+        <div className="text-muted-foreground">
+          {localDict.description ?? ''}
+        </div>
 
-          <div className="flex gap-2 w-full items-center justify-center flex-row">
-            <AmountInput
-              localDict={localDict}
-              className="w-60 w-full"
-              setStakingAmount={setStakingAmount}
-              handleStake={handleStake}
-              maxAmount={
-                pceBalance
-                  ? Number(formatEther(BigInt(pceBalance as string)))
-                  : 0
-              }
-            />
+        <div className="flex gap-2 w-full items-center justify-center flex-row">
+          <AmountInput
+            localDict={localDict}
+            className="w-60 w-full"
+            setStakingAmount={setStakingAmount}
+            handleStake={handleStake}
+            maxAmount={
+              pceBalance ? Number(formatEther(BigInt(pceBalance as string))) : 0
+            }
+          />
 
-            <Button
-              className="w-full"
-              variant="outline"
-              onClick={() => {
-                handleWithdraw()
-              }}
-            >
-              Withdraw
-            </Button>
+          <Button
+            className="w-full"
+            variant="outline"
+            onClick={() => {
+              handleWithdraw()
+            }}
+          >
+            Withdraw
+          </Button>
 
-            <DelegateInput
-              className="w-60 w-full"
-              setDelegateAddr={setDelegateAddr}
-              handleDelegate={handleDelegate}
-            />
-          </div>
+          <DelegateInput
+            className="w-60 w-full"
+            setDelegateAddr={setDelegateAddr}
+            handleDelegate={handleDelegate}
+          />
         </div>
       </div>
     </div>

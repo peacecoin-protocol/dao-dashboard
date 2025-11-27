@@ -53,6 +53,7 @@ import { getDict } from '~/i18n/get-dict'
 
 import { localhost } from '~/lib/config'
 import { polygon, sepolia } from 'wagmi/chains'
+import { PageHeaderSection } from '~/components/custom/page-header-section'
 
 export default function ForBountyPage({
   params: { locale, ...params },
@@ -405,12 +406,12 @@ export default function ForBountyPage({
   const proposal = dict?.proposal ?? {}
 
   return (
-    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="w-[95%] mx-auto flex flex-col gap-4">
-        <h2 className="text-2xl font-bold tracking-tight mt-6">
-          {bounty.title ?? ''}
-        </h2>
-        <p className="text-muted-foreground">{bounty.description ?? ''}</p>
+    <div className="w-full">
+      <div className="w-full mx-auto flex flex-col gap-4">
+        <PageHeaderSection
+          title={bounty.title ?? ''}
+          description={bounty.description ?? ''}
+        />
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>

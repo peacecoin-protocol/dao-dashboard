@@ -35,6 +35,7 @@ import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { ringStyle } from '~/app/constants/styles'
 import { defaultChainId } from '~/app/constants/constants'
+import { PageHeaderSection } from '~/components/custom/page-header-section'
 
 export default function ForClosedPage({
   params: { locale, ...params },
@@ -142,11 +143,9 @@ export default function ForClosedPage({
   const closed = dict?.closed ?? {}
 
   return (
-    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="w-[95%] mx-auto gap-4 flex-col flex">
-        <h2 className="text-2xl font-bold tracking-tight mt-6">
-          {closed.title ?? ''}
-        </h2>
+    <div className="w-full">
+      <div className="w-full mx-auto gap-4 flex-col flex">
+        <PageHeaderSection title={closed.title ?? ''} />
         <div className="rounded-xl flex border">
           <Table>
             <TableHeader>

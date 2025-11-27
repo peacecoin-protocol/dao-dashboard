@@ -10,7 +10,6 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
-import { cn } from '~/components/utils'
 
 export interface DelegateInputProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -26,13 +25,8 @@ const DelegateInput = React.forwardRef<HTMLInputElement, DelegateInputProps>(
   ) => {
     return (
       <Dialog>
-        <DialogTrigger
-          className={cn(
-            'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2',
-            className
-          )}
-        >
-          Delegate
+        <DialogTrigger asChild>
+          <Button className={className}>Delegate</Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>

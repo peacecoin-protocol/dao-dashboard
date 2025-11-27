@@ -188,8 +188,8 @@ export default function ForPage({
   }, [pipContents, filteredStatus, filteredCategory])
 
   return (
-    <div className="w-full min-h-screen bg-background p-4 gap-4 flex flex-col">
-      <div className="w-[95%] mx-auto gap-6 flex flex-col">
+    <div className="w-full gap-4 flex flex-col">
+      <div className="w-full mx-auto gap-4 flex flex-col">
         <h2 className="text-3xl font-bold tracking-tight mt-4">
           {dict?.pipAll?.title || 'ALL Proposals'}
         </h2>
@@ -197,7 +197,7 @@ export default function ForPage({
           {dict?.pipAll?.description || 'ALL Peacecoin Improvement Proposals'}
         </p>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex justify-end">
           <Popover
             open={isStatusFilterOpen}
             onOpenChange={setIsStatusFilterOpen}
@@ -207,7 +207,7 @@ export default function ForPage({
                 variant="outline"
                 role="combobox"
                 className={cn(
-                  'w-full justify-between',
+                  'w-auto min-w-[180px] justify-between',
                   filteredStatus && 'text-muted-foreground'
                 )}
               >

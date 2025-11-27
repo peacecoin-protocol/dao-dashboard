@@ -9,7 +9,6 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
-import { cn } from '~/components/utils'
 
 export interface TransferInputProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -38,13 +37,8 @@ const TransferInput = React.forwardRef<HTMLInputElement, TransferInputProps>(
     const [amount, setAmount] = React.useState('')
     return (
       <Dialog>
-        <DialogTrigger
-          className={cn(
-            'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2',
-            className
-          )}
-        >
-          Transfer
+        <DialogTrigger asChild>
+          <Button className={className}>Transfer</Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader className="flex flex-col gap-2">
@@ -111,7 +105,6 @@ const TransferInput = React.forwardRef<HTMLInputElement, TransferInputProps>(
 
             <DialogClose asChild>
               <Button
-                size="lg"
                 className="w-full text-xl rounded-full"
                 onClick={() => {
                   handleTransfer()

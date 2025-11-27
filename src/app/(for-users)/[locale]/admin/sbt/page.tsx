@@ -151,7 +151,7 @@ const CreateButton = ({
 }) => (
   <Button
     variant="default"
-    className="flex w-full sm:w-60 sm:ml-auto justify-center"
+    className="flex w-full sm:w-72 sm:ml-auto justify-center"
     onClick={onClick}
     disabled={disabled}
   >
@@ -804,10 +804,10 @@ export default function SBTBuilderPage({
   )
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div className="flex flex-col">
       {loading && <LoadingOverlay />}
 
-      <div className="w-[95%] mx-auto flex flex-col gap-6">
+      <div className="w-full mx-auto flex flex-col gap-4">
         <PageHeader title={currentLabels.sbtList} />
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="self-start">

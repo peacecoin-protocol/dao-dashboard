@@ -56,6 +56,8 @@ import {
   sbtTableHeaders,
 } from '~/app/constants/constants'
 import { createClient } from '~/utils/supabase/client'
+import { PageHeaderSection } from '~/components/custom/page-header-section'
+import { PageSubHeaderSection } from '~/components/custom/page-sub-header-section'
 
 // Constants
 const PCE_LOGO = '/pce_logo.jpg'
@@ -635,22 +637,18 @@ export default function ForCampaignPage({
   )
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+    <>
       {loading && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
           <Spinner show={true} size="large" />
         </div>
       )}
-      <div className="w-[95%] mx-auto space-y-6 sm:space-y-8">
+      <div className="w-full mx-auto space-y-6 sm:space-y-8">
         {/* Header Section */}
-        <div className="space-y-3 sm:space-y-4">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
-            {campaign.title ?? ''}
-          </h1>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-4xl">
-            {campaign.description ?? ''}
-          </p>
-        </div>
+        <PageHeaderSection
+          title={campaign.title ?? ''}
+          description={campaign.description ?? ''}
+        />
 
         {/* Wallet Connected Section */}
         {chainId && (
@@ -701,20 +699,18 @@ export default function ForCampaignPage({
                 </CardContent>
               </Card>
             )}
-            <div className="space-y-3 sm:space-y-4">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
-                {campaign.sbtBalances ?? 'Token Balances'}
-              </h2>
-            </div>
+            <PageSubHeaderSection
+              title={campaign.sbtBalances ?? 'Token Balances'}
+            />
 
             <SBTTableComponent headers={sbtTableHeaders} sbtInfo={tokenData} />
           </div>
         )}
         {/* Campaign search input */}
-        <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-muted/60 bg-background/60 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm font-medium text-muted-foreground">
-            {campaign.searchCampaignLabel ?? 'Filter campaigns by DAO Name'}
-          </div>
+        <div className="flex flex-row justify-between">
+          <PageSubHeaderSection
+            title={campaign.searchCampaignLabel ?? 'Campaigns'}
+          />
           <Input
             type="text"
             placeholder={
@@ -760,6 +756,6 @@ export default function ForCampaignPage({
         isConnected={!!address}
         campaignDict={campaign}
       />
-    </div>
+    </>
   )
 }

@@ -39,6 +39,7 @@ import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { defaultChainId } from '~/app/constants/constants'
+import { PageHeaderSection } from '~/components/custom/page-header-section'
 
 export default function ForPendingPage({
   params: { locale, ...params },
@@ -167,11 +168,9 @@ export default function ForPendingPage({
   const pending = dict?.pending ?? {}
 
   return (
-    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="w-[95%] mx-auto gap-4 flex-col flex">
-        <h2 className="text-2xl font-bold tracking-tight mt-6">
-          {pending.title ?? ''}
-        </h2>
+    <div className="w-full">
+      <div className="w-full mx-auto gap-4 flex-col flex">
+        <PageHeaderSection title={pending.title ?? ''} />
 
         <div className="gap-4 flex flex-col">
           <p className="text-muted-foreground">

@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from '~/components/ui/select'
 
-import { cn } from '~/components/utils'
 import { TOKEN } from '~/i18n/types'
 import { formatString } from '~/components/utils'
 import { formatEther } from 'viem'
@@ -87,13 +86,8 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
           }
         }}
       >
-        <DialogTrigger
-          className={cn(
-            'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2',
-            className
-          )}
-        >
-          Swap
+        <DialogTrigger asChild>
+          <Button className={className}>Swap</Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader className="flex flex-col gap-2">
@@ -284,7 +278,6 @@ const ExchangeInput = React.forwardRef<HTMLInputElement, ExchangeInputProps>(
 
             <DialogClose asChild>
               <Button
-                size="lg"
                 className="w-full text-xl rounded-full"
                 onClick={() => {
                   if (fromToken && toToken) {

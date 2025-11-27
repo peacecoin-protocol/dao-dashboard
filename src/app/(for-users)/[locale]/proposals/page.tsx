@@ -42,31 +42,29 @@ export default function ForProposalPage({
   const vote = dict?.vote ?? {}
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="w-[95%] mx-auto links flex flex-row gap-10 items-center justify-center h-[50vh]">
-        <Button className="w-40 py-6" variant="outline" asChild>
-          <Link className="py-4" locale={locale} href="/pending">
-            {vote.pending ?? ''}
-          </Link>
-        </Button>
-        <Button className="w-40 py-6" variant="outline" asChild>
-          <Link locale={locale} href="/closed">
-            {vote.close ?? ''}
-          </Link>
-        </Button>
-        <Button className="w-40 py-6" variant="outline" asChild>
-          <Link locale={locale} href="/submit">
-            {vote.submit ?? ''}
-          </Link>
-        </Button>
+    <div className="w-full mx-auto links flex flex-row gap-10 items-center justify-center h-[50vh]">
+      <Button className="w-40 py-6" variant="outline" asChild>
+        <Link className="py-4" locale={locale} href="/pending">
+          {vote.pending ?? ''}
+        </Link>
+      </Button>
+      <Button className="w-40 py-6" variant="outline" asChild>
+        <Link locale={locale} href="/closed">
+          {vote.close ?? ''}
+        </Link>
+      </Button>
+      <Button className="w-40 py-6" variant="outline" asChild>
+        <Link locale={locale} href="/submit">
+          {vote.submit ?? ''}
+        </Link>
+      </Button>
 
-        <Button className="w-40 py-6" variant="outline" asChild>
-          <Link className="text-center" locale={locale} href="/delegate">
-            {vote.delegate ?? ''}
-            {<br></br>} {votes ? formatEther(BigInt(votes as string)) : '0'}
-          </Link>
-        </Button>
-      </div>
+      <Button className="w-40 py-6" variant="outline" asChild>
+        <Link className="text-center" locale={locale} href="/delegate">
+          {vote.delegate ?? ''}
+          {<br></br>} {votes ? formatEther(BigInt(votes as string)) : '0'}
+        </Link>
+      </Button>
     </div>
   )
 }

@@ -177,7 +177,7 @@ export const CampaignsTable = ({
   return (
     <div className="space-y-6">
       {/* Mobile View - Cards */}
-      <div className="space-y-4">
+      <div className="gap-4">
         {campaigns.length === 0 ? (
           <Card>
             <CardContent className="p-8">

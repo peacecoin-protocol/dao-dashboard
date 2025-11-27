@@ -31,7 +31,7 @@ const NFT_DETAIL = React.forwardRef<HTMLInputElement, NFT_DETAIL_Props>(
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="w-[90vw] max-w-[600px] h-auto mx-auto p-3 sm:p-4 lg:p-6 flex flex-col">
-          <section className="flex flex-col gap-3 sm:gap-4 lg:gap-6">
+          <section className="flex flex-col gap-3 sm:gap-4 lg:gap-4">
             {/* Image Section */}
             <figure className="flex justify-center">
               <section className="relative w-full max-w-[180px] sm:max-w-[220px] lg:max-w-[250px] h-[120px] sm:h-[150px] lg:h-[180px]">

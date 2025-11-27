@@ -37,6 +37,7 @@ import { config } from '~/lib/config'
 import { defaultChainId } from '~/app/constants/constants'
 
 import { TOKEN } from '~/i18n/types'
+import { PageHeaderSection } from '~/components/custom/page-header-section'
 
 export default function ForTokenPage({
   params: { locale, ...params },
@@ -485,11 +486,9 @@ export default function ForTokenPage({
   const token = dict?.token ?? {}
 
   return (
-    <div className="w-full min-h-screen bg-background p-4 sm:p-6 lg:p-8 gap-4 flex flex-col">
-      <div className="w-[95%] mx-auto flex flex-col gap-2">
-        <h2 className="text-2xl font-bold tracking-tight mt-6">
-          {token.title ?? ''}
-        </h2>
+    <div className="w-full gap-4 flex flex-col">
+      <div className="w-full mx-auto flex flex-col gap-2">
+        <PageHeaderSection title={token.title ?? ''} />
         <p className="text-muted-foreground">
           {token.subtitle1 ?? ''}
           {': '}
