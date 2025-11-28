@@ -393,11 +393,11 @@ export default function StakingPage({
 
           <div className="gap-4">
             {/* PCE Balance */}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 rounded-lg p-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 rounded-lg py-4">
               <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 w-full">
                 {votingPowerDict.pceBalance ?? 'PCE Balance'}
               </span>
-              <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 w-full">
+              <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 w-full text-right">
                 {pceBalance
                   ? formatNumber(parseFloat(formatEther(pceBalance as string)))
                   : '0'}{' '}
@@ -406,11 +406,11 @@ export default function StakingPage({
             </div>
 
             {/* Amount Staked */}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 rounded-lg p-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 rounded-lg pb-4">
               <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 w-full">
                 {votingPowerDict.amountStaked ?? 'Amount Staked'}
               </span>
-              <span className="text-lg font-semibold text-purple-600 dark:text-purple-400 w-full">
+              <span className="text-lg font-semibold text-purple-600 dark:text-purple-400 w-full text-right">
                 {wPCEBalance
                   ? formatNumber(
                       wPCEBalance
@@ -424,9 +424,6 @@ export default function StakingPage({
 
             {/* Amount to Stake Input */}
             <div className="space-y-2">
-              <label className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300">
-                {votingPowerDict.amountToStake ?? 'Amount to Stake'}
-              </label>
               <Input
                 type="number"
                 min="0"
