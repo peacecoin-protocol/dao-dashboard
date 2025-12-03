@@ -51,11 +51,14 @@ import { getDict } from '~/i18n/get-dict'
 
 import { Dictionary, Locale } from '~/i18n/types'
 
-import { formatString, shortenAddress } from '~/components/utils'
+import { shortenAddress } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { config } from '~/lib/config'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 import { TooltipComponent } from '~/components/custom/TooltipComponent'
+import { ProposalBadges } from '~/components/custom/proposal-badges'
+import { FormattedValue } from '~/components/custom/formatted-value'
+import { TokenValueCell } from '~/components/custom/token-value-cell'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { defaultChainId } from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
@@ -83,12 +86,7 @@ import {
   getFilesFromGroup,
 } from '~/app/pinata/pinataAPI'
 import { PageSubHeaderSection } from '~/components/custom/page-sub-header-section'
-
-type Proposal = {
-  id: number
-  description: string
-  status: string
-}
+import { StatsSection } from '~/components/custom/stats-section'
 
 type TokenBalance = {
   contractAddress: string
@@ -123,6 +121,7 @@ export default function ForDaoDetailPage({
   const [proposals, setProposals] = useState<any[]>([])
   const [proposalStatus, setStatus] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [daoInfo, setDaoInfo] = useState<any>(null)
 
   const [category, setCategory] = useState('')
 
@@ -146,12 +145,6 @@ export default function ForDaoDetailPage({
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [croppedImage, setCroppedImage] = useState<string | null>(null)
   const [isImageLoading, setIsImageLoading] = useState(false)
-  const imageLoadedRef = useRef(false)
-  const lastToastStateRef = useRef<{
-    isConfirmed?: boolean
-    isConfirming?: boolean
-    error?: any
-  }>({})
   const lastCroppedImageRef = useRef<string | null>(null)
 
   // Social editing state variables
@@ -236,6 +229,7 @@ export default function ForDaoDetailPage({
 
       if (dao) {
         setImageHash(dao.image)
+        setDaoInfo(dao)
       }
     }
     fetchDAO()
@@ -367,12 +361,6 @@ export default function ForDaoDetailPage({
       args: [id],
     }) as { data?: string; refetch: () => void }
 
-  // useEffect(() => {
-  //   if (timelockAddress) {
-  //     getTreasuryBalances(timelockAddress as `0x${string}`)
-  //   }
-  // }, [timelockAddress])
-
   const { data: governorAddress, refetch: refetchGovernorAddress } =
     useReadContract({
       address: timelockAddress as `0x${string}`,
@@ -385,12 +373,6 @@ export default function ForDaoDetailPage({
     abi: GOVERNOR_ABI,
     functionName: 'socialConfig',
   })
-
-  const { data: name } = useReadContract({
-    address: governorAddress as `0x${string}`,
-    abi: GOVERNOR_ABI,
-    functionName: 'name',
-  }) as { data?: string; refetch: () => void }
 
   const { data: governanceTokenAddress } = useReadContract({
     address: governorAddress as `0x${string}`,
@@ -495,14 +477,10 @@ export default function ForDaoDetailPage({
         </h1>
       </div>
       <p className="description">{proposal[9] || 'Description'}</p>
-      <div className="flex flex-row gap-2">
-        <span className="flex bg-dark_blue rounded-xl text-white font-bold w-44 p-1 items-center justify-center text-sm px-4">
-          {localDict.transferTokens ?? 'Transfer tokens'}
-        </span>
-        <span className="flex bg-dark_blue rounded-xl text-white font-bold p-1 items-center justify-center text-sm px-4">
-          {status}
-        </span>
-      </div>
+      <ProposalBadges
+        label={localDict.transferTokens ?? 'Transfer tokens'}
+        status={status}
+      />
 
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
@@ -594,7 +572,7 @@ export default function ForDaoDetailPage({
                 : 0
             }
             className="w-full"
-            strokeColor="#1995AD"
+            strokeColor="#primary_blue"
             trailColor="#A1D6E2"
             strokeWidth={1}
             trailWidth={1}
@@ -654,7 +632,7 @@ export default function ForDaoDetailPage({
 
         <div className="flex flex-row gap-1 md:gap-4 w-full">
           <Button
-            className="w-full bg-dark_blue"
+            className="w-full"
             disabled={status !== 'Active'}
             onClick={async () => {
               await writeContract({
@@ -668,7 +646,7 @@ export default function ForDaoDetailPage({
             {localDict.voteFor ?? 'Vote For'}
           </Button>
           <Button
-            className="w-full bg-dark_blue"
+            className="w-full"
             disabled={status !== 'Active'}
             onClick={async () => {
               await writeContract({
@@ -682,7 +660,7 @@ export default function ForDaoDetailPage({
             {localDict.voteAgainst ?? 'Vote Against'}
           </Button>
           <Button
-            className="w-full bg-dark_blue"
+            className="w-full"
             disabled={status !== 'Succeeded'}
             onClick={async () => {
               await writeContract({
@@ -696,7 +674,7 @@ export default function ForDaoDetailPage({
             {localDict.queue ?? 'Queue'}
           </Button>
           <Button
-            className="w-full bg-dark_blue"
+            className="w-full"
             disabled={
               Math.floor(Date.now() / 1000) < Number(proposal[2]) ||
               status !== 'Queued'
@@ -1061,6 +1039,8 @@ export default function ForDaoDetailPage({
             })
             .eq('daoId', id)
 
+          setDaoInfo(dao)
+
           toast({
             title:
               localDict.imageUpdatedSuccessfully ??
@@ -1134,7 +1114,7 @@ export default function ForDaoDetailPage({
         <div className="relative group">
           {isImageLoading ? (
             <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-dark_blue"></div>
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary_blue"></div>
             </div>
           ) : imageHash ? (
             <Image
@@ -1215,7 +1195,7 @@ export default function ForDaoDetailPage({
         </div>
 
         <div className="flex flex-col gap-2">
-          <h2 className="text-3xl font-bold">{name}</h2>
+          <h2 className="text-3xl font-bold">{daoInfo?.daoName}</h2>
           <span
             className="text-sm text-gray-500 mt-1 break-all flex flex-row items-center gap-2 cursor-pointer"
             onClick={(e) => {
@@ -1357,9 +1337,7 @@ export default function ForDaoDetailPage({
                       tooltipText="The number of blocks that must pass between when a proposal is created and when voting begins. This delay gives token holders time to research and discuss the proposal before voting starts."
                       className="font-bold rounded-xl flex"
                     />
-                    <div className="text-dark_blue">
-                      {votingDelay ? formatString(votingDelay as string) : '0'}
-                    </div>
+                    <FormattedValue value={votingDelay} />
                   </div>
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
@@ -1367,11 +1345,7 @@ export default function ForDaoDetailPage({
                       tooltipText="The duration (in blocks) during which token holders can cast their votes on a proposal. Once this period ends, no more votes can be cast and the proposal's outcome is determined based on the votes received."
                       className="font-bold rounded-xl flex"
                     />
-                    <div className="text-dark_blue">
-                      {votingPeriod
-                        ? formatString(votingPeriod as string)
-                        : '0'}
-                    </div>
+                    <FormattedValue value={votingPeriod} />
                   </div>
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
@@ -1380,11 +1354,7 @@ export default function ForDaoDetailPage({
                       className="font-bold rounded-xl flex"
                     />
 
-                    <div className="text-dark_blue">
-                      {timelockDelay
-                        ? formatString(timelockDelay as string)
-                        : '0'}
-                    </div>
+                    <FormattedValue value={timelockDelay} />
                   </div>
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
@@ -1395,11 +1365,10 @@ export default function ForDaoDetailPage({
                       className="font-bold rounded-xl flex"
                     />
 
-                    <div className="text-dark_blue">
-                      {proposalThreshold
-                        ? formatString(formatEther(proposalThreshold as string))
-                        : '0'}
-                    </div>
+                    <FormattedValue
+                      value={proposalThreshold}
+                      formatter={(val) => formatEther(val as string)}
+                    />
                   </div>
 
                   <div className="flex flex-row gap-4 justify-between items-center">
@@ -1408,11 +1377,10 @@ export default function ForDaoDetailPage({
                       tooltipText="The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
                       className="font-bold rounded-xl flex"
                     />
-                    <div className="text-dark_blue">
-                      {quorum
-                        ? formatString(formatEther(BigInt(quorum as string)))
-                        : '0'}
-                    </div>
+                    <FormattedValue
+                      value={quorum}
+                      formatter={(val) => formatEther(BigInt(val as string))}
+                    />
                   </div>
                 </div>
 
@@ -1427,52 +1395,39 @@ export default function ForDaoDetailPage({
                     }
                     className="font-bold rounded-xl flex"
                   />
-                  <div className="text-dark_blue">
-                    {votes ? formatString(formatEther(votes as string)) : '0'}
-                  </div>
+                  <FormattedValue
+                    value={votes}
+                    formatter={(val) => formatEther(val as string)}
+                  />
                 </div>
 
-                <div className="flex bg-gray-100 rounded-xl items-center justify-between cursor-pointer">
-                  <div className="flex flex-row gap-4 w-full items-center p-4 justify-center">
-                    <div className="flex flex-col gap-2 w-full justify-center">
-                      <div className="text-heavy_white text-sm flex justify-center items-center">
-                        TVL
-                      </div>
-
-                      <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-full items-center justify-center text-sm">
-                        $0
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2 w-full">
-                      <div className="text-heavy_white text-sm flex justify-center items-center">
-                        Memebers
-                      </div>
-                      <div className="flex bg-dark_blue rounded-xl text-white font-bold p-1 w-full items-center justify-center text-sm">
-                        0%
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <StatsSection tvl="$0" members="0%" />
 
                 <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
                   <h1 className="font-bold rounded-xl  flex">
                     {localDict.createdAt ?? 'Created at'}{' '}
-                    {new Date(Number(172839000) * 1000).toLocaleString()}
+                    {daoInfo?.created_at
+                      ? new Date(daoInfo?.created_at).toLocaleString()
+                      : '-'}
                   </h1>
                 </div>
                 <div className="flex flex-col border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
                   <div className="flex flex-row justify-between items-center mb-2">
-                    <h1 className="font-bold">DAO Socials</h1>
+                    <h1 className="font-bold">
+                      {localDict.social ?? 'Social:'}
+                    </h1>
                     <Button
                       variant="outline"
                       size="sm"
+                      className="w-auto"
                       onClick={() => {
                         setIsEditingSocials(!isEditingSocials)
                         setEditingSocials(socials)
                       }}
                     >
-                      {isEditingSocials ? 'Cancel' : 'Edit'}
+                      {isEditingSocials
+                        ? (localDict.cancel ?? 'Cancel')
+                        : (localDict.edit ?? 'Edit')}
                     </Button>
                   </div>
 
@@ -1480,7 +1435,7 @@ export default function ForDaoDetailPage({
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium">
-                          DAO Website
+                          {localDict.website ?? 'Website:'}
                         </label>
                         <Input
                           value={editingSocials.website}
@@ -1570,7 +1525,7 @@ export default function ForDaoDetailPage({
                               ? socials.website
                               : 'https://website.com'
                           }
-                          className="text-dark_blue hover:underline"
+                          className="text-primary_blue hover:underline"
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -1586,7 +1541,7 @@ export default function ForDaoDetailPage({
                               ? socials.linkedin
                               : 'https://www.linkedin.com/'
                           }
-                          className="text-dark_blue hover:underline"
+                          className="text-primary_blue hover:underline"
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -1602,7 +1557,7 @@ export default function ForDaoDetailPage({
                               ? socials.twitter
                               : 'https://twitter.com'
                           }
-                          className="text-dark_blue hover:underline"
+                          className="text-primary_blue hover:underline"
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -1618,7 +1573,7 @@ export default function ForDaoDetailPage({
                               ? socials.telegram
                               : 'https://t.me/'
                           }
-                          className="text-dark_blue hover:underline"
+                          className="text-primary_blue hover:underline"
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -1781,11 +1736,11 @@ export default function ForDaoDetailPage({
                               {token.name === '' ? 'PCE TEST' : token.name}
                             </TableCell>
                             <TableCell className="font-bold">
-                              {formatString(
-                                formatEther(
-                                  BigInt(token.tokenBalance).toString()
-                                )
-                              )}{' '}
+                              <FormattedValue
+                                value={BigInt(token.tokenBalance).toString()}
+                                formatter={(val) => formatEther(val as string)}
+                                inline
+                              />{' '}
                               {token.symbol === '' ? 'PCE TEST' : token.symbol}
                             </TableCell>
                           </TableRow>
@@ -1836,7 +1791,7 @@ export default function ForDaoDetailPage({
                     }}
                   >
                     <DialogTrigger asChild>
-                      <Button className="w-full bg-dark_blue">
+                      <Button className="w-full">
                         {localDict.depositToDaoTreasury ??
                           'Deposit to DAO Treasury'}
                       </Button>
@@ -1863,7 +1818,7 @@ export default function ForDaoDetailPage({
                           placeholder={localDict.amount ?? 'Amount'}
                         />
                         <Button
-                          className="w-full bg-dark_blue"
+                          className="w-full"
                           onClick={async () => {
                             await writeContract({
                               abi: PCE_ABI,
@@ -1931,7 +1886,7 @@ export default function ForDaoDetailPage({
                 <div className="flex flex-col sm:flex-row gap-4 w-full">
                   <AmountInput
                     localDict={localDict}
-                    className="w-full sm:w-60 bg-dark_blue"
+                    className="w-full sm:w-60"
                     setStakingAmount={setStakingAmount}
                     handleStake={handleStake}
                     maxAmount={
@@ -1940,15 +1895,12 @@ export default function ForDaoDetailPage({
                         : 0
                     }
                   />
-                  <Button
-                    className="w-full sm:w-60 bg-dark_blue"
-                    onClick={handleWithdraw}
-                  >
+                  <Button className="w-full sm:w-60" onClick={handleWithdraw}>
                     {localDict.withdraw ?? 'Withdraw'}
                   </Button>
 
                   <Button
-                    className="w-full sm:w-60 bg-dark_blue"
+                    className="w-full sm:w-60"
                     onClick={async () => {
                       setIsDelegateDialogOpened(true)
                     }}
@@ -1981,38 +1933,33 @@ export default function ForDaoDetailPage({
                       <TableRow>
                         <TableCell>
                           <div className="flex flex-row gap-2 items-center">
-                            <h1 className="text-md text-dark_blue font-bold break-all">
+                            <h1 className="text-md text-primary_blue font-bold break-all">
                               {communityTokenAddress
                                 ? shortenAddress(communityTokenAddress, 4)
                                 : '-'}
                             </h1>
                           </div>
                         </TableCell>
-                        <TableCell className="font-bold font-md text-dark_blue">
-                          {communityTokenBalance
-                            ? formatString(
-                                formatEther(
-                                  BigInt(communityTokenBalance as string)
-                                )
-                              )
-                            : '0'}{' '}
-                          {communityTokenSymbol}
-                        </TableCell>
-                        <TableCell className="font-bold font-md text-dark_blue">
-                          {governanceTokenBalance
-                            ? formatString(
-                                formatEther(
-                                  BigInt(governanceTokenBalance as string)
-                                )
-                              )
-                            : '0'}{' '}
-                          {communityTokenSymbol}
-                        </TableCell>
-                        <TableCell className="font-bold font-md text-dark_blue">
-                          {votes
-                            ? formatString(formatEther(BigInt(votes as string)))
-                            : '0'}{' '}
-                        </TableCell>
+                        <TokenValueCell
+                          value={communityTokenBalance}
+                          formatter={(val) =>
+                            formatEther(BigInt(val as string))
+                          }
+                          tokenSymbol={communityTokenSymbol}
+                        />
+                        <TokenValueCell
+                          value={governanceTokenBalance}
+                          formatter={(val) =>
+                            formatEther(BigInt(val as string))
+                          }
+                          tokenSymbol={communityTokenSymbol}
+                        />
+                        <TokenValueCell
+                          value={votes}
+                          formatter={(val) =>
+                            formatEther(BigInt(val as string))
+                          }
+                        />
                       </TableRow>
                     </TableBody>
                   </Table>

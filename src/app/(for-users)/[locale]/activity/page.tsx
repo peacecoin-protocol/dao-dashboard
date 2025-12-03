@@ -252,9 +252,13 @@ export default function ForUsersIndexPage({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>No.</TableHead>
-                        <TableHead>DAO Name</TableHead>
-                        <TableHead>Description</TableHead>
+                        <TableHead>{dashboard.tableNo ?? 'No.'}</TableHead>
+                        <TableHead>
+                          {dashboard.tableDaoName ?? 'DAO Name'}
+                        </TableHead>
+                        <TableHead>
+                          {dashboard.tableDescription ?? 'Description'}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

@@ -20,7 +20,10 @@
     "sincelasthour": "1時間前から",
     "recent": "最近成功したPIP",
     "made": "あなたは",
-    "proposal_success": "件の提案を成功させました"
+    "proposal_success": "件の提案を成功させました",
+    "tableNo": "番号",
+    "tableDaoName": "DAO名",
+    "tableDescription": "説明"
   },
   "proposal": {
     "proposalId": "ID",
@@ -287,7 +290,8 @@
     "zoomIn": "拡大",
     "cancel": "キャンセル",
     "crop": "切り取り",
-    "quorumVotes": "定足数投票"
+    "quorumVotes": "定足数投票",
+    "social": "ソーシャル:"
   },
   "pceDetail": {
     "transferTokens": "トークンを送金",
@@ -323,6 +327,13 @@
     "token": "トークン",
     "sbtId": "SBT ID",
     "enterSbtId": "SBT IDを入力",
+    "nftId": "NFT ID",
+    "enterNftId": "NFT IDを入力",
+    "tokenAddress": "トークンアドレス",
+    "enterTokenAddress": "トークンアドレスを入力",
+    "titleLabel": "タイトル",
+    "descriptionLabel": "説明",
+    "youAreNotTheOwnerOfThisToken": "このトークンの所有者ではありません",
     "enterCampaignTitle": "キャンペーンのタイトルを入力",
     "enterCampaignDescription": "キャンペーンの説明を入力",
     "totalAmount": "総額",
@@ -372,7 +383,21 @@
     "failedToFetchGistData": "Gistデータの取得に失敗しました",
     "signatureCopiedToClipboard": "署名がクリップボードにコピーされました",
     "failedToCopySignature": "署名のコピーに失敗しました",
-    "failedToCheckCampaignStatus": "キャンペーン状態の確認に失敗しました"
+    "failedToCheckCampaignStatus": "キャンペーン状態の確認に失敗しました",
+    "erc20": "ERC20",
+    "nft": "NFT",
+    "whitelistSignature": "ホワイトリスト + 署名",
+    "campaignIdLabel": "キャンペーンID:",
+    "accessLabel": "アクセス:",
+    "rewardLabel": "報酬:",
+    "perClaim": "請求ごと",
+    "claimedLabel": "請求済み:",
+    "daoLabel": "DAO:",
+    "sbtNftIdLabel": "SBT/NFT ID:",
+    "startLabel": "開始:",
+    "endLabel": "終了:",
+    "noCampaignsFound": "キャンペーンが見つかりません",
+    "totalLabel": "合計:"
   },
   "pipAll": {
     "title": "すべての提案",
@@ -458,6 +483,13 @@
     "sbtRevokedFailed": "SBT取り消し失敗",
     "updatingImage": "画像更新中...",
     "revoke": "取り消し",
-    "unrevoke": "取り消し解除"
+    "unrevoke": "取り消し解除",
+    "tokenId": "トークンID:",
+    "balance": "残高:",
+    "dao": "DAO:",
+    "noTokensAvailable": "トークンがありません",
+    "total": "合計:",
+    "sbt": "SBT",
+    "nft": "NFT"
   }
 }

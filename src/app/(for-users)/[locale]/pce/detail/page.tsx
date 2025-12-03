@@ -249,7 +249,7 @@ export default function ForPCEDetailPage({
                   }}
                 >
                   <DialogTrigger asChild>
-                    <Button className="w-full bg-dark_blue">
+                    <Button className="w-full">
                       {localDict.depositToDaoTreasury ??
                         'Deposit to DAO Treasury'}
                     </Button>
@@ -274,7 +274,7 @@ export default function ForPCEDetailPage({
                         placeholder={localDict.amount ?? 'Amount'}
                       />
                       <Button
-                        className="w-full bg-dark_blue"
+                        className="w-full"
                         onClick={async () => {
                           // Handle deposit logic here
                           setTokenAddress('')

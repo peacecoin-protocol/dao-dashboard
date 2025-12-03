@@ -145,7 +145,7 @@ export const CreateCampaignModal = ({
           </h2>
         </div>
 
-        <div className="gap-4">
+        <div className="space-y-4">
           {/* Campaign Type Selection */}
           <div className="space-y-2">
             <Label htmlFor="campaign-type">
@@ -188,10 +188,10 @@ export const CreateCampaignModal = ({
           <div className="space-y-2">
             <Label htmlFor="sbt-id">
               {form.tokenType == 1
-                ? 'SBT ID'
+                ? (campaign.sbtId ?? 'SBT ID')
                 : form.tokenType == 2
-                  ? 'NFT ID'
-                  : 'Token Address'}
+                  ? (campaign.nftId ?? 'NFT ID')
+                  : (campaign.tokenAddress ?? 'Token Address')}
             </Label>
             {form.tokenType != 0 && (
               <Input
@@ -201,7 +201,7 @@ export const CreateCampaignModal = ({
                 placeholder={
                   form.tokenType == 2
                     ? (campaign.enterNftId ?? 'Enter NFT ID')
-                    : (campaign.enterNftId ?? 'Enter SBT ID')
+                    : (campaign.enterSbtId ?? 'Enter SBT ID')
                 }
                 value={form.sbtId == 0 ? '' : form.sbtId.toString()}
                 onChange={handleChange}
@@ -244,7 +244,8 @@ export const CreateCampaignModal = ({
                     />
                     {!isOwner && tokenInfo && (
                       <span className="text-sm text-gray-500 mt-2">
-                        You are not the owner of this Token
+                        {campaign.youAreNotTheOwnerOfThisToken ??
+                          'You are not the owner of this Token'}
                       </span>
                     )}
                   </div>
@@ -254,7 +255,7 @@ export const CreateCampaignModal = ({
 
           {/* Title Input */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">{campaign.titleLabel ?? 'Title'}</Label>
             <Input
               id="title"
               type="text"
@@ -270,7 +271,9 @@ export const CreateCampaignModal = ({
 
           {/* Description Input */}
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">
+              {campaign.descriptionLabel ?? 'Description'}
+            </Label>
             <Input
               id="description"
               type="text"
