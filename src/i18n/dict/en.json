@@ -20,7 +20,10 @@
     "sincelasthour": "since last hour",
     "recent": "Recent Succeeded PIPs",
     "made": "You made",
-    "proposal_success": "proposals successfully"
+    "proposal_success": "proposals successfully",
+    "tableNo": "No.",
+    "tableDaoName": "DAO Name",
+    "tableDescription": "Description"
   },
   "proposal": {
     "proposalId": "ID",
@@ -287,7 +290,8 @@
     "zoomIn": "Zoom In",
     "cancel": "Cancel",
     "crop": "Crop",
-    "quorumVotes": "Quorum Votes"
+    "quorumVotes": "Quorum Votes",
+    "social": "Social:"
   },
   "pceDetail": {
     "transferTokens": "Transfer Tokens",
@@ -323,6 +327,13 @@
     "token": "Token",
     "sbtId": "SBT ID",
     "enterSbtId": "Enter SBT ID",
+    "nftId": "NFT ID",
+    "enterNftId": "Enter NFT ID",
+    "tokenAddress": "Token Address",
+    "enterTokenAddress": "Enter Token Address",
+    "titleLabel": "Title",
+    "descriptionLabel": "Description",
+    "youAreNotTheOwnerOfThisToken": "You are not the owner of this Token",
     "enterCampaignTitle": "Enter campaign title",
     "enterCampaignDescription": "Enter campaign description",
     "totalAmount": "Total Amount",
@@ -372,7 +383,21 @@
     "failedToFetchGistData": "Failed to fetch gist data",
     "signatureCopiedToClipboard": "Signature copied to clipboard",
     "failedToCopySignature": "Failed to copy signature",
-    "failedToCheckCampaignStatus": "Failed to check campaign status"
+    "failedToCheckCampaignStatus": "Failed to check campaign status",
+    "erc20": "ERC20",
+    "nft": "NFT",
+    "whitelistSignature": "Whitelist + Signature",
+    "campaignIdLabel": "Campaign ID:",
+    "accessLabel": "Access:",
+    "rewardLabel": "Reward:",
+    "perClaim": "per claim",
+    "claimedLabel": "Claimed:",
+    "daoLabel": "DAO:",
+    "sbtNftIdLabel": "SBT/NFT ID:",
+    "startLabel": "Start:",
+    "endLabel": "End:",
+    "noCampaignsFound": "No campaigns found",
+    "totalLabel": "Total:"
   },
   "pipAll": {
     "title": "ALL Proposals",
@@ -459,6 +484,13 @@
     "sbtRevokedFailed": "SBT revoked failed",
     "updatingImage": "Updating image...",
     "revoke": "Revoke",
-    "unrevoke": "Unrevoke"
+    "unrevoke": "Unrevoke",
+    "tokenId": "Token ID:",
+    "balance": "Balance:",
+    "dao": "DAO:",
+    "noTokensAvailable": "No tokens available",
+    "total": "Total:",
+    "sbt": "SBT",
+    "nft": "NFT"
   }
 }

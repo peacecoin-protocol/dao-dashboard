@@ -82,6 +82,8 @@ import { timestampToDate } from '~/components/utils'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import Image from 'next/image'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
+import { ProposalBadges } from '~/components/custom/proposal-badges'
+import { InfoCell } from '~/components/custom/info-cell'
 
 type TokenBalance = {
   contractAddress: string
@@ -401,14 +403,10 @@ export default function PCEPage({
           </h1>
         </div>
         <p className="description">{proposal[9] || 'Description'}</p>
-        <div className="flex flex-row gap-2">
-          <span className="flex bg-dark_blue rounded-xl text-white font-bold w-44 p-1 items-center justify-center text-sm px-4">
-            {localDict.transferTokens ?? 'Transfer tokens'}
-          </span>
-          <span className="flex bg-dark_blue rounded-xl text-white font-bold p-1 items-center justify-center text-sm px-4">
-            {status}
-          </span>
-        </div>
+        <ProposalBadges
+          label={localDict.transferTokens ?? 'Transfer tokens'}
+          status={status}
+        />
       </div>
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
@@ -557,7 +555,7 @@ export default function PCEPage({
 
         <div className="flex flex-row gap-1 sm:gap-4 w-full">
           <Button
-            className="w-full bg-dark_blue"
+            className="w-full"
             disabled={status !== 'Active'}
             onClick={async () => {
               await writeContract({
@@ -573,7 +571,7 @@ export default function PCEPage({
             {localDict.voteFor ?? 'Vote For'}
           </Button>
           <Button
-            className="w-full bg-dark_blue"
+            className="w-full"
             disabled={status !== 'Active'}
             onClick={async () => {
               await writeContract({
@@ -589,7 +587,7 @@ export default function PCEPage({
             {localDict.voteAgainst ?? 'Vote Against'}
           </Button>
           <Button
-            className="w-full bg-dark_blue"
+            className="w-full"
             disabled={status !== 'Succeeded'}
             onClick={async () => {
               await writeContract({
@@ -605,7 +603,7 @@ export default function PCEPage({
             {localDict.queue ?? 'Queue'}
           </Button>
           <Button
-            className="w-full bg-dark_blue"
+            className="w-full"
             disabled={
               getCurrentTimestamp() < Number(proposal[2]) || status !== 'Queued'
             }
@@ -1050,97 +1048,60 @@ export default function PCEPage({
                   </div>
 
                   <div className="flex flex-col border rounded-xl p-4 bg-gray-100 gap-4">
-                    <div className="flex flex-row justify-between items-center">
-                      <TooltipComponent
-                        title={localDict.voteDelay ?? 'Vote Delay'}
-                        tooltipText="The number of blocks that must pass between when a proposal is created and when voting begins. This delay gives token holders time to research and discuss the proposal before voting starts."
-                        className="font-bold rounded-xl flex"
-                      />
-                      <div className="text-dark_blue">
-                        {votingDelay
-                          ? formatString(votingDelay as string)
-                          : '0'}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-row justify-between items-center">
-                      <TooltipComponent
-                        title={localDict.votingPeriod ?? 'Voting Period'}
-                        tooltipText="The duration (in blocks) during which token holders can cast their votes on a proposal. Once this period ends, no more votes can be cast and the proposal's outcome is determined based on the votes received."
-                        className="font-bold rounded-xl flex"
-                      />
-                      <div className="text-dark_blue">
-                        {votingPeriod
-                          ? formatString(votingPeriod as string)
-                          : '0'}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-row justify-between items-center">
-                      <TooltipComponent
-                        title={localDict.timelockDelay ?? 'Timelock Delay'}
-                        tooltipText="The mandatory waiting period between when a proposal passes and when it can be executed. This delay gives token holders time to prepare for the changes and exit the protocol if they disagree with a passed proposal. Longer delays provide more security but reduce governance agility."
-                        className="font-bold rounded-xl flex"
-                      />
-
-                      <div className="text-dark_blue">
-                        {timelockDelay
-                          ? formatString(timelockDelay as string)
-                          : '0'}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-row justify-between items-center">
-                      <TooltipComponent
-                        title={
-                          localDict.proposalThreshold ?? 'Proposal Threshold'
-                        }
-                        tooltipText="The minimum number of votes a delegate must have to create a proposal. This threshold ensures that only members with sufficient stake in the DAO can initiate governance actions."
-                        className="font-bold rounded-xl flex"
-                      />
-
-                      <div className="text-dark_blue">
-                        {proposalThreshold
-                          ? formatString(
-                              formatEther(proposalThreshold as string)
-                            )
-                          : '0'}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-row gap-4 justify-between items-center">
-                      <TooltipComponent
-                        title={localDict.quorumVotes ?? 'Quorum Votes'}
-                        tooltipText="The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
-                        className="font-bold rounded-xl flex"
-                      />
-                      <div className="text-dark_blue">
-                        {quorum
-                          ? formatString(formatEther(quorum as string))
-                          : '0'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-row justify-between items-center border rounded-xl p-4 bg-gray-100">
-                    <TooltipComponent
-                      title={localDict.myPower ?? 'My Power'}
-                      tooltipText={
-                        'Your current voting power in this DAO, ' +
-                        'determined by the number of governance tokens you hold ' +
-                        'or have been delegated. This power allows you to vote on proposals ' +
-                        'and create new ones if you meet the proposal threshold.'
-                      }
-                      className="font-bold rounded-xl flex"
+                    <InfoCell
+                      title={localDict.voteDelay ?? 'Vote Delay'}
+                      tooltipText="The number of blocks that must pass between when a proposal is created and when voting begins. This delay gives token holders time to research and discuss the proposal before voting starts."
+                      value={votingDelay}
+                      formatter={(val) => formatString(String(val))}
                     />
-                    <div className="text-dark_blue">
-                      {/* {votes
-                      ? formatString(formatEther(BigInt(votes as string)))
-                      : '0'} */}
 
-                      {votes ? votes.toString() : '0'}
-                    </div>
+                    <InfoCell
+                      title={localDict.votingPeriod ?? 'Voting Period'}
+                      tooltipText="The duration (in blocks) during which token holders can cast their votes on a proposal. Once this period ends, no more votes can be cast and the proposal's outcome is determined based on the votes received."
+                      value={votingPeriod}
+                      formatter={(val) => formatString(String(val))}
+                    />
+
+                    <InfoCell
+                      title={localDict.timelockDelay ?? 'Timelock Delay'}
+                      tooltipText="The mandatory waiting period between when a proposal passes and when it can be executed. This delay gives token holders time to prepare for the changes and exit the protocol if they disagree with a passed proposal. Longer delays provide more security but reduce governance agility."
+                      value={timelockDelay}
+                      formatter={(val) => formatString(String(val))}
+                    />
+
+                    <InfoCell
+                      title={
+                        localDict.proposalThreshold ?? 'Proposal Threshold'
+                      }
+                      tooltipText="The minimum number of votes a delegate must have to create a proposal. This threshold ensures that only members with sufficient stake in the DAO can initiate governance actions."
+                      value={proposalThreshold}
+                      formatter={(val) =>
+                        formatString(formatEther(String(val)))
+                      }
+                    />
+
+                    <InfoCell
+                      title={localDict.quorumVotes ?? 'Quorum Votes'}
+                      tooltipText="The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
+                      value={quorum}
+                      formatter={(val) =>
+                        formatString(formatEther(String(val)))
+                      }
+                    />
                   </div>
+
+                  <InfoCell
+                    title={localDict.myPower ?? 'My Power'}
+                    tooltipText={
+                      'Your current voting power in this DAO, ' +
+                      'determined by the number of governance tokens you hold ' +
+                      'or have been delegated. This power allows you to vote on proposals ' +
+                      'and create new ones if you meet the proposal threshold.'
+                    }
+                    value={votes}
+                    formatter={(val) => String(val)}
+                    className="border rounded-xl p-4 bg-gray-100"
+                  />
                   <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
                     <h1 className="font-bold rounded-xl  flex">
                       {localDict.createdAt ?? 'Created at'}{' '}
@@ -1264,7 +1225,7 @@ export default function PCEPage({
                           <span className="font-medium">PCE Site:</span>
                           <Link
                             href={socials.website}
-                            className="text-dark_blue hover:underline"
+                            className="text-primary_blue hover:underline"
                             target="_blank"
                             rel="noopener noreferrer"
                           >
@@ -1276,7 +1237,7 @@ export default function PCEPage({
                           <span className="font-medium">LinkedIn:</span>
                           <Link
                             href={socials.linkedin}
-                            className="text-dark_blue hover:underline"
+                            className="text-primary_blue hover:underline"
                             target="_blank"
                             rel="noopener noreferrer"
                           >
@@ -1288,7 +1249,7 @@ export default function PCEPage({
                           <span className="font-medium">Twitter:</span>
                           <Link
                             href={socials.twitter}
-                            className="text-dark_blue hover:underline"
+                            className="text-primary_blue hover:underline"
                             target="_blank"
                             rel="noopener noreferrer"
                           >
@@ -1300,7 +1261,7 @@ export default function PCEPage({
                           <span className="font-medium">Telegram:</span>
                           <Link
                             href={socials.telegram}
-                            className="text-dark_blue hover:underline"
+                            className="text-primary_blue hover:underline"
                             target="_blank"
                             rel="noopener noreferrer"
                           >
@@ -1561,7 +1522,7 @@ export default function PCEPage({
                       }}
                     >
                       <DialogTrigger asChild>
-                        <Button className="w-full bg-dark_blue">
+                        <Button className="w-full">
                           {localDict.depositToDaoTreasury ??
                             'Deposit to DAO Treasury'}
                         </Button>
@@ -1590,7 +1551,7 @@ export default function PCEPage({
                             placeholder="Amount"
                           />
                           <Button
-                            className="w-full bg-dark_blue"
+                            className="w-full"
                             onClick={async () => {
                               await writeContract({
                                 abi: PCE_ABI,

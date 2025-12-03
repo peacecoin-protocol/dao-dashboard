@@ -25,7 +25,7 @@ const config = {
         oil: '#1B2E3C',
         grey: '#F5F5F5',
         light_black: '#E8E8E8',
-        dark_blue: '#1995AD',
+        primary_blue: '#147a8a',
         light_blue: '#A1D6E2',
         light_white: '#F1F1F2',
         heavy_white: '#7288A0',

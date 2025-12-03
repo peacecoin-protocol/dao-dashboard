@@ -215,7 +215,7 @@ const StatItem = ({
     <div className="text-gray-500 text-sm w-full items-center justify-center text-center">
       {label}
     </div>
-    <div className="flex rounded-xl text-dark_blue font-bold py-1 px-2 min-w-16 items-center justify-center text-lg w-full">
+    <div className="flex rounded-xl text-primary_blue font-bold py-1 px-2 min-w-16 items-center justify-center text-lg w-full">
       {value}
     </div>
   </div>

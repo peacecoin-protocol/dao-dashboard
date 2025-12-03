@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ActionInfo } from '~/i18n/types'
+import { usePathname } from 'next/navigation'
+import { ActionInfo, Dictionary, Locale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
 import { Button } from '~/components/ui/button'
 import Image from 'next/image'
 import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
@@ -37,7 +39,25 @@ export function SBTTableComponent({
   onRevoke,
 }: SBTTableProps) {
   const [daoNames, setDaoNames] = useState<Record<string, string>>({})
+  const [dict, setDict] = useState<Dictionary | null>(null)
   const supabase = createClient()
+  const pathname = usePathname()
+
+  // Extract locale from pathname
+  const locale: Locale =
+    (pathname?.match(/^\/([a-z]{2})(\/|$)/)?.[1] as Locale) || 'en'
+
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
 
   useEffect(() => {
     const fetchDaoNames = async () => {
@@ -115,7 +135,9 @@ export function SBTTableComponent({
                     </div>
                     <div className="flex-1 space-y-1 min-w-0">
                       <span className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-300">
-                        {sbt.isSBT ? 'SBT' : 'NFT'}
+                        {sbt.isSBT
+                          ? dict?.sbt?.sbt || 'SBT'
+                          : dict?.sbt?.nft || 'NFT'}
                       </span>
                       <p className="text-base font-semibold text-gray-900 dark:text-white break-words">
                         {sbt.name}
@@ -128,28 +150,34 @@ export function SBTTableComponent({
 
                   <dl className="mt-4 sm:mt-5 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-muted-foreground">
                     <div className="flex flex-col md:flex-row md:items-center md:gap-2">
-                      <dt className="font-medium text-foreground">Token ID:</dt>
+                      <dt className="font-medium text-foreground">
+                        {dict?.sbt?.tokenId || 'Token ID:'}
+                      </dt>
                       <dd className="break-all">{sbt.tokenId}</dd>
                     </div>
                     <div className="flex flex-col md:flex-row md:items-center md:gap-2">
-                      <dt className="font-medium text-foreground">Balance:</dt>
+                      <dt className="font-medium text-foreground">
+                        {dict?.sbt?.balance || 'Balance:'}
+                      </dt>
                       <dd>{sbt.balance ?? '0'}</dd>
                     </div>
                     <div className="flex flex-col md:flex-row md:items-center md:gap-2">
                       <dt className="font-medium text-foreground">
-                        Voting Power:
+                        {dict?.sbt?.votingPower || 'Voting Power:'}
                       </dt>
                       <dd>{sbt.votingPower}</dd>
                     </div>
                     <div className="flex flex-col md:flex-row md:items-center md:gap-2">
-                      <dt className="font-medium text-foreground">DAO:</dt>
+                      <dt className="font-medium text-foreground">
+                        {dict?.sbt?.dao || 'DAO:'}
+                      </dt>
                       <dd className="break-words">
                         {getDaoDisplay(sbt.daoId)}
                       </dd>
                     </div>
                     <div className="flex flex-col md:flex-row md:items-center md:gap-2 md:col-span-2">
                       <dt className="font-medium text-foreground">
-                        Created At:
+                        {dict?.sbt?.createdAt || 'Created At:'}
                       </dt>
                       <dd className="break-words">
                         {sbt.created_at
@@ -186,14 +214,14 @@ export function SBTTableComponent({
           ))
         ) : (
           <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-6 text-center text-sm text-muted-foreground">
-            No tokens available
+            {dict?.sbt?.noTokensAvailable || 'No tokens available'}
           </div>
         )}
       </div>
 
       {/* Total Footer */}
       <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-900/70 p-4 text-center font-medium text-sm text-gray-900 dark:text-white">
-        Total: {(sbtInfo && sbtInfo.length) ?? '0'}
+        {dict?.sbt?.total || 'Total:'} {(sbtInfo && sbtInfo.length) ?? '0'}
       </div>
     </div>
   )

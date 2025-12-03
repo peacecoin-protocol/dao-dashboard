@@ -20,7 +20,10 @@
     "sincelasthour": "desde a última hora",
     "recent": "PIPs Recentes Bem-sucedidos",
     "made": "Você fez",
-    "proposal_success": "propostas com sucesso"
+    "proposal_success": "propostas com sucesso",
+    "tableNo": "Nº",
+    "tableDaoName": "Nome do DAO",
+    "tableDescription": "Descrição"
   },
   "proposal": {
     "proposalId": "ID",
@@ -287,7 +290,8 @@
     "zoomIn": "Aumentar Zoom",
     "cancel": "Cancelar",
     "crop": "Recortar",
-    "quorumVotes": "Votos do Quórum"
+    "quorumVotes": "Votos do Quórum",
+    "social": "Social:"
   },
   "pceDetail": {
     "transferTokens": "Transferir Tokens",
@@ -323,6 +327,13 @@
     "token": "Token",
     "sbtId": "ID SBT",
     "enterSbtId": "Inserir ID SBT",
+    "nftId": "ID NFT",
+    "enterNftId": "Inserir ID NFT",
+    "tokenAddress": "Endereço do Token",
+    "enterTokenAddress": "Inserir Endereço do Token",
+    "titleLabel": "Título",
+    "descriptionLabel": "Descrição",
+    "youAreNotTheOwnerOfThisToken": "Você não é o proprietário deste Token",
     "enterCampaignTitle": "Inserir título da campanha",
     "enterCampaignDescription": "Inserir descrição da campanha",
     "totalAmount": "Quantidade Total",
@@ -372,7 +383,21 @@
     "failedToFetchGistData": "Falha ao buscar dados do Gist",
     "signatureCopiedToClipboard": "Assinatura copiada para a área de transferência",
     "failedToCopySignature": "Falha ao copiar assinatura",
-    "failedToCheckCampaignStatus": "Falha ao verificar status da campanha"
+    "failedToCheckCampaignStatus": "Falha ao verificar status da campanha",
+    "erc20": "ERC20",
+    "nft": "NFT",
+    "whitelistSignature": "Lista Branca + Assinatura",
+    "campaignIdLabel": "ID da Campanha:",
+    "accessLabel": "Acesso:",
+    "rewardLabel": "Recompensa:",
+    "perClaim": "por reclamação",
+    "claimedLabel": "Reclamado:",
+    "daoLabel": "DAO:",
+    "sbtNftIdLabel": "ID SBT/NFT:",
+    "startLabel": "Início:",
+    "endLabel": "Fim:",
+    "noCampaignsFound": "Nenhuma campanha encontrada",
+    "totalLabel": "Total:"
   },
   "pipAll": {
     "title": "TODAS as Propostas",
@@ -459,6 +484,13 @@
     "sbtRevokedFailed": "Falha na revogação do SBT",
     "updatingImage": "Atualizando imagem...",
     "revoke": "Revogar",
-    "unrevoke": "Desrevogar"
+    "unrevoke": "Desrevogar",
+    "tokenId": "ID do Token:",
+    "balance": "Saldo:",
+    "dao": "DAO:",
+    "noTokensAvailable": "Nenhum token disponível",
+    "total": "Total:",
+    "sbt": "SBT",
+    "nft": "NFT"
   }
 }

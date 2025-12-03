@@ -35,7 +35,7 @@ export default function AddDynamicInputFields({
   }
 
   return (
-    <div className="gap-4">
+    <div className="space-y-4">
       {inputs.map((item, index) => (
         <div key={index} className="space-y-3 w-full">
           <div className="flex flex-col sm:flex-row gap-3 w-full">

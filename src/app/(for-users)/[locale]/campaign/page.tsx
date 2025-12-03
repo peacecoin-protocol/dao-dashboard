@@ -62,8 +62,6 @@ import { PageSubHeaderSection } from '~/components/custom/page-sub-header-sectio
 // Constants
 const CLAIM_MESSAGE = 'Claim Bounty for dApp.xyz'
 const DEFAULT_CAMPAIGN_ID = -1
-const DEFAULT_NFT_DETAIL_INDEX = -1
-const EMPTY_NFT_IMAGE = '/images/empty-nft.svg'
 
 // Types
 interface DialogState {
@@ -250,30 +248,6 @@ export default function ForCampaignPage({
   const [filteredCampaignData, setFilteredCampaignData] = useState<CAMPAIGN[]>(
     []
   )
-
-  useEffect(() => {
-    const fetchAllDAOs = async () => {
-      try {
-        if (!address) return
-
-        setLoading(true)
-
-        const { data } = await supabase
-          .from('DAO')
-          .select()
-          .eq('creator', address as string)
-          .order('id', { ascending: true })
-
-        setAllDAOs(data as SupabaseDao[])
-        setLoading(false)
-      } catch (error) {
-        console.error('Error fetching data', error)
-        setLoading(false)
-      }
-    }
-
-    fetchAllDAOs()
-  }, [address])
 
   useEffect(() => {
     if (searchTerm.length > 0) {

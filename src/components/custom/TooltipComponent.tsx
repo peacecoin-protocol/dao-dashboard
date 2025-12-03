@@ -31,7 +31,7 @@ export function TooltipComponent({
             </svg>
           </button>
         </TooltipTrigger>
-        <TooltipContent className="bg-dark_blue text-oil px-3 py-2">
+        <TooltipContent className="text-oil px-3 py-2">
           <p className="text-sm text-white">
             {tooltipText.split('.').map(
               (sentence, index, array) =>

@@ -20,7 +20,10 @@
     "sincelasthour": "较上小时",
     "recent": "最近通过的PIP",
     "made": "您已完成",
-    "proposal_success": "个成功提案"
+    "proposal_success": "个成功提案",
+    "tableNo": "编号",
+    "tableDaoName": "DAO名称",
+    "tableDescription": "描述"
   },
   "proposal": {
     "proposalId": "ID",
@@ -287,7 +290,8 @@
     "zoomIn": "放大",
     "cancel": "取消",
     "crop": "裁剪",
-    "quorumVotes": "法定票数"
+    "quorumVotes": "法定票数",
+    "social": "社交:"
   },
   "pceDetail": {
     "transferTokens": "转账代币",
@@ -323,6 +327,13 @@
     "token": "代币",
     "sbtId": "SBT ID",
     "enterSbtId": "输入SBT ID",
+    "nftId": "NFT ID",
+    "enterNftId": "输入NFT ID",
+    "tokenAddress": "代币地址",
+    "enterTokenAddress": "输入代币地址",
+    "titleLabel": "标题",
+    "descriptionLabel": "描述",
+    "youAreNotTheOwnerOfThisToken": "您不是此代币的所有者",
     "enterCampaignTitle": "输入活动标题",
     "enterCampaignDescription": "输入活动描述",
     "totalAmount": "总金额",
@@ -372,7 +383,21 @@
     "failedToFetchGistData": "获取Gist数据失败",
     "signatureCopiedToClipboard": "签名已复制到剪贴板",
     "failedToCopySignature": "复制签名失败",
-    "failedToCheckCampaignStatus": "检查活动状态失败"
+    "failedToCheckCampaignStatus": "检查活动状态失败",
+    "erc20": "ERC20",
+    "nft": "NFT",
+    "whitelistSignature": "白名单 + 签名",
+    "campaignIdLabel": "活动ID:",
+    "accessLabel": "访问:",
+    "rewardLabel": "奖励:",
+    "perClaim": "每次领取",
+    "claimedLabel": "已领取:",
+    "daoLabel": "DAO:",
+    "sbtNftIdLabel": "SBT/NFT ID:",
+    "startLabel": "开始:",
+    "endLabel": "结束:",
+    "noCampaignsFound": "未找到活动",
+    "totalLabel": "总计:"
   },
   "pipAll": {
     "title": "所有提案",
@@ -459,6 +484,13 @@
     "sbtRevokedFailed": "SBT撤销失败",
     "updatingImage": "更新图片中...",
     "revoke": "撤销",
-    "unrevoke": "取消撤销"
+    "unrevoke": "取消撤销",
+    "tokenId": "代币ID:",
+    "balance": "余额:",
+    "dao": "DAO:",
+    "noTokensAvailable": "没有可用代币",
+    "total": "总计:",
+    "sbt": "SBT",
+    "nft": "NFT"
   }
 }

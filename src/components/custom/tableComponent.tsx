@@ -92,13 +92,20 @@ export function TableComponent({
   }, [campaignInfo, supabase])
 
   const getRewardType = (tokenType: number) => {
-    if (tokenType === 1) return 'SBT'
-    if (tokenType === 2) return 'NFT'
-    return 'ERC20'
+    if (!dict?.campaign)
+      return tokenType === 1 ? 'SBT' : tokenType === 2 ? 'NFT' : 'ERC20'
+    if (tokenType === 1) return dict.campaign.sbt || 'SBT'
+    if (tokenType === 2) return dict.campaign.nft || 'NFT'
+    return dict.campaign.erc20 || 'ERC20'
   }
 
-  const getAccessType = (campaign: CAMPAIGN) =>
-    campaign.validateSignatures ? 'Whitelist + Signature' : 'Whitelist'
+  const getAccessType = (campaign: CAMPAIGN) => {
+    if (!dict?.campaign)
+      return campaign.validateSignatures ? 'Whitelist + Signature' : 'Whitelist'
+    return campaign.validateSignatures
+      ? dict.campaign.whitelistSignature || 'Whitelist + Signature'
+      : dict.campaign.whitelist || 'Whitelist'
+  }
 
   const getDaoDisplay = (daoId: string) => {
     if (!daoId) return '-'
@@ -159,7 +166,9 @@ export function TableComponent({
                                 isEnded ? 'bg-red-500' : 'bg-green-500'
                               }`}
                             >
-                              {isEnded ? 'Ended' : 'Active'}
+                              {isEnded
+                                ? dict?.campaign?.ended || 'Ended'
+                                : dict?.campaign?.active || 'Active'}
                             </span>
                           </div>
                           <p className="text-base font-semibold text-gray-900 dark:text-white">
@@ -175,26 +184,30 @@ export function TableComponent({
                     <dl className="grid grid-cols-1 gap-3 text-sm text-muted-foreground md:grid-cols-2">
                       <div className="flex flex-col md:flex-row md:items-center md:gap-2">
                         <dt className="font-medium text-foreground">
-                          Campaign ID:
+                          {dict?.campaign?.campaignIdLabel || 'Campaign ID:'}
                         </dt>
                         <dd>{campaign.campaignId}</dd>
                       </div>
                       <div className="flex flex-col md:flex-row md:items-center md:gap-2">
-                        <dt className="font-medium text-foreground">Access:</dt>
+                        <dt className="font-medium text-foreground">
+                          {dict?.campaign?.accessLabel || 'Access:'}
+                        </dt>
                         <dd>{getAccessType(campaign)}</dd>
                       </div>
                       <div className="flex flex-col md:flex-row md:items-center md:gap-2">
-                        <dt className="font-medium text-foreground">Reward:</dt>
+                        <dt className="font-medium text-foreground">
+                          {dict?.campaign?.rewardLabel || 'Reward:'}
+                        </dt>
                         <dd>
                           {campaign.tokenType != 0
                             ? campaign.claimAmount
                             : formatEther(campaign.claimAmount ?? '0')}{' '}
-                          per claim
+                          {dict?.campaign?.perClaim || 'per claim'}
                         </dd>
                       </div>
                       <div className="flex flex-col md:flex-row md:items-center md:gap-2">
                         <dt className="font-medium text-foreground">
-                          Claimed:
+                          {dict?.campaign?.claimedLabel || 'Claimed:'}
                         </dt>
                         <dd>
                           {campaign.tokenType != 0
@@ -207,21 +220,27 @@ export function TableComponent({
                         </dd>
                       </div>
                       <div className="flex flex-col md:flex-row md:items-center md:gap-2">
-                        <dt className="font-medium text-foreground">DAO:</dt>
+                        <dt className="font-medium text-foreground">
+                          {dict?.campaign?.daoLabel || 'DAO:'}
+                        </dt>
                         <dd>{getDaoDisplay(campaign.daoId || '')}</dd>
                       </div>
                       <div className="flex flex-col md:flex-row md:items-center md:gap-2">
                         <dt className="font-medium text-foreground">
-                          SBT/NFT ID:
+                          {dict?.campaign?.sbtNftIdLabel || 'SBT/NFT ID:'}
                         </dt>
                         <dd>{campaign.sbtId}</dd>
                       </div>
                       <div className="flex flex-col md:flex-row md:items-center md:gap-2">
-                        <dt className="font-medium text-foreground">Start:</dt>
+                        <dt className="font-medium text-foreground">
+                          {dict?.campaign?.startLabel || 'Start:'}
+                        </dt>
                         <dd>{timestampToDate(Number(campaign.startDate))}</dd>
                       </div>
                       <div className="flex flex-col md:flex-row md:items-center md:gap-2">
-                        <dt className="font-medium text-foreground">End:</dt>
+                        <dt className="font-medium text-foreground">
+                          {dict?.campaign?.endLabel || 'End:'}
+                        </dt>
                         <dd>{timestampToDate(Number(campaign.endDate))} </dd>
                       </div>
                     </dl>
@@ -244,14 +263,15 @@ export function TableComponent({
           })
         ) : (
           <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-muted-foreground dark:border-gray-700 dark:bg-gray-900/40">
-            No campaigns found
+            {dict?.campaign?.noCampaignsFound || 'No campaigns found'}
           </div>
         )}
       </div>
 
       {/* Total Footer */}
       <div className="rounded-2xl border border-gray-200 bg-white/90 p-4 text-center font-medium text-sm text-gray-900 dark:border-gray-800 dark:bg-gray-900/70 dark:text-white">
-        Total: {(campaignInfo && campaignInfo.length) ?? '0'}
+        {dict?.campaign?.totalLabel || 'Total:'}{' '}
+        {(campaignInfo && campaignInfo.length) ?? '0'}
       </div>
     </div>
   )
