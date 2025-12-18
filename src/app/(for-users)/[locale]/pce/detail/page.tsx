@@ -254,6 +254,7 @@ export default function ForPCEDetailPage({
                         'Deposit to DAO Treasury'}
                     </Button>
                   </DialogTrigger>
+
                   <DialogContent>
                     <DialogHeader className="flex flex-col gap-2">
                       <DialogTitle>Address</DialogTitle>

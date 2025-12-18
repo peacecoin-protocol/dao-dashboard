@@ -13,8 +13,7 @@ import { usePathname } from 'next/navigation'
 import { Dictionary, Locale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
-export interface TransferInputProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface TransferInputProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   setTransferAmount: (amount: string) => void
   handleTransfer: () => void
   setTransferAddress: (address: string) => void

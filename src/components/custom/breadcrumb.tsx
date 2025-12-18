@@ -39,11 +39,10 @@ interface InternalBreadcrumbItemProps {
   isLastChild: boolean
 }
 
-interface BreadcrumbItemProps
-  extends Omit<
-    React.ComponentPropsWithoutRef<'li'>,
-    keyof InternalBreadcrumbItemProps
-  > {}
+interface BreadcrumbItemProps extends Omit<
+  React.ComponentPropsWithoutRef<'li'>,
+  keyof InternalBreadcrumbItemProps
+> {}
 
 const BreadcrumbItem = React.forwardRef<HTMLLIElement, BreadcrumbItemProps>(
   ({ className, children, ...props }, ref) => {

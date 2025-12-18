@@ -11,8 +11,7 @@ import {
 } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
 
-export interface AmountInputProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface AmountInputProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   setStakingAmount: (amount: string) => void
   handleStake: () => void
   maxAmount: number

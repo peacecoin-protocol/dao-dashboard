@@ -3,8 +3,7 @@ import * as React from 'react'
 import Image from 'next/image'
 import { Dialog, DialogContent } from '~/components/ui/dialog'
 
-export interface NFT_DETAIL_Props
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface NFT_DETAIL_Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   imageSrc: string

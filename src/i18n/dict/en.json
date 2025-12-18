@@ -72,6 +72,7 @@
     "category4": "Deploying a Contract",
     "category5": "Updating Timelock Variables",
     "category6": "Updating Governor Variables",
+    "category7": "Multiple Options for Voting",
     "propose": "Propose",
     "select": "Select a category",
     "amount": "Amount",
@@ -153,7 +154,9 @@
     "address": "Address",
     "delegate": "Delegate",
     "votingPower": "Voting Power",
-    "peaceCoin": "PEACECOIN"
+    "peaceCoin": "PEACECOIN",
+    "dialogDescription": "Enter the address to delegate your voting power",
+    "enterAddress": "Enter address"
   },
   "faq": {
     "title": "FAQ",

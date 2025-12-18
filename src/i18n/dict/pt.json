@@ -72,6 +72,7 @@
     "category4": "Implantar um Contrato",
     "category5": "Atualizar Variáveis de Timelock",
     "category6": "Atualizar Variáveis de Governança",
+    "category7": "Opções Múltiplas para Votar",
     "propose": "Propor",
     "select": "Selecionar categoria",
     "amount": "Quantidade",
@@ -153,7 +154,9 @@
     "address": "Endereço",
     "delegate": "Delegar",
     "votingPower": "Poder de Voto",
-    "peaceCoin": "PEACECOIN"
+    "peaceCoin": "PEACECOIN",
+    "dialogDescription": "Digite o endereço para delegar seu poder de voto",
+    "enterAddress": "Digite o endereço"
   },
   "faq": {
     "title": "FAQ",

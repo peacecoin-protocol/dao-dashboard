@@ -11,8 +11,7 @@ import {
 import { PIP } from '~/i18n/types'
 import ReactMarkdown from 'react-markdown'
 
-export interface DialogGithubProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface DialogGithubProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   open: boolean
   localDict: any
   asChild?: boolean

@@ -25,8 +25,7 @@ import { formatString } from '~/components/utils'
 import { formatEther } from 'viem'
 import { ZeroAddress } from 'ethers'
 
-export interface ExchangeInputProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ExchangeInputProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   setSwapAmount: (amount: string) => void
   handleSwap: (fromToken: TOKEN, toToken: TOKEN) => void
   tokenLists: TOKEN[]

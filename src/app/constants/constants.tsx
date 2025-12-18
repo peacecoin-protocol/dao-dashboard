@@ -1,4 +1,3 @@
-import { Network } from 'alchemy-sdk'
 import { polygon, sepolia, hoodi } from 'wagmi/chains'
 import { localhost } from '~/lib/config'
 
@@ -31,14 +30,14 @@ export const WPCE_ADDRESS = {
 } as Record<number, `0x${string}`>
 
 export const timelockAddress = {
-  [sepolia.id]: '0xD2B976ECe671d2C5a064dDc5aB2C987eB5d35c8d',
+  [sepolia.id]: '0x1a8112dD66Cf01108b2163AB3BBd57faDeFB2329',
   [localhost.id]: '0x0E801D84Fa97b50751Dbf25036d067dCf18858bF',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x0F4E3eEEA64268926454aF8C38D62938637fd18e',
 } as Record<number, `0x${string}`>
 
 export const governorAddress = {
-  [sepolia.id]: '0xa1fc2DFB1EA9b45A253e5e6fBC5F84d852de0f4E',
+  [sepolia.id]: '0x130712DDDab08cB0f2ea6839765F94cC21Ddb66f',
   [localhost.id]: '0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x4a1EBA4B4895b6562B8d67510FF07c95F90049d8',
@@ -77,6 +76,13 @@ export const stakingAddress = {
   [localhost.id]: '0x3Aa5ebB10DC797CAC828524e59A333d0A371443c',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xafe9F87C70cA6b033Dab2E5a17b7C90Cd2c55C45',
+} as Record<number, `0x${string}`>
+
+export const MultipleVotingAddress = {
+  [sepolia.id]: '0x7633febaff3cee0115d86a287d0b587a85ed7c97',
+  [localhost.id]: '0x3c91bbb25c59544cac77e67f50ec3f2d5c30e733',
+  [polygon.id]: '0x0000000000000000000000000000000000000000',
+  [hoodi.id]: '0x3c91bbb25c59544cac77e67f50ec3f2d5c30e733',
 } as Record<number, `0x${string}`>
 
 export const SUBGRAPH_URL = {
@@ -140,11 +146,6 @@ export const createdAt = {
   [polygon.id]: '1714857600',
   [hoodi.id]: '1714857600',
 } as Record<number, string>
-
-export const ALCHEMY_CONFIG = {
-  apiKey: process.env.ALCHEMY_API_KEY,
-  network: Network.ETH_SEPOLIA,
-}
 
 export const defaultChainId = sepolia.id
 
