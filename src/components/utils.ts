@@ -38,8 +38,8 @@ export const shortenAddress = (address: any, length: number = 6) => {
 }
 
 export const formatString = (str: string) => {
-  if (str.length == 0) return 0
-  return parseFloat(parseFloat(str).toFixed(2))
+  if (str.length === 0) return '0'
+  return String(Math.floor(Number(str)))
 }
 
 export const formatNumber = (num: number) => {

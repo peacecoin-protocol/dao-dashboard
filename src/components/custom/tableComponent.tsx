@@ -126,14 +126,13 @@ export function TableComponent({
               Number(campaign.endDate) < new Date().getTime() / 1000
 
             return (
-              <button
+              <div
                 key={index}
-                type="button"
                 onClick={() => {
                   onCampaignClick?.(campaign.campaignId.toString())
                   onCellClick?.(campaign.campaignId)
                 }}
-                className="w-full rounded-2xl border border-gray-200 bg-white/90 p-4 text-left shadow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-gray-900/70"
+                className="w-full rounded-2xl border border-gray-200 bg-white/90 p-4 text-left shadow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-gray-900/70 cursor-pointer"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
                   <div className="flex flex-1 flex-col gap-4">
@@ -258,7 +257,7 @@ export function TableComponent({
                     </div>
                   )}
                 </div>
-              </button>
+              </div>
             )
           })
         ) : (

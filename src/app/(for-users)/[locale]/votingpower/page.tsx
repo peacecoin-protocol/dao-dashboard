@@ -144,7 +144,7 @@ export default function StakingPage({
     address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
     functionName: 'getVotes',
     args: [address],
-  })
+  }) as { data?: bigint; refetch: () => void }
 
   useEffect(() => {
     const fetchTokenData = async () => {
@@ -327,17 +327,16 @@ export default function StakingPage({
   }, [locale])
 
   const votingPower = useMemo(() => {
+    if (getTokenVote == null) return 0
     return (
-      totalSBTVotingPower +
+      Number(totalSBTVotingPower) +
       Number(
         formatEther(
-          stakedBalance && typeof stakedBalance === 'bigint'
-            ? stakedBalance
-            : BigInt(0)
+          getTokenVote == null ? BigInt(0) : (getTokenVote as unknown as bigint)
         )
       )
     )
-  }, [totalSBTVotingPower, stakedBalance])
+  }, [totalSBTVotingPower, getTokenVote])
 
   const handleDelegate = async () => {
     await writeContractAsync({
@@ -478,25 +477,14 @@ export default function StakingPage({
             <div className="space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
                 <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
-                  {votingPowerDict.stakedAmount ?? 'Staked Amount'}
-                </span>
-                <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
-                  {stakedBalance
-                    ? formatNumber(
-                        parseFloat(formatEther(stakedBalance as string))
-                      )
-                    : '0'}
-                </span>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
-                <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
                   {votingPowerDict.delegationPower ?? 'Delegation Power'}
                 </span>
                 <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                   {getTokenVote
                     ? formatNumber(
-                        parseFloat(formatEther(stakedBalance as string))
+                        parseFloat(
+                          formatEther(getTokenVote as unknown as bigint)
+                        )
                       )
                     : '0'}
                 </span>

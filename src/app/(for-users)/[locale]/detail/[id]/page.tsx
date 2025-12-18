@@ -87,6 +87,7 @@ import {
 } from '~/app/pinata/pinataAPI'
 import { PageSubHeaderSection } from '~/components/custom/page-sub-header-section'
 import { StatsSection } from '~/components/custom/stats-section'
+import { DelegateInput } from '~/components/custom/delegate-input'
 
 type TokenBalance = {
   contractAddress: string
@@ -241,44 +242,6 @@ export default function ForDaoDetailPage({
     const id = fullPath.split('/').pop()
     setId(id as string)
   }, [])
-
-  const DelegateDialog = ({
-    isOpen,
-    onOpenChange,
-    delegateAddr,
-    localDict,
-    handleDelegate,
-  }: {
-    isOpen: boolean
-    onOpenChange: (open: boolean) => void
-    delegateAddr: string
-    localDict: any
-    handleDelegate: () => void
-  }) => (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{localDict.delegate ?? 'Delegate'}</DialogTitle>
-          <DialogDescription>
-            Enter the address to delegate your voting power
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col gap-4 mt-4">
-          <Input
-            placeholder={localDict.enterAddress ?? 'Enter address'}
-            value={delegateAddr}
-            name="delegateAddr"
-            onChange={(e) => setDelegateAddr(e.target.value)}
-          />
-          <div>
-            <Button onClick={handleDelegate}>
-              {localDict.delegate ?? 'Delegate'}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
 
   // Handle updating DAO social links
   const handleUpdateSocials = async () => {
@@ -1899,14 +1862,11 @@ export default function ForDaoDetailPage({
                     {localDict.withdraw ?? 'Withdraw'}
                   </Button>
 
-                  <Button
+                  <DelegateInput
                     className="w-full sm:w-60"
-                    onClick={async () => {
-                      setIsDelegateDialogOpened(true)
-                    }}
-                  >
-                    {localDict.delegate ?? 'Delegate'}
-                  </Button>
+                    setDelegateAddr={setDelegateAddr}
+                    handleDelegate={handleDelegate}
+                  />
                 </div>
                 {/* Responsive table container */}
                 <div className="rounded-xl flex border mt-4 w-full overflow-x-auto">
@@ -1966,14 +1926,6 @@ export default function ForDaoDetailPage({
                 </div>
               </div>
             </div>
-
-            <DelegateDialog
-              isOpen={isDelegateDialogOpened}
-              onOpenChange={setIsDelegateDialogOpened}
-              delegateAddr={delegateAddr}
-              localDict={localDict}
-              handleDelegate={handleDelegate}
-            />
           </TabsContent>
         </Tabs>
       </div>

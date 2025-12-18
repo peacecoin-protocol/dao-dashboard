@@ -72,6 +72,7 @@
     "category4": "部署合约",
     "category5": "更新时间锁变量",
     "category6": "更新治理变量",
+    "category7": "多选项投票",
     "propose": "提案",
     "select": "选择类别",
     "amount": "金额",
@@ -153,7 +154,9 @@
     "address": "地址",
     "delegate": "委托",
     "votingPower": "投票权重",
-    "peaceCoin": "和平币"
+    "peaceCoin": "和平币",
+    "dialogDescription": "输入要委托投票权的地址",
+    "enterAddress": "输入地址"
   },
   "faq": {
     "title": "常见问题",

@@ -72,6 +72,7 @@
     "category4": "コントラクトのデプロイ",
     "category5": "タイムロック変数の更新",
     "category6": "ガバナー変数の更新",
+    "category7": "複数投票オプション",
     "propose": "提案",
     "select": "カテゴリーを選択",
     "amount": "金額",
@@ -153,7 +154,9 @@
     "address": "アドレス",
     "delegate": "委任",
     "votingPower": "投票力",
-    "peaceCoin": "ピースコイン"
+    "peaceCoin": "ピースコイン",
+    "dialogDescription": "投票権を委任するアドレスを入力してください",
+    "enterAddress": "アドレスを入力"
   },
   "faq": {
     "title": "よくある質問",

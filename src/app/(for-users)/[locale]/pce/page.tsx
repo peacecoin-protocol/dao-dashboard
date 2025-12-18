@@ -10,11 +10,11 @@ import { Alchemy, Network } from 'alchemy-sdk'
 
 import RingLoader from 'react-spinners/RingLoader'
 import { ringStyle } from '~/app/constants/styles'
-import { Line } from 'rc-progress'
-import { generateIdenteapot } from '@teapotlabs/identeapots'
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
 import { Button } from '~/components/ui/button'
+import { Checkbox } from '~/components/ui/checkbox'
+import { Plus, X, ChevronsUpDown } from 'lucide-react'
 
 import {
   Table,
@@ -25,7 +25,11 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { Input } from '~/components/ui/input'
-import { readContract } from '@wagmi/core'
+import {
+  readContract,
+  waitForTransactionReceipt,
+  simulateContract,
+} from '@wagmi/core'
 
 import { ethers, formatEther, parseEther } from 'ethers'
 
@@ -54,6 +58,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '~/components/ui/popover'
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from '~/components/ui/command'
 
 import { getDict } from '~/i18n/get-dict'
 
@@ -66,7 +81,10 @@ import { Textarea } from '~/components/ui/textarea'
 import { config } from '~/lib/config'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 import { TooltipComponent } from '~/components/custom/TooltipComponent'
-import { defaultChainId } from '~/app/constants/constants'
+import {
+  defaultChainId,
+  MultipleVotingAddress,
+} from '~/app/constants/constants'
 import { useBlock } from 'wagmi'
 import {
   governorAddress,
@@ -74,16 +92,18 @@ import {
   timelockAddress,
   daoStudioAddress,
   PCE_SBT_ADDRESS,
+  WPCE_ADDRESS,
 } from '~/app/constants/constants'
 
 import { createdAt } from '~/app/constants/constants'
 import { Env } from '~/env'
-import { timestampToDate } from '~/components/utils'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import Image from 'next/image'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
-import { ProposalBadges } from '~/components/custom/proposal-badges'
 import { InfoCell } from '~/components/custom/info-cell'
+import { MULTIPLE_VOTINGS_ABI } from '~/app/ABIs/MultipleVotings'
+import { PCE_GOV_TOKEN_ABI } from '~/app/ABIs/PCEGovToken'
+import { createClient } from '~/utils/supabase/client'
 
 type TokenBalance = {
   contractAddress: string
@@ -118,23 +138,28 @@ export default function PCEPage({
   const [variable2, setVariable2] = useState('')
   const [variable3, setVariable3] = useState('')
 
+  const [multipleOptions, setMultipleOptions] = useState<any[]>([])
   const [proposals, setProposals] = useState<any[]>([])
-  const [proposalStatus, setStatus] = useState<any[]>([])
-  let [loading, setLoading] = useState(true)
+
+  const [filteredProposals, setFilteredProposals] = useState<any[]>([])
+  let [loading, setLoading] = useState(false)
+  let [votingPower, setVotingPower] = useState(0)
 
   const [category, setCategory] = useState('')
 
-  const [isDelegateDialogOpened, setIsDelegateDialogOpened] = useState(false)
   const [isDepositDialogOpened, setIsDepositDialogOpened] = useState(false)
   const [isCreateProposalDialogOpened, setIsCreateProposalDialogOpened] =
     useState(false)
+  const [isRefetching, setIsRefetching] = useState(false)
 
-  const [identicon, setIdenticon] = useState('')
+  const supabase = createClient()
 
-  const [nftBalances, setNftBalances] = useState<number[]>([])
-  const [votingPower, setVotingPower] = useState<number[]>([])
+  // Options state for category 7
+  const [options, setOptions] = useState<string[]>(['', ''])
 
   const [tabContent, setTabContent] = useState('about')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false)
 
   const [treasuryBalances, setTreasuryBalances] = useState<TokenBalance[]>([])
 
@@ -188,49 +213,11 @@ export default function PCEPage({
     }
   }, [timelockAddress])
 
-  const DelegateDialog = ({
-    isOpen,
-    onOpenChange,
-    delegateAddr,
-    localDict,
-    handleDelegate,
-  }: {
-    isOpen: boolean
-    onOpenChange: (open: boolean) => void
-    delegateAddr: string
-    localDict: any
-    handleDelegate: () => void
-  }) => (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{localDict.delegate ?? 'Delegate'}</DialogTitle>
-          <DialogDescription>
-            Enter the address to delegate your voting power
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col gap-4 mt-4">
-          <Input
-            placeholder={localDict.enterAddress ?? 'Enter address'}
-            value={delegateAddr}
-            name="delegateAddr"
-            onChange={(e) => setDelegateAddr(e.target.value)}
-          />
-          <div>
-            <Button onClick={handleDelegate}>
-              {localDict.delegate ?? 'Delegate'}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-
   const {
     data: hash,
     error,
     writeContract,
-    writeContractAsync,
+    writeContractAsync: writeContractAsync,
   } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
@@ -249,6 +236,33 @@ export default function PCEPage({
     abi: GOVERNOR_ABI,
     functionName: 'votingDelay',
   })
+
+  const { data: multipleVotingPeriod, refetch: refetchMultipleVotingPeriod } =
+    useReadContract({
+      address: MultipleVotingAddress[
+        chainId || defaultChainId
+      ] as `0x${string}`,
+      abi: MULTIPLE_VOTINGS_ABI,
+      functionName: 'votingPeriod',
+    })
+
+  const { data: multipleVotingDelay, refetch: refetchMultipleVotingDelay } =
+    useReadContract({
+      address: MultipleVotingAddress[
+        chainId || defaultChainId
+      ] as `0x${string}`,
+      abi: MULTIPLE_VOTINGS_ABI,
+      functionName: 'votingDelay',
+    })
+
+  const { data: multipleVotingQuorum, refetch: refetchMultipleVotingQuorum } =
+    useReadContract({
+      address: MultipleVotingAddress[
+        chainId || defaultChainId
+      ] as `0x${string}`,
+      abi: MULTIPLE_VOTINGS_ABI,
+      functionName: 'quorumVotes',
+    })
 
   const { data: pceBalance, refetch: refetchPCEBalance } = useReadContract({
     address: pceAddress[chainId || defaultChainId] as `0x${string}`,
@@ -278,18 +292,26 @@ export default function PCEPage({
     functionName: 'votingPeriod',
   })
 
-  const { data: currentTokenId, refetch: refetchCurrentTokenId } =
-    useReadContract({
-      address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-      abi: SBT_ABI,
-      functionName: 'currentTokenId',
-    })
+  const { data: getVotes, refetch: refetchGetVotes } = useReadContract({
+    address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
+    abi: PCE_GOV_TOKEN_ABI,
+    functionName: 'getVotes',
+    args: [address],
+  })
 
   const { data: socialConfig, refetch: refetchSocialConfig } = useReadContract({
     address: governorAddress[chainId || defaultChainId] as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'socialConfig',
   })
+
+  useEffect(() => {
+    if (getVotes) {
+      setVotingPower(
+        Number(formatString(String(formatEther(String(getVotes)))))
+      )
+    }
+  }, [getVotes])
 
   useEffect(() => {
     if (
@@ -321,327 +343,449 @@ export default function PCEPage({
       functionName: 'delay',
     })
 
-  const getCurrentTimestamp = () => {
-    return Number(block?.timestamp)
-  }
-
-  useEffect(() => {
-    const fetchNFTBalances = async () => {
-      if (!chainId) {
-        return
-      }
-      if (currentTokenId && Number(currentTokenId) > 0) {
-        toast({ title: 'Loading SBT NFTs...' })
-
-        let _nftBalances: number[] = []
-        for (let i = 1; i <= (currentTokenId as number); i++) {
-          const _balance = (await readContract(config, {
-            abi: SBT_ABI,
-            address: PCE_SBT_ADDRESS[
-              chainId || defaultChainId
-            ] as `0x${string}`,
-            functionName: 'balanceOf',
-            args: [address, i],
-          })) as number
-
-          _nftBalances.push(_balance)
-        }
-        setNftBalances(_nftBalances)
-      }
-    }
-
-    fetchNFTBalances()
-  }, [chainId, currentTokenId, isConfirmed])
-
-  useEffect(() => {
-    const fetchVotingPower = async () => {
-      if (!chainId) {
-        return
-      }
-      if (currentTokenId && Number(currentTokenId) > 0) {
-        toast({ title: 'Loading Voting Power...' })
-
-        let _votingPower: number[] = []
-        for (let i = 1; i <= (currentTokenId as number); i++) {
-          const votingPowerPerId = (await readContract(config, {
-            abi: SBT_ABI,
-            address: PCE_SBT_ADDRESS[
-              chainId || defaultChainId
-            ] as `0x${string}`,
-            functionName: 'votingPowerPerId',
-            args: [i],
-          })) as number
-
-          _votingPower.push(votingPowerPerId)
-        }
-        setVotingPower(_votingPower)
-      }
-    }
-
-    fetchVotingPower()
-  }, [chainId, currentTokenId, isConfirmed])
-
-  const ProposalCard = ({
-    proposal,
-    status,
-    index,
+  const OptionsCard = ({
+    multipleOptionProposalData,
   }: {
-    proposal: any
-    status: string
-    index: number
-  }) => (
-    <article className="flex flex-col w-full bg-gray-100 p-4 rounded-xl gap-2">
-      <div
-        className="flex flex-col gap-2 cursor-pointer"
-        onClick={() => {
-          router.push(`/${locale}/pce/detail/`)
-        }}
-      >
-        <div className="flex flex-row items-center justify-between w-full rounded-xl">
-          <h1 className="flex flex-row text-xl font-bold w-full">
-            {proposal[9] || 'Description'}
-          </h1>
-        </div>
-        <p className="description">{proposal[9] || 'Description'}</p>
-        <ProposalBadges
-          label={localDict.transferTokens ?? 'Transfer tokens'}
-          status={status}
-        />
-      </div>
-      <div className="flex flex-col gap-8">
+    multipleOptionProposalData: any
+  }) => {
+    const [selectedOption, setSelectedOption] = useState<number | null>(null)
+    let start = multipleOptionProposalData?.start ?? 0
+    let end = multipleOptionProposalData?.end ?? 0
+    let options = multipleOptionProposalData?.options ?? []
+    let optionVotes = multipleOptionProposalData?.optionVotes ?? []
+    let description = multipleOptionProposalData?.description ?? ''
+    let status = multipleOptionProposalData?.status ?? ''
+    let hasVoted = multipleOptionProposalData?.hasVoted ?? false
+    // Use the blockNumber from wagmi's useBlockNumber hook (already in the parent component)
+
+    // Calculate total votes from optionVotes (handle BigInt values)
+    const totalVotes = optionVotes.reduce((acc: bigint, curr: any) => {
+      const currValue =
+        typeof curr === 'bigint' ? curr : BigInt(String(curr || 0))
+      return acc + currValue
+    }, BigInt(0))
+
+    // Calculate percentages for all options
+    const optionPercentages = options.map((option: string, index: number) => {
+      const optionValue = optionVotes[index] || BigInt(0)
+      const value =
+        typeof optionValue === 'bigint'
+          ? optionValue
+          : BigInt(String(optionValue || 0))
+      return totalVotes > 0 ? (Number(value) / Number(totalVotes)) * 100 : 0
+    })
+
+    // Find max percentage for color coding
+    const maxPercentage = Math.max(...optionPercentages)
+
+    // Determine colors: green for highest, orange for middle, red for lowest
+    const getColor = (percentage: number) => {
+      if (percentage === maxPercentage && maxPercentage > 0) {
+        return 'bg-green-500'
+      } else if (percentage > 0) {
+        // Check if it's the second highest
+        const sorted = [...optionPercentages].sort((a, b) => b - a)
+        if (percentage === sorted[1] && sorted[1] > 0) {
+          return 'bg-orange-500'
+        }
+        return 'bg-red-500'
+      }
+      return 'bg-gray-300'
+    }
+
+    // Await reading the contract to get proposal info for the given pID
+    // This should run on component mount/update with pID, so useEffect is appropriate.
+
+    return (
+      <article className="flex flex-col bg-blue-50 p-6 rounded-xl gap-4 shadow-sm">
         <div className="flex flex-col gap-2">
-          <div className="flex flex-row justify-between">
-            <h1>{localDict.voteFor ?? 'Vote For'}</h1>
-            <h1>
-              {Number(formatEther(proposal[5] || 0)).toLocaleString()} (
-              {proposal[5] && proposal[6] !== undefined
-                ? proposal[6] === 0 && proposal[5] > 0
-                  ? 100
-                  : (
-                      (Number(formatEther(proposal[5])) /
-                        (Number(formatEther(proposal[5])) +
-                          Number(formatEther(proposal[6])))) *
-                      100
-                    ).toFixed(2)
-                : '0'}
-              %)
+          <div className="flex flex-row items-center justify-between w-full">
+            <h1 className="text-xl font-bold text-gray-800 flex-1">
+              {description || 'Description'}
             </h1>
-          </div>
-          <Line
-            percent={
-              Number(proposal[5] || 0) > 0 &&
-              Number(BigInt(quorum?.toString() || '0')) > 0
-                ? (Number(proposal[5]) / Number(quorum?.toString() || '0')) *
-                  100
-                : 0
-            }
-            strokeColor="#1995AD"
-            trailColor="#A1D6E2"
-            strokeWidth={1}
-            trailWidth={1}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-row justify-between">
-            <h1>{localDict.voteAgainst ?? 'Vote Against'}</h1>
-            <h1>
-              {Number(proposal[6] || 0).toLocaleString()} (
-              {proposal[5] && proposal[6] !== undefined
-                ? proposal[5] === 0 && proposal[6] > 0
-                  ? 100
-                  : (
-                      (Number(proposal[6]) /
-                        (Number(proposal[5]) + Number(proposal[6]))) *
-                      100
-                    ).toFixed(2)
-                : '0'}
-              %)
-            </h1>
-          </div>
-
-          <Line
-            percent={
-              Number(proposal[6] || 0) > 0 &&
-              Number(BigInt(quorum?.toString() || '0')) > 0
-                ? (Number(proposal[6]) / Number(quorum?.toString() || '0')) *
-                  100
-                : 0
-            }
-            strokeColor="#1995AD"
-            trailColor="#A1D6E2"
-            strokeWidth={1}
-            trailWidth={1}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-row justify-between">
-            <h1>{localDict.votingPeriod ?? 'Voting Period'}</h1>
-            <h1>
-              {localDict.currentBlock ?? 'Current Block'}: {Number(blockNumber)}
-            </h1>
-          </div>
-
-          <Line
-            percent={
-              Number(proposal[3]) < Number(blockNumber)
-                ? Math.min(
-                    ((Number(blockNumber) - Number(proposal[3])) /
-                      Number(votingPeriod)) *
-                      100,
-                    100
-                  )
-                : 0
-            }
-            className="w-full"
-            strokeColor="#1995AD"
-            trailColor="#A1D6E2"
-            strokeWidth={1}
-            trailWidth={1}
-          />
-
-          <div className="flex flex-row justify-between">
-            <h1>
-              {localDict.startedAt ?? 'Started at'} {Number(proposal[3])}
-            </h1>
-            <h1>
-              {localDict.endingAt ?? 'Ending at'} {Number(proposal[4])}
-            </h1>
+            <span
+              className={`text-xs font-semibold px-3 py-1 rounded-full
+      ${
+        status === 'Active'
+          ? 'bg-green-200 text-green-900'
+          : status === 'Pending'
+            ? 'bg-yellow-200 text-yellow-900'
+            : status === 'Ended'
+              ? 'bg-gray-300 text-gray-700'
+              : 'bg-gray-200 text-gray-800'
+      }`}
+              style={{ minWidth: 73, textAlign: 'center' }}
+            >
+              {status}
+            </span>
           </div>
         </div>
 
-        {Number(proposal[2]) !== 0 && status === 'Queued' && (
-          <div className="flex flex-col justify-between gap-2">
-            <div className="flex flex-row justify-between">
-              <h1>{localDict.timelockDelay ?? 'Timelock Delay'}</h1>
-              <h1>{timestampToDate(Number(proposal[2]))}</h1>
-            </div>
+        <div className="flex flex-col gap-4">
+          {/* Display options with checkboxes and progress bars */}
+          {options.map((option: string, index: number) => {
+            const optionValue = optionVotes[index] || BigInt(0)
+            const value =
+              typeof optionValue === 'bigint'
+                ? optionValue
+                : BigInt(String(optionValue || 0))
+            const percentage = optionPercentages[index] || 0
+            const percentageStr = percentage.toFixed(2)
 
-            <Line
-              percent={
-                Number(proposal[2]) > 0
-                  ? Math.min(
-                      ((getCurrentTimestamp() -
-                        (Number(proposal[2]) - Number(timelockDelay))) *
-                        100) /
-                        Number(timelockDelay),
-                      100
-                    )
-                  : 0
+            return (
+              <div key={index} className="flex flex-col gap-2">
+                <div className="flex flex-row items-center gap-3">
+                  <Checkbox
+                    checked={selectedOption === index}
+                    onCheckedChange={() => setSelectedOption(index)}
+                    className="h-5 w-5"
+                    disabled={status !== 'Active' || hasVoted}
+                  />
+                  <span className="flex-1 text-gray-700 whitespace-pre-line break-words">
+                    {option}
+                  </span>
+                  <span className="text-gray-700 font-medium">
+                    {formatString(formatEther(value))}: {`(${percentageStr}%) `}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${getColor(percentage)}`}
+                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        {/* Submit Button */}
+        <Button
+          className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 rounded-lg"
+          disabled={status !== 'Active' || selectedOption === null}
+          onClick={async () => {
+            if (selectedOption !== null) {
+              setLoading(true)
+              try {
+                const tx = await writeContractAsync({
+                  abi: MULTIPLE_VOTINGS_ABI,
+                  address: MultipleVotingAddress[
+                    chainId || defaultChainId
+                  ] as `0x${string}`,
+                  functionName: 'castMultipleChoiceVote',
+                  args: [multipleOptionProposalData.pID, selectedOption],
+                })
+
+                await waitForTransactionReceipt(config, {
+                  hash: tx,
+                  confirmations: 1,
+                })
+
+                setIsRefetching(!isRefetching)
+                setSelectedOption(null)
+              } catch (error) {
+                console.error('Error voting:', error)
+                toast({ title: 'Failed to vote' })
+              } finally {
+                setLoading(false)
+                setSelectedOption(null)
               }
-              strokeColor="#1995AD"
-              trailColor="#A1D6E2"
-              strokeWidth={1}
-              trailWidth={1}
-            />
+            }
+          }}
+          style={{
+            display: hasVoted || status !== 'Active' ? 'none' : undefined,
+          }}
+        >
+          Submit
+        </Button>
+        {status === 'Ended' && (
+          <div className="mt-4">
+            <h3 className="font-semibold mb-2">
+              {localDict?.resultsTitle ?? 'Voting Results'}
+            </h3>
+            <ul className="space-y-2">
+              {multipleOptionProposalData.options &&
+                (() => {
+                  // value may be under multipleOptionProposalData.values or multipleOptionProposalData.optionValues based on how it's structured
+                  let valuesArr: number[] = []
+                  if (Array.isArray(multipleOptionProposalData.optionVotes)) {
+                    valuesArr = multipleOptionProposalData.optionVotes.map(
+                      (v: any) => Number(v)
+                    )
+                  }
 
-            <div className="flex flex-row justify-between">
-              <h1>
-                {localDict.startedAt ?? 'Started at'}
-                {Number(proposal[2]) > 0
-                  ? timestampToDate(Number(proposal[2]) - Number(timelockDelay))
-                  : '-'}
-              </h1>
-              <h1>
-                {localDict.endingAt ?? 'Ending at'}
-                {Number(proposal[2]) > 0
-                  ? timestampToDate(Number(proposal[2]))
-                  : 0}
-              </h1>
-            </div>
+                  let total = valuesArr.reduce((acc, curr) => acc + curr, 0)
+                  // Find max indices (so we can highlight/wrap the "most chosen")
+                  const maxValue = Math.max(...valuesArr)
+                  const maxIndices = valuesArr
+                    .map((v, idx) => (v === maxValue ? idx : -1))
+                    .filter((idx) => idx !== -1)
+
+                  return multipleOptionProposalData.options.map(
+                    (opt: string, idx: number) => {
+                      const value = valuesArr[idx] ?? 0
+                      let formattedValue: string = ''
+                      formattedValue = formatString(
+                        formatEther(BigInt(value).toString())
+                      )
+
+                      let pct =
+                        total > 0
+                          ? ((Number(value) / total) * 100).toFixed(2)
+                          : '0.00'
+
+                      // Highlight the most chosen option(s)
+                      const isMostChosen = maxIndices.includes(idx)
+
+                      return (
+                        <li
+                          key={idx}
+                          className={`flex items-center gap-2 ${
+                            isMostChosen ? 'font-bold text-green-700' : ''
+                          }`}
+                        >
+                          <span className="font-medium">{opt}</span>
+                          <span className="ml-auto">
+                            {formattedValue} {localDict?.votes ?? 'votes'} (
+                            {pct}
+                            %)
+                          </span>
+                          {isMostChosen && (
+                            <span className="ml-2 text-xs text-green-600 font-semibold">
+                              {/* Customizable: show only for first, or for all with max votes */}
+                              {`has beeen choose the most`}
+                            </span>
+                          )}
+                        </li>
+                      )
+                    }
+                  )
+                })()}
+            </ul>
           </div>
         )}
+      </article>
+    )
+  }
 
-        <div className="flex flex-row gap-1 sm:gap-4 w-full">
-          <Button
-            className="w-full"
-            disabled={status !== 'Active'}
-            onClick={async () => {
-              await writeContract({
-                abi: GOVERNOR_ABI,
-                address: governorAddress[
-                  chainId || defaultChainId
-                ] as `0x${string}`,
-                functionName: 'castVote',
-                args: [proposal[0], true],
-              })
-            }}
-          >
-            {localDict.voteFor ?? 'Vote For'}
-          </Button>
-          <Button
-            className="w-full"
-            disabled={status !== 'Active'}
-            onClick={async () => {
-              await writeContract({
-                abi: GOVERNOR_ABI,
-                address: governorAddress[
-                  chainId || defaultChainId
-                ] as `0x${string}`,
-                functionName: 'castVote',
-                args: [proposal[0], false],
-              })
-            }}
-          >
-            {localDict.voteAgainst ?? 'Vote Against'}
-          </Button>
-          <Button
-            className="w-full"
-            disabled={status !== 'Succeeded'}
-            onClick={async () => {
-              await writeContract({
-                abi: GOVERNOR_ABI,
-                address: governorAddress[
-                  chainId || defaultChainId
-                ] as `0x${string}`,
-                functionName: 'queue',
-                args: [proposal[0]],
-              })
-            }}
-          >
-            {localDict.queue ?? 'Queue'}
-          </Button>
-          <Button
-            className="w-full"
-            disabled={
-              getCurrentTimestamp() < Number(proposal[2]) || status !== 'Queued'
-            }
-            onClick={async () => {
-              await writeContract({
-                abi: GOVERNOR_ABI,
-                address: governorAddress[
-                  chainId || defaultChainId
-                ] as `0x${string}`,
-                functionName: 'execute',
-                args: [proposal[0]],
-              })
-            }}
-          >
-            {localDict.execute ?? 'Execute'}
-          </Button>
+  const ProposalCard = ({ proposal }: { proposal: any }) => {
+    const [selectedOption, setSelectedOption] = useState<number | null>(null)
+
+    let start = proposal?.start ?? 0
+    let end = proposal?.end ?? 0
+    let options = proposal?.options ?? []
+    let optionVotes = proposal?.optionVotes ?? []
+    let description = proposal?.description ?? ''
+    let status = proposal?.status ?? ''
+    let hasVoted = proposal?.hasVoted ?? false
+
+    // Calculate total votes from optionVotes (handle BigInt values)
+    const totalVotes = optionVotes.reduce((acc: bigint, curr: any) => {
+      const currValue =
+        typeof curr === 'bigint' ? curr : BigInt(String(curr || 0))
+      return acc + currValue
+    }, BigInt(0))
+
+    // Use the blockNumber from wagmi's useBlockNumber hook (already in the parent component)
+
+    // Calculate percentages for all options
+    const optionPercentages = options.map((option: string, index: number) => {
+      const optionValue = optionVotes[index] || BigInt(0)
+      const value =
+        typeof optionValue === 'bigint'
+          ? optionValue
+          : BigInt(String(optionValue || 0))
+      return totalVotes > 0 ? (Number(value) / Number(totalVotes)) * 100 : 0
+    })
+
+    // Find max percentage for color coding
+    const maxPercentage = Math.max(...optionPercentages)
+
+    // Determine colors: green for highest, orange for middle, red for lowest
+    const getColor = (percentage: number) => {
+      if (percentage === maxPercentage && maxPercentage > 0) {
+        return 'bg-green-500'
+      } else if (percentage > 0) {
+        // Check if it's the second highest
+        const sorted = [...optionPercentages].sort((a, b) => b - a)
+        if (percentage === sorted[1] && sorted[1] > 0) {
+          return 'bg-orange-500'
+        }
+        return 'bg-red-500'
+      }
+      return 'bg-gray-300'
+    }
+
+    // Await reading the contract to get proposal info for the given pID
+    // This should run on component mount/update with pID, so useEffect is appropriate.
+
+    return (
+      <article className="flex flex-col bg-blue-50 p-6 rounded-xl gap-4 shadow-sm">
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-row items-center justify-between w-full">
+            <h1 className="text-xl font-bold text-gray-800 flex-1">
+              {description || 'Description'}
+            </h1>
+            <span
+              className={`text-xs font-semibold px-3 py-1 rounded-full
+      ${
+        status === 'Active'
+          ? 'bg-green-200 text-green-900'
+          : status === 'Pending'
+            ? 'bg-yellow-200 text-yellow-900'
+            : status === 'Ended'
+              ? 'bg-gray-300 text-gray-700'
+              : 'bg-gray-200 text-gray-800'
+      }`}
+              style={{ minWidth: 73, textAlign: 'center' }}
+            >
+              {status}
+            </span>
+          </div>
         </div>
-      </div>
-      {/* <Dialog
-        open={isProposalDetailDialogOpened}
-        onOpenChange={(open) => {
-          setIsProposalDetailDialogOpened(open)
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Proposal Details</DialogTitle>
-            <DialogDescription>
-              <div className="flex flex-col gap-2">
-                <h1>Proposal ID: {index}</h1>
-                <h1>Proposal Description: {proposal[9]}</h1>
+
+        <div className="flex flex-col gap-4">
+          {/* Display options with checkboxes and progress bars */}
+          {options.map((option: string, index: number) => {
+            const optionValue = optionVotes[index] || BigInt(0)
+            const value =
+              typeof optionValue === 'bigint'
+                ? optionValue
+                : BigInt(String(optionValue || 0))
+            const percentage = optionPercentages[index] || 0
+            const percentageStr = percentage.toFixed(2)
+
+            return (
+              <div key={index} className="flex flex-col gap-2">
+                <div className="flex flex-row items-center gap-3">
+                  <Checkbox
+                    checked={selectedOption === index}
+                    onCheckedChange={() => setSelectedOption(index)}
+                    className="h-5 w-5"
+                    disabled={status !== 'Active' || hasVoted}
+                  />
+                  <span className="flex-1 text-gray-700 whitespace-pre-line break-words">
+                    {option}
+                  </span>
+                  <span className="text-gray-700 font-medium">
+                    {formatString(formatEther(value))}: {`(${percentageStr}%) `}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${getColor(percentage)}`}
+                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                  />
+                </div>
               </div>
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog> */}
-    </article>
-  )
+            )
+          })}
+        </div>
+        {/* Submit Button */}
+        <Button
+          className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 rounded-lg"
+          disabled={status !== 'Active' || selectedOption === null}
+          onClick={async () => {
+            if (selectedOption !== null) {
+              setLoading(true)
+              try {
+                const tx = await writeContractAsync({
+                  abi: GOVERNOR_ABI,
+                  address: governorAddress[
+                    chainId || defaultChainId
+                  ] as `0x${string}`,
+                  functionName: 'castVote',
+                  args: [proposal.pID, selectedOption == 0 ? true : false],
+                })
+
+                await waitForTransactionReceipt(config, {
+                  hash: tx,
+                  confirmations: 1,
+                })
+
+                setIsRefetching(!isRefetching)
+                setSelectedOption(null)
+              } catch (error) {
+                console.error('Error voting:', error)
+              } finally {
+                setLoading(false)
+                setSelectedOption(null)
+              }
+            }
+          }}
+          style={{
+            display: hasVoted || status !== 'Active' ? 'none' : undefined,
+          }}
+        >
+          Submit
+        </Button>
+        {status === 'Ended' && (
+          <div className="mt-4">
+            <h3 className="font-semibold mb-2">
+              {localDict?.resultsTitle ?? 'Voting Results'}
+            </h3>
+            <ul className="space-y-2">
+              {proposal.options &&
+                (() => {
+                  // value may be under multipleOptionProposalData.values or multipleOptionProposalData.optionValues based on how it's structured
+                  let valuesArr: number[] = []
+                  if (Array.isArray(proposal.optionVotes)) {
+                    valuesArr = proposal.optionVotes.map((v: any) => Number(v))
+                  }
+
+                  let total = valuesArr.reduce((acc, curr) => acc + curr, 0)
+                  // Find max indices (so we can highlight/wrap the "most chosen")
+                  const maxValue = Math.max(...valuesArr)
+                  const maxIndices = valuesArr
+                    .map((v, idx) => (v === maxValue ? idx : -1))
+                    .filter((idx) => idx !== -1)
+
+                  return proposal.options.map((opt: string, idx: number) => {
+                    const value = valuesArr[idx] ?? 0
+                    let formattedValue: string = ''
+                    formattedValue = formatString(
+                      formatEther(BigInt(value).toString())
+                    )
+
+                    let pct =
+                      total > 0
+                        ? ((Number(value) / total) * 100).toFixed(2)
+                        : '0.00'
+
+                    // Highlight the most chosen option(s)
+                    const isMostChosen = maxIndices.includes(idx)
+
+                    return (
+                      <li
+                        key={idx}
+                        className={`flex items-center gap-2 ${
+                          isMostChosen ? 'font-bold text-green-700' : ''
+                        }`}
+                      >
+                        <span className="font-medium">{opt}</span>
+                        <span className="ml-auto">
+                          {formattedValue} {localDict?.votes ?? 'votes'} ({pct}
+                          %)
+                        </span>
+                        {isMostChosen && (
+                          <span className="ml-2 text-xs text-green-600 font-semibold">
+                            {/* Customizable: show only for first, or for all with max votes */}
+                            {`has beeen choose the most`}
+                          </span>
+                        )}
+                      </li>
+                    )
+                  })
+                })()}
+            </ul>
+          </div>
+        )}
+      </article>
+    )
+  }
+
+  const getCurrentTimestamp = () => {
+    return Number(block?.timestamp) || Math.floor(Date.now() / 1000)
+  }
 
   function handleChange(event: any) {
     const name = event.target.name
@@ -680,110 +824,236 @@ export default function PCEPage({
       functionName: 'proposalCount',
     })
 
-  const fetchData = React.useCallback(
-    async (count: number) => {
-      setLoading(true)
-      if (!count || !governorAddress || count == 0) {
-        setProposals([])
-        setStatus([])
-        setLoading(false)
+  const { data: multipleProposalCount, refetch: refetchMultipleProposalCount } =
+    useReadContract({
+      address: MultipleVotingAddress[
+        chainId || defaultChainId
+      ] as `0x${string}`,
+      abi: MULTIPLE_VOTINGS_ABI,
+      functionName: 'proposalCount',
+    }) as unknown as { data?: number; refetch: () => void }
+
+  useEffect(() => {
+    async function fetchMultipleProposals() {
+      const currentBlock = blockNumber ?? 0
+
+      if (!multipleProposalCount || !address || !chainId || !currentBlock)
         return
-      }
 
-      let temp = []
-      let _status = []
-      for (let i = 1; i <= count; i++) {
-        let proposal = null
-        let status = null
-        try {
-          proposal = await readContract(config, {
-            address: governorAddress[
-              chainId || defaultChainId
-            ] as `0x${string}`,
-            abi: GOVERNOR_ABI,
-            functionName: 'proposals',
-            args: [i],
-          })
+      setLoading(true)
+      let _multipleOptions = []
+      for (let i = 1; i < Number(multipleProposalCount) + 1; i++) {
+        const _proposalData = await readContract(config, {
+          address: MultipleVotingAddress[
+            chainId || defaultChainId
+          ] as `0x${string}`,
+          abi: MULTIPLE_VOTINGS_ABI,
+          functionName: 'getProposal',
+          args: [i.toString()],
+          account: address,
+        })
 
-          status = await readContract(config, {
-            address: governorAddress[
-              chainId || defaultChainId
-            ] as `0x${string}`,
-            abi: GOVERNOR_ABI,
-            functionName: 'state',
-            args: [i],
-          })
-        } catch (error) {
-          i--
-          continue
-        }
+        const _optionVotes = await readContract(config, {
+          address: MultipleVotingAddress[
+            chainId || defaultChainId
+          ] as `0x${string}`,
+          abi: MULTIPLE_VOTINGS_ABI,
+          functionName: 'getOptionVotes',
+          args: [i],
+        })
 
-        switch (status as number) {
-          case 0:
-            _status.push('Pending')
-            temp.push(proposal)
-            break
-          case 1:
-            _status.push('Active')
-            temp.push(proposal)
-            break
-          case 2:
-            _status.push('Canceled')
-            temp.push(proposal)
-            break
-          case 3:
-            _status.push('Defeated')
-            temp.push(proposal)
-            break
-          case 4:
-            _status.push('Succeeded')
-            temp.push(proposal)
-            break
-          case 5:
-            _status.push('Queued')
-            temp.push(proposal)
-            break
-          case 6:
-            _status.push('Expired')
-            temp.push(proposal)
-            break
-          case 7:
-            _status.push('Executed')
-            temp.push(proposal)
-            break
-          default:
-            break
-        }
-      }
-      setProposals(temp)
-      setStatus(_status)
-      setLoading(false)
-    },
-    [config, governorAddress, chainId, defaultChainId]
-  )
-  useEffect(() => {
-    fetchData(Number(proposalCount))
-  }, [proposalCount, governorAddress, chainId, isConfirmed, fetchData])
-
-  useEffect(() => {
-    const fetchIdenticon = async () => {
-      if (governorAddress) {
-        setIdenticon(
-          await generateIdenteapot(
-            governorAddress[chainId || defaultChainId] as `0x${string}`,
-            ''
+        const isEnded =
+          currentBlock >
+          Number(
+            Array.isArray(_proposalData) ? Number(String(_proposalData[4])) : 0
           )
-        )
+        _multipleOptions.push({
+          pID: i,
+          description: Array.isArray(_proposalData)
+            ? (_proposalData[7] as string)
+            : '',
+          options: Array.isArray(_proposalData)
+            ? (_proposalData[2] as string[])
+            : [],
+          start: Array.isArray(_proposalData)
+            ? (_proposalData[3] as number)
+            : 0,
+          end: Array.isArray(_proposalData) ? (_proposalData[4] as number) : 0,
+          totalVotes: Array.isArray(_proposalData)
+            ? (_proposalData[5] as number)
+            : 0,
+          status: isEnded ? 'Ended' : 'Active',
+          hasVoted: Array.isArray(_proposalData)
+            ? (_proposalData[8] as boolean)
+            : false,
+          optionVotes: _optionVotes,
+          isMultipleChoice: true,
+        })
       }
+
+      setMultipleOptions(_multipleOptions)
+      setLoading(false)
     }
-    fetchIdenticon()
-  }, [governorAddress, chainId])
+    fetchMultipleProposals()
+  }, [multipleProposalCount, address, chainId, isRefetching])
+
+  useEffect(() => {
+    async function fetchProposals() {
+      const currentBlock = blockNumber ?? 0
+
+      if (!proposalCount || !address || !chainId || !currentBlock) return
+
+      setLoading(true)
+      let _proposals = []
+      for (let i = 1; i < Number(proposalCount) + 1; i++) {
+        const _proposalData = await readContract(config, {
+          address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+          abi: GOVERNOR_ABI,
+          functionName: 'proposals',
+          args: [i.toString()],
+          account: address,
+        })
+
+        const getReceipt = await readContract(config, {
+          address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+          abi: GOVERNOR_ABI,
+          functionName: 'getReceipt',
+          args: [i.toString(), address],
+        })
+
+        const options = ['Yes', 'No']
+
+        const isEnded =
+          currentBlock >
+          Number(
+            Array.isArray(_proposalData) ? Number(String(_proposalData[4])) : 0
+          )
+        _proposals.push({
+          pID: i,
+          description: Array.isArray(_proposalData)
+            ? (_proposalData[9] as string)
+            : '',
+          options: options,
+          start: Array.isArray(_proposalData)
+            ? (_proposalData[3] as number)
+            : 0,
+          end: Array.isArray(_proposalData) ? (_proposalData[4] as number) : 0,
+          totalVotes: Array.isArray(_proposalData)
+            ? (_proposalData[5] as number)
+            : 0,
+          status: isEnded ? 'Ended' : 'Active',
+          hasVoted: (getReceipt as any)?.hasVoted ?? false,
+          optionVotes: [
+            Array.isArray(_proposalData)
+              ? (_proposalData[5] as bigint)
+              : BigInt(0),
+            Array.isArray(_proposalData)
+              ? (_proposalData[6] as bigint)
+              : BigInt(0),
+          ],
+          isMultipleChoice: false,
+          isCanceled: Array.isArray(_proposalData)
+            ? (_proposalData[7] as boolean)
+            : false,
+          isExecuted: Array.isArray(_proposalData)
+            ? (_proposalData[8] as boolean)
+            : false,
+        })
+      }
+
+      setProposals(_proposals)
+      setLoading(false)
+    }
+    fetchProposals()
+  }, [proposalCount, address, chainId, isRefetching])
+
+  // Filter proposals based on status
+  useEffect(() => {
+    if (multipleOptions.length === 0) return
+
+    let filtered = multipleOptions
+
+    if (statusFilter === 'active') {
+      filtered = multipleOptions.filter((option) => option.status === 'Active')
+    } else if (statusFilter === 'ended') {
+      filtered = multipleOptions.filter((option) => option.status === 'Ended')
+    }
+    // 'all' shows all proposals, so no filtering needed
+
+    setFilteredProposals(filtered)
+  }, [multipleOptions, statusFilter])
 
   const handleCreateProposal = async () => {
     setIsCreateProposalDialogOpened(false)
 
+    setLoading(true)
+
     if (category.length == 0) {
       toast({ title: 'Please Select Category' })
+      return
+    }
+
+    if (category === '7') {
+      if (description == '') {
+        toast({ title: 'Please enter a valid description' })
+        return
+      }
+
+      for (let i = 0; i < options.length; i++) {
+        if (options[i] == '') {
+          toast({ title: 'Please enter a valid option' })
+          return
+        }
+      }
+
+      try {
+        const simulateResult = await simulateContract(config, {
+          abi: MULTIPLE_VOTINGS_ABI,
+          address: MultipleVotingAddress[
+            chainId || defaultChainId
+          ] as `0x${string}`,
+          functionName: 'proposeMultipleChoice',
+          args: [options, description],
+        })
+
+        const pID = (simulateResult.result as bigint).toString()
+
+        const tx = await writeContractAsync({
+          abi: MULTIPLE_VOTINGS_ABI,
+          address: MultipleVotingAddress[
+            chainId || defaultChainId
+          ] as `0x${string}`,
+          functionName: 'proposeMultipleChoice',
+          args: [options, description],
+        })
+
+        await waitForTransactionReceipt(config, {
+          hash: tx,
+          confirmations: 1,
+        })
+
+        // await supabase.from('MultipleOptions').insert({
+        //   pID: Number(pID),
+        //   description: _proposalDataObject.description,
+        //   options: _proposalDataObject.options.join(','),
+        //   start: _proposalDataObject.start.toString(),
+        //   end: _proposalDataObject.end.toString(),
+        //   values: _optionVotes.join(','),
+        //   proposer: address,
+        // })
+
+        await refetchMultipleProposalCount()
+      } catch (error) {
+        const errorMessage = (error as BaseError).shortMessage
+        if (errorMessage.includes('proposer votes below proposal threshold')) {
+          toast({ title: 'Proposer votes below proposal threshold' })
+        } else {
+          toast({ title: 'Failed to create proposal' })
+        }
+      } finally {
+        setLoading(false)
+      }
+
       return
     }
 
@@ -830,14 +1100,32 @@ export default function PCEPage({
       )
     }
 
-    writeContract({
-      abi: GOVERNOR_ABI,
-      address: governorAddress[chainId || defaultChainId] as `0x${string}`,
-      functionName: 'propose',
-      args: [[_address], [_value], [_signature], [_calldata], description],
-    })
+    try {
+      const simulateResult = await simulateContract(config, {
+        abi: GOVERNOR_ABI,
+        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'propose',
+        args: [[_address], [_value], [_signature], [_calldata], description],
+      })
 
-    await refetchProposalCount()
+      // To get the return value, await and store the result from writeContract
+      const tx = await writeContractAsync({
+        abi: GOVERNOR_ABI,
+        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'propose',
+        args: [[_address], [_value], [_signature], [_calldata], description],
+      })
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
+
+      await refetchProposalCount()
+    } catch (error) {
+      console.error('Error creating proposal:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleUpdateSocials = async () => {
@@ -908,6 +1196,15 @@ export default function PCEPage({
     fetchDict()
   }, [locale])
 
+  // Reset options when dialog opens
+  useEffect(() => {
+    if (isCreateProposalDialogOpened) {
+      setOptions(['', ''])
+      setDescription('')
+      setCategory('')
+    }
+  }, [isCreateProposalDialogOpened])
+
   return (
     <div className="w-full flex flex-col gap-4">
       <div className="flex flex-row items-center gap-4">
@@ -933,7 +1230,10 @@ export default function PCEPage({
               <TabsTrigger value="about" onClick={() => setTabContent('about')}>
                 {localDict.aboutDao}
               </TabsTrigger>
-              <TabsTrigger value="all" onClick={() => setTabContent('all')}>
+              <TabsTrigger
+                value="proposals"
+                onClick={() => setTabContent('proposals')}
+              >
                 {localDict.allProposals}
               </TabsTrigger>
               <TabsTrigger value="holds" onClick={() => setTabContent('holds')}>
@@ -941,45 +1241,12 @@ export default function PCEPage({
               </TabsTrigger>
             </TabsList>
             <TabsContent value="about" className="w-full">
-              <div className="flex sm:flex-row flex-col w-full gap-8">
-                <div className="flex flex-col w-full mt-4 gap-4">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-2">
-                    <h1 className="text-2xl font-bold">
-                      {localDict.latestProposals}
-                    </h1>
-                    <div className="flex flex-row gap-4">
-                      <Button
-                        onClick={() => {
-                          setIsCreateProposalDialogOpened(true)
-                        }}
-                      >
-                        {localDict.createNewProposal}
-                      </Button>
-                    </div>
-                  </div>
+              <div className="flex flex-row gap-8 w-full flex-3">
+                {/* Replace two-column layout with a single column for full-width display */}
+                <div className="flex flex-col gap-4 w-full flex-1">
+                  <h1 className="text-2xl font-bold">{localDict.about}</h1>
 
-                  {[...proposals]
-                    .reverse()
-                    .slice(0, 2)
-                    .map((proposal, index) => (
-                      <ProposalCard
-                        key={index}
-                        proposal={proposal}
-                        status={[...proposalStatus].reverse()[index]}
-                        index={index}
-                      />
-                    ))}
-
-                  {proposals.length === 0 && (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals}
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col sm:w-[40%] gap-4">
-                  <h1 className="text-2xl font-bold mt-4">{localDict.about}</h1>
-
-                  <div className="flex flex-col border rounded-xl p-4 mt-2 bg-gray-100 gap-2">
+                  <div className="flex flex-col border rounded-xl p-4 mt-2 bg-gray-100 gap-2 w-full">
                     <div className="flex flex-row justify-between items-center rounded-xl mt-2 w-full">
                       <TooltipComponent
                         title={localDict.govenorToken ?? 'Governor Token'}
@@ -990,19 +1257,19 @@ export default function PCEPage({
                         chainId={chainId}
                         type="address"
                         address={
-                          PCE_SBT_ADDRESS[
+                          WPCE_ADDRESS[
                             chainId || defaultChainId
                           ] as `0x${string}`
                         }
                         message={shortenAddress(
-                          PCE_SBT_ADDRESS[
+                          WPCE_ADDRESS[
                             chainId || defaultChainId
                           ] as `0x${string}`
                         )}
                       ></CustomLink.default>
                     </div>
 
-                    <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
+                    <div className="flex flex-row justify-between items-center rounded-xl mt-2 w-full">
                       <TooltipComponent
                         title={localDict.timelock ?? 'Timelock'}
                         tooltipText="A smart contract that adds a delay between when a proposal passes and when it can be executed. This delay gives token holders time to review and react to approved proposals before they take effect."
@@ -1024,7 +1291,7 @@ export default function PCEPage({
                       ></CustomLink.default>
                     </div>
 
-                    <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
+                    <div className="flex flex-row justify-between items-center rounded-xl mt-2 w-full">
                       <TooltipComponent
                         title={localDict.governor ?? 'Governor'}
                         tooltipText="The core contract that manages the DAO's governance process. It handles proposal creation, voting, and execution of approved proposals. This contract implements the rules and parameters for how governance works."
@@ -1047,7 +1314,7 @@ export default function PCEPage({
                     </div>
                   </div>
 
-                  <div className="flex flex-col border rounded-xl p-4 bg-gray-100 gap-4">
+                  <div className="flex flex-col border rounded-xl p-4 bg-gray-100 gap-4 w-full">
                     <InfoCell
                       title={localDict.voteDelay ?? 'Vote Delay'}
                       tooltipText="The number of blocks that must pass between when a proposal is created and when voting begins. This delay gives token holders time to research and discuss the proposal before voting starts."
@@ -1074,7 +1341,7 @@ export default function PCEPage({
                         localDict.proposalThreshold ?? 'Proposal Threshold'
                       }
                       tooltipText="The minimum number of votes a delegate must have to create a proposal. This threshold ensures that only members with sufficient stake in the DAO can initiate governance actions."
-                      value={proposalThreshold}
+                      value={multipleVotingQuorum}
                       formatter={(val) =>
                         formatString(formatEther(String(val)))
                       }
@@ -1083,7 +1350,7 @@ export default function PCEPage({
                     <InfoCell
                       title={localDict.quorumVotes ?? 'Quorum Votes'}
                       tooltipText="The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
-                      value={quorum}
+                      value={multipleVotingQuorum}
                       formatter={(val) =>
                         formatString(formatEther(String(val)))
                       }
@@ -1098,11 +1365,12 @@ export default function PCEPage({
                       'or have been delegated. This power allows you to vote on proposals ' +
                       'and create new ones if you meet the proposal threshold.'
                     }
-                    value={votes}
-                    formatter={(val) => String(val)}
-                    className="border rounded-xl p-4 bg-gray-100"
+                    value={votingPower}
+                    formatter={(val) => formatString(String(val))}
+                    className="border rounded-xl p-4 bg-gray-100 w-full"
                   />
-                  <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100">
+
+                  <div className="flex flex-col border rounded-xl p-4 gap-4 bg-gray-100 w-full">
                     <h1 className="font-bold rounded-xl  flex">
                       {localDict.createdAt ?? 'Created at'}{' '}
                       {new Date(
@@ -1110,7 +1378,8 @@ export default function PCEPage({
                       ).toLocaleString()}
                     </h1>
                   </div>
-                  <div className="flex flex-col border rounded-xl p-4 gap-4 mb-40 bg-gray-100">
+
+                  <div className="flex flex-col border rounded-xl p-4 gap-4 mb-40 bg-gray-100 w-full">
                     <div className="flex flex-row justify-between items-center mb-2">
                       <h1 className="font-bold">Socials</h1>
                       <Button
@@ -1274,128 +1543,94 @@ export default function PCEPage({
                 </div>
               </div>
             </TabsContent>
-            <TabsContent value="all">
-              <div className="flex flex-row w-full items-center sm:justify-start justify-center">
-                <Tabs defaultValue="all" className="gap-0 w-full">
-                  <TabsList className="flex flex-row w-full sm:justify-start justify-center">
-                    <TabsTrigger className="w-20" value="all">
-                      {localDict.all ?? 'All'}
-                    </TabsTrigger>
-                    <TabsTrigger className="w-20" value="active">
-                      {localDict.active ?? 'Active'}
-                    </TabsTrigger>
-                    <TabsTrigger className="w-20" value="executed">
-                      {localDict.executed ?? 'Executed'}
-                    </TabsTrigger>
-                    <TabsTrigger className="w-20" value="defeated">
-                      {localDict.defeated ?? 'Defeated'}
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent
-                    value="all"
-                    className="flex w-full flex-col gap-4 mt-4"
+            <TabsContent value="proposals">
+              <div className="flex flex-col mt-4 gap-4 w-full">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
+                  <Button
+                    className="bg-primary_blue text-white w-48 ml-auto"
+                    onClick={() => setIsCreateProposalDialogOpened(true)}
                   >
-                    {proposals.length > 0 ? (
-                      proposals.map((proposal, index) => {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
-                      })
-                    ) : (
-                      <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                        {localDict.noProposals ?? 'No proposals at the moment'}
-                      </div>
-                    )}
-                  </TabsContent>
-                  <TabsContent
-                    value="active"
-                    className="flex w-full flex-col mt-0"
-                  >
-                    {proposals.filter(
-                      (_, index) => proposalStatus[index] === 'Active'
-                    ).length > 0 ? (
-                      proposals.map((proposal, index) => {
-                        if (proposalStatus[index] === 'Active') {
-                          return (
-                            <ProposalCard
-                              key={index}
-                              proposal={proposal}
-                              status={proposalStatus[index]}
-                              index={index}
-                            />
-                          )
-                        }
-                        return null
-                      })
-                    ) : (
-                      <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                        {localDict.noProposals ??
-                          'No active proposals at the moment'}
-                      </div>
-                    )}
-                  </TabsContent>
+                    {localDict.createProposal ?? 'Create Proposal'}
+                  </Button>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <Popover
+                      open={isStatusFilterOpen}
+                      onOpenChange={setIsStatusFilterOpen}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full sm:w-[200px] justify-between bg-white"
+                        >
+                          {statusFilter === 'all'
+                            ? (localDict.all ?? 'All')
+                            : statusFilter === 'active'
+                              ? (localDict.active ?? 'Active')
+                              : (localDict.ended ?? 'Ended')}
+                          <ChevronsUpDown className="opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full sm:w-[200px] p-0">
+                        <Command>
+                          <CommandList>
+                            <CommandGroup>
+                              <CommandItem
+                                value="all"
+                                onSelect={() => {
+                                  setStatusFilter('all')
+                                  setIsStatusFilterOpen(false)
+                                }}
+                              >
+                                {localDict.all ?? 'All'}
+                              </CommandItem>
+                              <CommandItem
+                                value="active"
+                                onSelect={() => {
+                                  setStatusFilter('active')
+                                  setIsStatusFilterOpen(false)
+                                }}
+                              >
+                                {localDict.active ?? 'Active'}
+                              </CommandItem>
+                              <CommandItem
+                                value="ended"
+                                onSelect={() => {
+                                  setStatusFilter('ended')
+                                  setIsStatusFilterOpen(false)
+                                }}
+                              >
+                                {localDict.ended ?? 'Ended'}
+                              </CommandItem>
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
 
-                  <TabsContent
-                    value="executed"
-                    className="flex w-full flex-col mt-0"
-                  >
-                    {proposals.filter(
-                      (_, index) => proposalStatus[index] === 'Executed'
-                    ).length > 0 ? (
-                      proposals.map((proposal, index) => {
-                        if (proposalStatus[index] === 'Executed') {
-                          return (
-                            <ProposalCard
-                              key={index}
-                              proposal={proposal}
-                              status={proposalStatus[index]}
-                              index={index}
-                            />
-                          )
-                        }
-                        return null
-                      })
-                    ) : (
-                      <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                        {localDict.noProposals ??
-                          'No succeeded proposals at the moment'}
-                      </div>
-                    )}
-                  </TabsContent>
+                <div className="flex flex-col mt-4 gap-4 w-full">
+                  {proposals.length > 0 &&
+                    proposals.map((proposal) => (
+                      <ProposalCard key={proposal.pID} proposal={proposal} />
+                    ))}
+                </div>
 
-                  <TabsContent
-                    value="defeated"
-                    className="flex w-full flex-col gap-4 mt-0"
-                  >
-                    {proposals.filter(
-                      (_, index) => proposalStatus[index] === 'Defeated'
-                    ).length > 0 ? (
-                      proposals.map((proposal, index) => {
-                        if (proposalStatus[index] === 'Defeated') {
-                          return (
-                            <ProposalCard
-                              key={index}
-                              proposal={proposal}
-                              status={proposalStatus[index]}
-                              index={index}
-                            />
-                          )
-                        }
-                        return null
-                      })
-                    ) : (
-                      <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                        {localDict.noProposals ??
-                          'No defeated proposals at the moment'}
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
+                <div className="flex flex-col mt-4 gap-4 w-full">
+                  {filteredProposals.length > 0 &&
+                    filteredProposals.map((option) => (
+                      <OptionsCard
+                        key={option.pID}
+                        multipleOptionProposalData={option}
+                      />
+                    ))}
+                  {filteredProposals.length == 0 && !loading && (
+                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                      {localDict.noProposals}
+                    </div>
+                  )}
+                </div>
               </div>
             </TabsContent>
             <TabsContent value="holds">
@@ -1610,82 +1845,153 @@ export default function PCEPage({
                   <SelectItem value="4">{dict?.submit?.category4}</SelectItem>
                   <SelectItem value="5">{dict?.submit?.category5}</SelectItem>
                   <SelectItem value="6">{dict?.submit?.category6}</SelectItem>
+                  <SelectItem value="7">{dict?.submit?.category7}</SelectItem>
                 </SelectContent>
               </Select>
 
-              <div className="w-full flex flex-col gap-4">
-                <Input
-                  className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
-                  onChange={(e) => setTokenAddress(e.target.value)}
-                  placeholder={localDict.address ?? 'Address'}
-                />
+              {category === '7' ? (
+                <div className="w-full flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium">
+                      {localDict.description ?? 'Description'}
+                    </label>
+                    <Textarea
+                      className="max-sm:h-40 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94"
+                      placeholder={
+                        localDict.enterDescription ??
+                        'Enter proposal description'
+                      }
+                      name="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
+                  </div>
 
-                <Input
-                  className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder={dict?.submit?.amount ?? ''}
-                  name="values"
-                  onChange={handleChange}
-                />
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium">Options</label>
+                    <div className="flex flex-col gap-3">
+                      {options.map((option, index) => (
+                        <div
+                          key={index}
+                          className="flex flex-row gap-2 items-center"
+                        >
+                          <Input
+                            placeholder={`Option ${index + 1}`}
+                            value={option}
+                            onChange={(e) => {
+                              const newOptions = [...options]
+                              newOptions[index] = e.target.value
+                              setOptions(newOptions)
+                            }}
+                            className="flex-1"
+                          />
+                          {options.length > 2 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-10 w-10 text-red-500 hover:text-red-600 hover:bg-red-50"
+                              onClick={() => {
+                                const newOptions = options.filter(
+                                  (_, i) => i !== index
+                                )
+                                setOptions(newOptions)
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full sm:w-auto"
+                        onClick={() => {
+                          setOptions([...options, ''])
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Option
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full flex flex-col gap-4">
+                  <Input
+                    className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+                    onChange={(e) => setTokenAddress(e.target.value)}
+                    placeholder={localDict.address ?? 'Address'}
+                  />
 
-                <Input
-                  className={`${category !== '5' && category !== '6' ? 'hidden' : ''}`}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder={
-                    category === '5'
-                      ? dict?.submit?.gracePeriod
-                      : dict?.submit?.quorum_votes
-                  }
-                  name="variable1"
-                  onChange={handleChange}
-                />
+                  <Input
+                    className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder={dict?.submit?.amount ?? ''}
+                    name="values"
+                    onChange={handleChange}
+                  />
 
-                <Input
-                  className={`${category !== '5' && category !== '6' ? 'hidden' : ''}`}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder={
-                    category === '5'
-                      ? dict?.submit?.min_delay
-                      : dict?.submit?.proposal_threshold
-                  }
-                  name="variable2"
-                  onChange={handleChange}
-                />
+                  <Input
+                    className={`${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder={
+                      category === '5'
+                        ? dict?.submit?.gracePeriod
+                        : dict?.submit?.quorum_votes
+                    }
+                    name="variable1"
+                    onChange={handleChange}
+                  />
 
-                <Input
-                  className={` ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder={
-                    category === '5'
-                      ? dict?.submit?.max_delay
-                      : dict?.submit?.proposal_maxOperations
-                  }
-                  name="variable3"
-                  onChange={handleChange}
-                />
+                  <Input
+                    className={`${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder={
+                      category === '5'
+                        ? dict?.submit?.min_delay
+                        : dict?.submit?.proposal_threshold
+                    }
+                    name="variable2"
+                    onChange={handleChange}
+                  />
 
-                <Textarea
-                  className="max-sm:h-60 h-60 w-full align-center p-2 rounded-md border-[1px] border-gray94"
-                  placeholder={dict?.submit?.description ?? ''}
-                  name="description"
-                  onChange={handleChange}
-                />
+                  <Input
+                    className={` ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder={
+                      category === '5'
+                        ? dict?.submit?.max_delay
+                        : dict?.submit?.proposal_maxOperations
+                    }
+                    name="variable3"
+                    onChange={handleChange}
+                  />
 
-                <Textarea
-                  className={`max-sm:h-60 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94 outline-none ${category != '4' ? 'hidden' : ''}`}
-                  placeholder={dict?.submit?.bytescode ?? ''}
-                  name="byescode"
-                  onChange={handleChange}
-                />
-              </div>
+                  <Textarea
+                    className="max-sm:h-60 h-60 w-full align-center p-2 rounded-md border-[1px] border-gray94"
+                    placeholder={dict?.submit?.description ?? ''}
+                    name="description"
+                    onChange={handleChange}
+                  />
+
+                  <Textarea
+                    className={`max-sm:h-60 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94 outline-none ${category != '4' ? 'hidden' : ''}`}
+                    placeholder={dict?.submit?.bytescode ?? ''}
+                    name="byescode"
+                    onChange={handleChange}
+                  />
+                </div>
+              )}
 
               <Button onClick={handleCreateProposal}>Create</Button>
             </div>
