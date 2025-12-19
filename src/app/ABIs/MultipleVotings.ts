@@ -8,20 +8,6 @@ export const MULTIPLE_VOTINGS_ABI = [
   },
   {
     type: 'function',
-    name: 'MAX_VOTING_DELAY',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'MAX_VOTING_PERIOD',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'admin',
     inputs: [],
     outputs: [{ name: '', type: 'address', internalType: 'address' }],
@@ -69,8 +55,8 @@ export const MULTIPLE_VOTINGS_ABI = [
       { name: 'id', type: 'uint256', internalType: 'uint256' },
       { name: 'proposer', type: 'address', internalType: 'address' },
       { name: 'options', type: 'string[]', internalType: 'string[]' },
-      { name: 'startBlock', type: 'uint256', internalType: 'uint256' },
-      { name: 'endBlock', type: 'uint256', internalType: 'uint256' },
+      { name: 'startTimestamp', type: 'uint256', internalType: 'uint256' },
+      { name: 'endTimestamp', type: 'uint256', internalType: 'uint256' },
       { name: 'totalVotesCasted', type: 'uint256', internalType: 'uint256' },
       {
         name: 'state',
@@ -79,6 +65,7 @@ export const MULTIPLE_VOTINGS_ABI = [
       },
       { name: 'description', type: 'string', internalType: 'string' },
       { name: 'hasVoted', type: 'bool', internalType: 'bool' },
+      { name: 'createdAt', type: 'uint256', internalType: 'uint256' },
     ],
     stateMutability: 'view',
   },
@@ -97,15 +84,16 @@ export const MULTIPLE_VOTINGS_ABI = [
   },
   {
     type: 'function',
+    name: 'governor',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'initialize',
     inputs: [
-      { name: '_token', type: 'address', internalType: 'address' },
-      { name: '_sbt', type: 'address', internalType: 'address' },
-      { name: '_nft', type: 'address', internalType: 'address' },
-      { name: '_votingDelay', type: 'uint256', internalType: 'uint256' },
-      { name: '_votingPeriod', type: 'uint256', internalType: 'uint256' },
-      { name: '_quorumVotes', type: 'uint256', internalType: 'uint256' },
-      { name: '_proposalThreshold', type: 'uint256', internalType: 'uint256' },
+      { name: '_governor', type: 'address', internalType: 'address' },
       { name: '_admin', type: 'address', internalType: 'address' },
     ],
     outputs: [],
@@ -116,19 +104,6 @@ export const MULTIPLE_VOTINGS_ABI = [
     name: 'latestProposalIds',
     inputs: [{ name: '', type: 'address', internalType: 'address' }],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'nft',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'contract GovernorTokenInterface',
-      },
-    ],
     stateMutability: 'view',
   },
   {
@@ -152,8 +127,8 @@ export const MULTIPLE_VOTINGS_ABI = [
     outputs: [
       { name: 'id', type: 'uint256', internalType: 'uint256' },
       { name: 'proposer', type: 'address', internalType: 'address' },
-      { name: 'startBlock', type: 'uint256', internalType: 'uint256' },
-      { name: 'endBlock', type: 'uint256', internalType: 'uint256' },
+      { name: 'startTimestamp', type: 'uint256', internalType: 'uint256' },
+      { name: 'endTimestamp', type: 'uint256', internalType: 'uint256' },
       { name: 'totalVotesCast', type: 'uint256', internalType: 'uint256' },
       { name: 'description', type: 'string', internalType: 'string' },
       {
@@ -161,6 +136,7 @@ export const MULTIPLE_VOTINGS_ABI = [
         type: 'uint8',
         internalType: 'enum MultipleVotings.ProposalState',
       },
+      { name: 'createdAt', type: 'uint256', internalType: 'uint256' },
     ],
     stateMutability: 'view',
   },
@@ -170,29 +146,11 @@ export const MULTIPLE_VOTINGS_ABI = [
     inputs: [
       { name: 'options', type: 'string[]', internalType: 'string[]' },
       { name: 'description', type: 'string', internalType: 'string' },
+      { name: 'startTimestamp', type: 'uint256', internalType: 'uint256' },
+      { name: 'endTimestamp', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'quorumVotes',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'sbt',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'contract GovernorTokenInterface',
-      },
-    ],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -200,69 +158,6 @@ export const MULTIPLE_VOTINGS_ABI = [
     inputs: [{ name: '_admin', type: 'address', internalType: 'address' }],
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'setProposalThreshold',
-    inputs: [
-      { name: '_proposalThreshold', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'setQuorumVotes',
-    inputs: [
-      { name: '_quorumVotes', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'setVotingDelay',
-    inputs: [
-      { name: '_votingDelay', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'setVotingPeriod',
-    inputs: [
-      { name: '_votingPeriod', type: 'uint256', internalType: 'uint256' },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'token',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'contract GovernorTokenInterface',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'votingDelay',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'votingPeriod',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
   },
   {
     type: 'event',
@@ -295,13 +190,13 @@ export const MULTIPLE_VOTINGS_ABI = [
         internalType: 'string[]',
       },
       {
-        name: 'startBlock',
+        name: 'startTimestamp',
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
       },
       {
-        name: 'endBlock',
+        name: 'endTimestamp',
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
@@ -311,6 +206,12 @@ export const MULTIPLE_VOTINGS_ABI = [
         type: 'string',
         indexed: false,
         internalType: 'string',
+      },
+      {
+        name: 'createdAt',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
       },
     ],
     anonymous: false,

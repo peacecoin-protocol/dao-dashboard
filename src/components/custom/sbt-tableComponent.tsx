@@ -10,6 +10,7 @@ import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import { shortenAddress } from '../utils'
 import { Env } from '~/env'
 import { createClient } from '~/utils/supabase/client'
+import { formatEther } from 'ethers'
 export interface SBTInfo {
   tokenId: string
   creator: string
@@ -165,7 +166,7 @@ export function SBTTableComponent({
                       <dt className="font-medium text-foreground">
                         {dict?.sbt?.votingPower || 'Voting Power:'}
                       </dt>
-                      <dd>{sbt.votingPower}</dd>
+                      <dd>{formatEther(BigInt(sbt.votingPower))}</dd>
                     </div>
                     <div className="flex flex-col md:flex-row md:items-center md:gap-2">
                       <dt className="font-medium text-foreground">

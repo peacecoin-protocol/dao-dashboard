@@ -974,46 +974,61 @@ export default function ForDaoDetailPage({
 
   useEffect(() => {
     const updateImage = async () => {
+      if (!id || !croppedImage) return
+      if (lastCroppedImageRef.current === croppedImage) return
+
+      lastCroppedImageRef.current = croppedImage
+
       try {
-        if (!id || !croppedImage) return
-
-        // Only update if croppedImage has actually changed
-        if (lastCroppedImageRef.current === croppedImage) return
-
-        lastCroppedImageRef.current = croppedImage
-
         toast({
           title: localDict.updatingImage ?? 'Updating image...',
         })
 
-        const response = await fetch(croppedImage as string)
-        const blob = await response.blob()
-        const _file = new File([blob], id || 'dao-image', {
+        // Use fetch+blob only if croppedImage is a remote URL, skip otherwise
+        let fileData: Blob | string
+        if (croppedImage.startsWith('data:')) {
+          // base64-encoded image string
+          fileData = await (await fetch(croppedImage)).blob()
+        } else {
+          // Could be a url or already a blob, handle gracefully
+          fileData = await (await fetch(croppedImage)).blob()
+        }
+
+        const file = new File([fileData], id || 'dao-image', {
           type: 'image/png',
         })
-        const upload = await addFilesToGroupPublic(_file, DAO_GROUP_ID)
+        const upload = await addFilesToGroupPublic(file, DAO_GROUP_ID)
 
-        if (upload?.cid) {
-          setImageHash(upload?.cid)
-          const { data: dao } = await supabase
-            .from('DAO')
-            .update({
-              image: upload?.cid,
-            })
-            .eq('daoId', id)
-
-          setDaoInfo(dao)
-
-          toast({
-            title:
-              localDict.imageUpdatedSuccessfully ??
-              'Image updated successfully',
-          })
-        } else {
-          toast({
-            title: 'Failed to update image',
-          })
+        if (!upload?.cid) {
+          toast({ title: 'Failed to update image' })
+          return
         }
+
+        setImageHash(upload.cid)
+
+        // Use up-to-date daoInfo for mutation
+        const { data: dao, error: daoErr } = await supabase
+          .from('DAO')
+          .update({ image: upload.cid })
+          .eq('daoId', id)
+          .select('*')
+          .single()
+
+        if (daoErr) {
+          console.error('Error updating DAO image in Supabase:', daoErr)
+          toast({ title: 'Failed to update image' })
+          return
+        }
+
+        // Only update state via setDaoInfo to avoid mutating react state directly
+        setDaoInfo((prev: any) =>
+          prev ? { ...prev, image: upload.cid } : prev
+        )
+
+        toast({
+          title:
+            localDict.imageUpdatedSuccessfully ?? 'Image updated successfully',
+        })
       } catch (error) {
         console.error('Error updating image:', error)
         toast({
