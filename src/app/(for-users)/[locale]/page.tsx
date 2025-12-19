@@ -298,56 +298,63 @@ export default function ForDAOPage({
   const handleCreateDao = async () => {
     setIsDialogOpened(false)
 
-    const { result: daoId } = await simulateContract(config, {
-      abi: DAO_STUDIO_ABI,
-      address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
-      functionName: 'createDAO',
-      args: [
-        daoForm.name,
-        daoForm.metadata,
-        daoForm.tokenAddress,
-        daoForm.votingDelay,
-        daoForm.votingPeriod,
-        parseEther(daoForm.proposalThreshold),
-        daoForm.timelockDelay,
-        parseEther(daoForm.quorumVotes),
-      ],
-      gas: BigInt(1000000),
-    })
+    try {
+      const { result: daoId } = await simulateContract(config, {
+        abi: DAO_STUDIO_ABI,
+        address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'createDAO',
+        args: [
+          daoForm.name,
+          daoForm.metadata,
+          daoForm.tokenAddress,
+          daoForm.votingDelay,
+          daoForm.votingPeriod,
+          parseEther(daoForm.proposalThreshold),
+          daoForm.timelockDelay,
+          parseEther(daoForm.quorumVotes),
+        ],
+        gas: BigInt(1000000),
+      })
 
-    const tx = await writeContractAsync({
-      abi: DAO_STUDIO_ABI,
-      address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
-      functionName: 'createDAO',
-      args: [
-        daoForm.name,
-        daoForm.metadata,
-        daoForm.tokenAddress,
-        daoForm.votingDelay,
-        daoForm.votingPeriod,
-        parseEther(daoForm.proposalThreshold),
-        daoForm.timelockDelay,
-        parseEther(daoForm.quorumVotes),
-      ],
-      gas: BigInt(1000000),
-    })
+      const tx = await writeContractAsync({
+        abi: DAO_STUDIO_ABI,
+        address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'createDAO',
+        args: [
+          daoForm.name,
+          daoForm.metadata,
+          daoForm.tokenAddress,
+          daoForm.votingDelay,
+          daoForm.votingPeriod,
+          parseEther(daoForm.proposalThreshold),
+          daoForm.timelockDelay,
+          parseEther(daoForm.quorumVotes),
+        ],
+        gas: BigInt(1000000),
+      })
 
-    await waitForTransactionReceipt(config, {
-      hash: tx,
-      confirmations: 1,
-    })
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
 
-    await supabase.from('DAO').insert({
-      daoId: daoId,
-      daoName: daoForm.name,
-      creator: address,
-      image: '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
+      await supabase.from('DAO').insert({
+        daoId: daoId,
+        daoName: daoForm.name,
+        creator: address,
+        image: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
 
-    refetchHasRole()
-    setRefetchDaos(!refetchDaos)
+      refetchHasRole()
+      setRefetchDaos(!refetchDaos)
+    } catch (error) {
+      console.error('Error creating DAO:', error)
+      toast({ title: (error as BaseError).shortMessage })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const updateDaoForm = (field: keyof DaoFormState, value: string) => {

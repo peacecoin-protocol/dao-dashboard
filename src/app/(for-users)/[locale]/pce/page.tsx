@@ -14,7 +14,7 @@ import { ringStyle } from '~/app/constants/styles'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
 import { Button } from '~/components/ui/button'
 import { Checkbox } from '~/components/ui/checkbox'
-import { Plus, X, ChevronsUpDown } from 'lucide-react'
+import { Plus, X, ChevronsUpDown, Calendar } from 'lucide-react'
 
 import {
   Table,
@@ -102,7 +102,6 @@ import Image from 'next/image'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 import { InfoCell } from '~/components/custom/info-cell'
 import { MULTIPLE_VOTINGS_ABI } from '~/app/ABIs/MultipleVotings'
-import { PCE_GOV_TOKEN_ABI } from '~/app/ABIs/PCEGovToken'
 import { createClient } from '~/utils/supabase/client'
 
 type TokenBalance = {
@@ -143,7 +142,6 @@ export default function PCEPage({
 
   const [filteredProposals, setFilteredProposals] = useState<any[]>([])
   let [loading, setLoading] = useState(false)
-  let [votingPower, setVotingPower] = useState(0)
 
   const [category, setCategory] = useState('')
 
@@ -156,6 +154,10 @@ export default function PCEPage({
 
   // Options state for category 7
   const [options, setOptions] = useState<string[]>(['', ''])
+
+  // Time state for category 7
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
 
   const [tabContent, setTabContent] = useState('about')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -292,26 +294,11 @@ export default function PCEPage({
     functionName: 'votingPeriod',
   })
 
-  const { data: getVotes, refetch: refetchGetVotes } = useReadContract({
-    address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-    abi: PCE_GOV_TOKEN_ABI,
-    functionName: 'getVotes',
-    args: [address],
-  })
-
   const { data: socialConfig, refetch: refetchSocialConfig } = useReadContract({
     address: governorAddress[chainId || defaultChainId] as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'socialConfig',
   })
-
-  useEffect(() => {
-    if (getVotes) {
-      setVotingPower(
-        Number(formatString(String(formatEther(String(getVotes)))))
-      )
-    }
-  }, [getVotes])
 
   useEffect(() => {
     if (
@@ -335,6 +322,13 @@ export default function PCEPage({
     args: [],
     chainId: chainId || defaultChainId,
   })
+
+  const { data: getVotes, refetch: refetchGetVotes } = useReadContract({
+    address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'getPastVotes',
+    args: [address, blockNumber?.toString()],
+  }) as { data?: bigint; refetch: () => void }
 
   const { data: timelockDelay, refetch: refetchTimelockDelay } =
     useReadContract({
@@ -484,7 +478,6 @@ export default function PCEPage({
                 setSelectedOption(null)
               } catch (error) {
                 console.error('Error voting:', error)
-                toast({ title: 'Failed to vote' })
               } finally {
                 setLoading(false)
                 setSelectedOption(null)
@@ -783,10 +776,6 @@ export default function PCEPage({
     )
   }
 
-  const getCurrentTimestamp = () => {
-    return Number(block?.timestamp) || Math.floor(Date.now() / 1000)
-  }
-
   function handleChange(event: any) {
     const name = event.target.name
     const value = event.target.value
@@ -810,13 +799,6 @@ export default function PCEPage({
     setCategory(value)
   }
 
-  const { data: votes, refetch: refetchVotes } = useReadContract({
-    address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-    abi: SBT_ABI,
-    functionName: 'getVotes',
-    args: [address],
-  })
-
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
       address: governorAddress[chainId || defaultChainId] as `0x${string}`,
@@ -835,9 +817,9 @@ export default function PCEPage({
 
   useEffect(() => {
     async function fetchMultipleProposals() {
-      const currentBlock = blockNumber ?? 0
+      const currentTimestamp = Math.floor(Date.now() / 1000)
 
-      if (!multipleProposalCount || !address || !chainId || !currentBlock)
+      if (!multipleProposalCount || !address || !chainId || !currentTimestamp)
         return
 
       setLoading(true)
@@ -863,7 +845,7 @@ export default function PCEPage({
         })
 
         const isEnded =
-          currentBlock >
+          currentTimestamp >
           Number(
             Array.isArray(_proposalData) ? Number(String(_proposalData[4])) : 0
           )
@@ -899,7 +881,7 @@ export default function PCEPage({
 
   useEffect(() => {
     async function fetchProposals() {
-      const currentBlock = blockNumber ?? 0
+      const currentBlock = Math.floor(Date.now() / 1000)
 
       if (!proposalCount || !address || !chainId || !currentBlock) return
 
@@ -1006,6 +988,12 @@ export default function PCEPage({
         }
       }
 
+      const startTimeTimestamp = startTime
+        ? Math.floor(new Date(startTime).getTime() / 1000)
+        : 0
+      const endTimeTimestamp = endTime
+        ? Math.floor(new Date(endTime).getTime() / 1000)
+        : 0
       try {
         const simulateResult = await simulateContract(config, {
           abi: MULTIPLE_VOTINGS_ABI,
@@ -1013,7 +1001,7 @@ export default function PCEPage({
             chainId || defaultChainId
           ] as `0x${string}`,
           functionName: 'proposeMultipleChoice',
-          args: [options, description],
+          args: [options, description, startTimeTimestamp, endTimeTimestamp],
         })
 
         const pID = (simulateResult.result as bigint).toString()
@@ -1024,7 +1012,7 @@ export default function PCEPage({
             chainId || defaultChainId
           ] as `0x${string}`,
           functionName: 'proposeMultipleChoice',
-          args: [options, description],
+          args: [options, description, startTimeTimestamp, endTimeTimestamp],
         })
 
         await waitForTransactionReceipt(config, {
@@ -1045,11 +1033,7 @@ export default function PCEPage({
         await refetchMultipleProposalCount()
       } catch (error) {
         const errorMessage = (error as BaseError).shortMessage
-        if (errorMessage.includes('proposer votes below proposal threshold')) {
-          toast({ title: 'Proposer votes below proposal threshold' })
-        } else {
-          toast({ title: 'Failed to create proposal' })
-        }
+        toast({ title: errorMessage })
       } finally {
         setLoading(false)
       }
@@ -1169,7 +1153,6 @@ export default function PCEPage({
         })
 
         setDelegateAddr('')
-        await refetchVotes()
         await getTreasuryBalances(
           timelockAddress[chainId || defaultChainId] as `0x${string}`
         )
@@ -1341,18 +1324,20 @@ export default function PCEPage({
                         localDict.proposalThreshold ?? 'Proposal Threshold'
                       }
                       tooltipText="The minimum number of votes a delegate must have to create a proposal. This threshold ensures that only members with sufficient stake in the DAO can initiate governance actions."
-                      value={multipleVotingQuorum}
+                      value={proposalThreshold}
                       formatter={(val) =>
-                        formatString(formatEther(String(val)))
+                        // formatString(formatEther(String(val)))
+                        formatString(String(val))
                       }
                     />
 
                     <InfoCell
                       title={localDict.quorumVotes ?? 'Quorum Votes'}
                       tooltipText="The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
-                      value={multipleVotingQuorum}
+                      value={quorum}
                       formatter={(val) =>
-                        formatString(formatEther(String(val)))
+                        // formatString(formatEther(String(val)))
+                        formatString(String(val))
                       }
                     />
                   </div>
@@ -1365,8 +1350,10 @@ export default function PCEPage({
                       'or have been delegated. This power allows you to vote on proposals ' +
                       'and create new ones if you meet the proposal threshold.'
                     }
-                    value={votingPower}
-                    formatter={(val) => formatString(String(val))}
+                    value={getVotes ?? '0'}
+                    formatter={(val) =>
+                      formatString(formatEther(val as string).toString())
+                    }
                     className="border rounded-xl p-4 bg-gray-100 w-full"
                   />
 
@@ -1865,6 +1852,33 @@ export default function PCEPage({
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                     />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium">Start Time</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          type="datetime-local"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          className="pl-10 pr-10 w-full"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium">End Time</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          type="datetime-local"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          className="pl-10 pr-10 w-full"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex flex-col gap-2">

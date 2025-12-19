@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Button } from '~/components/ui/button'
 
@@ -16,6 +16,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   type BaseError,
+  useBlockNumber,
 } from 'wagmi'
 
 import { getDict } from '~/i18n/get-dict'
@@ -63,12 +64,13 @@ export default function StakingPage({
   let [loading, setLoading] = useState(true)
 
   const [stakingAmount, setStakingAmount] = useState('')
-  const [totalSBTVotingPower, setTotalSBTVotingPower] = useState<number>(0)
   const [stakedBalance, setStakedBalance] = useState<string>('0')
-
+  const [votingPower, setVotingPower] = useState<number>(0)
   const [tokenData, setTokenData] = useState<SBTInfo[]>([])
   const [refetchTokenData, setRefetchTokenData] = useState(false)
   const { address, chainId } = useAccount()
+
+  const { data: blockNumber } = useBlockNumber()
 
   const {
     data: hash,
@@ -138,6 +140,22 @@ export default function StakingPage({
         stakingAddress[chainId || defaultChainId] as `0x${string}`,
       ],
     })
+
+  const { data: sbtVotingPower, refetch: refetchGetSBTVotingPower } =
+    useReadContract({
+      abi: SBT_ABI,
+      address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
+      functionName: 'getPastVotes',
+      args: [address, blockNumber?.toString()],
+    }) as { data?: bigint; refetch: () => void }
+
+  const { data: nftVotingPower, refetch: refetchGetNFTVotingPower } =
+    useReadContract({
+      abi: SBT_ABI,
+      address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
+      functionName: 'getPastVotes',
+      args: [address, blockNumber?.toString()],
+    }) as { data?: bigint; refetch: () => void }
 
   const { data: getTokenVote, refetch: refetchGetTokenVote } = useReadContract({
     abi: PCE_GOV_TOKEN_ABI,
@@ -326,45 +344,93 @@ export default function StakingPage({
     fetchDict()
   }, [locale])
 
-  const votingPower = useMemo(() => {
-    if (getTokenVote == null) return 0
-    return (
-      Number(totalSBTVotingPower) +
-      Number(
-        formatEther(
-          getTokenVote == null ? BigInt(0) : (getTokenVote as unknown as bigint)
-        )
-      )
-    )
-  }, [totalSBTVotingPower, getTokenVote])
+  useEffect(() => {
+    let tokenVotingPower = 0
+    let _sbtVotingPower = 0
+    let _nftVotingPower = 0
+    if (getTokenVote) {
+      tokenVotingPower = Number(formatEther(getTokenVote as unknown as bigint))
+    }
+    if (sbtVotingPower) {
+      _sbtVotingPower = Number(formatEther(sbtVotingPower as unknown as bigint))
+    }
+    if (nftVotingPower) {
+      _nftVotingPower = Number(formatEther(nftVotingPower as unknown as bigint))
+    }
+
+    setVotingPower(tokenVotingPower + _sbtVotingPower + _nftVotingPower)
+  }, [getTokenVote, sbtVotingPower, nftVotingPower])
 
   const handleDelegate = async () => {
-    await writeContractAsync({
-      abi: PCE_GOV_TOKEN_ABI,
-      address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-      functionName: 'delegate',
-      args: [address],
-    })
+    setLoading(true)
+    try {
+      await writeContractAsync({
+        abi: PCE_GOV_TOKEN_ABI,
+        address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'delegate',
+        args: [address],
+      })
 
-    await refetchGetTokenVote()
+      await refetchGetTokenVote()
+    } catch (error) {
+      console.error('Error delegating voting power:', error)
+      toast({ title: (error as BaseError).shortMessage })
+      return
+    } finally {
+      setLoading(false)
+    }
   }
 
-  useEffect(() => {
-    const fetchSBTVotingPower = async () => {
-      let _SBTPower = 0
-      if (tokenData && tokenData.length > 0) {
-        for (let i = 0; i < tokenData.length; i++) {
-          if (tokenData[i]?.balance && tokenData[i]?.votingPower) {
-            _SBTPower +=
-              Number(tokenData[i]?.balance) * Number(tokenData[i]?.votingPower)
-          }
-        }
-      }
+  const handleSBTDelegate = async () => {
+    setLoading(true)
+    try {
+      const tx = await writeContractAsync({
+        abi: SBT_ABI,
+        address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'delegate',
+        args: [address],
+      })
 
-      setTotalSBTVotingPower(_SBTPower)
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
+
+      await refetchGetSBTVotingPower()
+    } catch (error) {
+      console.error('Error delegating voting power:', error)
+      toast({ title: (error as BaseError).shortMessage })
+      return
+    } finally {
+      setLoading(false)
     }
-    fetchSBTVotingPower()
-  }, [tokenData])
+  }
+
+  const handleNFTTDelegate = async () => {
+    setLoading(true)
+    try {
+      const tx = await writeContractAsync({
+        abi: SBT_ABI,
+        address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'delegate',
+        args: [address],
+      })
+
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
+
+      await refetchGetNFTVotingPower()
+    } catch (error) {
+      console.error('Error delegating voting power:', error)
+      toast({ title: (error as BaseError).shortMessage })
+      return
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="w-full mx-auto flex flex-col gap-4">
       {/* Header Section */}
@@ -495,8 +561,23 @@ export default function StakingPage({
                   {votingPowerDict.sbtVotingPower ?? 'SBT & NFT Voting Power'}
                 </span>
                 <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
-                  {totalSBTVotingPower
-                    ? formatNumber(totalSBTVotingPower)
+                  {sbtVotingPower
+                    ? formatNumber(
+                        Number(formatEther(sbtVotingPower as unknown as bigint))
+                      )
+                    : '0'}
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
+                <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
+                  {votingPowerDict.nftVotingPower ?? 'NFT Voting Power'}
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
+                  {nftVotingPower
+                    ? formatNumber(
+                        Number(formatEther(nftVotingPower as unknown as bigint))
+                      )
                     : '0'}
                 </span>
               </div>
@@ -576,6 +657,18 @@ export default function StakingPage({
               ` (${tokenData.length ?? 0})`
             }
           />
+
+          <div className="flex flex-row gap-4 ml-auto">
+            <Button onClick={handleSBTDelegate} className="w-60">
+              {votingPowerDict.delegateSBTVotingPower ??
+                'Delegate SBT Voting Power'}
+            </Button>
+
+            <Button onClick={handleNFTTDelegate} className="w-60">
+              {votingPowerDict.delegateNFTVotingPower ??
+                'Delegate NFT Voting Power'}
+            </Button>
+          </div>
 
           <div className="-mx-4 sm:mx-0">
             <div className="px-4 sm:px-0">

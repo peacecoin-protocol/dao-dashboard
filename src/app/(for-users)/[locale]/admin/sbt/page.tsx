@@ -47,6 +47,7 @@ import {
   type BaseError,
   useReadContract,
 } from 'wagmi'
+import { parseEther } from 'ethers'
 import { ChevronsUpDown, Plus, Image as ImageIcon } from 'lucide-react'
 import {
   SBTInfo,
@@ -613,7 +614,7 @@ export default function SBTBuilderPage({
         JSON.stringify({
           name: cardForm.name,
           description: cardForm.description,
-          votingPower: cardForm.votingPower,
+          votingPower: parseEther(cardForm.votingPower).toString(),
           image: uploadResult?.cid,
         }),
       ],
@@ -635,7 +636,11 @@ export default function SBTBuilderPage({
           abi: SBT_ABI,
           address: contractAddress as `0x${string}`,
           functionName: 'createToken',
-          args: [jsonUploadResult?.cid, cardForm.votingPower, cardForm.daoId],
+          args: [
+            jsonUploadResult?.cid,
+            parseEther(cardForm.votingPower).toString(),
+            cardForm.daoId,
+          ],
         })
         await waitForTransactionReceipt(config, {
           hash: createTokenTx,
@@ -651,7 +656,7 @@ export default function SBTBuilderPage({
           tokenId: Number(tokenId) + 1,
           name: cardForm.name,
           description: cardForm.description,
-          votingPower: cardForm.votingPower,
+          votingPower: parseEther(cardForm.votingPower).toString(),
           image: uploadResult?.cid,
           creator: address,
           daoId: cardForm.daoId,
