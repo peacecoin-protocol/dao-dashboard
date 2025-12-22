@@ -422,9 +422,9 @@
     "viewOnGitHub": "Ver en GitHub"
   },
   "votingPower": {
-    "title": "Pool de Staking PACECOIN",
-    "description": "Asegura tu futuro y gana recompensas apostando tus tokens PACECOIN en nuestro pool de staking profesional.",
-    "stakeYourTokens": "Aposta tus SPACECOIN",
+    "title": "Pool de Staking PEACECOIN",
+    "description": "Asegura tu futuro y gana recompensas apostando tus tokens PEACECOIN en nuestro pool de staking profesional.",
+    "stakeYourTokens": "Aposta tus PEACECOIN",
     "stakeDescription": "Comienza a ganar apostando tus tokens en el pool.",
     "pceBalance": "Saldo PCE",
     "amountStaked": "Cantidad Apostada",

@@ -56,6 +56,7 @@ import {
 import { shortenAddress } from '~/components/utils'
 
 import { createClient } from '~/utils/supabase/client'
+import { Env } from '~/env'
 
 // Types
 interface CardFormState {
@@ -614,8 +615,13 @@ export default function SBTBuilderPage({
         JSON.stringify({
           name: cardForm.name,
           description: cardForm.description,
-          votingPower: parseEther(cardForm.votingPower).toString(),
-          image: uploadResult?.cid,
+          attributes: [
+            {
+              trait_type: 'votingPower',
+              value: parseEther(cardForm.votingPower).toString(),
+            },
+          ],
+          image: Env.PINATA_GATEWAY_URL + '/ipfs/' + uploadResult?.cid,
         }),
       ],
       uploadResult?.cid + '.json',

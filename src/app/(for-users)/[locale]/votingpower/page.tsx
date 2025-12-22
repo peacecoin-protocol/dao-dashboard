@@ -435,20 +435,19 @@ export default function StakingPage({
     <div className="w-full mx-auto flex flex-col gap-4">
       {/* Header Section */}
       <PageHeaderSection
-        title={votingPowerDict.title ?? 'PACECOIN Staking Pool'}
+        title={votingPowerDict.title ?? 'PEACECOIN Staking Pool'}
         description={
           votingPowerDict.description ??
-          'Secure your future and earn rewards by staking your PACECOIN tokens in our professional staking pool.'
+          'Secure your future and earn rewards by staking your PEACECOIN tokens in our professional staking pool.'
         }
       />
 
       {/* Main Content - Mobile Responsive Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
-        {/* Left Section - Stake your SPACECOIN */}
         <div className="rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
           <div className="text-center mb-6">
             <PageHeaderSection
-              title={votingPowerDict.stakeYourTokens ?? 'Stake your SPACECOIN'}
+              title={votingPowerDict.stakeYourTokens ?? 'Stake your PEACECOIN'}
               description={
                 votingPowerDict.stakeDescription ??
                 'Start earning by staking your tokens in the pool.'

@@ -234,7 +234,7 @@ export const CreateCampaignModal = ({
                     <Image
                       src={
                         tokenInfo
-                          ? `${Env.PINATA_GATEWAY_URL}/ipfs/${tokenInfo?.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
+                          ? `${Env.PINATA_GATEWAY_URL}/ipfs/${tokenInfo?.image}`
                           : EMPTY_NFT_IMAGE
                       }
                       alt={tokenInfo?.name || ''}

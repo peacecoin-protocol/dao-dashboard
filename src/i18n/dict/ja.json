@@ -421,9 +421,9 @@
     "viewOnGitHub": "GitHubで表示"
   },
   "votingPower": {
-    "title": "PACECOINステーキングプール",
-    "description": "PACECOINトークンを私たちのプロフェッショナルステーキングプールにステーキングして、将来を確保し、報酬を獲得しましょう。",
-    "stakeYourTokens": "SPACECOINをステーキング",
+    "title": "PEACECOINステーキングプール",
+    "description": "PEACECOINトークンを私たちのプロフェッショナルステーキングプールにステーキングして、将来を確保し、報酬を獲得しましょう。",
+    "stakeYourTokens": "PEACECOINをステーキング",
     "stakeDescription": "プールでトークンをステーキングして稼ぎ始めましょう。",
     "pceBalance": "PCE残高",
     "amountStaked": "ステーキング金額",

@@ -101,7 +101,7 @@ export function SBTTableComponent({
 
   const getImageSrc = (image?: string) => {
     if (!image) return EMPTY_NFT_IMAGE
-    return `${Env.PINATA_GATEWAY_URL}/ipfs/${image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
+    return `${Env.PINATA_GATEWAY_URL}/ipfs/${image}`
   }
 
   const getDaoDisplay = (daoId: string) => {

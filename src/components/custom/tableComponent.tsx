@@ -142,7 +142,7 @@ export function TableComponent({
                           <Image
                             src={
                               campaign.image
-                                ? `${Env.PINATA_GATEWAY_URL}/ipfs/${campaign.image}?pinataGatewayToken=${Env.PINATA_GATEWAY_TOKEN}`
+                                ? `${Env.PINATA_GATEWAY_URL}/ipfs/${campaign.image}`
                                 : EMPTY_NFT_IMAGE
                             }
                             alt={campaign.title || ''}
