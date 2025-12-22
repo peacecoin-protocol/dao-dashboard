@@ -824,7 +824,7 @@ export default function PCEPage({
 
       setLoading(true)
       let _multipleOptions = []
-      for (let i = 1; i < Number(multipleProposalCount) + 1; i++) {
+      for (let i = Number(multipleProposalCount); i > 0; i--) {
         const _proposalData = await readContract(config, {
           address: MultipleVotingAddress[
             chainId || defaultChainId
@@ -1326,8 +1326,7 @@ export default function PCEPage({
                       tooltipText="The minimum number of votes a delegate must have to create a proposal. This threshold ensures that only members with sufficient stake in the DAO can initiate governance actions."
                       value={proposalThreshold}
                       formatter={(val) =>
-                        // formatString(formatEther(String(val)))
-                        formatString(String(val))
+                        formatString(formatEther(String(val)))
                       }
                     />
 
@@ -1336,8 +1335,7 @@ export default function PCEPage({
                       tooltipText="The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
                       value={quorum}
                       formatter={(val) =>
-                        // formatString(formatEther(String(val)))
-                        formatString(String(val))
+                        formatString(formatEther(String(val)))
                       }
                     />
                   </div>
