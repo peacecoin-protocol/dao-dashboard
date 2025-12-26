@@ -676,7 +676,11 @@ export default function ForCampaignPage({
               title={campaign.sbtBalances ?? 'Token Balances'}
             />
 
-            <SBTTableComponent headers={sbtTableHeaders} sbtInfo={tokenData} />
+            <SBTTableComponent
+              headers={sbtTableHeaders}
+              sbtInfo={tokenData}
+              chainId={chainId || defaultChainId}
+            />
           </div>
         )}
         {/* Campaign search input */}

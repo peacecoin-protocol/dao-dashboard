@@ -6,11 +6,14 @@ import { ActionInfo, Dictionary, Locale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { Button } from '~/components/ui/button'
 import Image from 'next/image'
-import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
+import { EMPTY_NFT_IMAGE, NFTAddress } from '~/app/constants/constants'
+import { PCE_SBT_ADDRESS } from '~/app/constants/constants'
 import { shortenAddress } from '../utils'
 import { Env } from '~/env'
 import { createClient } from '~/utils/supabase/client'
 import { formatEther } from 'ethers'
+import CopyIcon from '../../../public/svg/copy'
+import { useToast } from '~/hooks/use-toast'
 export interface SBTInfo {
   tokenId: string
   creator: string
@@ -30,6 +33,7 @@ interface SBTTableProps {
   headers: string[]
   sbtInfo: SBTInfo[]
   action?: ActionInfo
+  chainId: number
   onRevoke?: (token: SBTInfo) => void
 }
 
@@ -38,11 +42,13 @@ export function SBTTableComponent({
   sbtInfo,
   action,
   onRevoke,
+  chainId,
 }: SBTTableProps) {
   const [daoNames, setDaoNames] = useState<Record<string, string>>({})
   const [dict, setDict] = useState<Dictionary | null>(null)
   const supabase = createClient()
   const pathname = usePathname()
+  const { toast } = useToast()
 
   // Extract locale from pathname
   const locale: Locale =
@@ -176,7 +182,34 @@ export function SBTTableComponent({
                         {getDaoDisplay(sbt.daoId)}
                       </dd>
                     </div>
-                    <div className="flex flex-col md:flex-row md:items-center md:gap-2 md:col-span-2">
+                    <div className="flex flex-col md:flex-row md:items-center md:gap-2">
+                      <dt className="font-medium text-foreground">
+                        {dict?.sbt?.address || 'Address:'}
+                      </dt>
+                      <dd className="break-words flex items-center gap-0">
+                        {sbt.isSBT
+                          ? shortenAddress(NFTAddress[chainId] as `0x${string}`)
+                          : shortenAddress(
+                              PCE_SBT_ADDRESS[chainId] as `0x${string}`
+                            )}
+                        <Button
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const addressToCopy = sbt.isSBT
+                              ? (NFTAddress[chainId] as `0x${string}`)
+                              : (PCE_SBT_ADDRESS[chainId] as `0x${string}`)
+                            navigator.clipboard.writeText(addressToCopy)
+                            toast({
+                              title: 'Address copied!',
+                            })
+                          }}
+                        >
+                          <CopyIcon className="h-4 w-4 text-gray-400" />
+                        </Button>
+                      </dd>
+                    </div>
+                    <div className="flex flex-col md:flex-row md:items-center md:gap-2">
                       <dt className="font-medium text-foreground">
                         {dict?.sbt?.createdAt || 'Created At:'}
                       </dt>

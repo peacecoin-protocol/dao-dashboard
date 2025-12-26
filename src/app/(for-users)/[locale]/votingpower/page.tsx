@@ -674,6 +674,7 @@ export default function StakingPage({
               <SBTTableComponent
                 headers={sbtTableHeaders}
                 sbtInfo={tokenData}
+                chainId={chainId || defaultChainId}
               />
             </div>
           </div>
