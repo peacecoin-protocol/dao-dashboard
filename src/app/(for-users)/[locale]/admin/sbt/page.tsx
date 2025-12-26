@@ -440,7 +440,7 @@ export default function SBTBuilderPage({
       setAllDAOs(daos as SupabaseDao[])
     }
     fetchAllDAOs()
-  }, [supabase])
+  }, [supabase, address])
 
   // Effects
   useEffect(() => {
@@ -861,6 +861,7 @@ export default function SBTBuilderPage({
               unrevoke: currentLabels.unrevoked,
             },
           }}
+          chainId={chainId || defaultChainId}
           onRevoke={(token: SBTInfo) => {
             handleRevokeToken(token)
           }}
