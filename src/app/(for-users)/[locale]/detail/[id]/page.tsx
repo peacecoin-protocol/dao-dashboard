@@ -663,10 +663,10 @@ export default function ForDaoDetailPage({
   }
 
   const { data: votes, refetch: refetchVotes } = useReadContract({
-    address: governanceTokenAddress as `0x${string}`,
-    abi: PCE_C_GOV_TOKEN_ABI,
-    functionName: 'getVotes',
-    args: [address],
+    address: governorAddress as `0x${string}`,
+    abi: GOVERNOR_ABI,
+    functionName: 'getPastVotes',
+    args: [address, blockNumber?.toString()],
   }) as { data?: string; refetch: () => void }
 
   const { data: proposalCount, refetch: refetchProposalCount } =
