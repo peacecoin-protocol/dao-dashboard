@@ -12,7 +12,11 @@ import {
   type BaseError,
   useReadContract,
 } from 'wagmi'
-import { readContract, waitForTransactionReceipt } from '@wagmi/core'
+import {
+  readContract,
+  simulateContract,
+  waitForTransactionReceipt,
+} from '@wagmi/core'
 import { CAMPAIGN } from '~/i18n/types'
 
 import { Button } from '~/components/ui/button'
@@ -26,7 +30,7 @@ import {
 import { CAMPAIGN_ABI } from '~/app/ABIs/Campaigns'
 
 import { config } from '~/lib/config'
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary, SupabaseDao } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { Spinner } from '~/components/ui/Spinner'
 import { CreateCampaignModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/createCampaignModal'
@@ -35,6 +39,7 @@ import { TableComponent } from '~/components/custom/tableComponent'
 import { erc20Abi } from 'viem'
 import { createClient } from '~/utils/supabase/client'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
+import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 
 // Constants
 const DEFAULT_CAMPAIGN_ID = -1
@@ -56,6 +61,8 @@ export default function ForCampaignPage({
   const { address, chainId } = useAccount()
   const { chains, switchChain } = useSwitchChain()
   const { toast } = useToast()
+  const [allDAOs, setAllDAOs] = useState<SupabaseDao[]>([])
+  const [allTokens, setAllTokens] = useState<SBTInfo[]>([])
 
   const supabase = createClient()
 
@@ -88,6 +95,25 @@ export default function ForCampaignPage({
     }
     fetchCampaignData()
   }, [address, supabase, refetchCampaignData])
+
+  useEffect(() => {
+    const fetchAllDAOs = async () => {
+      const { data: daos } = await supabase
+        .from('DAO')
+        .select()
+        .eq('creator', address as `0x${string}`)
+      setAllDAOs(daos as SupabaseDao[])
+    }
+    fetchAllDAOs()
+  }, [supabase, address])
+
+  useEffect(() => {
+    const fetchAllTokens = async () => {
+      const { data: tokens } = await supabase.from('Token').select()
+      setAllTokens(tokens as SBTInfo[])
+    }
+    fetchAllTokens()
+  }, [supabase, address])
 
   // State
   const [dialogState, setDialogState] = useState<DialogState>({
@@ -172,6 +198,26 @@ export default function ForCampaignPage({
         addresses = [ZeroAddress]
       }
 
+      console.log('encodedGists', encodedGists)
+      console.log('addresses', addresses)
+      console.log('formData.id', formData.id)
+
+      // Make sure formData.id, addresses, and encodedGists are all defined before simulating
+      if (
+        typeof formData.id === 'undefined' ||
+        !Array.isArray(addresses) ||
+        typeof encodedGists === 'undefined'
+      ) {
+        throw new Error('Invalid arguments for addCampWinners')
+      }
+      const simulateResult = await simulateContract(config, {
+        abi: CAMPAIGN_ABI,
+        address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'addCampWinners',
+        args: [formData.id, addresses, encodedGists],
+      })
+      console.log('simulatedTx', simulateResult)
+
       const tx = await writeContractAsync({
         abi: CAMPAIGN_ABI,
         address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
@@ -252,10 +298,20 @@ export default function ForCampaignPage({
         }
       }
 
+      const startDateTimestamp = Math.floor(
+        new Date(formData.startDate).getTime() / 1000
+      )
+      const endDateTimestamp = Math.floor(
+        new Date(formData.endDate).getTime() / 1000
+      )
+
       const campaign = {
+        daoId: formData.daoId,
         sbtId: formData.sbtId,
         title: formData.title,
         description: formData.description,
+        token: formData.tokenType != 0 ? ZeroAddress : formData.tokenAddress,
+        tokenType: formData.tokenType,
         claimAmount:
           formData.tokenType !== 0
             ? formData.claimAmount
@@ -264,15 +320,20 @@ export default function ForCampaignPage({
           formData.tokenType !== 0
             ? formData.totalAmount
             : parseEther(formData.totalAmount),
-        startDate: new Date(formData.startDate).getTime() / 1000,
-        endDate: new Date(formData.endDate).getTime() / 1000,
+        startDate: String(startDateTimestamp),
+        endDate: String(endDateTimestamp),
         validateSignatures: formData.isVerifySignature,
-        tokenType: formData.tokenType,
-        token: formData.tokenType != 0 ? ZeroAddress : formData.tokenAddress,
         creator: address as `0x${string}`,
       }
 
       try {
+        const simulateResult = await simulateContract(config, {
+          abi: CAMPAIGN_ABI,
+          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
+          functionName: 'createCampaign',
+          args: [campaign],
+        })
+
         const tx = await writeContractAsync({
           abi: CAMPAIGN_ABI,
           address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
@@ -338,6 +399,8 @@ export default function ForCampaignPage({
           onSubmit={handleCreateCampaign}
           setIsInvalidToken={setIsInvalidToken}
           campaign={campaign}
+          allDAOs={allDAOs}
+          allTokens={allTokens}
         />
 
         <AddWhitelistModal

@@ -69,6 +69,7 @@ export const CAMPAIGN_ABI = [
     name: 'campaigns',
     inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     outputs: [
+      { name: 'daoId', type: 'bytes32', internalType: 'bytes32' },
       { name: 'sbtId', type: 'uint256', internalType: 'uint256' },
       { name: 'title', type: 'string', internalType: 'string' },
       { name: 'description', type: 'string', internalType: 'string' },
@@ -108,6 +109,7 @@ export const CAMPAIGN_ABI = [
         type: 'tuple',
         internalType: 'struct Campaigns.Campaign',
         components: [
+          { name: 'daoId', type: 'bytes32', internalType: 'bytes32' },
           { name: 'sbtId', type: 'uint256', internalType: 'uint256' },
           { name: 'title', type: 'string', internalType: 'string' },
           { name: 'description', type: 'string', internalType: 'string' },
@@ -155,19 +157,7 @@ export const CAMPAIGN_ABI = [
   {
     type: 'function',
     name: 'initialize',
-    inputs: [
-      { name: '_daoFactory', type: 'address', internalType: 'address' },
-      {
-        name: '_sbt',
-        type: 'address',
-        internalType: 'contract PEACECOINDAO_SBT',
-      },
-      {
-        name: '_nft',
-        type: 'address',
-        internalType: 'contract PEACECOINDAO_NFT',
-      },
-    ],
+    inputs: [{ name: '_daoFactory', type: 'address', internalType: 'address' }],
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -179,15 +169,6 @@ export const CAMPAIGN_ABI = [
       { name: '_winner', type: 'address', internalType: 'address' },
     ],
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'nft',
-    inputs: [],
-    outputs: [
-      { name: '', type: 'address', internalType: 'contract PEACECOINDAO_NFT' },
-    ],
     stateMutability: 'view',
   },
   {
@@ -242,15 +223,6 @@ export const CAMPAIGN_ABI = [
     inputs: [],
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'sbt',
-    inputs: [],
-    outputs: [
-      { name: '', type: 'address', internalType: 'contract PEACECOINDAO_SBT' },
-    ],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -331,6 +303,12 @@ export const CAMPAIGN_ABI = [
         type: 'uint256',
         indexed: true,
         internalType: 'uint256',
+      },
+      {
+        name: 'daoId',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
       },
       {
         name: 'sbtId',

@@ -5,12 +5,6 @@ import Image from 'next/image'
 import { config } from '~/lib/config'
 
 import { SBT_ABI } from '~/app/ABIs/SBT'
-import {
-  NFTAddress,
-  PCE_SBT_ADDRESS,
-  defaultChainId,
-  sbtTableHeaders,
-} from '~/app/constants/constants'
 import { SupabaseDao } from '~/i18n/types'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 
@@ -45,7 +39,6 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   type BaseError,
-  useReadContract,
 } from 'wagmi'
 import { parseEther } from 'ethers'
 import { ChevronsUpDown, Plus, Image as ImageIcon } from 'lucide-react'
@@ -53,7 +46,7 @@ import {
   SBTInfo,
   SBTTableComponent,
 } from '~/components/custom/sbt-tableComponent'
-import { shortenAddress } from '~/components/utils'
+import { DaoSearchSelect } from '~/components/custom/dao-search-select'
 
 import { createClient } from '~/utils/supabase/client'
 import { Env } from '~/env'
@@ -192,7 +185,7 @@ const CreateTokenModal = ({
   onCropComplete: (cropped: string) => void
   onCloseCropModal: () => void
   labels: Record<string, string>
-  allDAOs: { daoId: string; daoName: string }[]
+  allDAOs: SupabaseDao[]
   disabled: boolean
 }) => (
   <Dialog open={isOpen} onOpenChange={onClose}>
@@ -227,90 +220,19 @@ const CreateTokenModal = ({
           </select>
         </label>
         {/* DAO select with search bar */}
-        <label className="text-sm font-medium text-gray-700 flex flex-col gap-1">
-          {labels.dao || 'DAO'}
-          <div className="flex flex-col gap-2">
-            {/* Custom DAO dropdown with search box */}
-            <div className="relative">
-              <Input
-                className="mb-2"
-                type="text"
-                placeholder={labels.searchDao || 'Search DAO...'}
-                value={form.daoSearch || ''}
-                onChange={(e) => {
-                  // Clear selected DAO when new search starts
-                  if (form.daoSearch !== e.target.value) {
-                    onFormChange('daoId', '')
-                  }
-                  onFormChange('daoSearch', e.target.value)
-                }}
-              />
-              {/* When searching, show dropdown; when not searching, don't show anything */}
-              {form.daoSearch !== '' && !form.daoId && (
-                <div className="border border-gray-300 rounded-md shadow-sm bg-white max-h-40 overflow-y-auto">
-                  {allDAOs &&
-                  allDAOs.length > 0 &&
-                  allDAOs.filter(
-                    (dao: { daoName: string; daoId: string }) =>
-                      dao.daoName
-                        .toLowerCase()
-                        .includes(form.daoSearch.toLowerCase()) ||
-                      dao.daoId
-                        .toLowerCase()
-                        .includes(form.daoSearch.toLowerCase())
-                  ).length > 0 ? (
-                    allDAOs
-                      .filter(
-                        (dao: { daoName: string; daoId: string }) =>
-                          dao.daoName
-                            .toLowerCase()
-                            .includes(form.daoSearch.toLowerCase()) ||
-                          dao.daoId
-                            .toLowerCase()
-                            .includes(form.daoSearch.toLowerCase())
-                      )
-                      .map((dao: { daoId: string; daoName: string }) => (
-                        <div
-                          key={dao.daoId}
-                          className={`px-3 py-2 cursor-pointer hover:bg-blue-100 ${
-                            form.daoId === dao.daoId
-                              ? 'bg-blue-50 font-semibold'
-                              : ''
-                          }`}
-                          onClick={() => {
-                            onFormChange('daoId', dao.daoId)
-                            onFormChange('daoSearch', '') // Hide the dropdown after selecting
-                          }}
-                        >
-                          {dao.daoName} &nbsp;|&nbsp;{' '}
-                          {shortenAddress(dao.daoId)}
-                        </div>
-                      ))
-                  ) : (
-                    <div className="px-3 py-2 text-blue-600">
-                      {labels.noDaoFound || 'No DAO found'}
-                    </div>
-                  )}
-                </div>
-              )}
-              {/* Only display the selected DAO if not currently searching */}
-              {form.daoId && (
-                <div className="mt-1 text-sm text-blue-600">
-                  {(() => {
-                    const selected = allDAOs.find(
-                      (dao) => dao.daoId === form.daoId
-                    )
-                    if (selected) {
-                      return `${selected.daoName} | ${shortenAddress(selected.daoId)}`
-                    } else {
-                      return ''
-                    }
-                  })()}
-                </div>
-              )}
-            </div>
-          </div>
-        </label>
+        <DaoSearchSelect
+          daoSearch={form.daoSearch}
+          daoId={form.daoId}
+          allDAOs={allDAOs}
+          onDaoSearchChange={(value) => onFormChange('daoSearch', value)}
+          onDaoIdChange={(value) => onFormChange('daoId', value)}
+          labels={{
+            dao: labels.dao,
+            searchDao: labels.searchDao,
+            noDaoFound: labels.noDaoFound,
+          }}
+          inputClassName="mt-1 mb-2 h-10"
+        />
         <label className="text-sm font-medium text-gray-700">
           {labels.description}
           <Input
@@ -399,7 +321,6 @@ export default function SBTBuilderPage({
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [croppedImage, setCroppedImage] = useState<string | null>(null)
   const [isCropModalOpen, setIsCropModalOpen] = useState(false)
-  const [tokenBalances, setTokenBalances] = useState<number[]>([])
   const supabase = createClient()
 
   const [cardForm, setCardForm] = useState<CardFormState>({
@@ -489,59 +410,42 @@ export default function SBTBuilderPage({
     }
   }, [tokenData, filter, tokenType])
 
-  const { data: sbtCurrentTokenId, refetch: refetchSbtCurrentTokenId } =
-    useReadContract({
-      abi: SBT_ABI,
-      address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-      functionName: 'numberOfTokens',
-      args: [],
-    })
-
-  const { data: nftCurrentTokenId, refetch: refetchNftCurrentTokenId } =
-    useReadContract({
-      abi: SBT_ABI,
-      address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
-      functionName: 'numberOfTokens',
-      args: [],
-    })
-
   useEffect(() => {
     const fetchTokenData = async () => {
-      try {
-        setLoading(true)
-        const { data: tokens } = await supabase
-          .from('Token')
-          .select()
-          .eq('creator', address as string)
+      setLoading(true)
+      const { data: tokens } = await supabase
+        .from('Token')
+        .select()
+        .eq('creator', address as string)
 
-        const _tokenData = tokens as SBTInfo[]
+      const _tokenData = tokens as SBTInfo[]
 
-        const tokenBalances = await Promise.all(
-          _tokenData.map(async (token: SBTInfo) => {
-            const balance = (await readContract(config, {
+      const tokenBalances = await Promise.all(
+        _tokenData.map(async (token: SBTInfo) => {
+          let balance = 0
+          try {
+            balance = (await readContract(config, {
               abi: SBT_ABI,
-              address: token.isSBT
-                ? (PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`)
-                : (NFTAddress[chainId || defaultChainId] as `0x${string}`),
+              address: token.address as `0x${string}`,
               functionName: 'balanceOf',
               args: [address, token.tokenId],
             })) as number
-            return balance
-          })
-        )
-
-        _tokenData.forEach((token: SBTInfo, index: number) => {
-          token.balance = tokenBalances[index]?.toString() ?? '0'
+          } catch (error) {
+            console.error('Error fetching token balance:', error)
+            return
+          }
+          return balance
         })
-        setTokenData(_tokenData)
-      } catch (error) {
-        console.error('Error fetching token data:', error)
-      } finally {
-        setLoading(false)
-      }
+      )
+
+      _tokenData.forEach((token: SBTInfo, index: number) => {
+        token.balance = tokenBalances[index] ?? 0
+      })
+      setTokenData(_tokenData)
+      setLoading(false)
     }
     fetchTokenData()
-  }, [address, refetchTokenData, supabase, chainId])
+  }, [address, refetchTokenData, supabase])
 
   useEffect(() => {
     if (isConfirmed) {
@@ -593,9 +497,14 @@ export default function SBTBuilderPage({
 
     setIsCreateModalOpen(false)
 
+    const { data: _daoInfo } = await supabase
+      .from('DAO')
+      .select()
+      .eq('daoId', cardForm.daoId)
+
     const contractAddress = cardForm.isSBT
-      ? PCE_SBT_ADDRESS[chainId || defaultChainId]
-      : NFTAddress[chainId || defaultChainId]
+      ? _daoInfo?.[0]?.sbtAddress
+      : _daoInfo?.[0]?.nftAddress
 
     // try {
     toast({ title: 'Uploading image...' })
@@ -645,21 +554,23 @@ export default function SBTBuilderPage({
           args: [
             jsonUploadResult?.cid,
             parseEther(cardForm.votingPower).toString(),
-            cardForm.daoId,
           ],
         })
+
         await waitForTransactionReceipt(config, {
           hash: createTokenTx,
           confirmations: 1,
         })
 
-        const currentTokenId = cardForm.isSBT
-          ? sbtCurrentTokenId
-          : nftCurrentTokenId
+        const currentTokenId = await readContract(config, {
+          abi: SBT_ABI,
+          address: contractAddress as `0x${string}`,
+          functionName: 'numberOfTokens',
+        })
         const tokenId = currentTokenId ? currentTokenId.toString() : '0'
 
         await supabase.from('Token').insert({
-          tokenId: Number(tokenId) + 1,
+          tokenId: Number(tokenId),
           name: cardForm.name,
           description: cardForm.description,
           votingPower: parseEther(cardForm.votingPower).toString(),
@@ -667,6 +578,7 @@ export default function SBTBuilderPage({
           creator: address,
           daoId: cardForm.daoId,
           isSBT: cardForm.isSBT,
+          address: contractAddress as `0x${string}`,
         })
 
         setRefetchTokenData(!refetchTokenData)
@@ -694,11 +606,8 @@ export default function SBTBuilderPage({
     croppedImage,
     address,
     cardForm,
-    chainId,
     writeContractAsync,
     toast,
-    sbtCurrentTokenId,
-    nftCurrentTokenId,
     supabase,
     refetchTokenData,
   ])
@@ -779,9 +688,7 @@ export default function SBTBuilderPage({
 
         const revokeTx = await writeContractAsync({
           abi: SBT_ABI,
-          address: token.isSBT
-            ? (PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`)
-            : (NFTAddress[chainId || defaultChainId] as `0x${string}`),
+          address: token.address as `0x${string}`,
           functionName: 'revoke',
           args: [token.tokenId, !token.isRevoked],
         })
@@ -811,7 +718,7 @@ export default function SBTBuilderPage({
         toast({ title: 'Failed to revoke token' })
       }
     },
-    [address, chainId, refetchTokenData, supabase, toast, writeContractAsync]
+    [address, refetchTokenData, supabase, toast, writeContractAsync]
   )
 
   return (
@@ -853,7 +760,6 @@ export default function SBTBuilderPage({
         </div>
 
         <SBTTableComponent
-          headers={[...sbtTableHeaders, 'Action']}
           sbtInfo={filteredTokenData}
           action={{
             title: {
@@ -861,7 +767,6 @@ export default function SBTBuilderPage({
               unrevoke: currentLabels.unrevoked,
             },
           }}
-          chainId={chainId || defaultChainId}
           onRevoke={(token: SBTInfo) => {
             handleRevokeToken(token)
           }}

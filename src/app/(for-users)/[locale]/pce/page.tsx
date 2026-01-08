@@ -1030,7 +1030,7 @@ export default function PCEPage({
         //   proposer: address,
         // })
 
-        await refetchMultipleProposalCount()
+        refetchMultipleProposalCount()
       } catch (error) {
         const errorMessage = (error as BaseError).shortMessage
         toast({ title: errorMessage })
@@ -1104,7 +1104,7 @@ export default function PCEPage({
         confirmations: 1,
       })
 
-      await refetchProposalCount()
+      refetchProposalCount()
     } catch (error) {
       console.error('Error creating proposal:', error)
     } finally {
@@ -1156,7 +1156,7 @@ export default function PCEPage({
         await getTreasuryBalances(
           timelockAddress[chainId || defaultChainId] as `0x${string}`
         )
-        await refetchProposalCount()
+        refetchProposalCount()
       } else if (isConfirming) {
         toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {
@@ -1788,8 +1788,8 @@ export default function PCEPage({
                               setTokenAddress('')
                               setTransferAmount('')
                               setIsDepositDialogOpened(!isDepositDialogOpened)
-                              await refetchPCEBalance()
-                              await refetchGovTokenBalance()
+                              refetchPCEBalance()
+                              refetchGovTokenBalance()
                             }}
                           >
                             {localDict.deposit ?? 'Deposit'}

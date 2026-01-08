@@ -332,7 +332,7 @@ export default function ForTokenPage({
 
         await waitForTransactionReceipt(config, {
           hash: hash,
-          confirmations: 2,
+          confirmations: 1,
         })
       }
     } catch (error) {
@@ -350,7 +350,7 @@ export default function ForTokenPage({
 
       await waitForTransactionReceipt(config, {
         hash: hash,
-        confirmations: 2,
+        confirmations: 1,
       })
 
       await getCommunityTokenInfo(toToken.address as `0x${string}`)
@@ -385,7 +385,7 @@ export default function ForTokenPage({
 
         await waitForTransactionReceipt(config, {
           hash: hash,
-          confirmations: 2,
+          confirmations: 1,
         })
       }
     } catch (error) {
@@ -403,7 +403,7 @@ export default function ForTokenPage({
 
       await waitForTransactionReceipt(config, {
         hash: hash,
-        confirmations: 2,
+        confirmations: 1,
       })
 
       await getCommunityTokenInfo(token)
@@ -425,7 +425,7 @@ export default function ForTokenPage({
 
       await waitForTransactionReceipt(config, {
         hash: hash,
-        confirmations: 2,
+        confirmations: 1,
       })
 
       await getCommunityTokenInfo(token)
@@ -451,7 +451,7 @@ export default function ForTokenPage({
 
     await waitForTransactionReceipt(config, {
       hash: hash,
-      confirmations: 2,
+      confirmations: 1,
     })
 
     await getCommunityTokenInfo(tokenAddress)

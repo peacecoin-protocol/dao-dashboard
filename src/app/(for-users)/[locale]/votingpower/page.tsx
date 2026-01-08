@@ -35,8 +35,8 @@ import {
   pceAddress,
   stakingAddress,
   WPCE_ADDRESS,
-  sbtTableHeaders,
   NFTAddress,
+  PCE_DAO_ID,
 } from '~/app/constants/constants'
 
 import { STAKING_ABI } from '~/app/ABIs/Staking'
@@ -81,7 +81,7 @@ export default function StakingPage({
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
-      confirmations: 2,
+      confirmations: 1,
     })
 
   const { data: pceBalance, refetch: refetchPCEBalance } = useReadContract({
@@ -168,7 +168,10 @@ export default function StakingPage({
     const fetchTokenData = async () => {
       try {
         setLoading(true)
-        const { data: tokens } = await supabase.from('Token').select()
+        const { data: tokens } = await supabase
+          .from('Token')
+          .select()
+          .eq('daoId', PCE_DAO_ID)
 
         const _tokenData = tokens as SBTInfo[]
 
@@ -187,7 +190,7 @@ export default function StakingPage({
         )
 
         _tokenData.forEach((token: SBTInfo, index: number) => {
-          token.balance = tokenBalances[index]?.toString() ?? '0'
+          token.balance = tokenBalances[index] ?? 0
         })
         setTokenData(
           _tokenData.filter((token: SBTInfo) => Number(token.balance) > 0)
@@ -239,15 +242,13 @@ export default function StakingPage({
       }
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 2,
+        confirmations: 1,
       })
 
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      await refetchAllowance()
-      await refetchWPCEAllowance()
-      await refetchGetTokenVote()
-      await refetchPCEBalance()
+      refetchAllowance()
+      refetchWPCEAllowance()
+      refetchGetTokenVote()
+      refetchPCEBalance()
     }
 
     let tx
@@ -263,16 +264,15 @@ export default function StakingPage({
 
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 2,
+        confirmations: 1,
       })
     } catch (error) {
       console.error('Error depositing tokens:', error)
       return
     }
 
-    await refetchPCEBalance()
-    await refetchAllowance()
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    refetchPCEBalance()
+    refetchAllowance()
   }
 
   const handleWithdraw = async () => {
@@ -290,13 +290,12 @@ export default function StakingPage({
 
     await waitForTransactionReceipt(config, {
       hash: tx,
-      confirmations: 2,
+      confirmations: 1,
     })
-    await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    await refetchWPCEBalance()
-    await refetchPCEBalance()
-    await refetchGetTokenVote()
+    refetchWPCEBalance()
+    refetchPCEBalance()
+    refetchGetTokenVote()
   }
 
   useEffect(() => {
@@ -306,9 +305,9 @@ export default function StakingPage({
           title: transactionSuccessMessage,
         })
 
-        await refetchWPCEBalance()
-        await refetchPCEBalance()
-        await refetchGetTokenVote()
+        refetchWPCEBalance()
+        refetchPCEBalance()
+        refetchGetTokenVote()
       } else if (isConfirming) {
         toast({
           title: transactionPendingMessage,
@@ -371,7 +370,7 @@ export default function StakingPage({
         args: [address],
       })
 
-      await refetchGetTokenVote()
+      refetchGetTokenVote()
     } catch (error) {
       console.error('Error delegating voting power:', error)
       toast({ title: (error as BaseError).shortMessage })
@@ -396,7 +395,7 @@ export default function StakingPage({
         confirmations: 1,
       })
 
-      await refetchGetSBTVotingPower()
+      refetchGetSBTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
       toast({ title: (error as BaseError).shortMessage })
@@ -421,7 +420,7 @@ export default function StakingPage({
         confirmations: 1,
       })
 
-      await refetchGetNFTVotingPower()
+      refetchGetNFTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
       toast({ title: (error as BaseError).shortMessage })
@@ -671,11 +670,7 @@ export default function StakingPage({
 
           <div className="-mx-4 sm:mx-0">
             <div className="px-4 sm:px-0">
-              <SBTTableComponent
-                headers={sbtTableHeaders}
-                sbtInfo={tokenData}
-                chainId={chainId || defaultChainId}
-              />
+              <SBTTableComponent sbtInfo={tokenData} />
             </div>
           </div>
         </div>
