@@ -32,11 +32,9 @@ import {
 import { timestampToDate } from '~/components/utils'
 
 import {
-  PCE_SBT_ADDRESS,
   campaignAddress,
   defaultChainId,
   GAS_LIMIT,
-  NFTAddress,
 } from '~/app/constants/constants'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 
@@ -51,10 +49,7 @@ import {
   SBTTableComponent,
   SBTInfo,
 } from '~/components/custom/sbt-tableComponent'
-import {
-  campaignTableHeaders,
-  sbtTableHeaders,
-} from '~/app/constants/constants'
+import { campaignTableHeaders } from '~/app/constants/constants'
 import { createClient } from '~/utils/supabase/client'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 import { PageSubHeaderSection } from '~/components/custom/page-sub-header-section'
@@ -345,40 +340,39 @@ export default function ForCampaignPage({
 
   useEffect(() => {
     const fetchTokenData = async () => {
-      try {
-        setLoading(true)
-        const { data: tokens } = await supabase.from('Token').select()
+      setLoading(true)
+      const { data: tokens } = await supabase.from('Token').select()
 
-        const _tokenData = tokens as SBTInfo[]
+      const _tokenData = tokens as SBTInfo[]
 
-        const tokenBalances = await Promise.all(
-          _tokenData.map(async (token: SBTInfo) => {
-            const balance = (await readContract(config, {
+      const tokenBalances = await Promise.all(
+        _tokenData.map(async (token: SBTInfo) => {
+          let balance = 0
+          try {
+            balance = (await readContract(config, {
               abi: SBT_ABI,
-              address: token.isSBT
-                ? (PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`)
-                : (NFTAddress[chainId || defaultChainId] as `0x${string}`),
+              address: token.address as `0x${string}`,
               functionName: 'balanceOf',
               args: [address, token.tokenId],
             })) as number
-            return balance
-          })
-        )
-
-        _tokenData.forEach((token: SBTInfo, index: number) => {
-          token.balance = tokenBalances[index]?.toString() ?? '0'
+            return balance ?? 0
+          } catch (error) {
+            console.error('Error fetching token balance:', error)
+          }
         })
-        setTokenData(
-          _tokenData.filter((token: SBTInfo) => Number(token.balance) > 0)
-        )
-      } catch (error) {
-        console.error('Error fetching token data:', error)
-      } finally {
-        setLoading(false)
-      }
+      )
+
+      _tokenData.forEach((token: SBTInfo, index: number) => {
+        token.balance = tokenBalances[index] ?? 0
+      })
+      setTokenData(
+        _tokenData.filter((token: SBTInfo) => Number(token.balance) > 0)
+      )
+
+      setLoading(false)
     }
     fetchTokenData()
-  }, [address, refetchTokenData, supabase, chainId])
+  }, [address, refetchTokenData, supabase])
 
   useEffect(() => {
     if (!dialogState.isOpen) {
@@ -676,11 +670,7 @@ export default function ForCampaignPage({
               title={campaign.sbtBalances ?? 'Token Balances'}
             />
 
-            <SBTTableComponent
-              headers={sbtTableHeaders}
-              sbtInfo={tokenData}
-              chainId={chainId || defaultChainId}
-            />
+            <SBTTableComponent sbtInfo={tokenData} />
           </div>
         )}
         {/* Campaign search input */}

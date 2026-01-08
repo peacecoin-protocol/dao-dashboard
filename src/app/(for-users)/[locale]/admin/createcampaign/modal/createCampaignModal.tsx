@@ -18,6 +18,8 @@ import { createClient } from '~/utils/supabase/client'
 import { Env } from '~/env'
 import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import Image from 'next/image'
+import { SupabaseDao } from '~/i18n/types'
+import { DaoSearchSelect } from '~/components/custom/dao-search-select'
 
 export const CreateCampaignModal = ({
   isOpen,
@@ -25,18 +27,23 @@ export const CreateCampaignModal = ({
   onSubmit,
   campaign,
   setIsInvalidToken,
+  allDAOs,
 }: {
   isOpen: boolean
   onClose: () => void
   onSubmit: (formData: any) => void
   campaign: any
   setIsInvalidToken: (value: boolean) => void
+  allDAOs: SupabaseDao[]
+  allTokens: SBTInfo[]
 }) => {
   const { toast } = useToast()
   const { address } = useAccount()
   const supabase = createClient()
   const [tokenInfo, setTokenInfo] = useState<SBTInfo | null>(null)
   const [form, setForm] = useState({
+    daoId: '',
+    daoSearch: '',
     sbtId: 0,
     title: '',
     description: '',
@@ -55,6 +62,7 @@ export const CreateCampaignModal = ({
         .from('Token')
         .select()
         .eq('isSBT', form.tokenType == 1 ? true : false)
+        .eq('daoId', form.daoId)
         .eq('tokenId', form.sbtId.toString())
 
       if (data && data.length > 0) {
@@ -68,6 +76,7 @@ export const CreateCampaignModal = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+
     if (name === 'sbtId' && value == '0' && form.tokenType == 1) {
       toast({
         title: 'SBT ID must be greater than 0',
@@ -80,6 +89,10 @@ export const CreateCampaignModal = ({
       return
     }
 
+    setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const onFormChange = (name: string, value: any) => {
     setForm((prev) => ({ ...prev, [name]: value }))
   }
 
@@ -123,6 +136,8 @@ export const CreateCampaignModal = ({
 
     onSubmit(form)
     setForm({
+      daoId: '',
+      daoSearch: '',
       sbtId: 0,
       title: '',
       description: '',
@@ -138,16 +153,32 @@ export const CreateCampaignModal = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto p-2 sm:p-3 space-y-3">
         <div className="text-center">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight">
             {campaign.createCampaign ?? 'Create Campaign'}
           </h2>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <DaoSearchSelect
+              daoSearch={form.daoSearch}
+              daoId={form.daoId}
+              allDAOs={allDAOs}
+              onDaoSearchChange={(value) => onFormChange('daoSearch', value)}
+              onDaoIdChange={(value) => onFormChange('daoId', value)}
+              labels={{
+                dao: campaign.daoId ?? 'DAO ID',
+                searchDao: campaign.searchDao,
+                noDaoFound: campaign.noDaoFound,
+              }}
+              inputClassName="w-full h-8 text-sm mb-2"
+            />
+          </div>
+
           {/* Campaign Type Selection */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="campaign-type">
               {campaign.campaignType ?? 'Campaign Type'}
             </Label>
@@ -166,7 +197,7 @@ export const CreateCampaignModal = ({
                 }))
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-8 text-sm">
                 <SelectValue
                   placeholder={
                     campaign.selectCampaignType ?? 'Select campaign type'
@@ -185,7 +216,7 @@ export const CreateCampaignModal = ({
 
           {/* SBT ID Input */}
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="sbt-id">
               {form.tokenType == 1
                 ? (campaign.sbtId ?? 'SBT ID')
@@ -205,7 +236,7 @@ export const CreateCampaignModal = ({
                 }
                 value={form.sbtId == 0 ? '' : form.sbtId.toString()}
                 onChange={handleChange}
-                className="w-full"
+                className="w-full h-8 text-sm"
               />
             )}
 
@@ -219,7 +250,7 @@ export const CreateCampaignModal = ({
                 }
                 value={form.tokenAddress}
                 onChange={handleChange}
-                className="w-full"
+                className="w-full h-8 text-sm"
               />
             )}
 
@@ -238,12 +269,12 @@ export const CreateCampaignModal = ({
                           : EMPTY_NFT_IMAGE
                       }
                       alt={tokenInfo?.name || ''}
-                      width={80}
-                      height={80}
-                      className="object-cover"
+                      width={56}
+                      height={56}
+                      className="object-cover h-14 w-14"
                     />
                     {!isOwner && tokenInfo && (
-                      <span className="text-sm text-gray-500 mt-2">
+                      <span className="text-xs text-gray-500 mt-1">
                         {campaign.youAreNotTheOwnerOfThisToken ??
                           'You are not the owner of this Token'}
                       </span>
@@ -254,7 +285,7 @@ export const CreateCampaignModal = ({
           </div>
 
           {/* Title Input */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="title">{campaign.titleLabel ?? 'Title'}</Label>
             <Input
               id="title"
@@ -265,12 +296,12 @@ export const CreateCampaignModal = ({
               }
               value={form.title}
               onChange={handleChange}
-              className="w-full"
+              className="w-full h-8 text-sm"
             />
           </div>
 
           {/* Description Input */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="description">
               {campaign.descriptionLabel ?? 'Description'}
             </Label>
@@ -284,13 +315,13 @@ export const CreateCampaignModal = ({
               }
               value={form.description}
               onChange={handleChange}
-              className="w-full"
+              className="w-full h-8 text-sm"
             />
           </div>
 
           {/* Amount Inputs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="space-y-1">
               <Label htmlFor="total-amount">
                 {campaign.totalAmount ?? 'Total Amount'}
               </Label>
@@ -301,10 +332,10 @@ export const CreateCampaignModal = ({
                 placeholder={campaign.enterTotalAmount ?? 'Enter total amount'}
                 value={form.totalAmount}
                 onChange={handleChange}
-                className="w-full"
+                className="w-full h-8 text-sm"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="claim-amount">
                 {campaign.claimAmount ?? 'Claim Amount'}
               </Label>
@@ -315,13 +346,13 @@ export const CreateCampaignModal = ({
                 placeholder={campaign.enterClaimAmount ?? 'Enter claim amount'}
                 value={form.claimAmount}
                 onChange={handleChange}
-                className="w-full"
+                className="w-full h-8 text-sm"
               />
             </div>
           </div>
 
           {/* Verification Type Selection */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="verification-type">
               {campaign.verificationType ?? 'Verification Type'}
             </Label>
@@ -334,7 +365,7 @@ export const CreateCampaignModal = ({
                 }))
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-8 text-sm">
                 <SelectValue
                   placeholder={
                     campaign.selectVerificationType ??
@@ -355,8 +386,8 @@ export const CreateCampaignModal = ({
           </div>
 
           {/* Date Inputs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="space-y-1">
               <Label htmlFor="start-date">
                 {campaign.startDateTime ?? 'Start Date & Time'}
               </Label>
@@ -366,10 +397,10 @@ export const CreateCampaignModal = ({
                 name="startDate"
                 value={form.startDate}
                 onChange={handleChange}
-                className="w-full"
+                className="w-full h-8 text-sm"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="end-date">
                 {campaign.endDateTime ?? 'End Date & Time'}
               </Label>
@@ -379,13 +410,13 @@ export const CreateCampaignModal = ({
                 name="endDate"
                 value={form.endDate}
                 onChange={handleChange}
-                className="w-full"
+                className="w-full h-8 text-sm"
               />
             </div>
           </div>
 
           {/* Submit Button */}
-          <Button onClick={handleSubmit} className="w-full">
+          <Button onClick={handleSubmit} className="w-full h-9 text-sm">
             {campaign.createCampaign ?? 'Create Campaign'}
           </Button>
         </div>

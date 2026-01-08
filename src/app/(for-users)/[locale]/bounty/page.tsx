@@ -204,10 +204,11 @@ export default function ForBountyPage({
   })
 
   const refetchData = async () => {
-    await refetchBalance()
-    await refetchBountyAmount()
-    await refetchContributorBounties()
+    refetchBalance()
+    refetchBountyAmount()
+    refetchContributorBounties()
   }
+
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const name = event.target.name
     const value = event.target.value
@@ -247,7 +248,7 @@ export default function ForBountyPage({
 
       await provider.waitForTransaction(claimContributorBountyTX)
 
-      await refetchData()
+      refetchData()
     } catch (error) {
       toast({ title: (error as BaseError).shortMessage })
     }
@@ -299,7 +300,7 @@ export default function ForBountyPage({
 
       provider.waitForTransaction(addProposalBountyTX)
 
-      await refetchData()
+      refetchData()
     } catch (error) {
       toast({ title: (error as BaseError).shortMessage })
     }
@@ -351,7 +352,7 @@ export default function ForBountyPage({
 
       await provider.waitForTransaction(addContributorBountyTX)
 
-      await refetchData()
+      refetchData()
     } catch (error) {
       toast({ title: (error as BaseError).shortMessage })
     }
@@ -367,7 +368,7 @@ export default function ForBountyPage({
         setBountyAmount('')
         setContributorAddr('')
 
-        await refetchData()
+        refetchData()
       } else if (isConfirming) {
         toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {

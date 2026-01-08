@@ -76,7 +76,7 @@ import { timestampToDate } from '~/components/utils'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { Env } from '~/env'
 import { useToast } from '~/hooks/use-toast'
-import { DAO_FACTORY_ABI } from '~/app/ABIs/DAOFactory'
+import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
 import { DialogTrigger } from '~/components/ui/dialog'
 import { AmountInput } from '~/components/custom/amount-input'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
@@ -88,6 +88,10 @@ import {
 import { PageSubHeaderSection } from '~/components/custom/page-sub-header-section'
 import { StatsSection } from '~/components/custom/stats-section'
 import { DelegateInput } from '~/components/custom/delegate-input'
+import { SBTInfo } from '~/components/custom/sbt-tableComponent'
+import { SBT_ABI } from '~/app/ABIs/SBT'
+import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
+import { PageHeaderSection } from '~/components/custom/page-header-section'
 
 type TokenBalance = {
   contractAddress: string
@@ -109,6 +113,7 @@ export default function ForDaoDetailPage({
 
   const [dict, setDict] = useState<Dictionary | null>(null)
   const localDict = useMemo(() => dict?.daoInfo ?? {}, [dict])
+  const votingPowerDict = dict?.votingPower ?? {}
 
   const [delegateAddr, setDelegateAddr] = useState('')
   const [transferAddr, setTransferAddr] = useState('')
@@ -123,6 +128,20 @@ export default function ForDaoDetailPage({
   const [proposalStatus, setStatus] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [daoInfo, setDaoInfo] = useState<any>(null)
+
+  const [governorAddress, setGovernorAddress] = useState<string | undefined>('')
+  const [governanceTokenAddress, setGovernanceTokenAddress] = useState<
+    string | undefined
+  >('')
+  const [timelockAddress, setTimelockAddress] = useState<string | undefined>('')
+  const [communityTokenAddress, setCommunityTokenAddress] = useState<
+    string | undefined
+  >('')
+  const [sbtAddress, setSbtAddress] = useState<string | undefined>('')
+  const [nftAddress, setNftAddress] = useState<string | undefined>('')
+
+  const [tokenData, setTokenData] = useState<SBTInfo[]>([])
+  const [refetchTokenData, setRefetchTokenData] = useState(false)
 
   const [category, setCategory] = useState('')
 
@@ -284,10 +303,10 @@ export default function ForDaoDetailPage({
 
       await waitForTransactionReceipt(config, {
         hash,
-        confirmations: 2,
+        confirmations: 1,
       })
 
-      await refetchSocialConfig()
+      refetchSocialConfig()
     } catch (error) {
       console.error('Error updating social links:', error)
 
@@ -316,32 +335,30 @@ export default function ForDaoDetailPage({
       confirmations: 1,
     })
 
-  const { data: timelockAddress, refetch: refetchTimelockAddress } =
-    useReadContract({
-      address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
-      abi: DAO_FACTORY_ABI,
-      functionName: 'timelock',
-      args: [id],
-    }) as { data?: string; refetch: () => void }
+  const { data: daoConfigs, refetch: refetchDaoConfigs } = useReadContract({
+    address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
+    abi: DAO_STUDIO_ABI,
+    functionName: 'daoConfigs',
+    args: [id],
+  }) as { data?: string; refetch: () => void }
 
-  const { data: governorAddress, refetch: refetchGovernorAddress } =
-    useReadContract({
-      address: timelockAddress as `0x${string}`,
-      abi: TIMELOCK_ABI,
-      functionName: 'admin',
-    }) as { data?: `0x${string}`; refetch: () => void }
+  useEffect(() => {
+    console.log('dao', daoConfigs)
+    if (daoConfigs?.length == 7) {
+      setGovernorAddress(daoConfigs[3])
+      setGovernanceTokenAddress(daoConfigs[4])
+      setCommunityTokenAddress(daoConfigs[5])
+      setTimelockAddress(daoConfigs[0])
+      setSbtAddress(daoConfigs[1])
+      setNftAddress(daoConfigs[2])
+    }
+  }, [daoConfigs])
 
   const { data: socialConfig, refetch: refetchSocialConfig } = useReadContract({
     address: governorAddress as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'socialConfig',
   })
-
-  const { data: governanceTokenAddress } = useReadContract({
-    address: governorAddress as `0x${string}`,
-    abi: GOVERNOR_ABI,
-    functionName: 'token',
-  }) as { data?: string; refetch: () => void }
 
   const { data: votingDelay, refetch: refetchVotingDelay } = useReadContract({
     address: governorAddress as `0x${string}`,
@@ -363,13 +380,6 @@ export default function ForDaoDetailPage({
       args: [address],
     }) as { data?: string; refetch: () => void }
 
-  const { data: daoCreator } = useReadContract({
-    address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
-    abi: DAO_FACTORY_ABI,
-    functionName: 'daoCreators',
-    args: [id],
-  }) as { data?: string; refetch: () => void }
-
   const { data: proposalThreshold, refetch: refetchProposalThreshold } =
     useReadContract({
       address: governorAddress as `0x${string}`,
@@ -390,12 +400,6 @@ export default function ForDaoDetailPage({
       functionName: 'delay',
     }) as { data?: string; refetch: () => void }
 
-  const { data: communityTokenAddress } = useReadContract({
-    address: governanceTokenAddress as `0x${string}`,
-    abi: PCE_C_GOV_TOKEN_ABI,
-    functionName: 'communityToken',
-  }) as { data?: string; refetch: () => void }
-
   const { data: communityTokenBalance, refetch: refetchCommunityTokenBalance } =
     useReadContract({
       address: communityTokenAddress as `0x${string}`,
@@ -413,6 +417,46 @@ export default function ForDaoDetailPage({
   const getCurrentTimestamp = () => {
     return Number(block?.timestamp)
   }
+
+  useEffect(() => {
+    const fetchTokenData = async () => {
+      setLoading(true)
+      const { data: tokens } = await supabase
+        .from('Token')
+        .select()
+        .eq('daoId', id)
+
+      console.log('tokens', tokens)
+
+      const _tokenData = tokens as SBTInfo[]
+
+      const tokenBalances = await Promise.all(
+        _tokenData.map(async (token: SBTInfo) => {
+          let balance = 0
+          try {
+            balance = (await readContract(config, {
+              abi: SBT_ABI,
+              address: token.address as `0x${string}`,
+              functionName: 'balanceOf',
+              args: [address, token.tokenId],
+            })) as number
+            return balance
+          } catch (error) {
+            console.error('Error fetching token balance:', error)
+            return 0
+          }
+        })
+      )
+
+      _tokenData.forEach((token: SBTInfo, index: number) => {
+        token.balance = tokenBalances[index] ?? 0
+      })
+      setTokenData(_tokenData.filter((token: SBTInfo) => token.balance > 0))
+
+      setLoading(false)
+    }
+    fetchTokenData()
+  }, [address, refetchTokenData, supabase, chainId, id])
 
   const ProposalCard = ({
     proposal,
@@ -763,7 +807,7 @@ export default function ForDaoDetailPage({
       }
     }
     fetchIdenticon()
-  }, [governorAddress])
+  }, [governorAddress, id])
 
   const handleCreateProposal = async () => {
     setIsCreateProposalDialogOpened(false)
@@ -808,7 +852,7 @@ export default function ForDaoDetailPage({
       title: 'Proposal created successfully',
     })
 
-    await refetchProposalCount()
+    refetchProposalCount()
   }
 
   useEffect(() => {
@@ -866,7 +910,7 @@ export default function ForDaoDetailPage({
       }
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 2,
+        confirmations: 1,
       })
     }
 
@@ -881,7 +925,7 @@ export default function ForDaoDetailPage({
 
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 2,
+        confirmations: 1,
       })
     } catch (error) {
       console.error('Error depositing tokens:', error)
@@ -890,9 +934,9 @@ export default function ForDaoDetailPage({
 
     setStakingAmount('')
 
-    await refetchGovTokenBalance()
-    await refetchCommunityTokenBalance()
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    refetchGovTokenBalance()
+    refetchCommunityTokenBalance()
+    refetchVotes()
   }
 
   const handleWithdraw = async () => {
@@ -912,11 +956,61 @@ export default function ForDaoDetailPage({
 
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 2,
+        confirmations: 1,
       })
-      await refetchGovTokenBalance()
-      await refetchCommunityTokenBalance()
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      refetchGovTokenBalance()
+      refetchCommunityTokenBalance()
+      refetchVotes()
+    }
+  }
+
+  const handleSBTDelegate = async () => {
+    setLoading(true)
+    try {
+      const tx = await writeContractAsync({
+        abi: SBT_ABI,
+        address: sbtAddress as `0x${string}`,
+        functionName: 'delegate',
+        args: [address],
+      })
+
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
+
+      refetchVotes()
+    } catch (error) {
+      console.error('Error delegating voting power:', error)
+      toast({ title: (error as BaseError).shortMessage })
+      return
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleNFTTDelegate = async () => {
+    setLoading(true)
+    try {
+      const tx = await writeContractAsync({
+        abi: SBT_ABI,
+        address: nftAddress as `0x${string}`,
+        functionName: 'delegate',
+        args: [address],
+      })
+
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
+
+      refetchVotes()
+    } catch (error) {
+      console.error('Error delegating voting power:', error)
+      toast({ title: (error as BaseError).shortMessage })
+      return
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -939,10 +1033,10 @@ export default function ForDaoDetailPage({
 
         await waitForTransactionReceipt(config, {
           hash: tx,
-          confirmations: 2,
+          confirmations: 1,
         })
 
-        await refetchVotes()
+        refetchVotes()
       } catch (error) {
         console.error('Error delegating tokens:', error)
         return
@@ -1133,7 +1227,7 @@ export default function ForDaoDetailPage({
               <DropdownMenuContent>
                 <DropdownMenuItem
                   onClick={() => {
-                    if (daoCreator !== address) {
+                    if (daoInfo?.creator !== address) {
                       toast({
                         title: 'You are not the creator of this DAO',
                         variant: 'destructive',
@@ -1155,7 +1249,7 @@ export default function ForDaoDetailPage({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
-                    if (daoCreator !== address) {
+                    if (daoInfo?.creator !== address) {
                       toast({
                         title: 'You are not the creator of this DAO',
                         variant: 'destructive',
@@ -1938,6 +2032,35 @@ export default function ForDaoDetailPage({
                       </TableRow>
                     </TableBody>
                   </Table>
+                </div>
+
+                <div className="mt-8 sm:mt-12">
+                  <div className="rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700 flex flex-col gap-4">
+                    <PageHeaderSection
+                      title={
+                        (votingPowerDict.mySBTs ?? 'My Tokens') +
+                        ` (${tokenData.length ?? 0})`
+                      }
+                    />
+
+                    <div className="flex flex-row gap-4 ml-auto">
+                      <Button onClick={handleSBTDelegate} className="w-60">
+                        {votingPowerDict.delegateSBTVotingPower ??
+                          'Delegate SBT Voting Power'}
+                      </Button>
+
+                      <Button onClick={handleNFTTDelegate} className="w-60">
+                        {votingPowerDict.delegateNFTVotingPower ??
+                          'Delegate NFT Voting Power'}
+                      </Button>
+                    </div>
+
+                    <div className="-mx-4 sm:mx-0">
+                      <div className="px-4 sm:px-0">
+                        <SBTTableComponent sbtInfo={tokenData} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

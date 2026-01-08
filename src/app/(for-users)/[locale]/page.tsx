@@ -12,7 +12,11 @@ import {
   type BaseError,
 } from 'wagmi'
 
-import { simulateContract, waitForTransactionReceipt } from '@wagmi/core'
+import {
+  readContract,
+  simulateContract,
+  waitForTransactionReceipt,
+} from '@wagmi/core'
 import { SupabaseDao } from '~/i18n/types'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 import { ringStyle } from '~/app/constants/styles'
@@ -313,7 +317,7 @@ export default function ForDAOPage({
           daoForm.timelockDelay,
           parseEther(daoForm.quorumVotes),
         ],
-        gas: BigInt(1000000),
+        gas: BigInt(8000000),
       })
 
       const tx = await writeContractAsync({
@@ -330,7 +334,7 @@ export default function ForDAOPage({
           daoForm.timelockDelay,
           parseEther(daoForm.quorumVotes),
         ],
-        gas: BigInt(1000000),
+        gas: BigInt(8000000),
       })
 
       await waitForTransactionReceipt(config, {
@@ -338,14 +342,31 @@ export default function ForDAOPage({
         confirmations: 1,
       })
 
-      await supabase.from('DAO').insert({
-        daoId: daoId,
-        daoName: daoForm.name,
-        creator: address,
-        image: '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+      const daoConfigs = await readContract(config, {
+        abi: DAO_STUDIO_ABI,
+        address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'daoConfigs',
+        args: [daoId],
       })
+
+      if (
+        daoConfigs &&
+        Array.isArray(daoConfigs) &&
+        (daoConfigs as any[]).length == 7
+      ) {
+        const sbtAddress = daoConfigs[1] as string
+        const nftAddress = daoConfigs[2] as string
+        await supabase.from('DAO').insert({
+          daoId: daoId,
+          daoName: daoForm.name,
+          creator: address,
+          image: '',
+          sbtAddress: sbtAddress,
+          nftAddress: nftAddress,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+      }
 
       refetchHasRole()
       setRefetchDaos(!refetchDaos)

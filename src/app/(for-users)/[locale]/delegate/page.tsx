@@ -131,7 +131,7 @@ export default function ForDelegatePage({
       }
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 2,
+        confirmations: 1,
       })
     }
 
@@ -147,14 +147,12 @@ export default function ForDelegatePage({
       setStakingAmount('')
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 2,
+        confirmations: 1,
       })
     } catch (error) {
       console.error('Error depositing tokens:', error)
       return
     }
-
-    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     refetchPceBalance()
     refetchPceGovBalance()
@@ -173,14 +171,12 @@ export default function ForDelegatePage({
 
       await waitForTransactionReceipt(config, {
         hash: tx,
-        confirmations: 2,
+        confirmations: 1,
       })
     } catch (error) {
       console.error('Error withdrawing tokens:', error)
       return
     }
-
-    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     refetchPceBalance()
     refetchPceGovBalance()
@@ -195,7 +191,7 @@ export default function ForDelegatePage({
         })
 
         setDelegateAddr('')
-        await refetchVotes()
+        refetchVotes()
       } else if (isConfirming) {
         toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {
