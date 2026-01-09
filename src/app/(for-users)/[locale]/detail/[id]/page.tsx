@@ -247,6 +247,8 @@ export default function ForDaoDetailPage({
         .eq('daoId', id)
         .single()
 
+      console.log('dao', dao)
+
       if (dao) {
         setImageHash(dao.image)
         setDaoInfo(dao)
