@@ -343,14 +343,13 @@ export default function ForDaoDetailPage({
   }) as { data?: string; refetch: () => void }
 
   useEffect(() => {
-    console.log('dao', daoConfigs)
     if (daoConfigs?.length == 7) {
-      setGovernorAddress(daoConfigs[3])
-      setGovernanceTokenAddress(daoConfigs[4])
-      setCommunityTokenAddress(daoConfigs[5])
       setTimelockAddress(daoConfigs[0])
       setSbtAddress(daoConfigs[1])
       setNftAddress(daoConfigs[2])
+      setGovernorAddress(daoConfigs[3])
+      setGovernanceTokenAddress(daoConfigs[4])
+      setCommunityTokenAddress(daoConfigs[5])
     }
   }, [daoConfigs])
 
@@ -425,8 +424,6 @@ export default function ForDaoDetailPage({
         .from('Token')
         .select()
         .eq('daoId', id)
-
-      console.log('tokens', tokens)
 
       const _tokenData = tokens as SBTInfo[]
 
@@ -711,6 +708,13 @@ export default function ForDaoDetailPage({
     abi: GOVERNOR_ABI,
     functionName: 'getPastVotes',
     args: [address, blockNumber?.toString()],
+  }) as { data?: string; refetch: () => void }
+
+  const { data: tokenVote, refetch: refetchTokenVote } = useReadContract({
+    address: governanceTokenAddress as `0x${string}`,
+    abi: PCE_C_GOV_TOKEN_ABI,
+    functionName: 'getVotes',
+    args: [address],
   }) as { data?: string; refetch: () => void }
 
   const { data: proposalCount, refetch: refetchProposalCount } =
@@ -2024,7 +2028,7 @@ export default function ForDaoDetailPage({
                           tokenSymbol={communityTokenSymbol}
                         />
                         <TokenValueCell
-                          value={votes}
+                          value={tokenVote}
                           formatter={(val) =>
                             formatEther(BigInt(val as string))
                           }

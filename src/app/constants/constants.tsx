@@ -43,22 +43,8 @@ export const campaignAddress = {
   [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',
 } as Record<number, `0x${string}`>
 
-export const PCE_SBT_ADDRESS = {
-  [sepolia.id]: '0x0E06435dD47e9aCc44F20029b62D778215193E4C',
-  [localhost.id]: '0x3d3a47670cebC45B405268BE07371F97AB408f81',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
-  [hoodi.id]: '0xBa9E16D096262023c50A3cCCC4f08af4b321fB21',
-} as Record<number, `0x${string}`>
-
-export const NFTAddress = {
-  [sepolia.id]: '0xC93454A921F85bBe1CD063546C32597FC2eFF310',
-  [localhost.id]: '0x0ce968ba1ff3035bd54679a5bc7ad6b21cca4c25',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
-  [hoodi.id]: '0xe004A0f37B2Be66e7225119F7EFF2d49C7F93629',
-} as Record<number, `0x${string}`>
-
 export const WPCE_ADDRESS = {
-  [sepolia.id]: '0xaf826b76EA6F65efbdd1D976e367eF770FBdD77D',
+  [sepolia.id]: '0xcedd08caa35a826e55029db17050bc756f66d36b',
   [localhost.id]: '0x4c5859f0F772848b2D91F1D83E2Fe57935348029',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xFf6eF3e8CA9dEfb0A6E42d10fBAA3261981B93D1',
@@ -86,7 +72,7 @@ export const MultipleVotingAddress = {
 } as Record<number, `0x${string}`>
 
 export const PCE_DAO_ID =
-  '0x0000000000000000000000000000000000000000000000000000000000000000'
+  '0x3c0e5f5e3599ccf6fe184ba883217020aeee5b1526e39853c5bad5a388dddc04'
 
 export const SUBGRAPH_URL = {
   [sepolia.id]:

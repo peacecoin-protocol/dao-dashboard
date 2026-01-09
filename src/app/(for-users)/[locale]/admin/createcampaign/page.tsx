@@ -76,6 +76,7 @@ export default function ForCampaignPage({
         .select()
         .eq('creator', address as `0x${string}`)
         .order('campaignId', { ascending: true })
+
       if (campaignData && campaignData.length > 0) {
         const _tokenData = await Promise.all(
           campaignData.map(async (campaign, index) => {
@@ -84,6 +85,7 @@ export default function ForCampaignPage({
               .select()
               .eq('tokenId', campaign.sbtId.toString())
               .eq('isSBT', campaign.tokenType == 1 ? true : false)
+              .eq('daoId', campaign.daoId)
 
             campaignData[index].daoId = data?.[0]?.daoId
             campaignData[index].image = data?.[0]?.image

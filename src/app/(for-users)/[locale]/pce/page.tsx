@@ -87,22 +87,21 @@ import {
 } from '~/app/constants/constants'
 import { useBlock } from 'wagmi'
 import {
-  governorAddress,
   pceAddress,
   timelockAddress,
   daoStudioAddress,
-  PCE_SBT_ADDRESS,
   WPCE_ADDRESS,
+  PCE_DAO_ID,
 } from '~/app/constants/constants'
 
 import { createdAt } from '~/app/constants/constants'
 import { Env } from '~/env'
-import { SBT_ABI } from '~/app/ABIs/SBT'
 import Image from 'next/image'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 import { InfoCell } from '~/components/custom/info-cell'
 import { MULTIPLE_VOTINGS_ABI } from '~/app/ABIs/MultipleVotings'
 import { createClient } from '~/utils/supabase/client'
+import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
 
 type TokenBalance = {
   contractAddress: string
@@ -149,6 +148,8 @@ export default function PCEPage({
   const [isCreateProposalDialogOpened, setIsCreateProposalDialogOpened] =
     useState(false)
   const [isRefetching, setIsRefetching] = useState(false)
+
+  const [governorAddress, setGovernorAddress] = useState<string | undefined>('')
 
   const supabase = createClient()
 
@@ -206,6 +207,18 @@ export default function PCEPage({
 
     setTreasuryBalances(formatedBalances)
   }
+  const { data: daoConfigs, refetch: refetchDaoConfigs } = useReadContract({
+    address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
+    abi: DAO_STUDIO_ABI,
+    functionName: 'daoConfigs',
+    args: [PCE_DAO_ID],
+  }) as { data?: string; refetch: () => void }
+
+  useEffect(() => {
+    if (daoConfigs?.length == 7) {
+      setGovernorAddress(daoConfigs[3])
+    }
+  }, [daoConfigs])
 
   useEffect(() => {
     if (timelockAddress[chainId || defaultChainId]) {
@@ -228,13 +241,13 @@ export default function PCEPage({
     })
 
   const { data: quorum, refetch: refetchQuorum } = useReadContract({
-    address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+    address: governorAddress as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'quorumVotes',
   })
 
   const { data: votingDelay, refetch: refetchVotingDelay } = useReadContract({
-    address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+    address: governorAddress as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'votingDelay',
   })
@@ -273,29 +286,21 @@ export default function PCEPage({
     args: [address],
   })
 
-  const { data: governanceTokenBalance, refetch: refetchGovTokenBalance } =
-    useReadContract({
-      address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-      abi: PCE_ABI,
-      functionName: 'balanceOf',
-      args: [address],
-    })
-
   const { data: proposalThreshold, refetch: refetchProposalThreshold } =
     useReadContract({
-      address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+      address: governorAddress as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalThreshold',
     })
 
   const { data: votingPeriod, refetch: refetchVotingPeriod } = useReadContract({
-    address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+    address: governorAddress as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'votingPeriod',
   })
 
   const { data: socialConfig, refetch: refetchSocialConfig } = useReadContract({
-    address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+    address: governorAddress as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'socialConfig',
   })
@@ -315,16 +320,8 @@ export default function PCEPage({
     }
   }, [socialConfig])
 
-  const { data: uri_, refetch: refetchUri } = useReadContract({
-    abi: SBT_ABI,
-    address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-    functionName: 'uri_',
-    args: [],
-    chainId: chainId || defaultChainId,
-  })
-
   const { data: getVotes, refetch: refetchGetVotes } = useReadContract({
-    address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+    address: governorAddress as `0x${string}`,
     abi: GOVERNOR_ABI,
     functionName: 'getPastVotes',
     args: [address, blockNumber?.toString()],
@@ -683,9 +680,7 @@ export default function PCEPage({
               try {
                 const tx = await writeContractAsync({
                   abi: GOVERNOR_ABI,
-                  address: governorAddress[
-                    chainId || defaultChainId
-                  ] as `0x${string}`,
+                  address: governorAddress as `0x${string}`,
                   functionName: 'castVote',
                   args: [proposal.pID, selectedOption == 0 ? true : false],
                 })
@@ -801,7 +796,7 @@ export default function PCEPage({
 
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
-      address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+      address: governorAddress as `0x${string}`,
       abi: GOVERNOR_ABI,
       functionName: 'proposalCount',
     })
@@ -889,7 +884,7 @@ export default function PCEPage({
       let _proposals = []
       for (let i = 1; i < Number(proposalCount) + 1; i++) {
         const _proposalData = await readContract(config, {
-          address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+          address: governorAddress as `0x${string}`,
           abi: GOVERNOR_ABI,
           functionName: 'proposals',
           args: [i.toString()],
@@ -897,7 +892,7 @@ export default function PCEPage({
         })
 
         const getReceipt = await readContract(config, {
-          address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+          address: governorAddress as `0x${string}`,
           abi: GOVERNOR_ABI,
           functionName: 'getReceipt',
           args: [i.toString(), address],
@@ -1070,7 +1065,7 @@ export default function PCEPage({
         [variable1, variable2, variable3]
       )
     } else if (category === '6') {
-      _address = governorAddress[chainId || defaultChainId]
+      _address = governorAddress as `0x${string}`
       _signature = 'updateVariables(uint256,uint256,uint256)'
       _calldata = new ethers.AbiCoder().encode(
         ['uint256', 'uint256', 'uint256'],
@@ -1087,7 +1082,7 @@ export default function PCEPage({
     try {
       const simulateResult = await simulateContract(config, {
         abi: GOVERNOR_ABI,
-        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+        address: governorAddress as `0x${string}`,
         functionName: 'propose',
         args: [[_address], [_value], [_signature], [_calldata], description],
       })
@@ -1095,7 +1090,7 @@ export default function PCEPage({
       // To get the return value, await and store the result from writeContract
       const tx = await writeContractAsync({
         abi: GOVERNOR_ABI,
-        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+        address: governorAddress as `0x${string}`,
         functionName: 'propose',
         args: [[_address], [_value], [_signature], [_calldata], description],
       })
@@ -1120,7 +1115,7 @@ export default function PCEPage({
 
       await writeContract({
         abi: GOVERNOR_ABI,
-        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+        address: governorAddress as `0x${string}`,
         functionName: 'updateSocialConfig',
         args: [
           '',
@@ -1283,15 +1278,9 @@ export default function PCEPage({
                       <CustomLink.default
                         chainId={chainId}
                         type="address"
-                        address={
-                          governorAddress[
-                            chainId || defaultChainId
-                          ] as `0x${string}`
-                        }
+                        address={governorAddress as `0x${string}`}
                         message={shortenAddress(
-                          governorAddress[
-                            chainId || defaultChainId
-                          ] as `0x${string}`
+                          governorAddress as `0x${string}`
                         )}
                       ></CustomLink.default>
                     </div>
@@ -1789,7 +1778,6 @@ export default function PCEPage({
                               setTransferAmount('')
                               setIsDepositDialogOpened(!isDepositDialogOpened)
                               refetchPCEBalance()
-                              refetchGovTokenBalance()
                             }}
                           >
                             {localDict.deposit ?? 'Deposit'}

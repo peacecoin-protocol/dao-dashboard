@@ -15,7 +15,7 @@ import {
   type BaseError,
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
-import { CAMPAIGN, SupabaseDao } from '~/i18n/types'
+import { CAMPAIGN } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
@@ -219,9 +219,7 @@ export default function ForCampaignPage({
   const [loading, setLoading] = useState<boolean>(false)
   const [tokenData, setTokenData] = useState<SBTInfo[]>([])
 
-  const [allDAOs, setAllDAOs] = useState<SupabaseDao[]>([])
   const [daoNames, setDaoNames] = useState<Record<string, string>>({})
-
   const [searchTerm, setSearchTerm] = useState<string>('')
 
   // Contract hooks
@@ -276,6 +274,7 @@ export default function ForCampaignPage({
               .select()
               .eq('tokenId', campaign.sbtId.toString())
               .eq('isSBT', campaign.tokenType == 1 ? true : false)
+              .eq('daoId', campaign.daoId)
 
             campaignData[index].daoId = data?.[0]?.daoId
             campaignData[index].image = data?.[0]?.image
