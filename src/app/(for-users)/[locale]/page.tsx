@@ -42,7 +42,7 @@ import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { parseEther } from 'viem'
 
 import { Env } from '~/env'
-
+import { PCE_DAO_ID } from '~/app/constants/constants'
 // Fetch token holders from Moralis API, paginating until cursor is null
 async function getHolders(chainId: number, tokenAddress: string) {
   // Moralis API endpoint and key
@@ -244,9 +244,19 @@ export default function ForDAOPage({
 
   useEffect(() => {
     const fetchDAO = async () => {
-      const { data: dao } = await supabase.from('DAO').select()
+      const { data: dao } = await supabase
+        .from('DAO')
+        .select()
+        .order('id', { ascending: false })
 
-      setDaos(dao as SupabaseDao[])
+      let sortedDaos = (dao as SupabaseDao[]) || []
+      sortedDaos = sortedDaos.sort((a, b) => {
+        if (a.daoId === PCE_DAO_ID) return -1
+        if (b.daoId === PCE_DAO_ID) return 1
+        return 0
+      })
+
+      setDaos(sortedDaos)
       setLoading(false)
     }
     fetchDAO()

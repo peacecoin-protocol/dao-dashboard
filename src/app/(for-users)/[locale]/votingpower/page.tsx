@@ -22,7 +22,7 @@ import {
 import { getDict } from '~/i18n/get-dict'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { defaultChainId } from '~/app/constants/constants'
+import { daoStudioAddress, defaultChainId } from '~/app/constants/constants'
 
 import { formatNumber } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
@@ -30,24 +30,18 @@ import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { config } from '~/lib/config'
 
 import { waitForTransactionReceipt } from '@wagmi/core'
-import {
-  PCE_SBT_ADDRESS,
-  pceAddress,
-  stakingAddress,
-  WPCE_ADDRESS,
-  NFTAddress,
-  PCE_DAO_ID,
-} from '~/app/constants/constants'
+import { pceAddress, WPCE_ADDRESS, PCE_DAO_ID } from '~/app/constants/constants'
 
-import { STAKING_ABI } from '~/app/ABIs/Staking'
 import { SBT_ABI } from '~/app/ABIs/SBT'
-
+import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
+import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { PCE_GOV_TOKEN_ABI } from '~/app/ABIs/PCEGovToken'
 import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
 import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 
 import { createClient } from '~/utils/supabase/client'
+import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
 
 export default function StakingPage({
   params: { locale },
@@ -64,10 +58,12 @@ export default function StakingPage({
   let [loading, setLoading] = useState(true)
 
   const [stakingAmount, setStakingAmount] = useState('')
-  const [stakedBalance, setStakedBalance] = useState<string>('0')
-  const [votingPower, setVotingPower] = useState<number>(0)
   const [tokenData, setTokenData] = useState<SBTInfo[]>([])
   const [refetchTokenData, setRefetchTokenData] = useState(false)
+  const [sbtAddress, setSbtAddress] = useState<string | undefined>('')
+  const [nftAddress, setNftAddress] = useState<string | undefined>('')
+  const [governorAddress, setGovernorAddress] = useState<string | undefined>('')
+
   const { address, chainId } = useAccount()
 
   const { data: blockNumber } = useBlockNumber()
@@ -84,6 +80,22 @@ export default function StakingPage({
       confirmations: 1,
     })
 
+  const { data: daoConfigs, refetch: refetchDaoConfigs } = useReadContract({
+    address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
+    abi: DAO_STUDIO_ABI,
+    functionName: 'daoConfigs',
+    args: [PCE_DAO_ID],
+  }) as { data?: string; refetch: () => void }
+
+  useEffect(() => {
+    if (daoConfigs?.length == 7) {
+      setGovernorAddress(daoConfigs[3])
+
+      setSbtAddress(daoConfigs[1])
+      setNftAddress(daoConfigs[2])
+    }
+  }, [daoConfigs])
+
   const { data: pceBalance, refetch: refetchPCEBalance } = useReadContract({
     address: pceAddress[chainId || defaultChainId] as `0x${string}`,
     abi: PCE_ABI,
@@ -98,36 +110,11 @@ export default function StakingPage({
     args: [address],
   })
 
-  useEffect(() => {
-    const fetchStakedBalance = async () => {
-      if (wPCEBalance) {
-        const stakedBalance = await readContract(config, {
-          abi: STAKING_ABI,
-          address: stakingAddress[chainId || defaultChainId] as `0x${string}`,
-          functionName: '_convertToPEACECOIN',
-          args: [wPCEBalance as string],
-        })
-        setStakedBalance(stakedBalance as string)
-      } else {
-        setStakedBalance('0')
-      }
-    }
-    fetchStakedBalance()
-  }, [wPCEBalance, chainId])
-
-  const { data: rewardBalance, refetch: refetchRewardBalance } =
-    useReadContract({
-      address: stakingAddress[chainId || defaultChainId] as `0x${string}`,
-      abi: STAKING_ABI,
-      functionName: 'rewards',
-      args: [address],
-    })
-
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     abi: PCE_ABI,
     address: pceAddress[chainId || defaultChainId] as `0x${string}`,
     functionName: 'allowance',
-    args: [address, stakingAddress[chainId || defaultChainId] as `0x${string}`],
+    args: [address, WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`],
   })
 
   const { data: wPCEAllowance, refetch: refetchWPCEAllowance } =
@@ -135,16 +122,13 @@ export default function StakingPage({
       abi: PCE_ABI,
       address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
       functionName: 'allowance',
-      args: [
-        address,
-        stakingAddress[chainId || defaultChainId] as `0x${string}`,
-      ],
+      args: [address, WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`],
     })
 
   const { data: sbtVotingPower, refetch: refetchGetSBTVotingPower } =
     useReadContract({
       abi: SBT_ABI,
-      address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
+      address: sbtAddress as `0x${string}`,
       functionName: 'getPastVotes',
       args: [address, blockNumber?.toString()],
     }) as { data?: bigint; refetch: () => void }
@@ -152,7 +136,7 @@ export default function StakingPage({
   const { data: nftVotingPower, refetch: refetchGetNFTVotingPower } =
     useReadContract({
       abi: SBT_ABI,
-      address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
+      address: nftAddress as `0x${string}`,
       functionName: 'getPastVotes',
       args: [address, blockNumber?.toString()],
     }) as { data?: bigint; refetch: () => void }
@@ -164,45 +148,52 @@ export default function StakingPage({
     args: [address],
   }) as { data?: bigint; refetch: () => void }
 
+  const { data: getVotes, refetch: refetchGetVotes } = useReadContract({
+    abi: GOVERNOR_ABI,
+    address: governorAddress as `0x${string}`,
+    functionName: 'getPastVotes',
+    args: [address, blockNumber?.toString()],
+  }) as { data?: bigint; refetch: () => void }
+
   useEffect(() => {
     const fetchTokenData = async () => {
-      try {
-        setLoading(true)
-        const { data: tokens } = await supabase
-          .from('Token')
-          .select()
-          .eq('daoId', PCE_DAO_ID)
+      setLoading(true)
+      const { data: tokens } = await supabase
+        .from('Token')
+        .select()
+        .eq('daoId', PCE_DAO_ID)
 
-        const _tokenData = tokens as SBTInfo[]
+      const _tokenData = tokens as SBTInfo[]
 
-        const tokenBalances = await Promise.all(
-          _tokenData.map(async (token: SBTInfo) => {
-            const balance = (await readContract(config, {
+      const tokenBalances = await Promise.all(
+        _tokenData.map(async (token: SBTInfo) => {
+          let balance = 0
+          try {
+            balance = (await readContract(config, {
               abi: SBT_ABI,
-              address: token.isSBT
-                ? (PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`)
-                : (NFTAddress[chainId || defaultChainId] as `0x${string}`),
+              address: token.address as `0x${string}`,
               functionName: 'balanceOf',
               args: [address, token.tokenId],
             })) as number
-            return balance
-          })
-        )
-
-        _tokenData.forEach((token: SBTInfo, index: number) => {
-          token.balance = tokenBalances[index] ?? 0
+            return balance ?? 0
+          } catch (error) {
+            console.error('Error fetching token balance:', error)
+            return 0
+          }
         })
-        setTokenData(
-          _tokenData.filter((token: SBTInfo) => Number(token.balance) > 0)
-        )
-      } catch (error) {
-        console.error('Error fetching token data:', error)
-      } finally {
-        setLoading(false)
-      }
+      )
+
+      _tokenData.forEach((token: SBTInfo, index: number) => {
+        token.balance = tokenBalances[index] ?? 0
+      })
+      setTokenData(
+        _tokenData.filter((token: SBTInfo) => Number(token.balance) > 0)
+      )
+
+      setLoading(false)
     }
     fetchTokenData()
-  }, [address, refetchTokenData, supabase, chainId])
+  }, [address, refetchTokenData, supabase])
 
   const handleStake = async () => {
     if (stakingAmount === '' || stakingAmount === '0') {
@@ -232,7 +223,7 @@ export default function StakingPage({
           address: pceAddress[chainId || defaultChainId] as `0x${string}`,
           functionName: 'approve',
           args: [
-            stakingAddress[chainId || defaultChainId] as `0x${string}`,
+            WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
             BigInt(maxUint256),
           ],
         })
@@ -244,19 +235,14 @@ export default function StakingPage({
         hash: tx,
         confirmations: 1,
       })
-
-      refetchAllowance()
-      refetchWPCEAllowance()
-      refetchGetTokenVote()
-      refetchPCEBalance()
     }
 
     let tx
     try {
       tx = await writeContractAsync({
-        abi: STAKING_ABI,
-        address: stakingAddress[chainId || defaultChainId] as `0x${string}`,
-        functionName: 'stake',
+        abi: PCE_C_GOV_TOKEN_ABI,
+        address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'deposit',
         args: [BigInt(parseEther(stakingAmount))],
       })
 
@@ -273,6 +259,8 @@ export default function StakingPage({
 
     refetchPCEBalance()
     refetchAllowance()
+    refetchWPCEAllowance()
+    refetchWPCEBalance()
   }
 
   const handleWithdraw = async () => {
@@ -282,8 +270,8 @@ export default function StakingPage({
     }
 
     const tx = await writeContractAsync({
-      abi: STAKING_ABI,
-      address: stakingAddress[chainId || defaultChainId] as `0x${string}`,
+      abi: PCE_C_GOV_TOKEN_ABI,
+      address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
       functionName: 'withdraw',
       args: [wPCEBalance as string],
     })
@@ -343,23 +331,6 @@ export default function StakingPage({
     fetchDict()
   }, [locale])
 
-  useEffect(() => {
-    let tokenVotingPower = 0
-    let _sbtVotingPower = 0
-    let _nftVotingPower = 0
-    if (getTokenVote) {
-      tokenVotingPower = Number(formatEther(getTokenVote as unknown as bigint))
-    }
-    if (sbtVotingPower) {
-      _sbtVotingPower = Number(formatEther(sbtVotingPower as unknown as bigint))
-    }
-    if (nftVotingPower) {
-      _nftVotingPower = Number(formatEther(nftVotingPower as unknown as bigint))
-    }
-
-    setVotingPower(tokenVotingPower + _sbtVotingPower + _nftVotingPower)
-  }, [getTokenVote, sbtVotingPower, nftVotingPower])
-
   const handleDelegate = async () => {
     setLoading(true)
     try {
@@ -371,6 +342,7 @@ export default function StakingPage({
       })
 
       refetchGetTokenVote()
+      refetchGetVotes()
     } catch (error) {
       console.error('Error delegating voting power:', error)
       toast({ title: (error as BaseError).shortMessage })
@@ -385,7 +357,7 @@ export default function StakingPage({
     try {
       const tx = await writeContractAsync({
         abi: SBT_ABI,
-        address: PCE_SBT_ADDRESS[chainId || defaultChainId] as `0x${string}`,
+        address: sbtAddress as `0x${string}`,
         functionName: 'delegate',
         args: [address],
       })
@@ -396,6 +368,7 @@ export default function StakingPage({
       })
 
       refetchGetSBTVotingPower()
+      refetchGetVotes()
     } catch (error) {
       console.error('Error delegating voting power:', error)
       toast({ title: (error as BaseError).shortMessage })
@@ -410,7 +383,7 @@ export default function StakingPage({
     try {
       const tx = await writeContractAsync({
         abi: SBT_ABI,
-        address: NFTAddress[chainId || defaultChainId] as `0x${string}`,
+        address: nftAddress as `0x${string}`,
         functionName: 'delegate',
         args: [address],
       })
@@ -421,6 +394,7 @@ export default function StakingPage({
       })
 
       refetchGetNFTVotingPower()
+      refetchGetVotes()
     } catch (error) {
       console.error('Error delegating voting power:', error)
       toast({ title: (error as BaseError).shortMessage })
@@ -476,9 +450,7 @@ export default function StakingPage({
               <span className="text-lg font-semibold text-purple-600 dark:text-purple-400 w-full text-right">
                 {wPCEBalance
                   ? formatNumber(
-                      wPCEBalance
-                        ? parseFloat(formatEther(stakedBalance as string))
-                        : 0
+                      parseFloat(formatEther(wPCEBalance as unknown as bigint))
                     )
                   : '0'}{' '}
                 PCE
@@ -535,7 +507,11 @@ export default function StakingPage({
             />
 
             <div className="text-3xl sm:text-4xl font-bold text-teal-600 dark:text-teal-400 mb-4">
-              {formatNumber(votingPower)}
+              {getVotes
+                ? formatNumber(
+                    Number(formatEther(getVotes as unknown as bigint))
+                  )
+                : '0'}
             </div>
 
             <div className="space-y-2">
