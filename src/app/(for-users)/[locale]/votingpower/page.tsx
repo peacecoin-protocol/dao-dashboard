@@ -33,7 +33,6 @@ import { waitForTransactionReceipt } from '@wagmi/core'
 import { pceAddress, WPCE_ADDRESS, PCE_DAO_ID } from '~/app/constants/constants'
 
 import { SBT_ABI } from '~/app/ABIs/SBT'
-import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { PCE_GOV_TOKEN_ABI } from '~/app/ABIs/PCEGovToken'
 import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
@@ -63,6 +62,7 @@ export default function StakingPage({
   const [sbtAddress, setSbtAddress] = useState<string | undefined>('')
   const [nftAddress, setNftAddress] = useState<string | undefined>('')
   const [governorAddress, setGovernorAddress] = useState<string | undefined>('')
+  const [getVotes, setGetVotes] = useState<bigint | undefined>(undefined)
 
   const { address, chainId } = useAccount()
 
@@ -148,12 +148,15 @@ export default function StakingPage({
     args: [address],
   }) as { data?: bigint; refetch: () => void }
 
-  const { data: getVotes, refetch: refetchGetVotes } = useReadContract({
-    abi: GOVERNOR_ABI,
-    address: governorAddress as `0x${string}`,
-    functionName: 'getPastVotes',
-    args: [address, blockNumber?.toString()],
-  }) as { data?: bigint; refetch: () => void }
+  useEffect(() => {
+    if (getTokenVote && sbtVotingPower && nftVotingPower) {
+      setGetVotes(
+        BigInt(getTokenVote as unknown as string) +
+          BigInt(sbtVotingPower as unknown as string) +
+          BigInt(nftVotingPower as unknown as string)
+      )
+    }
+  }, [getTokenVote, sbtVotingPower, nftVotingPower])
 
   useEffect(() => {
     const fetchTokenData = async () => {
@@ -342,7 +345,8 @@ export default function StakingPage({
       })
 
       refetchGetTokenVote()
-      refetchGetVotes()
+      refetchGetSBTVotingPower()
+      refetchGetNFTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
       toast({ title: (error as BaseError).shortMessage })
@@ -368,7 +372,6 @@ export default function StakingPage({
       })
 
       refetchGetSBTVotingPower()
-      refetchGetVotes()
     } catch (error) {
       console.error('Error delegating voting power:', error)
       toast({ title: (error as BaseError).shortMessage })
@@ -394,7 +397,6 @@ export default function StakingPage({
       })
 
       refetchGetNFTVotingPower()
-      refetchGetVotes()
     } catch (error) {
       console.error('Error delegating voting power:', error)
       toast({ title: (error as BaseError).shortMessage })

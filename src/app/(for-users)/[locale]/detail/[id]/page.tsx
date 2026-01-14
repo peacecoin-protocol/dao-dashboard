@@ -51,14 +51,13 @@ import { getDict } from '~/i18n/get-dict'
 
 import { Dictionary, Locale } from '~/i18n/types'
 
-import { shortenAddress } from '~/components/utils'
+import { formatNumber, shortenAddress } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { config } from '~/lib/config'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
 import { TooltipComponent } from '~/components/custom/TooltipComponent'
 import { ProposalBadges } from '~/components/custom/proposal-badges'
 import { FormattedValue } from '~/components/custom/formatted-value'
-import { TokenValueCell } from '~/components/custom/token-value-cell'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { defaultChainId } from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
@@ -78,7 +77,6 @@ import { Env } from '~/env'
 import { useToast } from '~/hooks/use-toast'
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
 import { DialogTrigger } from '~/components/ui/dialog'
-import { AmountInput } from '~/components/custom/amount-input'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 import {
   addFilesToGroupPublic,
@@ -87,7 +85,6 @@ import {
 } from '~/app/pinata/pinataAPI'
 import { PageSubHeaderSection } from '~/components/custom/page-sub-header-section'
 import { StatsSection } from '~/components/custom/stats-section'
-import { DelegateInput } from '~/components/custom/delegate-input'
 import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
@@ -100,6 +97,11 @@ type TokenBalance = {
   symbol: string
   decimals: number
   logo: string
+}
+
+const toBigInt = (value?: string | bigint) => {
+  if (value === undefined || value === null) return 0n
+  return typeof value === 'bigint' ? value : BigInt(value)
 }
 
 export default function ForDaoDetailPage({
@@ -146,6 +148,7 @@ export default function ForDaoDetailPage({
   const [category, setCategory] = useState('')
 
   const [stakingAmount, setStakingAmount] = useState('')
+  const [getVotes, setGetVotes] = useState<bigint | undefined>(undefined)
 
   const [isDelegateDialogOpened, setIsDelegateDialogOpened] = useState(false)
   const [isDepositDialogOpened, setIsDepositDialogOpened] = useState(false)
@@ -719,6 +722,28 @@ export default function ForDaoDetailPage({
     args: [address],
   }) as { data?: string; refetch: () => void }
 
+  const { data: sbtVotingPower, refetch: refetchGetSBTVotingPower } =
+    useReadContract({
+      abi: SBT_ABI,
+      address: sbtAddress as `0x${string}`,
+      functionName: 'getPastVotes',
+      args: [address, blockNumber?.toString()],
+    }) as { data?: string | bigint; refetch: () => void }
+
+  const { data: nftVotingPower, refetch: refetchGetNFTVotingPower } =
+    useReadContract({
+      abi: SBT_ABI,
+      address: nftAddress as `0x${string}`,
+      functionName: 'getPastVotes',
+      args: [address, blockNumber?.toString()],
+    }) as { data?: string | bigint; refetch: () => void }
+
+  useEffect(() => {
+    setGetVotes(
+      toBigInt(tokenVote) + toBigInt(sbtVotingPower) + toBigInt(nftVotingPower)
+    )
+  }, [tokenVote, sbtVotingPower, nftVotingPower])
+
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
       address: governorAddress as `0x${string}`,
@@ -943,6 +968,7 @@ export default function ForDaoDetailPage({
     refetchGovTokenBalance()
     refetchCommunityTokenBalance()
     refetchVotes()
+    refetchTokenVote()
   }
 
   const handleWithdraw = async () => {
@@ -967,6 +993,7 @@ export default function ForDaoDetailPage({
       refetchGovTokenBalance()
       refetchCommunityTokenBalance()
       refetchVotes()
+      refetchTokenVote()
     }
   }
 
@@ -986,6 +1013,7 @@ export default function ForDaoDetailPage({
       })
 
       refetchVotes()
+      refetchGetSBTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
       toast({ title: (error as BaseError).shortMessage })
@@ -1011,6 +1039,7 @@ export default function ForDaoDetailPage({
       })
 
       refetchVotes()
+      refetchGetNFTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
       toast({ title: (error as BaseError).shortMessage })
@@ -1043,10 +1072,42 @@ export default function ForDaoDetailPage({
         })
 
         refetchVotes()
+        refetchTokenVote()
       } catch (error) {
         console.error('Error delegating tokens:', error)
         return
       }
+    }
+  }
+
+  const handleSelfDelegate = async () => {
+    if (!address) {
+      toast({ title: localDict.connectWallet ?? 'Connect your wallet' })
+      return
+    }
+
+    setLoading(true)
+    try {
+      const tx = await writeContractAsync({
+        abi: CommunityGov_ABI,
+        address: governanceTokenAddress as `0x${string}`,
+        functionName: 'delegate',
+        args: [address],
+      })
+
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
+
+      refetchVotes()
+      refetchTokenVote()
+    } catch (error) {
+      console.error('Error delegating voting power:', error)
+      toast({ title: (error as BaseError).shortMessage })
+      return
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -1949,95 +2010,217 @@ export default function ForDaoDetailPage({
           <TabsContent value="holders" className="w-full">
             <div className="flex flex-col mt-4 gap-4">
               <div className="flex flex-col w-full gap-4">
-                <div className="flex flex-col md:flex-row w-full gap-4 items-center justify-between">
-                  <div className="flex flex-col gap-4">
-                    <PageSubHeaderSection
-                      title={
-                        localDict.votingPowerBreakdown ??
-                        'Voting Power Breakdown'
-                      }
-                    />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
+                  <div className="rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
+                    <div className="text-center mb-6">
+                      <PageHeaderSection
+                        title={
+                          votingPowerDict.stakeYourTokens ?? 'Stake tokens'
+                        }
+                        description={
+                          votingPowerDict.stakeDescription ??
+                          'Start earning by staking your tokens in the pool.'
+                        }
+                      />
+                    </div>
+
+                    <div className="gap-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 rounded-lg py-4">
+                        <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 w-full">
+                          {votingPowerDict.pceBalance ?? 'Token Balance'}
+                        </span>
+                        <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 w-full text-right">
+                          {communityTokenBalance
+                            ? formatNumber(
+                                parseFloat(
+                                  formatEther(toBigInt(communityTokenBalance))
+                                )
+                              )
+                            : '0'}{' '}
+                          {communityTokenSymbol ?? 'TOKEN'}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 rounded-lg pb-4">
+                        <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 w-full">
+                          {votingPowerDict.amountStaked ?? 'Amount Staked'}
+                        </span>
+                        <span className="text-lg font-semibold text-purple-600 dark:text-purple-400 w-full text-right">
+                          {governanceTokenBalance
+                            ? formatNumber(
+                                parseFloat(
+                                  formatEther(toBigInt(governanceTokenBalance))
+                                )
+                              )
+                            : '0'}{' '}
+                          {communityTokenSymbol ?? 'TOKEN'}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder={
+                            votingPowerDict.enterAmount ?? 'Enter amount'
+                          }
+                          value={stakingAmount}
+                          onChange={(e) => setStakingAmount(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
+                        <Button
+                          className="w-full"
+                          variant="default"
+                          onClick={handleStake}
+                        >
+                          {votingPowerDict.stake ?? 'Stake'}
+                        </Button>
+                        <Button
+                          className="w-full"
+                          variant="default"
+                          onClick={handleWithdraw}
+                        >
+                          {votingPowerDict.withdraw ?? 'Withdraw'}
+                        </Button>
+
+                        <Button
+                          className="w-full"
+                          variant="default"
+                          onClick={handleSelfDelegate}
+                        >
+                          {votingPowerDict.delegate ?? 'Delegate'}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                {/* Responsive buttons/input row */}
-                <div className="flex flex-col sm:flex-row gap-4 w-full">
-                  <AmountInput
-                    localDict={localDict}
-                    className="w-full sm:w-60"
-                    setStakingAmount={setStakingAmount}
-                    handleStake={handleStake}
-                    maxAmount={
-                      communityTokenBalance
-                        ? Number(formatEther(BigInt(communityTokenBalance)))
-                        : 0
-                    }
-                  />
-                  <Button className="w-full sm:w-60" onClick={handleWithdraw}>
-                    {localDict.withdraw ?? 'Withdraw'}
-                  </Button>
+                  <div className="rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
+                    <div className="text-center space-y-4">
+                      <PageHeaderSection
+                        title={
+                          votingPowerDict.myVotingPower ?? 'My Voting Power'
+                        }
+                        description={''}
+                      />
 
-                  <DelegateInput
-                    className="w-full sm:w-60"
-                    setDelegateAddr={setDelegateAddr}
-                    handleDelegate={handleDelegate}
-                  />
-                </div>
-                {/* Responsive table container */}
-                <div className="rounded-xl flex border mt-4 w-full overflow-x-auto">
-                  <Table className="w-full">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>
-                          <div className="flex flex-row gap-4">
-                            {localDict.address ?? 'Address'}
-                          </div>
-                        </TableHead>
-                        <TableHead>
-                          {localDict.communityToken ?? 'Community Token'}
-                        </TableHead>
-                        <TableHead>
-                          {localDict.governanceToken ?? 'Governance Token'}
-                        </TableHead>
-                        <TableHead>
-                          {localDict.delegatedAmount ?? 'Delegated Amount'}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <div className="flex flex-row gap-2 items-center">
-                            <h1 className="text-md text-primary_blue font-bold break-all">
-                              {communityTokenAddress
-                                ? shortenAddress(communityTokenAddress, 4)
-                                : '-'}
-                            </h1>
-                          </div>
-                        </TableCell>
-                        <TokenValueCell
-                          value={communityTokenBalance}
-                          formatter={(val) =>
-                            formatEther(BigInt(val as string))
-                          }
-                          tokenSymbol={communityTokenSymbol}
-                        />
-                        <TokenValueCell
-                          value={governanceTokenBalance}
-                          formatter={(val) =>
-                            formatEther(BigInt(val as string))
-                          }
-                          tokenSymbol={communityTokenSymbol}
-                        />
-                        <TokenValueCell
-                          value={tokenVote}
-                          formatter={(val) =>
-                            formatEther(BigInt(val as string))
-                          }
-                        />
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                      <div className="text-3xl sm:text-4xl font-bold text-teal-600 dark:text-teal-400 mb-4">
+                        {getVotes
+                          ? formatNumber(
+                              Number(formatEther(getVotes as bigint))
+                            )
+                          : '0'}
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
+                          <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
+                            {votingPowerDict.delegationPower ??
+                              'Delegation Power'}
+                          </span>
+                          <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
+                            {tokenVote
+                              ? formatNumber(
+                                  parseFloat(formatEther(toBigInt(tokenVote)))
+                                )
+                              : '0'}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
+                          <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
+                            {votingPowerDict.sbtVotingPower ??
+                              'SBT Voting Power'}
+                          </span>
+                          <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
+                            {sbtVotingPower
+                              ? formatNumber(
+                                  Number(formatEther(toBigInt(sbtVotingPower)))
+                                )
+                              : '0'}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-center sm:text-left">
+                          <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300 w-full">
+                            {votingPowerDict.nftVotingPower ??
+                              'NFT Voting Power'}
+                          </span>
+                          <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
+                            {nftVotingPower
+                              ? formatNumber(
+                                  Number(formatEther(toBigInt(nftVotingPower)))
+                                )
+                              : '0'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 my-6 text-center sm:text-left">
+                      <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white w-full">
+                        {votingPowerDict.votingPowerAndInfo ??
+                          'Voting Power & Info'}
+                      </h2>
+                      <span className="text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                        {votingPowerDict.active ?? 'Active'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 my-4">
+                      <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                        <span className="font-semibold text-gray-800 dark:text-white">
+                          •
+                        </span>
+                        <p>
+                          {votingPowerDict.votingPowerFeature1 ??
+                            'Your total voting power is the sum of your staked amount'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                        <span className="font-semibold text-gray-800 dark:text-white">
+                          •
+                        </span>
+                        <p>
+                          {votingPowerDict.votingPowerFeature2 ??
+                            'Participate in governance decisions and earn more from staking rewards'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                        <span className="font-semibold text-gray-800 dark:text-white">
+                          •
+                        </span>
+                        <p>
+                          {votingPowerDict.votingPowerFeature3 ??
+                            "For 99% of you that don't like voting power, use it to influence rewards for other community members"}
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                        <span className="font-semibold text-gray-800 dark:text-white">
+                          •
+                        </span>
+                        <p>
+                          {votingPowerDict.votingPowerFeature4 ??
+                            'You can delegate voting power to any network participant'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                        <span className="font-semibold text-gray-800 dark:text-white">
+                          •
+                        </span>
+                        <p>
+                          {votingPowerDict.votingPowerFeature5 ??
+                            'You can also delegate voting power to our fund to publish governance decisions'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-8 sm:mt-12">
