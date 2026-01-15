@@ -76,6 +76,7 @@ export interface Dictionary {
   pipAll: Section
   votingPower: Section
   sbt: Section
+  management: Section
 }
 
 export interface TOKEN {

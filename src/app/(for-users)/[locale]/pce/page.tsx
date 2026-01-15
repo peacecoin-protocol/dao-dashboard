@@ -946,19 +946,24 @@ export default function PCEPage({
 
   // Filter proposals based on status
   useEffect(() => {
-    if (multipleOptions.length === 0) return
-
     let filtered = multipleOptions
+    filtered.push(...proposals)
 
     if (statusFilter === 'active') {
-      filtered = multipleOptions.filter((option) => option.status === 'Active')
+      filtered = filtered.filter((option) => option.status === 'Active')
     } else if (statusFilter === 'ended') {
-      filtered = multipleOptions.filter((option) => option.status === 'Ended')
+      filtered = filtered.filter((option) => option.status === 'Ended')
     }
-    // 'all' shows all proposals, so no filtering needed
+
+    filtered.sort((a, b) => {
+      // If end is a BigInt, convert to Number safely, else use as is
+      const endA = typeof a.end === 'bigint' ? Number(a.end) : a.end
+      const endB = typeof b.end === 'bigint' ? Number(b.end) : b.end
+      return endB - endA
+    })
 
     setFilteredProposals(filtered)
-  }, [multipleOptions, statusFilter])
+  }, [multipleOptions, proposals, statusFilter])
 
   const handleCreateProposal = async () => {
     setIsCreateProposalDialogOpened(false)
@@ -1576,12 +1581,12 @@ export default function PCEPage({
                   </div>
                 </div>
 
-                <div className="flex flex-col mt-4 gap-4 w-full">
+                {/* <div className="flex flex-col mt-4 gap-4 w-full">
                   {proposals.length > 0 &&
                     proposals.map((proposal) => (
                       <ProposalCard key={proposal.pID} proposal={proposal} />
                     ))}
-                </div>
+                </div> */}
 
                 <div className="flex flex-col mt-4 gap-4 w-full">
                   {filteredProposals.length > 0 &&

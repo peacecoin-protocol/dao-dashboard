@@ -1,6 +1,6 @@
 'use client'
 
-import { CopyIcon } from 'lucide-react'
+import { CopyIcon, Plus, X, Calendar, ChevronsUpDown } from 'lucide-react'
 import { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
@@ -18,6 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '~/components/ui/popover'
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from '~/components/ui/command'
 import { Textarea } from '~/components/ui/textarea'
 import {
   Table,
@@ -28,7 +39,8 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { Input } from '~/components/ui/input'
-import { readContract } from '@wagmi/core'
+import { Checkbox } from '~/components/ui/checkbox'
+import { readContract, simulateContract } from '@wagmi/core'
 import { ethers, formatEther, parseEther } from 'ethers'
 import {
   useAccount,
@@ -50,7 +62,7 @@ import { getDict } from '~/i18n/get-dict'
 
 import { Dictionary, Locale } from '~/i18n/types'
 
-import { formatNumber, shortenAddress } from '~/components/utils'
+import { formatNumber, formatString, shortenAddress } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { config } from '~/lib/config'
 import { TIMELOCK_ABI } from '~/app/ABIs/Timelock'
@@ -58,7 +70,11 @@ import { TooltipComponent } from '~/components/custom/TooltipComponent'
 import { ProposalBadges } from '~/components/custom/proposal-badges'
 import { FormattedValue } from '~/components/custom/formatted-value'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
-import { defaultChainId } from '~/app/constants/constants'
+import { MULTIPLE_VOTINGS_ABI } from '~/app/ABIs/MultipleVotings'
+import {
+  defaultChainId,
+  MultipleVotingAddress,
+} from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { daoStudioAddress } from '~/app/constants/constants'
 import { useBlockNumber, useBlock } from 'wagmi'
@@ -117,11 +133,15 @@ export default function ForDaoDetailPage({
   const votingPowerDict = dict?.votingPower ?? {}
 
   const [delegateAddr, setDelegateAddr] = useState('')
-  const [transferAddr, setTransferAddr] = useState('')
   const [description, setDescription] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
   const [tokenAddress, setTokenAddress] = useState('')
   const [imageHash, setImageHash] = useState('')
+  const [values, setValues] = useState('')
+  const [bytescode, setBytesCodes] = useState('')
+  const [variable1, setVariable1] = useState('')
+  const [variable2, setVariable2] = useState('')
+  const [variable3, setVariable3] = useState('')
 
   const [id, setId] = useState('')
 
@@ -129,6 +149,8 @@ export default function ForDaoDetailPage({
   const [proposalStatus, setStatus] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [daoInfo, setDaoInfo] = useState<any>(null)
+  const [multipleOptions, setMultipleOptions] = useState<any[]>([])
+  const [isRefetching, setIsRefetching] = useState(false)
 
   const [governorAddress, setGovernorAddress] = useState<string | undefined>('')
   const [governanceTokenAddress, setGovernanceTokenAddress] = useState<
@@ -145,6 +167,12 @@ export default function ForDaoDetailPage({
   const [refetchTokenData, setRefetchTokenData] = useState(false)
 
   const [category, setCategory] = useState('')
+  const [options, setOptions] = useState<string[]>(['', ''])
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
+  const [filteredProposals, setFilteredProposals] = useState<any[]>([])
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false)
 
   const [stakingAmount, setStakingAmount] = useState('')
   const [getVotes, setGetVotes] = useState<bigint | undefined>(undefined)
@@ -248,8 +276,6 @@ export default function ForDaoDetailPage({
         .select()
         .eq('daoId', id)
         .single()
-
-      console.log('dao', dao)
 
       if (dao) {
         setImageHash(dao.image)
@@ -447,6 +473,212 @@ export default function ForDaoDetailPage({
     }
     fetchTokenData()
   }, [address, refetchTokenData, supabase, chainId, id])
+
+  const OptionsCard = ({
+    multipleOptionProposalData,
+  }: {
+    multipleOptionProposalData: any
+  }) => {
+    const [selectedOption, setSelectedOption] = useState<number | null>(null)
+    let options = multipleOptionProposalData?.options ?? []
+    let optionVotes = multipleOptionProposalData?.optionVotes ?? []
+    let description = multipleOptionProposalData?.description ?? ''
+    let status = multipleOptionProposalData?.status ?? ''
+    let hasVoted = multipleOptionProposalData?.hasVoted ?? false
+
+    const totalVotes = optionVotes.reduce((acc: bigint, curr: any) => {
+      const currValue =
+        typeof curr === 'bigint' ? curr : BigInt(String(curr || 0))
+      return acc + currValue
+    }, BigInt(0))
+
+    const optionPercentages = options.map((option: string, index: number) => {
+      const optionValue = optionVotes[index] || BigInt(0)
+      const value =
+        typeof optionValue === 'bigint'
+          ? optionValue
+          : BigInt(String(optionValue || 0))
+      return totalVotes > 0 ? (Number(value) / Number(totalVotes)) * 100 : 0
+    })
+
+    const maxPercentage = Math.max(...optionPercentages)
+
+    const getColor = (percentage: number) => {
+      if (percentage === maxPercentage && maxPercentage > 0) {
+        return 'bg-green-500'
+      } else if (percentage > 0) {
+        const sorted = [...optionPercentages].sort((a, b) => b - a)
+        if (percentage === sorted[1] && sorted[1] > 0) {
+          return 'bg-orange-500'
+        }
+        return 'bg-red-500'
+      }
+      return 'bg-gray-300'
+    }
+
+    return (
+      <article className="flex flex-col bg-blue-50 p-6 rounded-xl gap-4 shadow-sm">
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-row items-center justify-between w-full">
+            <h1 className="text-xl font-bold text-gray-800 flex-1">
+              {description || 'Description'}
+            </h1>
+            <span
+              className={`text-xs font-semibold px-3 py-1 rounded-full
+      ${
+        status === 'Active'
+          ? 'bg-green-200 text-green-900'
+          : status === 'Pending'
+            ? 'bg-yellow-200 text-yellow-900'
+            : status === 'Ended'
+              ? 'bg-gray-300 text-gray-700'
+              : 'bg-gray-200 text-gray-800'
+      }`}
+              style={{ minWidth: 73, textAlign: 'center' }}
+            >
+              {status}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {options.map((option: string, index: number) => {
+            const optionValue = optionVotes[index] || BigInt(0)
+            const value =
+              typeof optionValue === 'bigint'
+                ? optionValue
+                : BigInt(String(optionValue || 0))
+            const percentage = optionPercentages[index] || 0
+            const percentageStr = percentage.toFixed(2)
+
+            return (
+              <div key={index} className="flex flex-col gap-2">
+                <div className="flex flex-row items-center gap-3">
+                  <Checkbox
+                    checked={selectedOption === index}
+                    onCheckedChange={() => setSelectedOption(index)}
+                    className="h-5 w-5"
+                    disabled={status !== 'Active' || hasVoted}
+                  />
+                  <span className="flex-1 text-gray-700 whitespace-pre-line break-words">
+                    {option}
+                  </span>
+                  <span className="text-gray-700 font-medium">
+                    {formatString(formatEther(value))}: {`(${percentageStr}%) `}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${getColor(percentage)}`}
+                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <Button
+          className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 rounded-lg"
+          disabled={status !== 'Active' || selectedOption === null}
+          onClick={async () => {
+            if (selectedOption !== null) {
+              setLoading(true)
+              try {
+                const tx = await writeContractAsync({
+                  abi: MULTIPLE_VOTINGS_ABI,
+                  address: MultipleVotingAddress[
+                    chainId || defaultChainId
+                  ] as `0x${string}`,
+                  functionName: 'castMultipleChoiceVote',
+                  args: [multipleOptionProposalData.pID, selectedOption],
+                })
+
+                await waitForTransactionReceipt(config, {
+                  hash: tx,
+                  confirmations: 1,
+                })
+
+                setIsRefetching(!isRefetching)
+                setSelectedOption(null)
+              } catch (error) {
+                console.error('Error voting:', error)
+              } finally {
+                setLoading(false)
+                setSelectedOption(null)
+              }
+            }
+          }}
+          style={{
+            display: hasVoted || status !== 'Active' ? 'none' : undefined,
+          }}
+        >
+          Submit
+        </Button>
+        {status === 'Ended' && (
+          <div className="mt-4">
+            <h3 className="font-semibold mb-2">
+              {localDict?.resultsTitle ?? 'Voting Results'}
+            </h3>
+            <ul className="space-y-2">
+              {multipleOptionProposalData.options &&
+                (() => {
+                  let valuesArr: number[] = []
+                  if (Array.isArray(multipleOptionProposalData.optionVotes)) {
+                    valuesArr = multipleOptionProposalData.optionVotes.map(
+                      (v: any) => Number(v)
+                    )
+                  }
+
+                  let total = valuesArr.reduce((acc, curr) => acc + curr, 0)
+                  const maxValue = Math.max(...valuesArr)
+                  const maxIndices = valuesArr
+                    .map((v, idx) => (v === maxValue ? idx : -1))
+                    .filter((idx) => idx !== -1)
+
+                  return multipleOptionProposalData.options.map(
+                    (opt: string, idx: number) => {
+                      const value = valuesArr[idx] ?? 0
+                      let formattedValue: string = ''
+                      formattedValue = formatString(
+                        formatEther(BigInt(value).toString())
+                      )
+
+                      let pct =
+                        total > 0
+                          ? ((Number(value) / total) * 100).toFixed(2)
+                          : '0.00'
+
+                      const isMostChosen = maxIndices.includes(idx)
+
+                      return (
+                        <li
+                          key={idx}
+                          className={`flex items-center gap-2 ${
+                            isMostChosen ? 'font-bold text-green-700' : ''
+                          }`}
+                        >
+                          <span className="font-medium">{opt}</span>
+                          <span className="ml-auto">
+                            {formattedValue} {localDict?.votes ?? 'votes'} (
+                            {pct}
+                            %)
+                          </span>
+                          {isMostChosen && (
+                            <span className="ml-2 text-xs text-green-600 font-semibold">
+                              {`has beeen choose the most`}
+                            </span>
+                          )}
+                        </li>
+                      )
+                    }
+                  )
+                })()}
+            </ul>
+          </div>
+        )}
+      </article>
+    )
+  }
 
   const ProposalCard = ({
     proposal,
@@ -692,6 +924,26 @@ export default function ForDaoDetailPage({
     </article>
   )
 
+  function handleChange(
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) {
+    const name = event.target.name
+    const value = event.target.value
+    if (name === 'values') {
+      setValues(value)
+    } else if (name === 'description') {
+      setDescription(value)
+    } else if (name === 'bytescode') {
+      setBytesCodes(value)
+    } else if (name === 'variable1') {
+      setVariable1(value)
+    } else if (name === 'variable2') {
+      setVariable2(value)
+    } else if (name === 'variable3') {
+      setVariable3(value)
+    }
+  }
+
   function handleSelect(value: any) {
     setCategory(value)
   }
@@ -732,10 +984,67 @@ export default function ForDaoDetailPage({
     )
   }, [tokenVote, sbtVotingPower, nftVotingPower])
 
+  useEffect(() => {
+    let filtered = [
+      ...multipleOptions.map((option) => ({
+        type: 'multiple',
+        data: option,
+      })),
+      ...proposals.map((proposal, index) => ({
+        type: 'governor',
+        data: proposal,
+        status: proposalStatus[index],
+        index,
+      })),
+    ]
+
+    const getItemStatus = (item: {
+      type: string
+      data: any
+      status?: string
+    }) => (item.type === 'multiple' ? item.data?.status : item.status)
+
+    if (statusFilter === 'active') {
+      filtered = filtered.filter((item) => getItemStatus(item) === 'Active')
+    } else if (statusFilter === 'ended') {
+      filtered = filtered.filter((item) => {
+        const status = getItemStatus(item)
+        return status ? status !== 'Active' : false
+      })
+    }
+
+    filtered.sort((a, b) => {
+      const endA =
+        a.type === 'multiple'
+          ? Number(a.data.end)
+          : typeof a.data?.[4] === 'bigint'
+            ? Number(a.data?.[4])
+            : Number(a.data?.[4] ?? 0)
+      const endB =
+        b.type === 'multiple'
+          ? Number(b.data.end)
+          : typeof b.data?.[4] === 'bigint'
+            ? Number(b.data?.[4])
+            : Number(b.data?.[4] ?? 0)
+      return endB - endA
+    })
+
+    setFilteredProposals(filtered)
+  }, [multipleOptions, proposals, proposalStatus, statusFilter])
+
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
       address: governorAddress as `0x${string}`,
       abi: GOVERNOR_ABI,
+      functionName: 'proposalCount',
+    }) as { data?: number; refetch: () => void }
+
+  const { data: multipleProposalCount, refetch: refetchMultipleProposalCount } =
+    useReadContract({
+      address: MultipleVotingAddress[
+        chainId || defaultChainId
+      ] as `0x${string}`,
+      abi: MULTIPLE_VOTINGS_ABI,
       functionName: 'proposalCount',
     }) as { data?: number; refetch: () => void }
 
@@ -820,6 +1129,70 @@ export default function ForDaoDetailPage({
   }, [proposalCount, isConfirmed, governorAddress])
 
   useEffect(() => {
+    async function fetchMultipleProposals() {
+      const currentTimestamp = Math.floor(Date.now() / 1000)
+
+      if (!multipleProposalCount || !address || !chainId || !currentTimestamp)
+        return
+
+      setLoading(true)
+      let _multipleOptions = []
+      for (let i = Number(multipleProposalCount); i > 0; i--) {
+        const _proposalData = await readContract(config, {
+          address: MultipleVotingAddress[
+            chainId || defaultChainId
+          ] as `0x${string}`,
+          abi: MULTIPLE_VOTINGS_ABI,
+          functionName: 'getProposal',
+          args: [i.toString()],
+          account: address,
+        })
+
+        const _optionVotes = await readContract(config, {
+          address: MultipleVotingAddress[
+            chainId || defaultChainId
+          ] as `0x${string}`,
+          abi: MULTIPLE_VOTINGS_ABI,
+          functionName: 'getOptionVotes',
+          args: [i],
+        })
+
+        const isEnded =
+          currentTimestamp >
+          Number(
+            Array.isArray(_proposalData) ? Number(String(_proposalData[4])) : 0
+          )
+        _multipleOptions.push({
+          pID: i,
+          description: Array.isArray(_proposalData)
+            ? (_proposalData[7] as string)
+            : '',
+          options: Array.isArray(_proposalData)
+            ? (_proposalData[2] as string[])
+            : [],
+          start: Array.isArray(_proposalData)
+            ? (_proposalData[3] as number)
+            : 0,
+          end: Array.isArray(_proposalData) ? (_proposalData[4] as number) : 0,
+          totalVotes: Array.isArray(_proposalData)
+            ? (_proposalData[5] as number)
+            : 0,
+          status: isEnded ? 'Ended' : 'Active',
+          hasVoted: Array.isArray(_proposalData)
+            ? (_proposalData[8] as boolean)
+            : false,
+          optionVotes: _optionVotes,
+          isMultipleChoice: true,
+        })
+      }
+
+      setMultipleOptions(_multipleOptions)
+      setLoading(false)
+    }
+    fetchMultipleProposals()
+  }, [multipleProposalCount, address, chainId, isRefetching])
+
+  useEffect(() => {
     const fetchIdenticon = async () => {
       if (governorAddress) {
         setIdenticon(await generateIdenteapot(id, ''))
@@ -830,25 +1203,120 @@ export default function ForDaoDetailPage({
 
   const handleCreateProposal = async () => {
     setIsCreateProposalDialogOpened(false)
+    setLoading(true)
 
     try {
-      const _calldata = new ethers.AbiCoder().encode(
-        ['address', 'uint256'],
-        [transferAddr, parseEther(transferAmount)]
-      )
-      const _signature = 'transfer(address,uint256)'
+      if (category.length === 0) {
+        toast({ title: 'Please Select Category' })
+        setLoading(false)
+        return
+      }
+
+      if (category === '7') {
+        if (description === '') {
+          toast({ title: 'Please enter a valid description' })
+          setLoading(false)
+          return
+        }
+
+        for (let i = 0; i < options.length; i++) {
+          if (options[i] === '') {
+            toast({ title: 'Please enter a valid option' })
+            setLoading(false)
+            return
+          }
+        }
+
+        const startTimeTimestamp = startTime
+          ? Math.floor(new Date(startTime).getTime() / 1000)
+          : 0
+        const endTimeTimestamp = endTime
+          ? Math.floor(new Date(endTime).getTime() / 1000)
+          : 0
+
+        const targetAddress = MultipleVotingAddress[
+          chainId || defaultChainId
+        ] as `0x${string}`
+
+        await simulateContract(config, {
+          abi: MULTIPLE_VOTINGS_ABI,
+          address: targetAddress,
+          functionName: 'proposeMultipleChoice',
+          args: [options, description, startTimeTimestamp, endTimeTimestamp],
+        })
+
+        const tx = await writeContractAsync({
+          abi: MULTIPLE_VOTINGS_ABI,
+          address: targetAddress,
+          functionName: 'proposeMultipleChoice',
+          args: [options, description, startTimeTimestamp, endTimeTimestamp],
+        })
+
+        await waitForTransactionReceipt(config, {
+          hash: tx,
+          confirmations: 1,
+        })
+
+        refetchMultipleProposalCount()
+        setIsRefetching(!isRefetching)
+        setLoading(false)
+        return
+      }
+
+      if (
+        tokenAddress.length === 0 &&
+        category !== '4' &&
+        category !== '5' &&
+        category !== '6'
+      ) {
+        toast({ title: 'Please enter a valid token address' })
+        setLoading(false)
+        return
+      }
+
+      let _signature = 'approve(address,uint256)'
+      let _value = '0'
+      let _calldata = ''
+      let _address: `0x${string}` | undefined
+
+      if (category === '2') {
+        _calldata = new ethers.AbiCoder().encode(
+          ['address', 'uint256'],
+          [address, parseEther(values)]
+        )
+        _signature = 'transfer(address,uint256)'
+        _address = tokenAddress as `0x${string}`
+      } else if (category === '4') {
+        _signature = 'deploy(bytes)'
+        _calldata = new ethers.AbiCoder().encode(['bytes'], [bytescode])
+        _address = daoStudioAddress[chainId || defaultChainId] as `0x${string}`
+      } else if (category === '5') {
+        _address = timelockAddress as `0x${string}`
+        _signature = 'updateVariables(uint256,uint256,uint256)'
+        _calldata = new ethers.AbiCoder().encode(
+          ['uint256', 'uint256', 'uint256'],
+          [variable1, variable2, variable3]
+        )
+      } else if (category === '6') {
+        _address = governorAddress as `0x${string}`
+        _signature = 'updateVariables(uint256,uint256,uint256)'
+        _calldata = new ethers.AbiCoder().encode(
+          ['uint256', 'uint256', 'uint256'],
+          [parseEther(variable1), parseEther(variable2), parseEther(variable3)]
+        )
+      } else {
+        _address = tokenAddress as `0x${string}`
+        _calldata = new ethers.AbiCoder().encode(
+          ['address', 'uint256'],
+          [address, parseEther(values)]
+        )
+      }
 
       const proposeTx = await writeContractAsync({
         abi: GOVERNOR_ABI,
         address: governorAddress as `0x${string}`,
         functionName: 'propose',
-        args: [
-          [tokenAddress as `0x${string}`],
-          [0],
-          [_signature],
-          [_calldata],
-          description,
-        ],
+        args: [[_address], [_value], [_signature], [_calldata], description],
       })
 
       await waitForTransactionReceipt(config, {
@@ -857,7 +1325,7 @@ export default function ForDaoDetailPage({
       })
     } catch (error) {
       console.error('Error creating proposal:', error)
-
+      setLoading(false)
       return
     }
 
@@ -865,15 +1333,16 @@ export default function ForDaoDetailPage({
       daoId: id,
       category: category,
       tokenAddress: tokenAddress,
-      amount: transferAmount,
+      amount: values,
       description: description,
-      transferTo: transferAddr,
+      transferTo: category === '2' ? (address ?? '') : '',
       proposer: address,
       proposalId: Number(proposalCount) + 1,
       created_at: new Date().toISOString(),
     })
 
     refetchProposalCount()
+    setLoading(false)
   }
 
   useEffect(() => {
@@ -1036,36 +1505,6 @@ export default function ForDaoDetailPage({
       console.error('Error delegating voting power:', error)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleDelegate = async () => {
-    setIsDelegateDialogOpened(false)
-
-    toast({
-      title: 'Delegating voting power...',
-    })
-
-    if (BigInt(governanceTokenBalance as string) > 0) {
-      let tx
-      try {
-        tx = await writeContractAsync({
-          abi: CommunityGov_ABI,
-          address: governanceTokenAddress as `0x${string}`,
-          functionName: 'delegate',
-          args: [delegateAddr],
-        })
-
-        await waitForTransactionReceipt(config, {
-          hash: tx,
-          confirmations: 1,
-        })
-
-        refetchVotes()
-        refetchTokenVote()
-      } catch (error) {
-        console.error('Error delegating tokens:', error)
-      }
     }
   }
 
@@ -1713,127 +2152,95 @@ export default function ForDaoDetailPage({
             </div>
           </TabsContent>
           <TabsContent value="all">
-            <div className="flex flex-row w-full items-center">
-              <Tabs defaultValue="all" className="gap-0 w-full">
-                <TabsList>
-                  <TabsTrigger className="w-20" value="all">
-                    {localDict.all}
-                  </TabsTrigger>
-                  <TabsTrigger className="w-20" value="active">
-                    {localDict.active}
-                  </TabsTrigger>
-                  <TabsTrigger className="w-20" value="executed">
-                    {localDict.executed}
-                  </TabsTrigger>
-                  <TabsTrigger className="w-20" value="defeated">
-                    {localDict.defeated}
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent
-                  value="all"
-                  className="flex w-full flex-col gap-4 mt-4"
+            <div className="flex flex-col mt-4 gap-4 w-full">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
+                <Button
+                  className="bg-primary_blue text-white w-48 ml-auto"
+                  onClick={() => setIsCreateProposalDialogOpened(true)}
                 >
-                  {proposals.length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      return (
-                        <ProposalCard
-                          key={index}
-                          proposal={proposal}
-                          status={proposalStatus[index]}
-                          index={index}
-                        />
-                      )
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ?? 'No proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-                <TabsContent
-                  value="active"
-                  className="flex w-full flex-col mt-0"
-                >
-                  {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Active'
-                  ).length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Active') {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
-                      }
-                      return null
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ??
-                        'No active proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
+                  {localDict.createProposal ?? 'Create Proposal'}
+                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <Popover
+                    open={isStatusFilterOpen}
+                    onOpenChange={setIsStatusFilterOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className="w-full sm:w-[200px] justify-between bg-white"
+                      >
+                        {statusFilter === 'all'
+                          ? (localDict.all ?? 'All')
+                          : statusFilter === 'active'
+                            ? (localDict.active ?? 'Active')
+                            : (localDict.ended ?? 'Ended')}
+                        <ChevronsUpDown className="opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full sm:w-[200px] p-0">
+                      <Command>
+                        <CommandList>
+                          <CommandGroup>
+                            <CommandItem
+                              value="all"
+                              onSelect={() => {
+                                setStatusFilter('all')
+                                setIsStatusFilterOpen(false)
+                              }}
+                            >
+                              {localDict.all ?? 'All'}
+                            </CommandItem>
+                            <CommandItem
+                              value="active"
+                              onSelect={() => {
+                                setStatusFilter('active')
+                                setIsStatusFilterOpen(false)
+                              }}
+                            >
+                              {localDict.active ?? 'Active'}
+                            </CommandItem>
+                            <CommandItem
+                              value="ended"
+                              onSelect={() => {
+                                setStatusFilter('ended')
+                                setIsStatusFilterOpen(false)
+                              }}
+                            >
+                              {localDict.ended ?? 'Ended'}
+                            </CommandItem>
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
 
-                <TabsContent
-                  value="executed"
-                  className="flex w-full flex-col mt-0"
-                >
-                  {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Executed'
-                  ).length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Executed') {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
-                      }
-                      return null
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ??
-                        'No succeeded proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent
-                  value="defeated"
-                  className="flex w-full flex-col gap-4 mt-0"
-                >
-                  {proposals.filter(
-                    (_, index) => proposalStatus[index] === 'Defeated'
-                  ).length > 0 ? (
-                    proposals.map((proposal, index) => {
-                      if (proposalStatus[index] === 'Defeated') {
-                        return (
-                          <ProposalCard
-                            key={index}
-                            proposal={proposal}
-                            status={proposalStatus[index]}
-                            index={index}
-                          />
-                        )
-                      }
-                      return null
-                    })
-                  ) : (
-                    <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
-                      {localDict.noProposals ??
-                        'No defeated proposals at the moment'}
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
+              <div className="flex flex-col mt-4 gap-4 w-full">
+                {filteredProposals.length > 0 ? (
+                  filteredProposals.map((item) =>
+                    item.type === 'multiple' ? (
+                      <OptionsCard
+                        key={`multiple-${item.data.pID}`}
+                        multipleOptionProposalData={item.data}
+                      />
+                    ) : (
+                      <ProposalCard
+                        key={`proposal-${item.index}`}
+                        proposal={item.data}
+                        status={item.status}
+                        index={item.index}
+                      />
+                    )
+                  )
+                ) : (
+                  <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
+                    {localDict.noProposals ?? 'No proposals at the moment'}
+                  </div>
+                )}
+              </div>
             </div>
           </TabsContent>
           <TabsContent value="balance">
@@ -2252,7 +2659,7 @@ export default function ForDaoDetailPage({
           <DialogDescription>
             Configure the proposal details below
           </DialogDescription>
-          <div className="flex flex-col gap-4 mt-4">
+          <div className="flex flex-col gap-4 mt-4 mb-2">
             <Select onValueChange={handleSelect}>
               <SelectTrigger className="w-full">
                 <SelectValue
@@ -2260,44 +2667,185 @@ export default function ForDaoDetailPage({
                 />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">
-                  {localDict.transferTokens ?? 'Transfer Tokens'}
-                </SelectItem>
+                <SelectItem value="1">{dict?.submit?.category1}</SelectItem>
+                <SelectItem value="2">{dict?.submit?.category2}</SelectItem>
+                <SelectItem value="3">{dict?.submit?.category3}</SelectItem>
+                <SelectItem value="4">{dict?.submit?.category4}</SelectItem>
+                <SelectItem value="5">{dict?.submit?.category5}</SelectItem>
+                <SelectItem value="6">{dict?.submit?.category6}</SelectItem>
+                <SelectItem value="7">{dict?.submit?.category7}</SelectItem>
               </SelectContent>
             </Select>
 
-            <Input
-              placeholder={localDict.enterTokenAddress ?? 'Enter Token Address'}
-              value={tokenAddress}
-              onChange={(e) => setTokenAddress(e.target.value)}
-            />
+            {category === '7' ? (
+              <div className="w-full flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">
+                    {localDict.description ?? 'Description'}
+                  </label>
+                  <Textarea
+                    className="max-sm:h-40 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94"
+                    placeholder={
+                      localDict.enterDescription ?? 'Enter proposal description'
+                    }
+                    name="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </div>
 
-            <Input
-              placeholder={localDict.enterAmount ?? 'Enter amount'}
-              value={transferAmount}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setTransferAmount(e.target.value)
-              }
-            />
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium">Start Time</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        type="datetime-local"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="pl-10 pr-10 w-full"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium">End Time</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        type="datetime-local"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        className="pl-10 pr-10 w-full"
+                      />
+                    </div>
+                  </div>
+                </div>
 
-            <Input
-              placeholder={
-                localDict.enterAddressToTransferTo ??
-                'Enter Address To Transfer To'
-              }
-              value={transferAddr}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setTransferAddr(e.target.value)
-              }
-            />
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">Options</label>
+                  <div className="flex flex-col gap-3">
+                    {options.map((option, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-row gap-2 items-center"
+                      >
+                        <Input
+                          placeholder={`Option ${index + 1}`}
+                          value={option}
+                          onChange={(e) => {
+                            const newOptions = [...options]
+                            newOptions[index] = e.target.value
+                            setOptions(newOptions)
+                          }}
+                          className="flex-1"
+                        />
+                        {options.length > 2 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10 text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => {
+                              const newOptions = options.filter(
+                                (_, i) => i !== index
+                              )
+                              setOptions(newOptions)
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                      onClick={() => {
+                        setOptions([...options, ''])
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Option
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full flex flex-col gap-4">
+                <Input
+                  className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+                  onChange={(e) => setTokenAddress(e.target.value)}
+                  placeholder={localDict.address ?? 'Address'}
+                />
 
-            <Textarea
-              placeholder={localDict.enterDescription ?? 'Enter description'}
-              value={description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setDescription(e.target.value)
-              }
-            />
+                <Input
+                  className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder={dict?.submit?.amount ?? ''}
+                  name="values"
+                  onChange={handleChange}
+                />
+
+                <Input
+                  className={`${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder={
+                    category === '5'
+                      ? dict?.submit?.gracePeriod
+                      : dict?.submit?.quorum_votes
+                  }
+                  name="variable1"
+                  onChange={handleChange}
+                />
+
+                <Input
+                  className={`${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder={
+                    category === '5'
+                      ? dict?.submit?.min_delay
+                      : dict?.submit?.proposal_threshold
+                  }
+                  name="variable2"
+                  onChange={handleChange}
+                />
+
+                <Input
+                  className={` ${category !== '5' && category !== '6' ? 'hidden' : ''}`}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder={
+                    category === '5'
+                      ? dict?.submit?.max_delay
+                      : dict?.submit?.proposal_maxOperations
+                  }
+                  name="variable3"
+                  onChange={handleChange}
+                />
+
+                <Textarea
+                  className="max-sm:h-60 h-60 w-full align-center p-2 rounded-md border-[1px] border-gray94"
+                  placeholder={dict?.submit?.description ?? ''}
+                  name="description"
+                  onChange={handleChange}
+                />
+
+                <Textarea
+                  className={`max-sm:h-60 h-40 w-full align-center p-2 rounded-md border-[1px] border-gray94 outline-none ${category != '4' ? 'hidden' : ''}`}
+                  placeholder={dict?.submit?.bytescode ?? ''}
+                  name="bytescode"
+                  onChange={handleChange}
+                />
+              </div>
+            )}
 
             <Button onClick={handleCreateProposal}>
               {localDict.create ?? 'Create'}

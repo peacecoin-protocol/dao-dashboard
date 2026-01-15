@@ -496,5 +496,8 @@
     "total": "Total:",
     "sbt": "SBT",
     "nft": "NFT"
+  },
+  "management": {
+    "title": "Management"
   }
 }
