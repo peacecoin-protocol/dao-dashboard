@@ -73,6 +73,7 @@ import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { MULTIPLE_VOTINGS_ABI } from '~/app/ABIs/MultipleVotings'
 import {
   defaultChainId,
+  pceAddress,
   MultipleVotingAddress,
 } from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
@@ -219,6 +220,9 @@ export default function ForDaoDetailPage({
   const { data: block } = useBlock({
     blockNumber,
   })
+  const showMultipleOptions =
+    !!communityTokenAddress &&
+    communityTokenAddress === pceAddress[chainId || defaultChainId]
 
   const getTreasuryBalances = async (address: string) => {
     // Fetch ERC20 token balances for the given address using Moralis API
@@ -371,6 +375,12 @@ export default function ForDaoDetailPage({
       setCommunityTokenAddress(daoConfigs[5])
     }
   }, [daoConfigs])
+
+  useEffect(() => {
+    if (!showMultipleOptions && category === '7') {
+      setCategory('')
+    }
+  }, [showMultipleOptions, category])
 
   const { data: socialConfig, refetch: refetchSocialConfig } = useReadContract({
     address: governorAddress as `0x${string}`,
@@ -986,10 +996,12 @@ export default function ForDaoDetailPage({
 
   useEffect(() => {
     let filtered = [
-      ...multipleOptions.map((option) => ({
-        type: 'multiple',
-        data: option,
-      })),
+      ...(showMultipleOptions
+        ? multipleOptions.map((option) => ({
+            type: 'multiple',
+            data: option,
+          }))
+        : []),
       ...proposals.map((proposal, index) => ({
         type: 'governor',
         data: proposal,
@@ -1030,7 +1042,13 @@ export default function ForDaoDetailPage({
     })
 
     setFilteredProposals(filtered)
-  }, [multipleOptions, proposals, proposalStatus, statusFilter])
+  }, [
+    multipleOptions,
+    proposals,
+    proposalStatus,
+    statusFilter,
+    showMultipleOptions,
+  ])
 
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
@@ -1132,7 +1150,13 @@ export default function ForDaoDetailPage({
     async function fetchMultipleProposals() {
       const currentTimestamp = Math.floor(Date.now() / 1000)
 
-      if (!multipleProposalCount || !address || !chainId || !currentTimestamp)
+      if (
+        !multipleProposalCount ||
+        !address ||
+        !chainId ||
+        !currentTimestamp ||
+        !showMultipleOptions
+      )
         return
 
       setLoading(true)
@@ -1190,7 +1214,7 @@ export default function ForDaoDetailPage({
       setLoading(false)
     }
     fetchMultipleProposals()
-  }, [multipleProposalCount, address, chainId, isRefetching])
+  }, [multipleProposalCount, address, chainId, isRefetching, showMultipleOptions])
 
   useEffect(() => {
     const fetchIdenticon = async () => {
@@ -2673,11 +2697,13 @@ export default function ForDaoDetailPage({
                 <SelectItem value="4">{dict?.submit?.category4}</SelectItem>
                 <SelectItem value="5">{dict?.submit?.category5}</SelectItem>
                 <SelectItem value="6">{dict?.submit?.category6}</SelectItem>
-                <SelectItem value="7">{dict?.submit?.category7}</SelectItem>
+                {showMultipleOptions && (
+                  <SelectItem value="7">{dict?.submit?.category7}</SelectItem>
+                )}
               </SelectContent>
             </Select>
 
-            {category === '7' ? (
+            {category === '7' && showMultipleOptions ? (
               <div className="w-full flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium">
