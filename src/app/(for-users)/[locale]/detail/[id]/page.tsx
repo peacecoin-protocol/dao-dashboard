@@ -100,7 +100,7 @@ type TokenBalance = {
 }
 
 const toBigInt = (value?: string | bigint) => {
-  if (value === undefined || value === null) return 0n
+  if (value === undefined || value === null) return BigInt(0)
   return typeof value === 'bigint' ? value : BigInt(value)
 }
 
