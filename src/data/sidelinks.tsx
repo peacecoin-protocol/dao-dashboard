@@ -1,15 +1,14 @@
 import {
   IconBuilding,
   IconFileText,
-  IconGauge,
   IconHexagonNumber1,
+  IconHexagonNumber3,
   IconHexagonNumber2,
   IconLayoutDashboard,
   IconStar,
   IconUserShield,
   IconUsers,
   IconWallet,
-  IconWorld,
 } from '@tabler/icons-react'
 
 import { Locale, Dictionary } from '~/i18n/types'
@@ -98,18 +97,18 @@ export const useSideLinks = (locale: Locale, isOwner: boolean): SideLink[] => {
     //     },
     //   ],
     // },
-    {
-      title: sidebar.pce ?? 'PeaceCoin Protocol DAO',
-      label: '',
-      href: '/pce',
-      icon: <IconWorld size={18} />,
-    },
-    {
-      title: sidebar.votingPower ?? 'Voting Power',
-      label: '',
-      href: '/votingpower',
-      icon: <IconGauge size={18} />,
-    },
+    // {
+    //   title: sidebar.pce ?? 'PeaceCoin Protocol DAO',
+    //   label: '',
+    //   href: '/pce',
+    //   icon: <IconWorld size={18} />,
+    // },
+    // {
+    //   title: sidebar.votingPower ?? 'Voting Power',
+    //   label: '',
+    //   href: '/votingpower',
+    //   icon: <IconGauge size={18} />,
+    // },
     {
       title: sidebar.token ?? 'Token',
       label: '',
@@ -210,6 +209,12 @@ export const useSideLinks = (locale: Locale, isOwner: boolean): SideLink[] => {
           label: '',
           href: '/admin/sbt/',
           icon: <IconHexagonNumber2 size={18} />,
+        },
+        {
+          title: sidebar.management ?? 'Management',
+          label: '',
+          href: '/admin/management/',
+          icon: <IconHexagonNumber3 size={18} />,
         },
       ],
     })

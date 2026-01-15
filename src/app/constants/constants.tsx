@@ -178,3 +178,7 @@ export const campaignTableHeaders = [
 ]
 
 export const GAS_LIMIT = 1000000
+
+export const ERROR_MESSAGES = {
+  reverted: 'Transaction reverted',
+}

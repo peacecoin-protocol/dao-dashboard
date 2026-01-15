@@ -97,12 +97,17 @@ export default function ForDelegatePage({
   }
 
   const handleDelegate = async () => {
-    writeContract({
-      abi: PCE_GOV_TOKEN_ABI,
-      address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-      functionName: 'delegate',
-      args: [delegateAddr],
-    })
+    try {
+      writeContract({
+        abi: PCE_GOV_TOKEN_ABI,
+        address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'delegate',
+        args: [delegateAddr],
+      })
+    } catch (error) {
+      console.error('Error delegating tokens:', error)
+      return
+    }
   }
 
   const handleStake = async () => {

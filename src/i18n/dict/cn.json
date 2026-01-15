@@ -495,5 +495,8 @@
     "total": "总计:",
     "sbt": "SBT",
     "nft": "NFT"
+  },
+  "management": {
+    "title": "管理"
   }
 }

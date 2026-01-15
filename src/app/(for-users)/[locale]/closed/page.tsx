@@ -89,7 +89,6 @@ export default function ForClosedPage({
   const fetchData = async (count: number) => {
     if (count == 0) return
 
-    const proposalPromises = []
     let temp = []
     let _status = []
 

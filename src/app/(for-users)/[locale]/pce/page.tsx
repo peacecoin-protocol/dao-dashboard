@@ -898,7 +898,7 @@ export default function PCEPage({
           args: [i.toString(), address],
         })
 
-        const options = ['Yes', 'No']
+        const options = ['For Vote', 'Against Vote']
 
         const isEnded =
           currentBlock >
@@ -946,19 +946,24 @@ export default function PCEPage({
 
   // Filter proposals based on status
   useEffect(() => {
-    if (multipleOptions.length === 0) return
-
     let filtered = multipleOptions
+    filtered.push(...proposals)
 
     if (statusFilter === 'active') {
-      filtered = multipleOptions.filter((option) => option.status === 'Active')
+      filtered = filtered.filter((option) => option.status === 'Active')
     } else if (statusFilter === 'ended') {
-      filtered = multipleOptions.filter((option) => option.status === 'Ended')
+      filtered = filtered.filter((option) => option.status === 'Ended')
     }
-    // 'all' shows all proposals, so no filtering needed
+
+    filtered.sort((a, b) => {
+      // If end is a BigInt, convert to Number safely, else use as is
+      const endA = typeof a.end === 'bigint' ? Number(a.end) : a.end
+      const endB = typeof b.end === 'bigint' ? Number(b.end) : b.end
+      return endB - endA
+    })
 
     setFilteredProposals(filtered)
-  }, [multipleOptions, statusFilter])
+  }, [multipleOptions, proposals, statusFilter])
 
   const handleCreateProposal = async () => {
     setIsCreateProposalDialogOpened(false)
@@ -1027,8 +1032,7 @@ export default function PCEPage({
 
         refetchMultipleProposalCount()
       } catch (error) {
-        const errorMessage = (error as BaseError).shortMessage
-        toast({ title: errorMessage })
+        console.error('Error creating proposal:', error)
       } finally {
         setLoading(false)
       }
@@ -1134,7 +1138,6 @@ export default function PCEPage({
       // For now, we'll just show the updated values in the UI
     } catch (error) {
       console.error('Error updating social links:', error)
-      toast({ title: 'Failed to update social links' })
     } finally {
       setIsUpdatingSocials(false)
     }
@@ -1146,12 +1149,6 @@ export default function PCEPage({
         toast({
           title: 'Transaction Succeed!',
         })
-
-        setDelegateAddr('')
-        await getTreasuryBalances(
-          timelockAddress[chainId || defaultChainId] as `0x${string}`
-        )
-        refetchProposalCount()
       } else if (isConfirming) {
         toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {
@@ -1584,12 +1581,12 @@ export default function PCEPage({
                   </div>
                 </div>
 
-                <div className="flex flex-col mt-4 gap-4 w-full">
+                {/* <div className="flex flex-col mt-4 gap-4 w-full">
                   {proposals.length > 0 &&
                     proposals.map((proposal) => (
                       <ProposalCard key={proposal.pID} proposal={proposal} />
                     ))}
-                </div>
+                </div> */}
 
                 <div className="flex flex-col mt-4 gap-4 w-full">
                   {filteredProposals.length > 0 &&
@@ -1762,22 +1759,27 @@ export default function PCEPage({
                           <Button
                             className="w-full"
                             onClick={async () => {
-                              await writeContract({
-                                abi: PCE_ABI,
-                                address: tokenAddress as `0x${string}`,
-                                functionName: 'transfer',
-                                args: [
-                                  timelockAddress[
-                                    chainId || defaultChainId
-                                  ] as `0x${string}`,
-                                  parseEther(transferAmount),
-                                ],
-                              })
+                              try {
+                                await writeContract({
+                                  abi: PCE_ABI,
+                                  address: tokenAddress as `0x${string}`,
+                                  functionName: 'transfer',
+                                  args: [
+                                    timelockAddress[
+                                      chainId || defaultChainId
+                                    ] as `0x${string}`,
+                                    parseEther(transferAmount),
+                                  ],
+                                })
 
-                              setTokenAddress('')
-                              setTransferAmount('')
-                              setIsDepositDialogOpened(!isDepositDialogOpened)
-                              refetchPCEBalance()
+                                setTokenAddress('')
+                                setTransferAmount('')
+                                setIsDepositDialogOpened(!isDepositDialogOpened)
+                                refetchPCEBalance()
+                              } catch (error) {
+                                console.error('Error depositing tokens:', error)
+                                return
+                              }
                             }}
                           >
                             {localDict.deposit ?? 'Deposit'}
