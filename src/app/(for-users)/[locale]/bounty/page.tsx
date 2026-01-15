@@ -109,6 +109,16 @@ export default function ForBountyPage({
   }, [chainId])
 
   useEffect(() => {
+    if (isConfirmed) {
+      toast({ title: 'Transaction Succeeded!' })
+    } else if (isConfirming) {
+      toast({ title: 'Transaction Pending, Please Wait...' })
+    } else if (error) {
+      toast({ title: (error as BaseError).shortMessage })
+    }
+  }, [isConfirmed, isConfirming, error, toast])
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const { data } = await client.query({
@@ -233,7 +243,7 @@ export default function ForBountyPage({
 
       await provider.waitForTransaction(claimProposalBountyTX)
     } catch (error) {
-      toast({ title: (error as BaseError).shortMessage })
+      console.log(error, 'Transaction error')
     }
   }
 
@@ -250,7 +260,7 @@ export default function ForBountyPage({
 
       refetchData()
     } catch (error) {
-      toast({ title: (error as BaseError).shortMessage })
+      console.log(error, 'Transaction error')
     }
   }
 
@@ -302,7 +312,7 @@ export default function ForBountyPage({
 
       refetchData()
     } catch (error) {
-      toast({ title: (error as BaseError).shortMessage })
+      console.log(error, 'Transaction error')
     }
   }
 
@@ -354,7 +364,7 @@ export default function ForBountyPage({
 
       refetchData()
     } catch (error) {
-      toast({ title: (error as BaseError).shortMessage })
+      console.log(error, 'Transaction error')
     }
   }
 
@@ -372,7 +382,7 @@ export default function ForBountyPage({
       } else if (isConfirming) {
         toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {
-        toast({ title: (error as BaseError).shortMessage })
+        console.log(error, 'Transaction error')
       }
     }
 

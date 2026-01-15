@@ -382,7 +382,6 @@ export default function ForDAOPage({
       setRefetchDaos(!refetchDaos)
     } catch (error) {
       console.error('Error creating DAO:', error)
-      toast({ title: (error as BaseError).shortMessage })
     } finally {
       setLoading(false)
     }

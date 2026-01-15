@@ -356,8 +356,7 @@ export default function ForTokenPage({
       await getCommunityTokenInfo(toToken.address as `0x${string}`)
       await getCommunityTokenInfo(fromToken.address as `0x${string}`)
     } catch (error) {
-      toast({ title: (error as BaseError).shortMessage })
-      return
+      console.error('Error swapping tokens:', error)
     }
   }
 
@@ -389,8 +388,7 @@ export default function ForTokenPage({
         })
       }
     } catch (error) {
-      toast({ title: (error as BaseError).shortMessage })
-      return
+      console.error('Error swapping from local token:', error)
     }
 
     try {
@@ -408,8 +406,7 @@ export default function ForTokenPage({
 
       await getCommunityTokenInfo(token)
     } catch (error) {
-      toast({ title: (error as BaseError).shortMessage })
-      return
+      console.error('Error swapping to local token:', error)
     }
   }
 
@@ -430,8 +427,7 @@ export default function ForTokenPage({
 
       await getCommunityTokenInfo(token)
     } catch (error) {
-      toast({ title: (error as BaseError).shortMessage })
-      return
+      console.error('Error transferring tokens:', error)
     }
   }
 
@@ -444,15 +440,14 @@ export default function ForTokenPage({
         functionName: 'swapToLocalToken',
         args: [tokenAddress, parseEther(swapAmount)],
       })
-    } catch (error) {
-      toast({ title: (error as BaseError).shortMessage })
-      return
-    }
 
-    await waitForTransactionReceipt(config, {
-      hash: hash,
-      confirmations: 1,
-    })
+      await waitForTransactionReceipt(config, {
+        hash: hash,
+        confirmations: 1,
+      })
+    } catch (error) {
+      console.error('Error swapping to local token:', error)
+    }
 
     await getCommunityTokenInfo(tokenAddress)
   }
@@ -460,27 +455,36 @@ export default function ForTokenPage({
   const handleCreateToken = async () => {
     setDialogStatus(!isOpened)
 
-    writeContract({
-      abi: PCE_ABI,
-      address: pceAddress[chainId || defaultChainId] as `0x${string}`,
-      functionName: 'createToken',
-      args: [
-        tokenInfo.name,
-        tokenInfo.symbol,
-        tokenInfo.amountToExchange,
-        tokenInfo.dilutionFactor,
-        tokenInfo.decreaseIntervalDays,
-        tokenInfo.afterDecreaseBp,
-        tokenInfo.maxIncreaseOfTotalSupplyBp,
-        tokenInfo.maxIncreaseBp,
-        tokenInfo.maxUsageBp,
-        tokenInfo.changeBp,
-        tokenInfo.incomeExchangeAllowMethod,
-        tokenInfo.outgoExchangeAllowMethod,
-        tokenInfo.incomeTargetTokens,
-        tokenInfo.outgoTargetTokens,
-      ],
-    })
+    try {
+      const hash = await writeContractAsync({
+        abi: PCE_ABI,
+        address: pceAddress[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'createToken',
+        args: [
+          tokenInfo.name,
+          tokenInfo.symbol,
+          tokenInfo.amountToExchange,
+          tokenInfo.dilutionFactor,
+          tokenInfo.decreaseIntervalDays,
+          tokenInfo.afterDecreaseBp,
+          tokenInfo.maxIncreaseOfTotalSupplyBp,
+          tokenInfo.maxIncreaseBp,
+          tokenInfo.maxUsageBp,
+          tokenInfo.changeBp,
+          tokenInfo.incomeExchangeAllowMethod,
+          tokenInfo.outgoExchangeAllowMethod,
+          tokenInfo.incomeTargetTokens,
+          tokenInfo.outgoTargetTokens,
+        ],
+      })
+
+      await waitForTransactionReceipt(config, {
+        hash: hash,
+        confirmations: 1,
+      })
+    } catch (error) {
+      console.error('Error creating token:', error)
+    }
   }
 
   const token = dict?.token ?? {}

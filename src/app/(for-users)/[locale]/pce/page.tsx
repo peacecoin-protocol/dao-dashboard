@@ -898,7 +898,7 @@ export default function PCEPage({
           args: [i.toString(), address],
         })
 
-        const options = ['Yes', 'No']
+        const options = ['For Vote', 'Against Vote']
 
         const isEnded =
           currentBlock >
@@ -1027,8 +1027,7 @@ export default function PCEPage({
 
         refetchMultipleProposalCount()
       } catch (error) {
-        const errorMessage = (error as BaseError).shortMessage
-        toast({ title: errorMessage })
+        console.error('Error creating proposal:', error)
       } finally {
         setLoading(false)
       }
@@ -1134,7 +1133,6 @@ export default function PCEPage({
       // For now, we'll just show the updated values in the UI
     } catch (error) {
       console.error('Error updating social links:', error)
-      toast({ title: 'Failed to update social links' })
     } finally {
       setIsUpdatingSocials(false)
     }
@@ -1146,12 +1144,6 @@ export default function PCEPage({
         toast({
           title: 'Transaction Succeed!',
         })
-
-        setDelegateAddr('')
-        await getTreasuryBalances(
-          timelockAddress[chainId || defaultChainId] as `0x${string}`
-        )
-        refetchProposalCount()
       } else if (isConfirming) {
         toast({ title: 'TX is Pending, Please Wait...' })
       } else if (error) {
@@ -1762,22 +1754,27 @@ export default function PCEPage({
                           <Button
                             className="w-full"
                             onClick={async () => {
-                              await writeContract({
-                                abi: PCE_ABI,
-                                address: tokenAddress as `0x${string}`,
-                                functionName: 'transfer',
-                                args: [
-                                  timelockAddress[
-                                    chainId || defaultChainId
-                                  ] as `0x${string}`,
-                                  parseEther(transferAmount),
-                                ],
-                              })
+                              try {
+                                await writeContract({
+                                  abi: PCE_ABI,
+                                  address: tokenAddress as `0x${string}`,
+                                  functionName: 'transfer',
+                                  args: [
+                                    timelockAddress[
+                                      chainId || defaultChainId
+                                    ] as `0x${string}`,
+                                    parseEther(transferAmount),
+                                  ],
+                                })
 
-                              setTokenAddress('')
-                              setTransferAmount('')
-                              setIsDepositDialogOpened(!isDepositDialogOpened)
-                              refetchPCEBalance()
+                                setTokenAddress('')
+                                setTransferAmount('')
+                                setIsDepositDialogOpened(!isDepositDialogOpened)
+                                refetchPCEBalance()
+                              } catch (error) {
+                                console.error('Error depositing tokens:', error)
+                                return
+                              }
                             }}
                           >
                             {localDict.deposit ?? 'Deposit'}

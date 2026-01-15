@@ -29,7 +29,6 @@ import {
 } from '~/components/ui/table'
 import { Input } from '~/components/ui/input'
 import { readContract } from '@wagmi/core'
-
 import { ethers, formatEther, parseEther } from 'ethers'
 import {
   useAccount,
@@ -314,17 +313,6 @@ export default function ForDaoDetailPage({
       refetchSocialConfig()
     } catch (error) {
       console.error('Error updating social links:', error)
-
-      let errorMessage = 'Failed to update social links. Please try again.'
-      if (error instanceof Error) {
-        errorMessage = error.message
-      }
-
-      toast({
-        title: localDict.errorUpdatingSocials ?? 'Error updating social links',
-        description: errorMessage,
-        variant: 'destructive',
-      })
     }
   }
 
@@ -843,29 +831,35 @@ export default function ForDaoDetailPage({
   const handleCreateProposal = async () => {
     setIsCreateProposalDialogOpened(false)
 
-    const _calldata = new ethers.AbiCoder().encode(
-      ['address', 'uint256'],
-      [transferAddr, parseEther(transferAmount)]
-    )
-    const _signature = 'transfer(address,uint256)'
+    try {
+      const _calldata = new ethers.AbiCoder().encode(
+        ['address', 'uint256'],
+        [transferAddr, parseEther(transferAmount)]
+      )
+      const _signature = 'transfer(address,uint256)'
 
-    const proposeTx = await writeContractAsync({
-      abi: GOVERNOR_ABI,
-      address: governorAddress as `0x${string}`,
-      functionName: 'propose',
-      args: [
-        [tokenAddress as `0x${string}`],
-        [0],
-        [_signature],
-        [_calldata],
-        description,
-      ],
-    })
+      const proposeTx = await writeContractAsync({
+        abi: GOVERNOR_ABI,
+        address: governorAddress as `0x${string}`,
+        functionName: 'propose',
+        args: [
+          [tokenAddress as `0x${string}`],
+          [0],
+          [_signature],
+          [_calldata],
+          description,
+        ],
+      })
 
-    await waitForTransactionReceipt(config, {
-      hash: proposeTx,
-      confirmations: 1,
-    })
+      await waitForTransactionReceipt(config, {
+        hash: proposeTx,
+        confirmations: 1,
+      })
+    } catch (error) {
+      console.error('Error creating proposal:', error)
+
+      return
+    }
 
     const { data: proposal } = await supabase.from('Proposal').insert({
       daoId: id,
@@ -877,10 +871,6 @@ export default function ForDaoDetailPage({
       proposer: address,
       proposalId: Number(proposalCount) + 1,
       created_at: new Date().toISOString(),
-    })
-
-    toast({
-      title: 'Proposal created successfully',
     })
 
     refetchProposalCount()
@@ -935,14 +925,16 @@ export default function ForDaoDetailPage({
             parseEther(stakingAmount),
           ],
         })
+
+        await waitForTransactionReceipt(config, {
+          hash: tx,
+          confirmations: 1,
+        })
       } catch (error) {
         console.error('Error approving tokens:', error)
+
         return
       }
-      await waitForTransactionReceipt(config, {
-        hash: tx,
-        confirmations: 1,
-      })
     }
 
     let tx
@@ -960,6 +952,7 @@ export default function ForDaoDetailPage({
       })
     } catch (error) {
       console.error('Error depositing tokens:', error)
+
       return
     }
 
@@ -981,15 +974,16 @@ export default function ForDaoDetailPage({
           functionName: 'withdraw',
           args: [governanceTokenBalance],
         })
+
+        await waitForTransactionReceipt(config, {
+          hash: tx,
+          confirmations: 1,
+        })
       } catch (error) {
         console.error('Error withdrawing tokens:', error)
+
         return
       }
-
-      await waitForTransactionReceipt(config, {
-        hash: tx,
-        confirmations: 1,
-      })
       refetchGovTokenBalance()
       refetchCommunityTokenBalance()
       refetchVotes()
@@ -1016,8 +1010,6 @@ export default function ForDaoDetailPage({
       refetchGetSBTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
-      toast({ title: (error as BaseError).shortMessage })
-      return
     } finally {
       setLoading(false)
     }
@@ -1042,8 +1034,6 @@ export default function ForDaoDetailPage({
       refetchGetNFTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
-      toast({ title: (error as BaseError).shortMessage })
-      return
     } finally {
       setLoading(false)
     }
@@ -1075,7 +1065,6 @@ export default function ForDaoDetailPage({
         refetchTokenVote()
       } catch (error) {
         console.error('Error delegating tokens:', error)
-        return
       }
     }
   }
@@ -1104,8 +1093,6 @@ export default function ForDaoDetailPage({
       refetchTokenVote()
     } catch (error) {
       console.error('Error delegating voting power:', error)
-      toast({ title: (error as BaseError).shortMessage })
-      return
     } finally {
       setLoading(false)
     }
@@ -2014,9 +2001,7 @@ export default function ForDaoDetailPage({
                   <div className="rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
                     <div className="text-center mb-6">
                       <PageHeaderSection
-                        title={
-                          votingPowerDict.stakeYourTokens ?? 'Stake tokens'
-                        }
+                        title={'Stake your community tokens'}
                         description={
                           votingPowerDict.stakeDescription ??
                           'Start earning by staking your tokens in the pool.'
@@ -2027,7 +2012,7 @@ export default function ForDaoDetailPage({
                     <div className="gap-4">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 rounded-lg py-4">
                         <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 w-full">
-                          {votingPowerDict.pceBalance ?? 'Token Balance'}
+                          {'Token Balance'}
                         </span>
                         <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 w-full text-right">
                           {communityTokenBalance

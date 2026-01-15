@@ -257,7 +257,6 @@ export default function StakingPage({
       })
     } catch (error) {
       console.error('Error depositing tokens:', error)
-      return
     }
 
     refetchPCEBalance()
@@ -272,17 +271,21 @@ export default function StakingPage({
       return
     }
 
-    const tx = await writeContractAsync({
-      abi: PCE_C_GOV_TOKEN_ABI,
-      address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
-      functionName: 'withdraw',
-      args: [wPCEBalance as string],
-    })
+    try {
+      const tx = await writeContractAsync({
+        abi: PCE_C_GOV_TOKEN_ABI,
+        address: WPCE_ADDRESS[chainId || defaultChainId] as `0x${string}`,
+        functionName: 'withdraw',
+        args: [wPCEBalance as string],
+      })
 
-    await waitForTransactionReceipt(config, {
-      hash: tx,
-      confirmations: 1,
-    })
+      await waitForTransactionReceipt(config, {
+        hash: tx,
+        confirmations: 1,
+      })
+    } catch (error) {
+      console.error('Error withdrawing tokens:', error)
+    }
 
     refetchWPCEBalance()
     refetchPCEBalance()
@@ -349,8 +352,6 @@ export default function StakingPage({
       refetchGetNFTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
-      toast({ title: (error as BaseError).shortMessage })
-      return
     } finally {
       setLoading(false)
     }
@@ -374,8 +375,6 @@ export default function StakingPage({
       refetchGetSBTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
-      toast({ title: (error as BaseError).shortMessage })
-      return
     } finally {
       setLoading(false)
     }
@@ -399,8 +398,6 @@ export default function StakingPage({
       refetchGetNFTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
-      toast({ title: (error as BaseError).shortMessage })
-      return
     } finally {
       setLoading(false)
     }
