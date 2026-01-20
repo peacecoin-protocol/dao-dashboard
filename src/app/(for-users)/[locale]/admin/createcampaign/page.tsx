@@ -200,10 +200,6 @@ export default function ForCampaignPage({
         addresses = [ZeroAddress]
       }
 
-      console.log('encodedGists', encodedGists)
-      console.log('addresses', addresses)
-      console.log('formData.id', formData.id)
-
       // Make sure formData.id, addresses, and encodedGists are all defined before simulating
       if (
         typeof formData.id === 'undefined' ||
@@ -218,7 +214,6 @@ export default function ForCampaignPage({
         functionName: 'addCampWinners',
         args: [formData.id, addresses, encodedGists],
       })
-      console.log('simulatedTx', simulateResult)
 
       const tx = await writeContractAsync({
         abi: CAMPAIGN_ABI,

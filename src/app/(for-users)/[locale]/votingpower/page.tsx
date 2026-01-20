@@ -88,11 +88,11 @@ export default function StakingPage({
   }) as { data?: string; refetch: () => void }
 
   useEffect(() => {
-    if (daoConfigs?.length == 7) {
+    if (daoConfigs?.length == 8) {
       setGovernorAddress(daoConfigs[3])
 
-      setSbtAddress(daoConfigs[1])
-      setNftAddress(daoConfigs[2])
+      setSbtAddress(daoConfigs[2])
+      setNftAddress(daoConfigs[3])
     }
   }, [daoConfigs])
 
