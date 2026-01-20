@@ -362,10 +362,10 @@ export default function ForDAOPage({
       if (
         daoConfigs &&
         Array.isArray(daoConfigs) &&
-        (daoConfigs as any[]).length == 7
+        (daoConfigs as any[]).length == 8
       ) {
-        const sbtAddress = daoConfigs[1] as string
-        const nftAddress = daoConfigs[2] as string
+        const sbtAddress = daoConfigs[2] as string
+        const nftAddress = daoConfigs[3] as string
         await supabase.from('DAO').insert({
           daoId: daoId,
           daoName: daoForm.name,

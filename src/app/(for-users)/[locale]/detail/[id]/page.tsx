@@ -48,6 +48,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   type BaseError,
+  useBlock,
 } from 'wagmi'
 
 import {
@@ -71,14 +72,9 @@ import { ProposalBadges } from '~/components/custom/proposal-badges'
 import { FormattedValue } from '~/components/custom/formatted-value'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { MULTIPLE_VOTINGS_ABI } from '~/app/ABIs/MultipleVotings'
-import {
-  defaultChainId,
-  pceAddress,
-  MultipleVotingAddress,
-} from '~/app/constants/constants'
+import { defaultChainId } from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { daoStudioAddress } from '~/app/constants/constants'
-import { useBlockNumber, useBlock } from 'wagmi'
 import { pinata } from '~/lib/config'
 import ImageCropModal from '~/components/ui/ImageCropModal'
 import {
@@ -105,6 +101,7 @@ import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
+import { WebSocketProvider } from 'ethers'
 
 type TokenBalance = {
   contractAddress: string
@@ -161,8 +158,15 @@ export default function ForDaoDetailPage({
   const [communityTokenAddress, setCommunityTokenAddress] = useState<
     string | undefined
   >('')
+  const [multipleVotingAddress, setMultipleVotingAddress] = useState<
+    string | undefined
+  >('')
   const [sbtAddress, setSbtAddress] = useState<string | undefined>('')
   const [nftAddress, setNftAddress] = useState<string | undefined>('')
+  const [nftVotingPower, setNftVotingPower] = useState<string | undefined>(
+    undefined
+  )
+  const [refetchVotingPower, setRefetchVotingPower] = useState(false)
 
   const [tokenData, setTokenData] = useState<SBTInfo[]>([])
   const [refetchTokenData, setRefetchTokenData] = useState(false)
@@ -215,14 +219,20 @@ export default function ForDaoDetailPage({
     telegram: '',
   })
 
-  const { address, chainId } = useAccount()
-  const { data: blockNumber } = useBlockNumber()
-  const { data: block } = useBlock({
-    blockNumber,
+  const provider = new WebSocketProvider(
+    'wss://eth-mainnet.g.alchemy.com/v2/7fsZZN_84W4-C4Sq_HSCS'
+  )
+
+  const [blockNumber, setBlockNumber] = useState<number | undefined>(undefined)
+
+  provider.on('block', (blockNumber) => {
+    setBlockNumber(blockNumber)
   })
-  const showMultipleOptions =
-    !!communityTokenAddress &&
-    communityTokenAddress === pceAddress[chainId || defaultChainId]
+
+  const { address, chainId } = useAccount()
+  const { data: block } = useBlock({
+    blockNumber: typeof blockNumber === 'number' ? BigInt(blockNumber) : undefined,
+  })
 
   const getTreasuryBalances = async (address: string) => {
     // Fetch ERC20 token balances for the given address using Moralis API
@@ -366,21 +376,16 @@ export default function ForDaoDetailPage({
   }) as { data?: string; refetch: () => void }
 
   useEffect(() => {
-    if (daoConfigs?.length == 7) {
+    if (daoConfigs?.length == 8) {
       setTimelockAddress(daoConfigs[0])
-      setSbtAddress(daoConfigs[1])
-      setNftAddress(daoConfigs[2])
-      setGovernorAddress(daoConfigs[3])
-      setGovernanceTokenAddress(daoConfigs[4])
-      setCommunityTokenAddress(daoConfigs[5])
+      setMultipleVotingAddress(daoConfigs[1])
+      setSbtAddress(daoConfigs[2])
+      setNftAddress(daoConfigs[3])
+      setGovernorAddress(daoConfigs[4])
+      setGovernanceTokenAddress(daoConfigs[5])
+      setCommunityTokenAddress(daoConfigs[6])
     }
-  }, [daoConfigs])
-
-  useEffect(() => {
-    if (!showMultipleOptions && category === '7') {
-      setCategory('')
-    }
-  }, [showMultipleOptions, category])
+  }, [daoConfigs, id])
 
   const { data: socialConfig, refetch: refetchSocialConfig } = useReadContract({
     address: governorAddress as `0x${string}`,
@@ -535,15 +540,14 @@ export default function ForDaoDetailPage({
             </h1>
             <span
               className={`text-xs font-semibold px-3 py-1 rounded-full
-      ${
-        status === 'Active'
-          ? 'bg-green-200 text-green-900'
-          : status === 'Pending'
-            ? 'bg-yellow-200 text-yellow-900'
-            : status === 'Ended'
-              ? 'bg-gray-300 text-gray-700'
-              : 'bg-gray-200 text-gray-800'
-      }`}
+      ${status === 'Active'
+                  ? 'bg-green-200 text-green-900'
+                  : status === 'Pending'
+                    ? 'bg-yellow-200 text-yellow-900'
+                    : status === 'Ended'
+                      ? 'bg-gray-300 text-gray-700'
+                      : 'bg-gray-200 text-gray-800'
+                }`}
               style={{ minWidth: 73, textAlign: 'center' }}
             >
               {status}
@@ -596,9 +600,7 @@ export default function ForDaoDetailPage({
               try {
                 const tx = await writeContractAsync({
                   abi: MULTIPLE_VOTINGS_ABI,
-                  address: MultipleVotingAddress[
-                    chainId || defaultChainId
-                  ] as `0x${string}`,
+                  address: multipleVotingAddress as `0x${string}`,
                   functionName: 'castMultipleChoiceVote',
                   args: [multipleOptionProposalData.pID, selectedOption],
                 })
@@ -663,9 +665,8 @@ export default function ForDaoDetailPage({
                       return (
                         <li
                           key={idx}
-                          className={`flex items-center gap-2 ${
-                            isMostChosen ? 'font-bold text-green-700' : ''
-                          }`}
+                          className={`flex items-center gap-2 ${isMostChosen ? 'font-bold text-green-700' : ''
+                            }`}
                         >
                           <span className="font-medium">{opt}</span>
                           <span className="ml-auto">
@@ -731,11 +732,11 @@ export default function ForDaoDetailPage({
                 ? proposal[6] === 0 && proposal[5] > 0
                   ? 100
                   : (
-                      (Number(formatEther(proposal[5])) /
-                        (Number(formatEther(proposal[5])) +
-                          Number(formatEther(proposal[6])))) *
-                      100
-                    ).toFixed(2)
+                    (Number(formatEther(proposal[5])) /
+                      (Number(formatEther(proposal[5])) +
+                        Number(formatEther(proposal[6])))) *
+                    100
+                  ).toFixed(2)
                 : '0'}
               %)
             </h1>
@@ -743,10 +744,10 @@ export default function ForDaoDetailPage({
           <Line
             percent={
               Number(proposal[5] || 0) > 0 &&
-              Number(BigInt(quorum?.toString() || '0')) > 0
+                Number(BigInt(quorum?.toString() || '0')) > 0
                 ? (Number(formatEther(proposal[5])) /
-                    Number(formatEther(quorum?.toString() || '0'))) *
-                  100
+                  Number(formatEther(quorum?.toString() || '0'))) *
+                100
                 : 0
             }
             strokeColor="#1995AD"
@@ -765,11 +766,11 @@ export default function ForDaoDetailPage({
                 ? proposal[5] === 0 && proposal[6] > 0
                   ? 100
                   : (
-                      (Number(formatEther(proposal[6])) /
-                        (Number(formatEther(proposal[5])) +
-                          Number(formatEther(proposal[6])))) *
-                      100
-                    ).toFixed(2)
+                    (Number(formatEther(proposal[6])) /
+                      (Number(formatEther(proposal[5])) +
+                        Number(formatEther(proposal[6])))) *
+                    100
+                  ).toFixed(2)
                 : '0'}
               %)
             </h1>
@@ -778,10 +779,10 @@ export default function ForDaoDetailPage({
           <Line
             percent={
               Number(proposal[6] || 0) > 0 &&
-              Number(BigInt(quorum?.toString() || '0')) > 0
+                Number(BigInt(quorum?.toString() || '0')) > 0
                 ? (Number(formatEther(proposal[6])) /
-                    Number(formatEther(quorum?.toString() || '0'))) *
-                  100
+                  Number(formatEther(quorum?.toString() || '0'))) *
+                100
                 : 0
             }
             strokeColor="#1995AD"
@@ -803,11 +804,11 @@ export default function ForDaoDetailPage({
             percent={
               Number(proposal[3]) < Number(blockNumber)
                 ? Math.min(
-                    ((Number(blockNumber) - Number(proposal[3])) /
-                      Number(votingPeriod)) *
-                      100,
-                    100
-                  )
+                  ((Number(blockNumber) - Number(proposal[3])) /
+                    Number(votingPeriod)) *
+                  100,
+                  100
+                )
                 : 0
             }
             className="w-full"
@@ -838,12 +839,12 @@ export default function ForDaoDetailPage({
               percent={
                 Number(proposal[2]) > 0
                   ? Math.min(
-                      ((getCurrentTimestamp() -
-                        (Number(proposal[2]) - Number(timelockDelay))) *
-                        100) /
-                        Number(timelockDelay),
-                      100
-                    )
+                    ((getCurrentTimestamp() -
+                      (Number(proposal[2]) - Number(timelockDelay))) *
+                      100) /
+                    Number(timelockDelay),
+                    100
+                  )
                   : 0
               }
               strokeColor="#1995AD"
@@ -958,12 +959,12 @@ export default function ForDaoDetailPage({
     setCategory(value)
   }
 
-  const { data: votes, refetch: refetchVotes } = useReadContract({
-    address: governorAddress as `0x${string}`,
-    abi: GOVERNOR_ABI,
-    functionName: 'getPastVotes',
-    args: [address, blockNumber?.toString()],
-  }) as { data?: string; refetch: () => void }
+  // const { data: votes, refetch: refetchVotes } = useReadContract({
+  //   address: governorAddress as `0x${string}`,
+  //   abi: GOVERNOR_ABI,
+  //   functionName: 'getPastVotes',
+  //   args: [address, blockNumber?.toString()],
+  // }) as { data?: string; refetch: () => void }
 
   const { data: tokenVote, refetch: refetchTokenVote } = useReadContract({
     address: governanceTokenAddress as `0x${string}`,
@@ -980,13 +981,29 @@ export default function ForDaoDetailPage({
       args: [address, blockNumber?.toString()],
     }) as { data?: string | bigint; refetch: () => void }
 
-  const { data: nftVotingPower, refetch: refetchGetNFTVotingPower } =
-    useReadContract({
-      abi: SBT_ABI,
-      address: nftAddress as `0x${string}`,
-      functionName: 'getPastVotes',
-      args: [address, blockNumber?.toString()],
-    }) as { data?: string | bigint; refetch: () => void }
+  // const { data: nftVotingPower, refetch: refetchGetNFTVotingPower } =
+  //   useReadContract({
+  //     abi: SBT_ABI,
+  //     address: nftAddress as `0x${string}`,
+  //     functionName: 'getPastVotes',
+  //     args: [address, blockNumber?.toString()],
+  //   }) as { data?: string | bigint; refetch: () => void }
+
+  useEffect(() => {
+    const fetchNFTVotingPower = async () => {
+      if (nftAddress && address && blockNumber) {
+        const nftVotingPower = await readContract(config, {
+          abi: SBT_ABI,
+          address: nftAddress as `0x${string}`,
+          functionName: 'getPastVotes',
+          args: [address, blockNumber?.toString()],
+        })
+
+        setNftVotingPower(nftVotingPower as string)
+      }
+    }
+    fetchNFTVotingPower()
+  }, [nftAddress, address, blockNumber, refetchVotingPower])
 
   useEffect(() => {
     setGetVotes(
@@ -996,12 +1013,10 @@ export default function ForDaoDetailPage({
 
   useEffect(() => {
     let filtered = [
-      ...(showMultipleOptions
-        ? multipleOptions.map((option) => ({
-            type: 'multiple',
-            data: option,
-          }))
-        : []),
+      ...multipleOptions.map((option) => ({
+        type: 'multiple',
+        data: option,
+      })),
       ...proposals.map((proposal, index) => ({
         type: 'governor',
         data: proposal,
@@ -1042,13 +1057,7 @@ export default function ForDaoDetailPage({
     })
 
     setFilteredProposals(filtered)
-  }, [
-    multipleOptions,
-    proposals,
-    proposalStatus,
-    statusFilter,
-    showMultipleOptions,
-  ])
+  }, [multipleOptions, proposals, proposalStatus, statusFilter])
 
   const { data: proposalCount, refetch: refetchProposalCount } =
     useReadContract({
@@ -1059,9 +1068,7 @@ export default function ForDaoDetailPage({
 
   const { data: multipleProposalCount, refetch: refetchMultipleProposalCount } =
     useReadContract({
-      address: MultipleVotingAddress[
-        chainId || defaultChainId
-      ] as `0x${string}`,
+      address: multipleVotingAddress as `0x${string}`,
       abi: MULTIPLE_VOTINGS_ABI,
       functionName: 'proposalCount',
     }) as { data?: number; refetch: () => void }
@@ -1150,22 +1157,14 @@ export default function ForDaoDetailPage({
     async function fetchMultipleProposals() {
       const currentTimestamp = Math.floor(Date.now() / 1000)
 
-      if (
-        !multipleProposalCount ||
-        !address ||
-        !chainId ||
-        !currentTimestamp ||
-        !showMultipleOptions
-      )
+      if (!multipleProposalCount || !address || !chainId || !currentTimestamp)
         return
 
       setLoading(true)
       let _multipleOptions = []
       for (let i = Number(multipleProposalCount); i > 0; i--) {
         const _proposalData = await readContract(config, {
-          address: MultipleVotingAddress[
-            chainId || defaultChainId
-          ] as `0x${string}`,
+          address: multipleVotingAddress as `0x${string}`,
           abi: MULTIPLE_VOTINGS_ABI,
           functionName: 'getProposal',
           args: [i.toString()],
@@ -1173,9 +1172,7 @@ export default function ForDaoDetailPage({
         })
 
         const _optionVotes = await readContract(config, {
-          address: MultipleVotingAddress[
-            chainId || defaultChainId
-          ] as `0x${string}`,
+          address: multipleVotingAddress as `0x${string}`,
           abi: MULTIPLE_VOTINGS_ABI,
           functionName: 'getOptionVotes',
           args: [i],
@@ -1214,7 +1211,7 @@ export default function ForDaoDetailPage({
       setLoading(false)
     }
     fetchMultipleProposals()
-  }, [multipleProposalCount, address, chainId, isRefetching, showMultipleOptions])
+  }, [multipleProposalCount, address, chainId, isRefetching])
 
   useEffect(() => {
     const fetchIdenticon = async () => {
@@ -1258,28 +1255,38 @@ export default function ForDaoDetailPage({
           ? Math.floor(new Date(endTime).getTime() / 1000)
           : 0
 
-        const targetAddress = MultipleVotingAddress[
-          chainId || defaultChainId
-        ] as `0x${string}`
+        const targetAddress = multipleVotingAddress as `0x${string}`
 
-        await simulateContract(config, {
-          abi: MULTIPLE_VOTINGS_ABI,
-          address: targetAddress,
-          functionName: 'proposeMultipleChoice',
-          args: [options, description, startTimeTimestamp, endTimeTimestamp],
-        })
+        try {
+          const simulateResult = await simulateContract(config, {
+            abi: MULTIPLE_VOTINGS_ABI,
+            address: targetAddress,
+            functionName: 'proposeMultipleChoice',
+            args: [options, description, startTimeTimestamp, endTimeTimestamp],
+          })
+        } catch (error) {
+          toast({ title: (error as BaseError).shortMessage })
+          setLoading(false)
+          return
+        }
 
-        const tx = await writeContractAsync({
-          abi: MULTIPLE_VOTINGS_ABI,
-          address: targetAddress,
-          functionName: 'proposeMultipleChoice',
-          args: [options, description, startTimeTimestamp, endTimeTimestamp],
-        })
+        try {
+          const tx = await writeContractAsync({
+            abi: MULTIPLE_VOTINGS_ABI,
+            address: targetAddress,
+            functionName: 'proposeMultipleChoice',
+            args: [options, description, startTimeTimestamp, endTimeTimestamp],
+          })
 
-        await waitForTransactionReceipt(config, {
-          hash: tx,
-          confirmations: 1,
-        })
+          await waitForTransactionReceipt(config, {
+            hash: tx,
+            confirmations: 1,
+          })
+        } catch (error) {
+          console.error('Error creating proposal:', error)
+          setLoading(false)
+          return
+        }
 
         refetchMultipleProposalCount()
         setIsRefetching(!isRefetching)
@@ -1453,7 +1460,6 @@ export default function ForDaoDetailPage({
 
     refetchGovTokenBalance()
     refetchCommunityTokenBalance()
-    refetchVotes()
     refetchTokenVote()
   }
 
@@ -1479,7 +1485,6 @@ export default function ForDaoDetailPage({
       }
       refetchGovTokenBalance()
       refetchCommunityTokenBalance()
-      refetchVotes()
       refetchTokenVote()
     }
   }
@@ -1499,7 +1504,6 @@ export default function ForDaoDetailPage({
         confirmations: 1,
       })
 
-      refetchVotes()
       refetchGetSBTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
@@ -1523,8 +1527,7 @@ export default function ForDaoDetailPage({
         confirmations: 1,
       })
 
-      refetchVotes()
-      refetchGetNFTVotingPower()
+      setRefetchVotingPower(!refetchVotingPower)
     } catch (error) {
       console.error('Error delegating voting power:', error)
     } finally {
@@ -1552,8 +1555,7 @@ export default function ForDaoDetailPage({
         confirmations: 1,
       })
 
-      refetchVotes()
-      refetchTokenVote()
+      refetchGetSBTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
     } finally {
@@ -1853,6 +1855,15 @@ export default function ForDaoDetailPage({
                     {localDict.createNewProposal}
                   </Button>
                 </div>
+                {[...multipleOptions]
+                  .reverse()
+                  .slice(0, 2)
+                  .map((multipleOption) => (
+                    <OptionsCard
+                      key={`multiple-${multipleOption.pID}`}
+                      multipleOptionProposalData={multipleOption}
+                    />
+                  ))}
                 {[...proposals]
                   .reverse()
                   .slice(0, 2)
@@ -1865,7 +1876,7 @@ export default function ForDaoDetailPage({
                     />
                   ))}
 
-                {proposals.length === 0 && (
+                {proposals.length === 0 && multipleOptions.length === 0 && (
                   <div className="flex justify-center items-center p-4 bg-gray-100 rounded-xl text-gray-500">
                     {localDict.noProposals}
                   </div>
@@ -1915,6 +1926,20 @@ export default function ForDaoDetailPage({
                       type="address"
                       address={governorAddress}
                       message={shortenAddress(governorAddress)}
+                    ></CustomLink.default>
+                  </div>
+
+                  <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
+                    <TooltipComponent
+                      title={localDict.multipleVoting ?? 'Multiple Voting'}
+                      tooltipText="The contract that manages the DAO's multiple voting process."
+                      className="font-bold rounded-xl flex"
+                    />
+                    <CustomLink.default
+                      chainId={chainId}
+                      type="address"
+                      address={multipleVotingAddress}
+                      message={shortenAddress(multipleVotingAddress)}
                     ></CustomLink.default>
                   </div>
                 </div>
@@ -1985,7 +2010,7 @@ export default function ForDaoDetailPage({
                     className="font-bold rounded-xl flex"
                   />
                   <FormattedValue
-                    value={votes}
+                    value={getVotes ?? '0'}
                     formatter={(val) => formatEther(val as string)}
                   />
                 </div>
@@ -2448,10 +2473,10 @@ export default function ForDaoDetailPage({
                         <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 w-full text-right">
                           {communityTokenBalance
                             ? formatNumber(
-                                parseFloat(
-                                  formatEther(toBigInt(communityTokenBalance))
-                                )
+                              parseFloat(
+                                formatEther(toBigInt(communityTokenBalance))
                               )
+                            )
                             : '0'}{' '}
                           {communityTokenSymbol ?? 'TOKEN'}
                         </span>
@@ -2464,10 +2489,10 @@ export default function ForDaoDetailPage({
                         <span className="text-lg font-semibold text-purple-600 dark:text-purple-400 w-full text-right">
                           {governanceTokenBalance
                             ? formatNumber(
-                                parseFloat(
-                                  formatEther(toBigInt(governanceTokenBalance))
-                                )
+                              parseFloat(
+                                formatEther(toBigInt(governanceTokenBalance))
                               )
+                            )
                             : '0'}{' '}
                           {communityTokenSymbol ?? 'TOKEN'}
                         </span>
@@ -2525,8 +2550,8 @@ export default function ForDaoDetailPage({
                       <div className="text-3xl sm:text-4xl font-bold text-teal-600 dark:text-teal-400 mb-4">
                         {getVotes
                           ? formatNumber(
-                              Number(formatEther(getVotes as bigint))
-                            )
+                            Number(formatEther(getVotes as bigint))
+                          )
                           : '0'}
                       </div>
 
@@ -2539,8 +2564,8 @@ export default function ForDaoDetailPage({
                           <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                             {tokenVote
                               ? formatNumber(
-                                  parseFloat(formatEther(toBigInt(tokenVote)))
-                                )
+                                parseFloat(formatEther(toBigInt(tokenVote)))
+                              )
                               : '0'}
                           </span>
                         </div>
@@ -2553,8 +2578,8 @@ export default function ForDaoDetailPage({
                           <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                             {sbtVotingPower
                               ? formatNumber(
-                                  Number(formatEther(toBigInt(sbtVotingPower)))
-                                )
+                                Number(formatEther(toBigInt(sbtVotingPower)))
+                              )
                               : '0'}
                           </span>
                         </div>
@@ -2567,8 +2592,8 @@ export default function ForDaoDetailPage({
                           <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                             {nftVotingPower
                               ? formatNumber(
-                                  Number(formatEther(toBigInt(nftVotingPower)))
-                                )
+                                Number(formatEther(toBigInt(nftVotingPower)))
+                              )
                               : '0'}
                           </span>
                         </div>
@@ -2697,13 +2722,11 @@ export default function ForDaoDetailPage({
                 <SelectItem value="4">{dict?.submit?.category4}</SelectItem>
                 <SelectItem value="5">{dict?.submit?.category5}</SelectItem>
                 <SelectItem value="6">{dict?.submit?.category6}</SelectItem>
-                {showMultipleOptions && (
-                  <SelectItem value="7">{dict?.submit?.category7}</SelectItem>
-                )}
+                <SelectItem value="7">{dict?.submit?.category7}</SelectItem>
               </SelectContent>
             </Select>
 
-            {category === '7' && showMultipleOptions ? (
+            {category === '7' ? (
               <div className="w-full flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium">
@@ -2897,7 +2920,7 @@ export default function ForDaoDetailPage({
             </DialogTitle>
             <DialogDescription>
               {selectedProposalIndex !== null &&
-              proposals[selectedProposalIndex] ? (
+                proposals[selectedProposalIndex] ? (
                 <div className="flex flex-col gap-2">
                   <h1>
                     {localDict.proposalId ?? 'Proposal ID'}:{' '}

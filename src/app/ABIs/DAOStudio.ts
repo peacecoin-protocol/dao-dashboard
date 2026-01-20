@@ -81,6 +81,7 @@ export const DAO_STUDIO_ABI = [
     inputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
     outputs: [
       { name: 'timelock', type: 'address', internalType: 'address' },
+      { name: 'multipleVoting', type: 'address', internalType: 'address' },
       { name: 'sbt', type: 'address', internalType: 'address' },
       { name: 'nft', type: 'address', internalType: 'address' },
       { name: 'governor', type: 'address', internalType: 'address' },
@@ -144,6 +145,13 @@ export const DAO_STUDIO_ABI = [
     inputs: [],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'multipleVotingImplementation',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -225,6 +233,11 @@ export const DAO_STUDIO_ABI = [
       },
       {
         name: '_governanceTokenImplementation',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: '_multipleVotingImplementation',
         type: 'address',
         internalType: 'address',
       },
@@ -325,6 +338,12 @@ export const DAO_STUDIO_ABI = [
       },
       {
         name: 'governanceTokenImplementation',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
+      {
+        name: 'multipleVotingImplementation',
         type: 'address',
         indexed: false,
         internalType: 'address',
@@ -506,6 +525,7 @@ export const DAO_STUDIO_ABI = [
   { type: 'error', name: 'InvalidVotingDelay', inputs: [] },
   { type: 'error', name: 'InvalidVotingPeriod', inputs: [] },
   { type: 'error', name: 'InvalidWPCEAddress', inputs: [] },
+  { type: 'error', name: 'MultipleVotingImplementationNotSet', inputs: [] },
   { type: 'error', name: 'NoUnusedTokens', inputs: [] },
   { type: 'error', name: 'NoWinners', inputs: [] },
   { type: 'error', name: 'NonTransferable', inputs: [] },
