@@ -118,12 +118,14 @@ const DaoCard = ({
   router,
   chainId,
   localeDict,
+  memberCount,
 }: {
   dao: SupabaseDao
   locale: string
   localeDict: any
   router: any
   chainId: number
+  memberCount: number
 }) => {
   const [identicon, setIdenticon] = useState<string>('')
   useEffect(() => {
@@ -198,11 +200,7 @@ const DaoCard = ({
       <div className="flex flex-row gap-4 items-center justify-center w-full">
         <StatItem label={localeDict.myPower} value={0} />
 
-        <StatItem
-          label={localeDict.members}
-          // value={dao.holders ? dao.holders + 1 : 1}
-          value={1}
-        />
+        <StatItem label={localeDict.members} value={memberCount} />
       </div>
     </div>
   )
@@ -241,6 +239,7 @@ export default function ForDAOPage({
 
   const [daos, setDaos] = useState<SupabaseDao[]>([])
   const [refetchDaos, setRefetchDaos] = useState(false)
+  const [memberCounts, setMemberCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
     const fetchDAO = async () => {
@@ -257,6 +256,25 @@ export default function ForDAOPage({
       })
 
       setDaos(sortedDaos)
+      if (sortedDaos.length > 0) {
+        const daoIds = sortedDaos.map((item) => item.daoId)
+        const { data: members } = await supabase
+          .from('Members')
+          .select('daoId')
+          .in('daoId', daoIds)
+
+        const counts = (members as { daoId: string }[] | null)?.reduce(
+          (acc, member) => {
+            acc[member.daoId] = (acc[member.daoId] ?? 0) + 1
+            return acc
+          },
+          {} as Record<string, number>
+        )
+
+        setMemberCounts(counts ?? {})
+      } else {
+        setMemberCounts({})
+      }
       setLoading(false)
     }
     fetchDAO()
@@ -598,6 +616,7 @@ export default function ForDAOPage({
                   localeDict={localeDict}
                   router={router}
                   chainId={chainId || 0}
+                  memberCount={memberCounts[dao.daoId] ?? 0}
                 />
               ))}
           </TabsContent>
