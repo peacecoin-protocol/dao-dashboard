@@ -48,7 +48,6 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   type BaseError,
-  useBlock,
   useSwitchChain,
 } from 'wagmi'
 
@@ -183,7 +182,6 @@ export default function ForDaoDetailPage({
   const [stakingAmount, setStakingAmount] = useState('')
   const [getVotes, setGetVotes] = useState<bigint | undefined>(undefined)
 
-  const [isDelegateDialogOpened, setIsDelegateDialogOpened] = useState(false)
   const [isDepositDialogOpened, setIsDepositDialogOpened] = useState(false)
   const [isCreateProposalDialogOpened, setIsCreateProposalDialogOpened] =
     useState(false)
@@ -220,22 +218,11 @@ export default function ForDaoDetailPage({
     telegram: '',
   })
 
-  const provider = new WebSocketProvider(
-    'wss://eth-mainnet.g.alchemy.com/v2/7fsZZN_84W4-C4Sq_HSCS'
-  )
+  const provider = new WebSocketProvider(Env.NEXT_PUBLIC_SEPOLIA_WEBSOCKET_URL)
 
   const [blockNumber, setBlockNumber] = useState<number | undefined>(undefined)
-
-  provider.on('block', (_blockNumber) => {
-    setBlockNumber(_blockNumber)
-  })
-
   const { address, chainId } = useAccount()
   const { chains, switchChain } = useSwitchChain()
-  const { data: block } = useBlock({
-    blockNumber:
-      typeof blockNumber === 'number' ? BigInt(blockNumber) : undefined,
-  })
 
   useEffect(() => {
     const switchChainAndReload = async () => {
@@ -245,6 +232,15 @@ export default function ForDaoDetailPage({
     }
     switchChainAndReload()
   }, [chainId, chains, switchChain])
+
+  useEffect(() => {
+    const fetchBlockNumber = async () => {
+      const blockNumber = await provider.getBlockNumber()
+      console.log('fetching block number', blockNumber)
+      setBlockNumber(blockNumber)
+    }
+    fetchBlockNumber()
+  }, [])
 
   const getTreasuryBalances = async (address: string) => {
     // Fetch ERC20 token balances for the given address using Moralis API
@@ -460,7 +456,7 @@ export default function ForDaoDetailPage({
   }) as { data?: string; refetch: () => void }
 
   const getCurrentTimestamp = () => {
-    return Number(block?.timestamp)
+    return Math.floor(Date.now() / 1000)
   }
 
   useEffect(() => {
@@ -1504,6 +1500,9 @@ export default function ForDaoDetailPage({
         hash: tx,
         confirmations: 1,
       })
+
+      const blockNumber = await provider.getBlockNumber()
+      setBlockNumber(blockNumber)
     } catch (error) {
       console.error('Error depositing tokens:', error)
 
@@ -1532,6 +1531,9 @@ export default function ForDaoDetailPage({
           hash: tx,
           confirmations: 1,
         })
+
+        const blockNumber = await provider.getBlockNumber()
+        setBlockNumber(blockNumber)
       } catch (error) {
         console.error('Error withdrawing tokens:', error)
 
@@ -1558,6 +1560,8 @@ export default function ForDaoDetailPage({
         confirmations: 1,
       })
 
+      const blockNumber = await provider.getBlockNumber()
+      setBlockNumber(blockNumber)
       refetchGetSBTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
@@ -1580,6 +1584,9 @@ export default function ForDaoDetailPage({
         hash: tx,
         confirmations: 1,
       })
+
+      const blockNumber = await provider.getBlockNumber()
+      setBlockNumber(blockNumber)
 
       setRefetchVotingPower(!refetchVotingPower)
     } catch (error) {
@@ -1608,6 +1615,9 @@ export default function ForDaoDetailPage({
         hash: tx,
         confirmations: 1,
       })
+
+      const blockNumber = await provider.getBlockNumber()
+      setBlockNumber(blockNumber)
 
       refetchGetSBTVotingPower()
     } catch (error) {

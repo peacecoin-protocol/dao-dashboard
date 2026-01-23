@@ -182,7 +182,7 @@ export default function PCEPage({
   const { toast } = useToast()
 
   const alchemyConfig = {
-    apiKey: Env.ALCHEMY_API_KEY,
+    apiKey: Env.NEXT_PUBLIC_ALCHEMY_API_KEY,
     network: Network.ETH_SEPOLIA,
   }
 
