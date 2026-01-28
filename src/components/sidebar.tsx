@@ -116,6 +116,8 @@ export default function Sidebar({
           isCollapsed={isCollapsed}
           links={sideLinks}
           locale={locale}
+          connectLabel={dict?.navigation?.connect ?? 'Connect'}
+          disconnectLabel={dict?.navigation?.disconnect ?? 'Disconnect'}
         />
 
         {/* Scrollbar width toggle button */}

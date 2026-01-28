@@ -3,6 +3,7 @@ import { polygon, sepolia } from 'wagmi/chains'
 import { Env } from '~/env'
 import { PinataSDK } from 'pinata'
 import { defineChain } from 'viem'
+import { injected, walletConnect } from 'wagmi/connectors'
 
 export const localhost = defineChain({
   id: 31337,
@@ -19,6 +20,10 @@ export const localhost = defineChain({
 
 export const config = createConfig({
   chains: [sepolia, localhost, polygon],
+  connectors: [
+    injected(),
+    walletConnect({ projectId: Env.NEXT_PUBLIC_WC_PROJECT_ID }),
+  ],
   transports: {
     [sepolia.id]: http(Env.NEXT_PUBLIC_SEPOLIA_RPC_URL),
     [localhost.id]: http(Env.NEXT_PUBLIC_LOCALHOST_RPC_URL),

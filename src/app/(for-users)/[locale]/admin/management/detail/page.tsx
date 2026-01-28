@@ -16,6 +16,9 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
+import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
+import { Button } from '~/components/ui/button'
 import { Env } from '~/env'
 import { daoStudioAddress, defaultChainId } from '~/app/constants/constants'
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
@@ -41,6 +44,10 @@ type AlchemyTransfer = {
   hash?: string
   from?: string
   to?: string
+  blockTimestamp?: string
+  metadata?: {
+    blockTimestamp?: string
+  }
   rawContract?: {
     value?: string
     decimal?: string
@@ -118,6 +125,12 @@ export default function ManagementDetailPage({
   )
   const [isLoading, setIsLoading] = useState(true)
   const [isStatsLoading, setIsStatsLoading] = useState(false)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [topCount, setTopCount] = useState('')
+  const [minCount, setMinCount] = useState('')
+  const [minSendCount, setMinSendCount] = useState('')
+  const [minReceiveCount, setMinReceiveCount] = useState('')
 
   const { data: daoConfigs } = useReadContract({
     address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
@@ -188,6 +201,9 @@ export default function ManagementDetailPage({
       fromAddress?: string
       toAddress?: string
     }) => {
+
+      setIsLoading(true)
+
       const transfers: AlchemyTransfer[] = []
       let pageKey: string | undefined
 
@@ -196,7 +212,7 @@ export default function ManagementDetailPage({
           fromBlock: '0x0',
           toBlock: 'latest',
           excludeZeroValue: false,
-          withMetadata: false,
+          withMetadata: true,
           category: ['erc20'],
           contractAddresses: [communityTokenAddress],
           ...params,
@@ -217,7 +233,6 @@ export default function ManagementDetailPage({
           }),
         })
 
-        console.log(response, "res")
 
         if (!response.ok) {
           throw new Error(`Alchemy error: ${response.statusText}`)
@@ -233,6 +248,7 @@ export default function ManagementDetailPage({
         pageKey = result.pageKey || undefined
       } while (pageKey)
 
+      setIsLoading(false)
       return transfers
     }
 
@@ -242,6 +258,19 @@ export default function ManagementDetailPage({
         fetchAllTransfers({ fromAddress: address }),
         fetchAllTransfers({ toAddress: address }),
       ])
+
+      const startTime = startDate ? new Date(startDate).getTime() : null
+      const endTime = endDate ? new Date(endDate).getTime() : null
+      const inDateRange = (transfer: AlchemyTransfer) => {
+        if (!startTime && !endTime) return true
+        const timestamp =
+          transfer.metadata?.blockTimestamp ?? transfer.blockTimestamp
+        const transferTime = timestamp ? new Date(timestamp).getTime() : null
+        if (!transferTime) return false
+        if (startTime && transferTime < startTime) return false
+        if (endTime && transferTime > endTime) return false
+        return true
+      }
 
       const uniqueTransferCount = (transfers: AlchemyTransfer[]) => {
         const hashes = new Set<string>()
@@ -254,10 +283,12 @@ export default function ManagementDetailPage({
       }
 
       const sentTransfers = sent.filter(
-        (transfer) => transfer.from?.toLowerCase() === address
+        (transfer) =>
+          transfer.from?.toLowerCase() === address && inDateRange(transfer)
       )
       const receivedTransfers = received.filter(
-        (transfer) => transfer.to?.toLowerCase() === address
+        (transfer) =>
+          transfer.to?.toLowerCase() === address && inDateRange(transfer)
       )
 
       let currentFactor = await readContract(config, {
@@ -328,13 +359,143 @@ export default function ManagementDetailPage({
     return () => {
       isCancelled = true
     }
-  }, [communityTokenAddress, members])
+  }, [communityTokenAddress, members, startDate, endDate])
+
+  const filteredMembers = useMemo(() => {
+    const minCountValue = Number(minCount)
+    const minSendCountValue = Number(minSendCount)
+    const minReceiveCountValue = Number(minReceiveCount)
+    const topCountValue = Number(topCount)
+
+    const enriched = members.map((member) => {
+      const stats = memberStats[member.userAddr.toLowerCase()]
+      const sendCount = stats?.sendCount ?? 0
+      const receiveCount = stats?.receiveCount ?? 0
+      const totalCount = sendCount + receiveCount
+      return { member, stats, totalCount }
+    })
+
+    let filtered = enriched
+    if (!Number.isNaN(minCountValue) && minCountValue > 0) {
+      filtered = filtered.filter((entry) => entry.totalCount >= minCountValue)
+    }
+    if (!Number.isNaN(minSendCountValue) && minSendCountValue > 0) {
+      filtered = filtered.filter(
+        (entry) => (entry.stats?.sendCount ?? 0) >= minSendCountValue
+      )
+    }
+    if (!Number.isNaN(minReceiveCountValue) && minReceiveCountValue > 0) {
+      filtered = filtered.filter(
+        (entry) => (entry.stats?.receiveCount ?? 0) >= minReceiveCountValue
+      )
+    }
+    if (!Number.isNaN(topCountValue) && topCountValue > 0) {
+      filtered = [...filtered]
+        .sort((a, b) => b.totalCount - a.totalCount)
+        .slice(0, topCountValue)
+    }
+
+    return filtered
+  }, [members, memberStats, minCount, minSendCount, minReceiveCount, topCount])
 
   return (
     <div className="w-full mx-auto flex flex-col items-center justify-center">
       <div className="flex w-full flex-col items-center justify-center">
         <PageHeaderSection title="Management Detail" />
         <div className="flex w-full flex-col gap-4 rounded-xl border p-4 sm:p-6 mt-4">
+          <div className="w-full rounded-lg border bg-muted/30 p-4">
+            <div className="flex flex-col gap-4">
+              <div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-6">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="startDate">Start date/time</Label>
+                  <Input
+                    id="startDate"
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(event) => setStartDate(event.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="endDate">End date/time</Label>
+                  <Input
+                    id="endDate"
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(event) => setEndDate(event.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="topCount">Top X by total count</Label>
+                  <Input
+                    id="topCount"
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={topCount}
+                    onChange={(event) => setTopCount(event.target.value)}
+                    placeholder="e.g. 10"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="minCount">Min total count</Label>
+                  <Input
+                    id="minCount"
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={minCount}
+                    onChange={(event) => setMinCount(event.target.value)}
+                    placeholder="e.g. 5"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="minSendCount">Min send count</Label>
+                  <Input
+                    id="minSendCount"
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={minSendCount}
+                    onChange={(event) => setMinSendCount(event.target.value)}
+                    placeholder="e.g. 3"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="minReceiveCount">Min receive count</Label>
+                  <Input
+                    id="minReceiveCount"
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={minReceiveCount}
+                    onChange={(event) => setMinReceiveCount(event.target.value)}
+                    placeholder="e.g. 3"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Filters apply to transfer stats shown below.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="default"
+                  className="w-full sm:w-48"
+                  onClick={() => {
+                    setStartDate('')
+                    setEndDate('')
+                    setTopCount('')
+                    setMinCount('')
+                    setMinSendCount('')
+                    setMinReceiveCount('')
+                  }}
+                >
+                  Clear filters
+                </Button>
+              </div>
+            </div>
+          </div>
           <div className="hidden w-full md:block">
             <div className="w-full overflow-x-auto">
               <Table>
@@ -355,9 +516,10 @@ export default function ManagementDetailPage({
                         Loading...
                       </TableCell>
                     </TableRow>
-                  ) : members.length > 0 ? (
-                    members.map((member, index) => {
-                      const stats = memberStats[member.userAddr.toLowerCase()]
+                  ) : filteredMembers.length > 0 ? (
+                    filteredMembers.map((entry, index) => {
+                      const member = entry.member
+                      const stats = entry.stats
                       const isStatsPending = isStatsLoading && !stats
                       const receiveCount = stats?.receiveCount ?? 0
                       const sendAmount = stats?.sendAmount ?? BigInt(0)
@@ -407,9 +569,10 @@ export default function ManagementDetailPage({
               <div className="rounded-lg border px-4 py-6 text-center text-sm">
                 Loading...
               </div>
-            ) : members.length > 0 ? (
-              members.map((member, index) => {
-                const stats = memberStats[member.userAddr.toLowerCase()]
+            ) : filteredMembers.length > 0 ? (
+              filteredMembers.map((entry, index) => {
+                const member = entry.member
+                const stats = entry.stats
                 const isStatsPending = isStatsLoading && !stats
                 const receiveCount = stats?.receiveCount ?? 0
                 const sendAmount = stats?.sendAmount ?? BigInt(0)

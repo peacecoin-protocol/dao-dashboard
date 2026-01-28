@@ -24,12 +24,16 @@ import { cn } from '~/lib/utils'
 import useCheckActiveNav from '~/hooks/use-check-active-nav'
 import { SideLink } from '~/data/sidelinks'
 import { Locale } from '~/i18n/types'
+import { useAccount, useDisconnect } from 'wagmi'
+import { useConnectModal } from '@rainbow-me/rainbowkit'
 
 interface NavProps extends React.HTMLAttributes<HTMLDivElement> {
   isCollapsed: boolean
   links: SideLink[]
   closeNav: () => void
   locale: Locale
+  connectLabel: string
+  disconnectLabel: string
 }
 
 export default function Nav({
@@ -38,7 +42,12 @@ export default function Nav({
   className,
   closeNav,
   locale,
+  connectLabel,
+  disconnectLabel,
 }: NavProps) {
+  const { isConnected } = useAccount()
+  const { disconnect } = useDisconnect()
+  const { openConnectModal } = useConnectModal()
   const renderLink = ({ sub, ...rest }: SideLink) => {
     const key = `${rest.title}-${rest.href}`
     if (isCollapsed && sub)
@@ -81,6 +90,37 @@ export default function Nav({
       <TooltipProvider delayDuration={0}>
         <nav className="grid gap-1 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
           {links.map(renderLink)}
+          <div className="md:hidden">
+            {isConnected ? (
+              <button
+                type="button"
+                className={cn(
+                  buttonVariants({ variant: 'secondary', size: 'sm' }),
+                  'h-12 w-full justify-start text-wrap rounded-none px-6 bg-white'
+                )}
+                onClick={() => {
+                  disconnect()
+                }}
+              >
+                {disconnectLabel}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={cn(
+                  buttonVariants({ variant: 'secondary', size: 'sm' }),
+                  'h-12 w-full justify-start text-wrap rounded-none px-6 bg-white'
+                )}
+                onClick={() => {
+                  if (openConnectModal) {
+                    openConnectModal()
+                  }
+                }}
+              >
+                {connectLabel}
+              </button>
+            )}
+          </div>
         </nav>
       </TooltipProvider>
     </div>
