@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAccount, useReadContract } from 'wagmi'
+import { formatUnits, parseUnits } from 'viem'
 import { createClient } from '~/utils/supabase/client'
 import { PagePropsWithLocale } from '~/i18n/types'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
@@ -27,12 +28,15 @@ type MemberRow = {
 type MemberStats = {
   sendCount: number
   receiveCount: number
-  receiveAmount: number
+  sendAmount: bigint
+  receiveAmount: bigint
 }
 
 type AlchemyTransfer = {
   value?: number | string
   hash?: string
+  from?: string
+  to?: string
   rawContract?: {
     value?: string
     decimal?: string
@@ -40,6 +44,61 @@ type AlchemyTransfer = {
 }
 
 const ALCHEMY_URL = `https://eth-sepolia.g.alchemy.com/v2/${Env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+const roundAndTrim = (value: string) => {
+  if (!value || value === '0') return '0'
+  const [intPartRaw, fracPartRaw = ''] = value.split('.')
+  let intPart = intPartRaw || '0'
+  let fracPart = fracPartRaw
+
+  if (fracPart.length > 2) {
+    const digits = fracPart.split('')
+    const shouldRoundUp = Number(digits[2] ?? '0') >= 5
+    fracPart = digits.slice(0, 2).join('')
+
+    if (shouldRoundUp) {
+      let carry = 1
+      const frac = fracPart.split('')
+      for (let i = frac.length - 1; i >= 0; i -= 1) {
+        const next = Number(frac[i]) + carry
+        if (next >= 10) {
+          frac[i] = '0'
+          carry = 1
+        } else {
+          frac[i] = String(next)
+          carry = 0
+          break
+        }
+      }
+      fracPart = frac.join('')
+      if (carry) {
+        const intDigits = intPart.split('')
+        for (let i = intDigits.length - 1; i >= 0; i -= 1) {
+          const next = Number(intDigits[i]) + carry
+          if (next >= 10) {
+            intDigits[i] = '0'
+            carry = 1
+          } else {
+            intDigits[i] = String(next)
+            carry = 0
+            break
+          }
+        }
+        if (carry) {
+          intDigits.unshift('1')
+        }
+        intPart = intDigits.join('')
+      }
+    }
+  }
+
+  const trimmedFrac = fracPart.replace(/0+$/, '')
+  return trimmedFrac.length > 0 ? `${intPart}.${trimmedFrac}` : intPart
+}
+
+const formatAmount = (amount: bigint) => {
+  const formatted = formatUnits(amount, 18)
+  return roundAndTrim(formatted)
+}
 
 export default function ManagementDetailPage({
   params: { locale },
@@ -96,25 +155,29 @@ export default function ManagementDetailPage({
     let isCancelled = false
 
     const parseTransferValue = (transfer: AlchemyTransfer) => {
+      const rawValue = transfer.rawContract?.value
+      if (rawValue) {
+        try {
+          return BigInt(rawValue)
+        } catch {
+          return BigInt(0)
+        }
+      }
       if (typeof transfer.value === 'number') {
-        return transfer.value
+        try {
+          return parseUnits(transfer.value.toString(), 18)
+        } catch {
+          return BigInt(0)
+        }
       }
       if (typeof transfer.value === 'string') {
-        const parsed = Number(transfer.value)
-        return Number.isFinite(parsed) ? parsed : 0
+        try {
+          return parseUnits(transfer.value, 18)
+        } catch {
+          return BigInt(0)
+        }
       }
-      const rawValue = transfer.rawContract?.value
-      const rawDecimals = transfer.rawContract?.decimal
-      if (!rawValue || !rawDecimals) {
-        return 0
-      }
-      try {
-        const decimals = parseInt(rawDecimals, 16)
-        if (!Number.isFinite(decimals)) return 0
-        return Number(BigInt(rawValue)) / 10 ** decimals
-      } catch {
-        return 0
-      }
+      return BigInt(0)
     }
 
     const fetchAllTransfers = async (params: {
@@ -128,7 +191,7 @@ export default function ManagementDetailPage({
         const requestParams: Record<string, unknown> = {
           fromBlock: '0x0',
           toBlock: 'latest',
-          excludeZeroValue: true,
+          excludeZeroValue: false,
           withMetadata: false,
           category: ['erc20'],
           contractAddresses: [communityTokenAddress],
@@ -138,6 +201,8 @@ export default function ManagementDetailPage({
         if (pageKey) {
           requestParams.pageKey = pageKey
         }
+
+        console.log("reXXXs")
 
         const response = await fetch(ALCHEMY_URL, {
           method: 'POST',
@@ -149,6 +214,8 @@ export default function ManagementDetailPage({
             params: [requestParams],
           }),
         })
+
+        console.log(response, "res")
 
         if (!response.ok) {
           throw new Error(`Alchemy error: ${response.statusText}`)
@@ -184,16 +251,28 @@ export default function ManagementDetailPage({
         return hashes.size || transfers.length
       }
 
-      const receiveAmount = received.reduce(
+      const sentTransfers = sent.filter(
+        (transfer) => transfer.from?.toLowerCase() === address
+      )
+      const receivedTransfers = received.filter(
+        (transfer) => transfer.to?.toLowerCase() === address
+      )
+
+      const receiveAmount = receivedTransfers.reduce(
         (sum, transfer) => sum + parseTransferValue(transfer),
-        0
+        BigInt(0)
+      )
+      const sendAmount = sentTransfers.reduce(
+        (sum, transfer) => sum + parseTransferValue(transfer),
+        BigInt(0)
       )
 
       return {
         address,
         stats: {
-          sendCount: uniqueTransferCount(sent),
-          receiveCount: uniqueTransferCount(received),
+          sendCount: uniqueTransferCount(sentTransfers),
+          receiveCount: uniqueTransferCount(receivedTransfers),
+          sendAmount,
           receiveAmount,
         },
       }
@@ -250,12 +329,14 @@ export default function ManagementDetailPage({
                 <TableHead className="font-bold">address</TableHead>
                 <TableHead className="font-bold">send_count</TableHead>
                 <TableHead className="font-bold">receive_count</TableHead>
+                <TableHead className="font-bold">send_volume</TableHead>
+                <TableHead className="font-bold">receive_volume</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
+                  <TableCell colSpan={6} className="text-center">
                     Loading...
                   </TableCell>
                 </TableRow>
@@ -264,6 +345,8 @@ export default function ManagementDetailPage({
                   const stats = memberStats[member.userAddr.toLowerCase()]
                   const isStatsPending = isStatsLoading && !stats
                   const receiveCount = stats?.receiveCount ?? 0
+                  const sendAmount = stats?.sendAmount ?? BigInt(0)
+                  const receiveAmount = stats?.receiveAmount ?? BigInt(0)
 
                   return (
                     <TableRow key={member.id}>
@@ -279,12 +362,20 @@ export default function ManagementDetailPage({
                       <TableCell className="font-bold">
                         {isStatsPending ? 'Loading...' : receiveCount}
                       </TableCell>
+                      <TableCell className="font-bold">
+                        {isStatsPending ? 'Loading...' : formatAmount(sendAmount)}
+                      </TableCell>
+                      <TableCell className="font-bold">
+                        {isStatsPending
+                          ? 'Loading...'
+                          : formatAmount(receiveAmount)}
+                      </TableCell>
                     </TableRow>
                   )
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
+                  <TableCell colSpan={6} className="text-center">
                     No members found
                   </TableCell>
                 </TableRow>
