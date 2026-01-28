@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAccount, useReadContract } from 'wagmi'
+import { readContract } from '@wagmi/core'
 import { formatUnits, parseUnits } from 'viem'
 import { createClient } from '~/utils/supabase/client'
 import { PagePropsWithLocale } from '~/i18n/types'
@@ -18,6 +19,9 @@ import {
 import { Env } from '~/env'
 import { daoStudioAddress, defaultChainId } from '~/app/constants/constants'
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
+import { COMMUNITY_TOKEN_ABI } from '~/app/ABIs/CommunityToken'
+
+import { config } from '~/lib/config'
 
 type MemberRow = {
   id: string
@@ -202,8 +206,6 @@ export default function ManagementDetailPage({
           requestParams.pageKey = pageKey
         }
 
-        console.log("reXXXs")
-
         const response = await fetch(ALCHEMY_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -258,14 +260,25 @@ export default function ManagementDetailPage({
         (transfer) => transfer.to?.toLowerCase() === address
       )
 
+      let currentFactor = await readContract(config, {
+        address: communityTokenAddress as `0x${string}`,
+        abi: COMMUNITY_TOKEN_ABI,
+        functionName: 'getCurrentFactor',
+        args: [],
+      }) as bigint
+
+      if (currentFactor < BigInt(1)) {
+        currentFactor = BigInt(1)
+      }
+
       const receiveAmount = receivedTransfers.reduce(
         (sum, transfer) => sum + parseTransferValue(transfer),
         BigInt(0)
-      )
+      ) / currentFactor
       const sendAmount = sentTransfers.reduce(
         (sum, transfer) => sum + parseTransferValue(transfer),
         BigInt(0)
-      )
+      ) / currentFactor
 
       return {
         address,
@@ -319,69 +332,152 @@ export default function ManagementDetailPage({
 
   return (
     <div className="w-full mx-auto flex flex-col items-center justify-center">
-      <div className="flex flex-col w-full items-center justify-center gap-4">
+      <div className="flex w-full flex-col items-center justify-center">
         <PageHeaderSection title="Management Detail" />
-        <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-bold">No</TableHead>
-                <TableHead className="font-bold">address</TableHead>
-                <TableHead className="font-bold">send_count</TableHead>
-                <TableHead className="font-bold">receive_count</TableHead>
-                <TableHead className="font-bold">send_volume</TableHead>
-                <TableHead className="font-bold">receive_volume</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : members.length > 0 ? (
-                members.map((member, index) => {
-                  const stats = memberStats[member.userAddr.toLowerCase()]
-                  const isStatsPending = isStatsLoading && !stats
-                  const receiveCount = stats?.receiveCount ?? 0
-                  const sendAmount = stats?.sendAmount ?? BigInt(0)
-                  const receiveAmount = stats?.receiveAmount ?? BigInt(0)
-
-                  return (
-                    <TableRow key={member.id}>
-                      <TableCell className="font-bold">{index + 1}</TableCell>
-                      <TableCell className="font-bold">
-                        {member.userAddr}
-                      </TableCell>
-                      <TableCell className="font-bold">
-                        {isStatsPending
-                          ? 'Loading...'
-                          : (stats?.sendCount ?? 0)}
-                      </TableCell>
-                      <TableCell className="font-bold">
-                        {isStatsPending ? 'Loading...' : receiveCount}
-                      </TableCell>
-                      <TableCell className="font-bold">
-                        {isStatsPending ? 'Loading...' : formatAmount(sendAmount)}
-                      </TableCell>
-                      <TableCell className="font-bold">
-                        {isStatsPending
-                          ? 'Loading...'
-                          : formatAmount(receiveAmount)}
+        <div className="flex w-full flex-col gap-4 rounded-xl border p-4 sm:p-6 mt-4">
+          <div className="hidden w-full md:block">
+            <div className="w-full overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-bold">No</TableHead>
+                    <TableHead className="font-bold">address</TableHead>
+                    <TableHead className="font-bold">send_count</TableHead>
+                    <TableHead className="font-bold">receive_count</TableHead>
+                    <TableHead className="font-bold">send_volume</TableHead>
+                    <TableHead className="font-bold">receive_volume</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center">
+                        Loading...
                       </TableCell>
                     </TableRow>
-                  )
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center">
-                    No members found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                  ) : members.length > 0 ? (
+                    members.map((member, index) => {
+                      const stats = memberStats[member.userAddr.toLowerCase()]
+                      const isStatsPending = isStatsLoading && !stats
+                      const receiveCount = stats?.receiveCount ?? 0
+                      const sendAmount = stats?.sendAmount ?? BigInt(0)
+                      const receiveAmount = stats?.receiveAmount ?? BigInt(0)
+
+                      return (
+                        <TableRow key={member.id}>
+                          <TableCell className="font-bold">{index + 1}</TableCell>
+                          <TableCell className="font-bold">
+                            {member.userAddr}
+                          </TableCell>
+                          <TableCell className="font-bold">
+                            {isStatsPending
+                              ? 'Loading...'
+                              : (stats?.sendCount ?? 0)}
+                          </TableCell>
+                          <TableCell className="font-bold">
+                            {isStatsPending ? 'Loading...' : receiveCount}
+                          </TableCell>
+                          <TableCell className="font-bold">
+                            {isStatsPending
+                              ? 'Loading...'
+                              : formatAmount(sendAmount)}
+                          </TableCell>
+                          <TableCell className="font-bold">
+                            {isStatsPending
+                              ? 'Loading...'
+                              : formatAmount(receiveAmount)}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center">
+                        No members found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          <div className="flex w-full flex-col gap-3 md:hidden">
+            {isLoading ? (
+              <div className="rounded-lg border px-4 py-6 text-center text-sm">
+                Loading...
+              </div>
+            ) : members.length > 0 ? (
+              members.map((member, index) => {
+                const stats = memberStats[member.userAddr.toLowerCase()]
+                const isStatsPending = isStatsLoading && !stats
+                const receiveCount = stats?.receiveCount ?? 0
+                const sendAmount = stats?.sendAmount ?? BigInt(0)
+                const receiveAmount = stats?.receiveAmount ?? BigInt(0)
+
+                return (
+                  <div
+                    key={member.id}
+                    className="rounded-lg border p-4 shadow-sm"
+                  >
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between text-sm font-semibold">
+                        <span>Member</span>
+                        <span>#{index + 1}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground break-all">
+                        {member.userAddr}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            send_count
+                          </span>
+                          <span className="font-semibold">
+                            {isStatsPending
+                              ? 'Loading...'
+                              : (stats?.sendCount ?? 0)}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            receive_count
+                          </span>
+                          <span className="font-semibold">
+                            {isStatsPending ? 'Loading...' : receiveCount}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            send_volume
+                          </span>
+                          <span className="font-semibold">
+                            {isStatsPending
+                              ? 'Loading...'
+                              : formatAmount(sendAmount)}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            receive_volume
+                          </span>
+                          <span className="font-semibold">
+                            {isStatsPending
+                              ? 'Loading...'
+                              : formatAmount(receiveAmount)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="rounded-lg border px-4 py-6 text-center text-sm">
+                No members found
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
