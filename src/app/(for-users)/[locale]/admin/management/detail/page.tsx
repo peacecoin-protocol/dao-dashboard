@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAccount, useReadContract } from 'wagmi'
+import { readContract } from '@wagmi/core'
+import { formatUnits, parseUnits } from 'viem'
 import { createClient } from '~/utils/supabase/client'
 import { PagePropsWithLocale } from '~/i18n/types'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
@@ -14,9 +16,15 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
+import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
+import { Button } from '~/components/ui/button'
 import { Env } from '~/env'
 import { daoStudioAddress, defaultChainId } from '~/app/constants/constants'
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
+import { COMMUNITY_TOKEN_ABI } from '~/app/ABIs/CommunityToken'
+
+import { config } from '~/lib/config'
 
 type MemberRow = {
   id: string
@@ -27,12 +35,19 @@ type MemberRow = {
 type MemberStats = {
   sendCount: number
   receiveCount: number
-  receiveAmount: number
+  sendAmount: bigint
+  receiveAmount: bigint
 }
 
 type AlchemyTransfer = {
   value?: number | string
   hash?: string
+  from?: string
+  to?: string
+  blockTimestamp?: string
+  metadata?: {
+    blockTimestamp?: string
+  }
   rawContract?: {
     value?: string
     decimal?: string
@@ -40,6 +55,61 @@ type AlchemyTransfer = {
 }
 
 const ALCHEMY_URL = `https://eth-sepolia.g.alchemy.com/v2/${Env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+const roundAndTrim = (value: string) => {
+  if (!value || value === '0') return '0'
+  const [intPartRaw, fracPartRaw = ''] = value.split('.')
+  let intPart = intPartRaw || '0'
+  let fracPart = fracPartRaw
+
+  if (fracPart.length > 2) {
+    const digits = fracPart.split('')
+    const shouldRoundUp = Number(digits[2] ?? '0') >= 5
+    fracPart = digits.slice(0, 2).join('')
+
+    if (shouldRoundUp) {
+      let carry = 1
+      const frac = fracPart.split('')
+      for (let i = frac.length - 1; i >= 0; i -= 1) {
+        const next = Number(frac[i]) + carry
+        if (next >= 10) {
+          frac[i] = '0'
+          carry = 1
+        } else {
+          frac[i] = String(next)
+          carry = 0
+          break
+        }
+      }
+      fracPart = frac.join('')
+      if (carry) {
+        const intDigits = intPart.split('')
+        for (let i = intDigits.length - 1; i >= 0; i -= 1) {
+          const next = Number(intDigits[i]) + carry
+          if (next >= 10) {
+            intDigits[i] = '0'
+            carry = 1
+          } else {
+            intDigits[i] = String(next)
+            carry = 0
+            break
+          }
+        }
+        if (carry) {
+          intDigits.unshift('1')
+        }
+        intPart = intDigits.join('')
+      }
+    }
+  }
+
+  const trimmedFrac = fracPart.replace(/0+$/, '')
+  return trimmedFrac.length > 0 ? `${intPart}.${trimmedFrac}` : intPart
+}
+
+const formatAmount = (amount: bigint) => {
+  const formatted = formatUnits(amount, 18)
+  return roundAndTrim(formatted)
+}
 
 export default function ManagementDetailPage({
   params: { locale },
@@ -55,6 +125,12 @@ export default function ManagementDetailPage({
   )
   const [isLoading, setIsLoading] = useState(true)
   const [isStatsLoading, setIsStatsLoading] = useState(false)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [topCount, setTopCount] = useState('')
+  const [minCount, setMinCount] = useState('')
+  const [minSendCount, setMinSendCount] = useState('')
+  const [minReceiveCount, setMinReceiveCount] = useState('')
 
   const { data: daoConfigs } = useReadContract({
     address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
@@ -96,31 +172,38 @@ export default function ManagementDetailPage({
     let isCancelled = false
 
     const parseTransferValue = (transfer: AlchemyTransfer) => {
+      const rawValue = transfer.rawContract?.value
+      if (rawValue) {
+        try {
+          return BigInt(rawValue)
+        } catch {
+          return BigInt(0)
+        }
+      }
       if (typeof transfer.value === 'number') {
-        return transfer.value
+        try {
+          return parseUnits(transfer.value.toString(), 18)
+        } catch {
+          return BigInt(0)
+        }
       }
       if (typeof transfer.value === 'string') {
-        const parsed = Number(transfer.value)
-        return Number.isFinite(parsed) ? parsed : 0
+        try {
+          return parseUnits(transfer.value, 18)
+        } catch {
+          return BigInt(0)
+        }
       }
-      const rawValue = transfer.rawContract?.value
-      const rawDecimals = transfer.rawContract?.decimal
-      if (!rawValue || !rawDecimals) {
-        return 0
-      }
-      try {
-        const decimals = parseInt(rawDecimals, 16)
-        if (!Number.isFinite(decimals)) return 0
-        return Number(BigInt(rawValue)) / 10 ** decimals
-      } catch {
-        return 0
-      }
+      return BigInt(0)
     }
 
     const fetchAllTransfers = async (params: {
       fromAddress?: string
       toAddress?: string
     }) => {
+
+      setIsLoading(true)
+
       const transfers: AlchemyTransfer[] = []
       let pageKey: string | undefined
 
@@ -128,8 +211,8 @@ export default function ManagementDetailPage({
         const requestParams: Record<string, unknown> = {
           fromBlock: '0x0',
           toBlock: 'latest',
-          excludeZeroValue: true,
-          withMetadata: false,
+          excludeZeroValue: false,
+          withMetadata: true,
           category: ['erc20'],
           contractAddresses: [communityTokenAddress],
           ...params,
@@ -150,6 +233,7 @@ export default function ManagementDetailPage({
           }),
         })
 
+
         if (!response.ok) {
           throw new Error(`Alchemy error: ${response.statusText}`)
         }
@@ -164,6 +248,7 @@ export default function ManagementDetailPage({
         pageKey = result.pageKey || undefined
       } while (pageKey)
 
+      setIsLoading(false)
       return transfers
     }
 
@@ -173,6 +258,19 @@ export default function ManagementDetailPage({
         fetchAllTransfers({ fromAddress: address }),
         fetchAllTransfers({ toAddress: address }),
       ])
+
+      const startTime = startDate ? new Date(startDate).getTime() : null
+      const endTime = endDate ? new Date(endDate).getTime() : null
+      const inDateRange = (transfer: AlchemyTransfer) => {
+        if (!startTime && !endTime) return true
+        const timestamp =
+          transfer.metadata?.blockTimestamp ?? transfer.blockTimestamp
+        const transferTime = timestamp ? new Date(timestamp).getTime() : null
+        if (!transferTime) return false
+        if (startTime && transferTime < startTime) return false
+        if (endTime && transferTime > endTime) return false
+        return true
+      }
 
       const uniqueTransferCount = (transfers: AlchemyTransfer[]) => {
         const hashes = new Set<string>()
@@ -184,16 +282,41 @@ export default function ManagementDetailPage({
         return hashes.size || transfers.length
       }
 
-      const receiveAmount = received.reduce(
-        (sum, transfer) => sum + parseTransferValue(transfer),
-        0
+      const sentTransfers = sent.filter(
+        (transfer) =>
+          transfer.from?.toLowerCase() === address && inDateRange(transfer)
       )
+      const receivedTransfers = received.filter(
+        (transfer) =>
+          transfer.to?.toLowerCase() === address && inDateRange(transfer)
+      )
+
+      let currentFactor = await readContract(config, {
+        address: communityTokenAddress as `0x${string}`,
+        abi: COMMUNITY_TOKEN_ABI,
+        functionName: 'getCurrentFactor',
+        args: [],
+      }) as bigint
+
+      if (currentFactor < BigInt(1)) {
+        currentFactor = BigInt(1)
+      }
+
+      const receiveAmount = receivedTransfers.reduce(
+        (sum, transfer) => sum + parseTransferValue(transfer),
+        BigInt(0)
+      ) / currentFactor
+      const sendAmount = sentTransfers.reduce(
+        (sum, transfer) => sum + parseTransferValue(transfer),
+        BigInt(0)
+      ) / currentFactor
 
       return {
         address,
         stats: {
-          sendCount: uniqueTransferCount(sent),
-          receiveCount: uniqueTransferCount(received),
+          sendCount: uniqueTransferCount(sentTransfers),
+          receiveCount: uniqueTransferCount(receivedTransfers),
+          sendAmount,
           receiveAmount,
         },
       }
@@ -236,61 +359,288 @@ export default function ManagementDetailPage({
     return () => {
       isCancelled = true
     }
-  }, [communityTokenAddress, members])
+  }, [communityTokenAddress, members, startDate, endDate])
+
+  const filteredMembers = useMemo(() => {
+    const minCountValue = Number(minCount)
+    const minSendCountValue = Number(minSendCount)
+    const minReceiveCountValue = Number(minReceiveCount)
+    const topCountValue = Number(topCount)
+
+    const enriched = members.map((member) => {
+      const stats = memberStats[member.userAddr.toLowerCase()]
+      const sendCount = stats?.sendCount ?? 0
+      const receiveCount = stats?.receiveCount ?? 0
+      const totalCount = sendCount + receiveCount
+      return { member, stats, totalCount }
+    })
+
+    let filtered = enriched
+    if (!Number.isNaN(minCountValue) && minCountValue > 0) {
+      filtered = filtered.filter((entry) => entry.totalCount >= minCountValue)
+    }
+    if (!Number.isNaN(minSendCountValue) && minSendCountValue > 0) {
+      filtered = filtered.filter(
+        (entry) => (entry.stats?.sendCount ?? 0) >= minSendCountValue
+      )
+    }
+    if (!Number.isNaN(minReceiveCountValue) && minReceiveCountValue > 0) {
+      filtered = filtered.filter(
+        (entry) => (entry.stats?.receiveCount ?? 0) >= minReceiveCountValue
+      )
+    }
+    if (!Number.isNaN(topCountValue) && topCountValue > 0) {
+      filtered = [...filtered]
+        .sort((a, b) => b.totalCount - a.totalCount)
+        .slice(0, topCountValue)
+    }
+
+    return filtered
+  }, [members, memberStats, minCount, minSendCount, minReceiveCount, topCount])
 
   return (
     <div className="w-full mx-auto flex flex-col items-center justify-center">
-      <div className="flex flex-col w-full items-center justify-center gap-4">
+      <div className="flex w-full flex-col items-center justify-center">
         <PageHeaderSection title="Management Detail" />
-        <div className="rounded-xl flex border mt-4 flex-col w-full gap-4 p-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-bold">No</TableHead>
-                <TableHead className="font-bold">address</TableHead>
-                <TableHead className="font-bold">send_count</TableHead>
-                <TableHead className="font-bold">receive_count</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : members.length > 0 ? (
-                members.map((member, index) => {
-                  const stats = memberStats[member.userAddr.toLowerCase()]
-                  const isStatsPending = isStatsLoading && !stats
-                  const receiveCount = stats?.receiveCount ?? 0
-
-                  return (
-                    <TableRow key={member.id}>
-                      <TableCell className="font-bold">{index + 1}</TableCell>
-                      <TableCell className="font-bold">
-                        {member.userAddr}
-                      </TableCell>
-                      <TableCell className="font-bold">
-                        {isStatsPending
-                          ? 'Loading...'
-                          : (stats?.sendCount ?? 0)}
-                      </TableCell>
-                      <TableCell className="font-bold">
-                        {isStatsPending ? 'Loading...' : receiveCount}
+        <div className="flex w-full flex-col gap-4 rounded-xl border p-4 sm:p-6 mt-4">
+          <div className="w-full rounded-lg border bg-muted/30 p-4">
+            <div className="flex flex-col gap-4">
+              <div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-6">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="startDate">Start date/time</Label>
+                  <Input
+                    id="startDate"
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(event) => setStartDate(event.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="endDate">End date/time</Label>
+                  <Input
+                    id="endDate"
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(event) => setEndDate(event.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="topCount">Top X by total count</Label>
+                  <Input
+                    id="topCount"
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={topCount}
+                    onChange={(event) => setTopCount(event.target.value)}
+                    placeholder="e.g. 10"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="minCount">Min total count</Label>
+                  <Input
+                    id="minCount"
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={minCount}
+                    onChange={(event) => setMinCount(event.target.value)}
+                    placeholder="e.g. 5"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="minSendCount">Min send count</Label>
+                  <Input
+                    id="minSendCount"
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={minSendCount}
+                    onChange={(event) => setMinSendCount(event.target.value)}
+                    placeholder="e.g. 3"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="minReceiveCount">Min receive count</Label>
+                  <Input
+                    id="minReceiveCount"
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={minReceiveCount}
+                    onChange={(event) => setMinReceiveCount(event.target.value)}
+                    placeholder="e.g. 3"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Filters apply to transfer stats shown below.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="default"
+                  className="w-full sm:w-48"
+                  onClick={() => {
+                    setStartDate('')
+                    setEndDate('')
+                    setTopCount('')
+                    setMinCount('')
+                    setMinSendCount('')
+                    setMinReceiveCount('')
+                  }}
+                >
+                  Clear filters
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div className="hidden w-full md:block">
+            <div className="w-full overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-bold">No</TableHead>
+                    <TableHead className="font-bold">address</TableHead>
+                    <TableHead className="font-bold">send_count</TableHead>
+                    <TableHead className="font-bold">receive_count</TableHead>
+                    <TableHead className="font-bold">send_volume</TableHead>
+                    <TableHead className="font-bold">receive_volume</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center">
+                        Loading...
                       </TableCell>
                     </TableRow>
-                  )
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center">
-                    No members found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                  ) : filteredMembers.length > 0 ? (
+                    filteredMembers.map((entry, index) => {
+                      const member = entry.member
+                      const stats = entry.stats
+                      const isStatsPending = isStatsLoading && !stats
+                      const receiveCount = stats?.receiveCount ?? 0
+                      const sendAmount = stats?.sendAmount ?? BigInt(0)
+                      const receiveAmount = stats?.receiveAmount ?? BigInt(0)
+
+                      return (
+                        <TableRow key={member.id}>
+                          <TableCell className="font-bold">{index + 1}</TableCell>
+                          <TableCell className="font-bold">
+                            {member.userAddr}
+                          </TableCell>
+                          <TableCell className="font-bold">
+                            {isStatsPending
+                              ? 'Loading...'
+                              : (stats?.sendCount ?? 0)}
+                          </TableCell>
+                          <TableCell className="font-bold">
+                            {isStatsPending ? 'Loading...' : receiveCount}
+                          </TableCell>
+                          <TableCell className="font-bold">
+                            {isStatsPending
+                              ? 'Loading...'
+                              : formatAmount(sendAmount)}
+                          </TableCell>
+                          <TableCell className="font-bold">
+                            {isStatsPending
+                              ? 'Loading...'
+                              : formatAmount(receiveAmount)}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center">
+                        No members found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          <div className="flex w-full flex-col gap-3 md:hidden">
+            {isLoading ? (
+              <div className="rounded-lg border px-4 py-6 text-center text-sm">
+                Loading...
+              </div>
+            ) : filteredMembers.length > 0 ? (
+              filteredMembers.map((entry, index) => {
+                const member = entry.member
+                const stats = entry.stats
+                const isStatsPending = isStatsLoading && !stats
+                const receiveCount = stats?.receiveCount ?? 0
+                const sendAmount = stats?.sendAmount ?? BigInt(0)
+                const receiveAmount = stats?.receiveAmount ?? BigInt(0)
+
+                return (
+                  <div
+                    key={member.id}
+                    className="rounded-lg border p-4 shadow-sm"
+                  >
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between text-sm font-semibold">
+                        <span>Member</span>
+                        <span>#{index + 1}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground break-all">
+                        {member.userAddr}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            send_count
+                          </span>
+                          <span className="font-semibold">
+                            {isStatsPending
+                              ? 'Loading...'
+                              : (stats?.sendCount ?? 0)}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            receive_count
+                          </span>
+                          <span className="font-semibold">
+                            {isStatsPending ? 'Loading...' : receiveCount}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            send_volume
+                          </span>
+                          <span className="font-semibold">
+                            {isStatsPending
+                              ? 'Loading...'
+                              : formatAmount(sendAmount)}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            receive_volume
+                          </span>
+                          <span className="font-semibold">
+                            {isStatsPending
+                              ? 'Loading...'
+                              : formatAmount(receiveAmount)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="rounded-lg border px-4 py-6 text-center text-sm">
+                No members found
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
