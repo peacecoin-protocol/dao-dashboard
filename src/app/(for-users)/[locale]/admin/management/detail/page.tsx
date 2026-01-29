@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { useAccount, useReadContract, useWriteContract } from 'wagmi'
+import { sepolia } from 'wagmi/chains'
 import {
   readContract,
   simulateContract,
@@ -76,6 +77,11 @@ type AlchemyTransfer = {
     value?: string
     decimal?: string
   }
+}
+
+type MoralisOwner = {
+  owner_address?: string
+  ownerAddress?: string
 }
 
 type DistributeHistoryRow = {
@@ -196,26 +202,69 @@ export default function ManagementDetailPage({
   }, [daoConfigs])
 
   useEffect(() => {
-    const fetchMembers = async () => {
-      if (!daoId) {
+    const fetchCommunityTokenUsers = async () => {
+      if (!daoId || !communityTokenAddress) {
         setMembers([])
         setIsLoading(false)
         return
       }
 
       setIsLoading(true)
-      const { data } = await supabase
-        .from('Members')
-        .select('id, userAddr, created_at')
-        .eq('daoId', daoId)
-        .order('created_at', { ascending: true })
+      try {
+        const apiKey = Env.MORALIS_API_KEY
+        if (!apiKey) {
+          throw new Error('Missing Moralis API key')
+        }
 
-      setMembers((data as MemberRow[]) || [])
-      setIsLoading(false)
+        const chain =
+          (chainId || defaultChainId) === sepolia.id ? 'sepolia' : 'eth'
+        const baseUrl = `https://deep-index.moralis.io/api/v2.2/erc20/${communityTokenAddress}/owners`
+
+        const owners: string[] = []
+        let cursor: string | null = null
+        do {
+          const url = new URL(baseUrl)
+          url.searchParams.set('chain', chain)
+          url.searchParams.set('order', 'DESC')
+          if (cursor) url.searchParams.set('cursor', cursor)
+
+          const res = await fetch(url.toString(), {
+            headers: {
+              accept: 'application/json',
+              'X-API-Key': apiKey,
+            },
+          })
+          if (!res.ok) throw new Error('Failed to fetch token holders')
+          const data = await res.json()
+
+          if (Array.isArray(data.result)) {
+            data.result.forEach((row: MoralisOwner) => {
+              const addr = row.owner_address || row.ownerAddress
+              if (addr) owners.push(addr)
+            })
+          }
+
+          cursor = data.cursor ?? null
+        } while (cursor)
+
+        const uniqueOwners = Array.from(new Set(owners)).filter(Boolean)
+        const rows: MemberRow[] = uniqueOwners.map((addr) => ({
+          id: addr,
+          userAddr: addr,
+          created_at: '',
+        }))
+
+        setMembers(rows)
+      } catch (error) {
+        console.error('Error fetching community token users:', error)
+        setMembers([])
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    fetchMembers()
-  }, [daoId, supabase])
+    fetchCommunityTokenUsers()
+  }, [daoId, communityTokenAddress, chainId])
 
   useEffect(() => {
     const fetchDaoTokens = async () => {
