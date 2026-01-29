@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
-import { useAccount, useReadContract } from 'wagmi'
-import { readContract } from '@wagmi/core'
+import { useAccount, useReadContract, useWriteContract } from 'wagmi'
+import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { formatUnits, parseUnits } from 'viem'
 import { createClient } from '~/utils/supabase/client'
 import { PagePropsWithLocale } from '~/i18n/types'
@@ -26,12 +27,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
+import Modal from '~/components/custom/Modal'
 import { Env } from '~/env'
-import { daoStudioAddress, defaultChainId } from '~/app/constants/constants'
+import {
+  daoStudioAddress,
+  defaultChainId,
+  EMPTY_NFT_IMAGE,
+} from '~/app/constants/constants'
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
 import { COMMUNITY_TOKEN_ABI } from '~/app/ABIs/CommunityToken'
+import { SBT_ABI } from '~/app/ABIs/SBT'
 
 import { config } from '~/lib/config'
+import { SBTInfo } from '~/components/custom/sbt-tableComponent'
+import { useToast } from '~/hooks/use-toast'
 
 type MemberRow = {
   id: string
@@ -124,7 +133,9 @@ export default function ManagementDetailPage({
   const supabase = createClient()
   const searchParams = useSearchParams()
   const daoId = searchParams.get('daoId') ?? ''
-  const { chainId } = useAccount()
+  const { chainId, address } = useAccount()
+  const { toast } = useToast()
+  const { writeContractAsync } = useWriteContract()
 
   const [members, setMembers] = useState<MemberRow[]>([])
   const [memberStats, setMemberStats] = useState<Record<string, MemberStats>>(
@@ -139,6 +150,10 @@ export default function ManagementDetailPage({
     'send_count' | 'receive_count' | 'send_volume' | 'receive_volume'
   >('send_count')
   const [minMetricValue, setMinMetricValue] = useState('')
+  const [isDistributeOpen, setIsDistributeOpen] = useState(false)
+  const [daoTokens, setDaoTokens] = useState<SBTInfo[]>([])
+  const [selectedTokenKey, setSelectedTokenKey] = useState('')
+  const [isDistributing, setIsDistributing] = useState(false)
 
   const { data: daoConfigs } = useReadContract({
     address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
@@ -175,6 +190,39 @@ export default function ManagementDetailPage({
 
     fetchMembers()
   }, [daoId, supabase])
+
+  useEffect(() => {
+    const fetchDaoTokens = async () => {
+      if (!daoId || !address) {
+        setDaoTokens([])
+        return
+      }
+
+      const { data } = await supabase
+        .from('Token')
+        .select()
+        .eq('creator', address)
+        .eq('daoId', daoId)
+        .order('created_at', { ascending: false })
+
+      setDaoTokens((data as SBTInfo[]) || [])
+    }
+
+    fetchDaoTokens()
+  }, [daoId, address, supabase])
+
+  useEffect(() => {
+    if (daoTokens.length === 0) {
+      setSelectedTokenKey('')
+      return
+    }
+    if (!selectedTokenKey) {
+      const firstToken = daoTokens[0]
+      if (firstToken) {
+        setSelectedTokenKey(`${firstToken.address}-${firstToken.tokenId}`)
+      }
+    }
+  }, [daoTokens, selectedTokenKey])
 
   useEffect(() => {
     let isCancelled = false
@@ -435,6 +483,62 @@ export default function ManagementDetailPage({
     return filtered
   }, [members, memberStats, minMetricValue, selectedMetric, topCount])
 
+  const selectedToken = useMemo(() => {
+    if (!selectedTokenKey) return null
+    return (
+      daoTokens.find(
+        (token) => `${token.address}-${token.tokenId}` === selectedTokenKey
+      ) ?? null
+    )
+  }, [daoTokens, selectedTokenKey])
+
+  const getTokenImage = (image?: string) => {
+    if (!image) return EMPTY_NFT_IMAGE
+    return `${Env.PINATA_GATEWAY_URL}/ipfs/${image}`
+  }
+
+  const handleDistribute = async () => {
+    if (!address) {
+      toast({ title: 'Please connect your wallet first.' })
+      return
+    }
+    if (!selectedToken) {
+      toast({ title: 'Please select an SBT/NFT to distribute.' })
+      return
+    }
+    if (filteredMembers.length <= 1) {
+      toast({ title: 'Please filter more than 1 user to distribute.' })
+      return
+    }
+
+    setIsDistributing(true)
+    try {
+      const toAddresses = filteredMembers.map((entry) => entry.member.userAddr as `0x${string}`)
+      const tokenIds = filteredMembers.map(() => BigInt(selectedToken.tokenId))
+      const amounts = filteredMembers.map(() => BigInt(1))
+
+      const txHash = await writeContractAsync({
+        abi: SBT_ABI,
+        address: selectedToken.address as `0x${string}`,
+        functionName: 'batchMint',
+        args: [toAddresses, tokenIds, amounts],
+      })
+
+      await waitForTransactionReceipt(config, {
+        hash: txHash,
+        confirmations: 1,
+      })
+
+      toast({ title: 'Distribution completed.' })
+      setIsDistributeOpen(false)
+    } catch (error) {
+      console.error('Error distributing SBT/NFT:', error)
+      toast({ title: 'Distribution failed.' })
+    } finally {
+      setIsDistributing(false)
+    }
+  }
+
   return (
     <div className="w-full mx-auto flex flex-col items-center justify-center">
       <div className="flex w-full flex-col items-center justify-center">
@@ -468,10 +572,10 @@ export default function ManagementDetailPage({
                     onValueChange={(value) =>
                       setSelectedMetric(
                         value as
-                          | 'send_count'
-                          | 'receive_count'
-                          | 'send_volume'
-                          | 'receive_volume'
+                        | 'send_count'
+                        | 'receive_count'
+                        | 'send_volume'
+                        | 'receive_volume'
                       )
                     }
                   >
@@ -690,7 +794,111 @@ export default function ManagementDetailPage({
             )}
           </div>
         </div>
+        <div className="flex w-full justify-end">
+          <Button
+            type="button"
+            variant="default"
+            className="w-full sm:w-48"
+            onClick={() => setIsDistributeOpen(true)}
+          >
+            Distribute
+          </Button>
+        </div>
       </div>
+      <Modal
+        isOpen={isDistributeOpen}
+        onClose={() => {
+          setIsDistributeOpen(false)
+        }}
+      >
+        <div className="w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto p-2 sm:p-3 space-y-4">
+          <div className="text-center">
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight">
+              Distribute SBT/NFT
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Select one token and distribute to filtered users.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tokenSelect">SBT/NFT</Label>
+            <Select
+              value={selectedTokenKey}
+              onValueChange={(value) => setSelectedTokenKey(value)}
+            >
+              <SelectTrigger id="tokenSelect" className="w-full">
+                <SelectValue placeholder="Select token" />
+              </SelectTrigger>
+              <SelectContent>
+                {daoTokens.length > 0 ? (
+                  daoTokens.map((token) => (
+                    <SelectItem
+                      key={`${token.address}-${token.tokenId}`}
+                      value={`${token.address}-${token.tokenId}`}
+                    >
+                      {token.name || 'Token'} #{token.tokenId} ·{' '}
+                      {token.isSBT ? 'SBT' : 'NFT'}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="none" disabled>
+                    No tokens found
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedToken && (
+            <div className="rounded-lg border p-4 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <div className="relative h-16 w-16 overflow-hidden rounded-md border">
+                  <Image
+                    src={getTokenImage(selectedToken.image)}
+                    alt={selectedToken.name || 'Token'}
+                    fill
+                    className="object-cover"
+                    sizes="64px"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold">
+                    {selectedToken.name || 'Token'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    #{selectedToken.tokenId} ·{' '}
+                    {selectedToken.isSBT ? 'SBT' : 'NFT'}
+                  </span>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {selectedToken.description || 'No description'}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Voting Power: {selectedToken.votingPower || '0'}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2 text-xs text-muted-foreground">
+            <span>Filtered users: {filteredMembers.length}</span>
+            <span>
+              Distribution is enabled when filtered users are more than 1.
+            </span>
+          </div>
+
+          <Button
+            className="w-full"
+            onClick={handleDistribute}
+            disabled={
+              isDistributing || !selectedToken || filteredMembers.length <= 1
+            }
+          >
+            {isDistributing ? 'Distributing...' : 'Distribute'}
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }
