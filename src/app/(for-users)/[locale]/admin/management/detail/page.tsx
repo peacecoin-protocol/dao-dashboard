@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { useAccount, useReadContract, useWriteContract } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { formatUnits, parseUnits } from 'viem'
+import { formatEther } from 'ethers'
 import { createClient } from '~/utils/supabase/client'
 import { PagePropsWithLocale } from '~/i18n/types'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
@@ -68,6 +69,17 @@ type AlchemyTransfer = {
     value?: string
     decimal?: string
   }
+}
+
+type DistributeHistoryRow = {
+  id: number
+  created_at: string
+  daoId: string
+  startTime: string | null
+  endTime: string | null
+  metric: string | null
+  topX: number | null
+  minValue: number | null
 }
 
 const ALCHEMY_URL = `https://eth-sepolia.g.alchemy.com/v2/${Env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
@@ -154,6 +166,13 @@ export default function ManagementDetailPage({
   const [daoTokens, setDaoTokens] = useState<SBTInfo[]>([])
   const [selectedTokenKey, setSelectedTokenKey] = useState('')
   const [isDistributing, setIsDistributing] = useState(false)
+  const [memberPage, setMemberPage] = useState(1)
+  const memberPageSize = 3
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  const [historyRows, setHistoryRows] = useState<DistributeHistoryRow[]>([])
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false)
+  const [historyPage, setHistoryPage] = useState(1)
+  const historyPageSize = 3
 
   const { data: daoConfigs } = useReadContract({
     address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
@@ -210,6 +229,44 @@ export default function ManagementDetailPage({
 
     fetchDaoTokens()
   }, [daoId, address, supabase])
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!daoId || !isHistoryOpen) return
+
+      setIsHistoryLoading(true)
+      const { data } = await supabase
+        .from('Distributes')
+        .select('id, created_at, daoId, startTime, endTime, metric, topX, minValue')
+        .eq('daoId', daoId)
+        .order('created_at', { ascending: false })
+
+      setHistoryRows((data as DistributeHistoryRow[]) || [])
+      setIsHistoryLoading(false)
+    }
+
+    fetchHistory()
+  }, [daoId, isHistoryOpen, supabase])
+
+  useEffect(() => {
+    if (!isHistoryOpen) {
+      setHistoryPage(1)
+    }
+  }, [isHistoryOpen])
+
+  useEffect(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(historyRows.length / historyPageSize)
+    )
+    if (historyPage > totalPages) {
+      setHistoryPage(totalPages)
+    }
+  }, [historyRows.length, historyPage, historyPageSize])
+
+  useEffect(() => {
+    setMemberPage(1)
+  }, [startDate, endDate, topCount, selectedMetric, minMetricValue])
 
   useEffect(() => {
     if (daoTokens.length === 0) {
@@ -483,6 +540,26 @@ export default function ManagementDetailPage({
     return filtered
   }, [members, memberStats, minMetricValue, selectedMetric, topCount])
 
+  useEffect(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(filteredMembers.length / memberPageSize)
+    )
+    if (memberPage > totalPages) {
+      setMemberPage(totalPages)
+    }
+  }, [filteredMembers.length, memberPage, memberPageSize])
+
+  const pagedMembers = useMemo(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(filteredMembers.length / memberPageSize)
+    )
+    const safePage = Math.min(memberPage, totalPages)
+    const startIndex = (safePage - 1) * memberPageSize
+    return filteredMembers.slice(startIndex, startIndex + memberPageSize)
+  }, [filteredMembers, memberPage, memberPageSize])
+
   const selectedToken = useMemo(() => {
     if (!selectedTokenKey) return null
     return (
@@ -497,6 +574,21 @@ export default function ManagementDetailPage({
     return `${Env.PINATA_GATEWAY_URL}/ipfs/${image}`
   }
 
+  const trimTrailingZeros = (value: string) => {
+    if (!value.includes('.')) return value
+    const trimmed = value.replace(/\.?0+$/, '')
+    return trimmed === '' ? '0' : trimmed
+  }
+
+  const formatVotingPower = (value?: string) => {
+    if (!value) return '0'
+    try {
+      return trimTrailingZeros(formatEther(BigInt(value)))
+    } catch {
+      return '0'
+    }
+  }
+
   const handleDistribute = async () => {
     if (!address) {
       toast({ title: 'Please connect your wallet first.' })
@@ -506,7 +598,7 @@ export default function ManagementDetailPage({
       toast({ title: 'Please select an SBT/NFT to distribute.' })
       return
     }
-    if (filteredMembers.length <= 1) {
+    if (filteredMembers.length < 1) {
       toast({ title: 'Please filter more than 1 user to distribute.' })
       return
     }
@@ -529,6 +621,15 @@ export default function ManagementDetailPage({
         confirmations: 1,
       })
 
+      await supabase.from('Distributes').insert({
+        daoId,
+        startTime: startDate || null,
+        endTime: endDate || null,
+        metric: selectedMetric,
+        topX: topCount ? Number(topCount) : null,
+        minValue: minMetricValue ? Number(minMetricValue) : null,
+      })
+
       toast({ title: 'Distribution completed.' })
       setIsDistributeOpen(false)
     } catch (error) {
@@ -546,7 +647,7 @@ export default function ManagementDetailPage({
         <div className="flex w-full flex-col gap-4 rounded-xl border p-4 sm:p-6 mt-4">
           <div className="w-full rounded-lg border bg-muted/30 p-4">
             <div className="flex flex-col gap-4">
-              <div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-6">
+              <div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-2">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="startDate">Start date/time</Label>
                   <Input
@@ -666,8 +767,8 @@ export default function ManagementDetailPage({
                         Loading...
                       </TableCell>
                     </TableRow>
-                  ) : filteredMembers.length > 0 ? (
-                    filteredMembers.map((entry, index) => {
+                  ) : pagedMembers.length > 0 ? (
+                    pagedMembers.map((entry, index) => {
                       const member = entry.member
                       const stats = entry.stats
                       const isStatsPending = isStatsLoading && !stats
@@ -678,7 +779,7 @@ export default function ManagementDetailPage({
                       return (
                         <TableRow key={member.id}>
                           <TableCell className="font-bold">
-                            {index + 1}
+                            {(memberPage - 1) * memberPageSize + index + 1}
                           </TableCell>
                           <TableCell className="font-bold">
                             {member.userAddr}
@@ -714,6 +815,58 @@ export default function ManagementDetailPage({
                 </TableBody>
               </Table>
             </div>
+
+            {filteredMembers.length > memberPageSize && (
+              <div className="flex items-center justify-between gap-2 mt-3">
+                <span className="text-xs text-muted-foreground">
+                  Page {memberPage} of{' '}
+                  {Math.max(
+                    1,
+                    Math.ceil(filteredMembers.length / memberPageSize)
+                  )}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setMemberPage((prev) => Math.max(1, prev - 1))
+                    }
+                    disabled={memberPage <= 1}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setMemberPage((prev) =>
+                        Math.min(
+                          Math.max(
+                            1,
+                            Math.ceil(
+                              filteredMembers.length / memberPageSize
+                            )
+                          ),
+                          prev + 1
+                        )
+                      )
+                    }
+                    disabled={
+                      memberPage >=
+                      Math.max(
+                        1,
+                        Math.ceil(filteredMembers.length / memberPageSize)
+                      )
+                    }
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex w-full flex-col gap-3 md:hidden">
@@ -721,8 +874,8 @@ export default function ManagementDetailPage({
               <div className="rounded-lg border px-4 py-6 text-center text-sm">
                 Loading...
               </div>
-            ) : filteredMembers.length > 0 ? (
-              filteredMembers.map((entry, index) => {
+            ) : pagedMembers.length > 0 ? (
+              pagedMembers.map((entry, index) => {
                 const member = entry.member
                 const stats = entry.stats
                 const isStatsPending = isStatsLoading && !stats
@@ -738,7 +891,9 @@ export default function ManagementDetailPage({
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between text-sm font-semibold">
                         <span>Member</span>
-                        <span>#{index + 1}</span>
+                        <span>
+                          #{(memberPage - 1) * memberPageSize + index + 1}
+                        </span>
                       </div>
                       <div className="text-xs text-muted-foreground break-all">
                         {member.userAddr}
@@ -792,9 +947,69 @@ export default function ManagementDetailPage({
                 No members found
               </div>
             )}
+
+            {filteredMembers.length > memberPageSize && (
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground">
+                  Page {memberPage} of{' '}
+                  {Math.max(
+                    1,
+                    Math.ceil(filteredMembers.length / memberPageSize)
+                  )}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setMemberPage((prev) => Math.max(1, prev - 1))
+                    }
+                    disabled={memberPage <= 1}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setMemberPage((prev) =>
+                        Math.min(
+                          Math.max(
+                            1,
+                            Math.ceil(
+                              filteredMembers.length / memberPageSize
+                            )
+                          ),
+                          prev + 1
+                        )
+                      )
+                    }
+                    disabled={
+                      memberPage >=
+                      Math.max(
+                        1,
+                        Math.ceil(filteredMembers.length / memberPageSize)
+                      )
+                    }
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-        <div className="flex w-full justify-end">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-48"
+            onClick={() => setIsHistoryOpen(true)}
+          >
+            History
+          </Button>
           <Button
             type="button"
             variant="default"
@@ -805,6 +1020,126 @@ export default function ManagementDetailPage({
           </Button>
         </div>
       </div>
+      <Modal
+        isOpen={isHistoryOpen}
+        onClose={() => {
+          setIsHistoryOpen(false)
+        }}
+      >
+        <div className="w-full max-w-2xl mx-auto p-2 sm:p-3 space-y-4">
+          <div className="text-center">
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight">
+              Distribute History
+            </h2>
+          </div>
+
+          {(() => {
+            const totalPages = Math.max(
+              1,
+              Math.ceil(historyRows.length / historyPageSize)
+            )
+            const safePage = Math.min(historyPage, totalPages)
+            const startIndex = (safePage - 1) * historyPageSize
+            const pageRows = historyRows.slice(
+              startIndex,
+              startIndex + historyPageSize
+            )
+
+            return (
+              <>
+                <div className="w-full overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="font-bold">Date</TableHead>
+                        <TableHead className="font-bold">Start</TableHead>
+                        <TableHead className="font-bold">End</TableHead>
+                        <TableHead className="font-bold">Metric</TableHead>
+                        <TableHead className="font-bold">Top X</TableHead>
+                        <TableHead className="font-bold">Min</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isHistoryLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center">
+                            Loading...
+                          </TableCell>
+                        </TableRow>
+                      ) : pageRows.length > 0 ? (
+                        pageRows.map((row) => (
+                          <TableRow key={row.id}>
+                            <TableCell className="text-xs">
+                              {row.created_at
+                                ? new Date(row.created_at).toLocaleString()
+                                : '-'}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {row.startTime || '-'}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {row.endTime || '-'}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {row.metric || '-'}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {row.topX ?? '-'}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {row.minValue ?? '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center">
+                            No history found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {historyRows.length > historyPageSize && (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      Page {safePage} of {totalPages}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setHistoryPage((prev) => Math.max(1, prev - 1))
+                        }
+                        disabled={safePage <= 1}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setHistoryPage((prev) =>
+                            Math.min(totalPages, prev + 1)
+                          )
+                        }
+                        disabled={safePage >= totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )
+          })()}
+        </div>
+      </Modal>
       <Modal
         isOpen={isDistributeOpen}
         onClose={() => {
@@ -876,7 +1211,7 @@ export default function ManagementDetailPage({
                 {selectedToken.description || 'No description'}
               </div>
               <div className="text-xs text-muted-foreground">
-                Voting Power: {selectedToken.votingPower || '0'}
+                Voting Power: {formatVotingPower(selectedToken.votingPower)}
               </div>
             </div>
           )}
@@ -892,7 +1227,7 @@ export default function ManagementDetailPage({
             className="w-full"
             onClick={handleDistribute}
             disabled={
-              isDistributing || !selectedToken || filteredMembers.length <= 1
+              isDistributing || !selectedToken || filteredMembers.length < 1
             }
           >
             {isDistributing ? 'Distributing...' : 'Distribute'}
