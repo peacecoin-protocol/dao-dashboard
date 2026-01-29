@@ -19,6 +19,13 @@ import {
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Button } from '~/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select'
 import { Env } from '~/env'
 import { daoStudioAddress, defaultChainId } from '~/app/constants/constants'
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
@@ -128,9 +135,10 @@ export default function ManagementDetailPage({
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [topCount, setTopCount] = useState('')
-  const [minCount, setMinCount] = useState('')
-  const [minSendCount, setMinSendCount] = useState('')
-  const [minReceiveCount, setMinReceiveCount] = useState('')
+  const [selectedMetric, setSelectedMetric] = useState<
+    'send_count' | 'receive_count' | 'send_volume' | 'receive_volume'
+  >('send_count')
+  const [minMetricValue, setMinMetricValue] = useState('')
 
   const { data: daoConfigs } = useReadContract({
     address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
@@ -201,7 +209,6 @@ export default function ManagementDetailPage({
       fromAddress?: string
       toAddress?: string
     }) => {
-
       setIsLoading(true)
 
       const transfers: AlchemyTransfer[] = []
@@ -232,7 +239,6 @@ export default function ManagementDetailPage({
             params: [requestParams],
           }),
         })
-
 
         if (!response.ok) {
           throw new Error(`Alchemy error: ${response.statusText}`)
@@ -291,25 +297,27 @@ export default function ManagementDetailPage({
           transfer.to?.toLowerCase() === address && inDateRange(transfer)
       )
 
-      let currentFactor = await readContract(config, {
+      let currentFactor = (await readContract(config, {
         address: communityTokenAddress as `0x${string}`,
         abi: COMMUNITY_TOKEN_ABI,
         functionName: 'getCurrentFactor',
         args: [],
-      }) as bigint
+      })) as bigint
 
       if (currentFactor < BigInt(1)) {
         currentFactor = BigInt(1)
       }
 
-      const receiveAmount = receivedTransfers.reduce(
-        (sum, transfer) => sum + parseTransferValue(transfer),
-        BigInt(0)
-      ) / currentFactor
-      const sendAmount = sentTransfers.reduce(
-        (sum, transfer) => sum + parseTransferValue(transfer),
-        BigInt(0)
-      ) / currentFactor
+      const receiveAmount =
+        receivedTransfers.reduce(
+          (sum, transfer) => sum + parseTransferValue(transfer),
+          BigInt(0)
+        ) / currentFactor
+      const sendAmount =
+        sentTransfers.reduce(
+          (sum, transfer) => sum + parseTransferValue(transfer),
+          BigInt(0)
+        ) / currentFactor
 
       return {
         address,
@@ -362,41 +370,70 @@ export default function ManagementDetailPage({
   }, [communityTokenAddress, members, startDate, endDate])
 
   const filteredMembers = useMemo(() => {
-    const minCountValue = Number(minCount)
-    const minSendCountValue = Number(minSendCount)
-    const minReceiveCountValue = Number(minReceiveCount)
     const topCountValue = Number(topCount)
+    const isCountMetric =
+      selectedMetric === 'send_count' || selectedMetric === 'receive_count'
+
+    const parseMinMetricValue = () => {
+      if (!minMetricValue) return null
+      if (isCountMetric) {
+        const parsed = Number(minMetricValue)
+        if (Number.isNaN(parsed) || parsed <= 0) return null
+        return BigInt(Math.floor(parsed))
+      }
+      try {
+        const parsed = parseUnits(minMetricValue, 18)
+        return parsed > BigInt(0) ? parsed : null
+      } catch {
+        return null
+      }
+    }
+
+    const minMetricValueParsed = parseMinMetricValue()
 
     const enriched = members.map((member) => {
       const stats = memberStats[member.userAddr.toLowerCase()]
       const sendCount = stats?.sendCount ?? 0
       const receiveCount = stats?.receiveCount ?? 0
-      const totalCount = sendCount + receiveCount
-      return { member, stats, totalCount }
+      const sendAmount = stats?.sendAmount ?? BigInt(0)
+      const receiveAmount = stats?.receiveAmount ?? BigInt(0)
+      const metricValue = (() => {
+        switch (selectedMetric) {
+          case 'send_count':
+            return BigInt(sendCount)
+          case 'receive_count':
+            return BigInt(receiveCount)
+          case 'send_volume':
+            return sendAmount
+          case 'receive_volume':
+            return receiveAmount
+          default:
+            return BigInt(0)
+        }
+      })()
+      return { member, stats, metricValue }
     })
 
     let filtered = enriched
-    if (!Number.isNaN(minCountValue) && minCountValue > 0) {
-      filtered = filtered.filter((entry) => entry.totalCount >= minCountValue)
-    }
-    if (!Number.isNaN(minSendCountValue) && minSendCountValue > 0) {
+    if (minMetricValueParsed !== null) {
       filtered = filtered.filter(
-        (entry) => (entry.stats?.sendCount ?? 0) >= minSendCountValue
-      )
-    }
-    if (!Number.isNaN(minReceiveCountValue) && minReceiveCountValue > 0) {
-      filtered = filtered.filter(
-        (entry) => (entry.stats?.receiveCount ?? 0) >= minReceiveCountValue
+        (entry) => entry.metricValue >= minMetricValueParsed
       )
     }
     if (!Number.isNaN(topCountValue) && topCountValue > 0) {
       filtered = [...filtered]
-        .sort((a, b) => b.totalCount - a.totalCount)
+        .sort((a, b) =>
+          a.metricValue === b.metricValue
+            ? 0
+            : a.metricValue > b.metricValue
+              ? -1
+              : 1
+        )
         .slice(0, topCountValue)
     }
 
     return filtered
-  }, [members, memberStats, minCount, minSendCount, minReceiveCount, topCount])
+  }, [members, memberStats, minMetricValue, selectedMetric, topCount])
 
   return (
     <div className="w-full mx-auto flex flex-col items-center justify-center">
@@ -425,7 +462,36 @@ export default function ManagementDetailPage({
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="topCount">Top X by total count</Label>
+                  <Label htmlFor="metricSelect">Metrics</Label>
+                  <Select
+                    value={selectedMetric}
+                    onValueChange={(value) =>
+                      setSelectedMetric(
+                        value as
+                          | 'send_count'
+                          | 'receive_count'
+                          | 'send_volume'
+                          | 'receive_volume'
+                      )
+                    }
+                  >
+                    <SelectTrigger id="metricSelect">
+                      <SelectValue placeholder="Select metric" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="send_count">send_count</SelectItem>
+                      <SelectItem value="receive_count">
+                        receive_count
+                      </SelectItem>
+                      <SelectItem value="send_volume">send_volume</SelectItem>
+                      <SelectItem value="receive_volume">
+                        receive_volume
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="topCount">Top X by metric</Label>
                   <Input
                     id="topCount"
                     type="number"
@@ -433,66 +499,46 @@ export default function ManagementDetailPage({
                     inputMode="numeric"
                     value={topCount}
                     onChange={(event) => setTopCount(event.target.value)}
-                    placeholder="e.g. 10"
+                    placeholder="e.g. 50"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="minCount">Min total count</Label>
+                  <Label htmlFor="minMetricValue">Min metric value</Label>
                   <Input
-                    id="minCount"
+                    id="minMetricValue"
                     type="number"
                     min="0"
                     inputMode="numeric"
-                    value={minCount}
-                    onChange={(event) => setMinCount(event.target.value)}
-                    placeholder="e.g. 5"
+                    value={minMetricValue}
+                    onChange={(event) => setMinMetricValue(event.target.value)}
+                    placeholder="e.g. 0"
                   />
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="minSendCount">Min send count</Label>
-                  <Input
-                    id="minSendCount"
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    value={minSendCount}
-                    onChange={(event) => setMinSendCount(event.target.value)}
-                    placeholder="e.g. 3"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="minReceiveCount">Min receive count</Label>
-                  <Input
-                    id="minReceiveCount"
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    value={minReceiveCount}
-                    onChange={(event) => setMinReceiveCount(event.target.value)}
-                    placeholder="e.g. 3"
-                  />
+
+                <div className="flex flex-col gap-2 justify-end">
+                  <Label className="invisible">Spacer</Label>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="default"
+                    className="w-full sm:w-48"
+                    onClick={() => {
+                      setStartDate('')
+                      setEndDate('')
+                      setTopCount('')
+                      setSelectedMetric('send_count')
+                      setMinMetricValue('')
+                    }}
+                  >
+                    Clear filters
+                  </Button>
                 </div>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-muted-foreground">
                   Filters apply to transfer stats shown below.
                 </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="default"
-                  className="w-full sm:w-48"
-                  onClick={() => {
-                    setStartDate('')
-                    setEndDate('')
-                    setTopCount('')
-                    setMinCount('')
-                    setMinSendCount('')
-                    setMinReceiveCount('')
-                  }}
-                >
-                  Clear filters
-                </Button>
               </div>
             </div>
           </div>
@@ -527,7 +573,9 @@ export default function ManagementDetailPage({
 
                       return (
                         <TableRow key={member.id}>
-                          <TableCell className="font-bold">{index + 1}</TableCell>
+                          <TableCell className="font-bold">
+                            {index + 1}
+                          </TableCell>
                           <TableCell className="font-bold">
                             {member.userAddr}
                           </TableCell>
