@@ -351,6 +351,10 @@ export default function ForCampaignPage({
             campaignId: (Number(campaignId) || 0) + 1,
           })
         }
+
+        toast({
+          title: 'Campaign created successfully',
+        })
       } catch (error) {
         console.error('Error creating campaign:', error)
         toast({
@@ -359,9 +363,6 @@ export default function ForCampaignPage({
       }
 
       setRefetchCampaignData(!refetchCampaignData)
-      toast({
-        title: 'Campaign created successfully',
-      })
     } catch (error) {
       console.error('Error creating campaign:', error)
       toast({

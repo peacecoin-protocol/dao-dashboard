@@ -37,7 +37,7 @@ export const governorAddress = {
 } as Record<number, `0x${string}`>
 
 export const campaignAddress = {
-  [sepolia.id]: '0x9B7A9e12AC261491534FDCf94ceBe11940a257b8',
+  [sepolia.id]: '0xc24Ba18585CaFfCE66D9ce0Dd658D8661763Ac17',
   [localhost.id]: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',
