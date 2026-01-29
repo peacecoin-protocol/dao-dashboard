@@ -4,7 +4,11 @@ import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { useAccount, useReadContract, useWriteContract } from 'wagmi'
-import { readContract, waitForTransactionReceipt } from '@wagmi/core'
+import {
+  readContract,
+  simulateContract,
+  waitForTransactionReceipt,
+} from '@wagmi/core'
 import { formatUnits, parseUnits } from 'viem'
 import { formatEther } from 'ethers'
 import { createClient } from '~/utils/supabase/client'
@@ -42,6 +46,9 @@ import { SBT_ABI } from '~/app/ABIs/SBT'
 import { config } from '~/lib/config'
 import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 import { useToast } from '~/hooks/use-toast'
+import { shortenAddress } from '~/components/utils'
+import CopyIcon from '../../../../../../../public/svg/copy'
+import { EmptyState } from '~/components/custom/empty-state'
 
 type MemberRow = {
   id: string
@@ -237,7 +244,9 @@ export default function ManagementDetailPage({
       setIsHistoryLoading(true)
       const { data } = await supabase
         .from('Distributes')
-        .select('id, created_at, daoId, startTime, endTime, metric, topX, minValue')
+        .select(
+          'id, created_at, daoId, startTime, endTime, metric, topX, minValue'
+        )
         .eq('daoId', daoId)
         .order('created_at', { ascending: false })
 
@@ -605,9 +614,18 @@ export default function ManagementDetailPage({
 
     setIsDistributing(true)
     try {
-      const toAddresses = filteredMembers.map((entry) => entry.member.userAddr as `0x${string}`)
+      const toAddresses = filteredMembers.map(
+        (entry) => entry.member.userAddr as `0x${string}`
+      )
       const tokenIds = filteredMembers.map(() => BigInt(selectedToken.tokenId))
       const amounts = filteredMembers.map(() => BigInt(1))
+
+      const simulateTx = await simulateContract(config, {
+        abi: SBT_ABI,
+        address: selectedToken.address as `0x${string}`,
+        functionName: 'batchMint',
+        args: [toAddresses, tokenIds, amounts],
+      })
 
       const txHash = await writeContractAsync({
         abi: SBT_ABI,
@@ -673,10 +691,10 @@ export default function ManagementDetailPage({
                     onValueChange={(value) =>
                       setSelectedMetric(
                         value as
-                        | 'send_count'
-                        | 'receive_count'
-                        | 'send_volume'
-                        | 'receive_volume'
+                          | 'send_count'
+                          | 'receive_count'
+                          | 'send_volume'
+                          | 'receive_volume'
                       )
                     }
                   >
@@ -808,7 +826,7 @@ export default function ManagementDetailPage({
                   ) : (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center">
-                        No members found
+                        <EmptyState title="No members found" />
                       </TableCell>
                     </TableRow>
                   )}
@@ -846,9 +864,7 @@ export default function ManagementDetailPage({
                         Math.min(
                           Math.max(
                             1,
-                            Math.ceil(
-                              filteredMembers.length / memberPageSize
-                            )
+                            Math.ceil(filteredMembers.length / memberPageSize)
                           ),
                           prev + 1
                         )
@@ -943,9 +959,7 @@ export default function ManagementDetailPage({
                 )
               })
             ) : (
-              <div className="rounded-lg border px-4 py-6 text-center text-sm">
-                No members found
-              </div>
+              <EmptyState title="No members found" />
             )}
 
             {filteredMembers.length > memberPageSize && (
@@ -978,9 +992,7 @@ export default function ManagementDetailPage({
                         Math.min(
                           Math.max(
                             1,
-                            Math.ceil(
-                              filteredMembers.length / memberPageSize
-                            )
+                            Math.ceil(filteredMembers.length / memberPageSize)
                           ),
                           prev + 1
                         )
@@ -1210,8 +1222,51 @@ export default function ManagementDetailPage({
               <div className="text-sm text-muted-foreground">
                 {selectedToken.description || 'No description'}
               </div>
-              <div className="text-xs text-muted-foreground">
-                Voting Power: {formatVotingPower(selectedToken.votingPower)}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
+                <div>
+                  <span className="font-medium text-foreground">
+                    Voting Power:
+                  </span>{' '}
+                  {formatVotingPower(selectedToken.votingPower)}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-foreground">
+                    Token Address:
+                  </span>
+                  <span>{shortenAddress(selectedToken.address)}</span>
+                  <button
+                    type="button"
+                    className="p-1 hover:bg-gray-200 rounded"
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedToken.address)
+                      toast({ title: 'Token address copied!' })
+                    }}
+                    title="Copy token address"
+                  >
+                    <CopyIcon className="h-4 w-4 text-gray-400" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-foreground">DAO ID:</span>
+                  <span>{shortenAddress(selectedToken.daoId)}</span>
+                  <button
+                    type="button"
+                    className="p-1 hover:bg-gray-200 rounded"
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedToken.daoId)
+                      toast({ title: 'DAO ID copied!' })
+                    }}
+                    title="Copy DAO ID"
+                  >
+                    <CopyIcon className="h-4 w-4 text-gray-400" />
+                  </button>
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">Created:</span>{' '}
+                  {selectedToken.created_at
+                    ? new Date(selectedToken.created_at).toLocaleString()
+                    : '-'}
+                </div>
               </div>
             </div>
           )}

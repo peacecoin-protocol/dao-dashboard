@@ -65,6 +65,8 @@ export default function ForTokenPage({
   const [swapAmount, setSwapAmount] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
   const [transferAddress, setTransferAddress] = useState('')
+  const [tokenPage, setTokenPage] = useState(1)
+  const tokenPageSize = 3
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -300,6 +302,20 @@ export default function ForTokenPage({
   }, [tokens])
 
   useEffect(() => {
+    setTokenPage(1)
+  }, [communityTokenInfo.length])
+
+  useEffect(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(communityTokenInfo.length / tokenPageSize)
+    )
+    if (tokenPage > totalPages) {
+      setTokenPage(totalPages)
+    }
+  }, [communityTokenInfo.length, tokenPage, tokenPageSize])
+
+  useEffect(() => {
     if (isConfirmed) {
       toast({
         title: 'Transaction Succeed!',
@@ -488,6 +504,16 @@ export default function ForTokenPage({
   }
 
   const token = dict?.token ?? {}
+  const tokenTotalPages = Math.max(
+    1,
+    Math.ceil(communityTokenInfo.length / tokenPageSize)
+  )
+  const tokenSafePage = Math.min(tokenPage, tokenTotalPages)
+  const tokenStartIndex = (tokenSafePage - 1) * tokenPageSize
+  const pagedCommunityTokenInfo = communityTokenInfo.slice(
+    tokenStartIndex,
+    tokenStartIndex + tokenPageSize
+  )
 
   return (
     <div className="w-full gap-4 flex flex-col">
@@ -618,7 +644,7 @@ export default function ForTokenPage({
           </DialogContent>
         </Dialog>
         <TokenTable
-          communityTokenInfo={communityTokenInfo}
+          communityTokenInfo={pagedCommunityTokenInfo}
           tokens={tokens}
           dict={dict}
           colSpan={colSpan}
@@ -635,6 +661,35 @@ export default function ForTokenPage({
           handleSwapToLocalToken={handleSwapToLocalToken}
           handleTransfer={handleTransfer}
         />
+        {communityTokenInfo.length > tokenPageSize && (
+          <div className="flex items-center justify-between gap-2 mt-3">
+            <span className="text-xs text-muted-foreground">
+              Page {tokenSafePage} of {tokenTotalPages}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setTokenPage((prev) => Math.max(1, prev - 1))}
+                disabled={tokenSafePage <= 1}
+              >
+                Previous
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setTokenPage((prev) => Math.min(tokenTotalPages, prev + 1))
+                }
+                disabled={tokenSafePage >= tokenTotalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
