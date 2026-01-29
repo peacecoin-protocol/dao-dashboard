@@ -108,6 +108,7 @@ import { shortenAddress } from '~/components/utils'
 import { CopyIcon } from 'lucide-react'
 import { useHasDaoManagerRole } from '~/hooks/use-has-role'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
+import { EmptyState } from '~/components/custom/empty-state'
 import { createClient } from '~/utils/supabase/client'
 
 const supabase = createClient()
@@ -240,6 +241,12 @@ export default function ForDAOPage({
   const [daos, setDaos] = useState<SupabaseDao[]>([])
   const [refetchDaos, setRefetchDaos] = useState(false)
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({})
+  const [daoPage, setDaoPage] = useState(1)
+  const daoPageSize = 3
+  const [search, setSearch] = useState('')
+  const [myDaoPage, setMyDaoPage] = useState(1)
+  const myDaoPageSize = 3
+  const [memberDaoIds, setMemberDaoIds] = useState<string[]>([])
 
   useEffect(() => {
     const fetchDAO = async () => {
@@ -279,6 +286,26 @@ export default function ForDAOPage({
     }
     fetchDAO()
   }, [supabase, refetchDaos])
+
+  useEffect(() => {
+    const fetchMemberDaos = async () => {
+      if (!address) {
+        setMemberDaoIds([])
+        return
+      }
+      const { data } = await supabase
+        .from('Members')
+        .select('daoId')
+        .eq('userAddr', address)
+
+      const ids = (data as { daoId: string }[] | null)
+        ?.map((row) => row.daoId)
+        .filter(Boolean)
+      setMemberDaoIds(ids ?? [])
+    }
+
+    fetchMemberDaos()
+  }, [address, supabase])
 
   const showConnectWalletAlert = () => {
     toast({ title: 'Please connect wallet' })
@@ -325,7 +352,10 @@ export default function ForDAOPage({
   })
 
   const [isDialogOpened, setIsDialogOpened] = useState(false)
-  const [search, setSearch] = useState('')
+  useEffect(() => {
+    setDaoPage(1)
+    setMyDaoPage(1)
+  }, [search, daos.length, memberDaoIds.length])
 
   const handleCreateDao = async () => {
     setIsDialogOpened(false)
@@ -439,6 +469,44 @@ export default function ForDAOPage({
   }, [locale])
 
   const title = localeDict.title ?? ''
+  const filteredDaos = daos.filter((dao) =>
+    dao.daoName?.toLowerCase().includes(search.toLowerCase())
+  )
+  const filteredMyDaos = filteredDaos.filter((dao) =>
+    memberDaoIds.includes(dao.daoId)
+  )
+  const daoTotalPages = Math.max(
+    1,
+    Math.ceil(filteredDaos.length / daoPageSize)
+  )
+  const daoSafePage = Math.min(daoPage, daoTotalPages)
+  const daoStartIndex = (daoSafePage - 1) * daoPageSize
+  const pagedDaos = filteredDaos.slice(
+    daoStartIndex,
+    daoStartIndex + daoPageSize
+  )
+  const myDaoTotalPages = Math.max(
+    1,
+    Math.ceil(filteredMyDaos.length / myDaoPageSize)
+  )
+  const myDaoSafePage = Math.min(myDaoPage, myDaoTotalPages)
+  const myDaoStartIndex = (myDaoSafePage - 1) * myDaoPageSize
+  const pagedMyDaos = filteredMyDaos.slice(
+    myDaoStartIndex,
+    myDaoStartIndex + myDaoPageSize
+  )
+
+  useEffect(() => {
+    if (daoPage > daoTotalPages) {
+      setDaoPage(daoTotalPages)
+    }
+  }, [daoPage, daoTotalPages])
+
+  useEffect(() => {
+    if (myDaoPage > myDaoTotalPages) {
+      setMyDaoPage(myDaoTotalPages)
+    }
+  }, [myDaoPage, myDaoTotalPages])
 
   return (
     <div className="w-full mx-auto flex flex-col gap-4">
@@ -604,11 +672,8 @@ export default function ForDAOPage({
             value="all"
             className="flex flex-col w-full items-center justify-center"
           >
-            {daos
-              .filter((dao) =>
-                dao.daoName?.toLowerCase().includes(search.toLowerCase())
-              )
-              .map((dao) => (
+            {pagedDaos.length > 0 ? (
+              pagedDaos.map((dao) => (
                 <DaoCard
                   key={dao.id}
                   dao={dao}
@@ -618,9 +683,100 @@ export default function ForDAOPage({
                   chainId={chainId || 0}
                   memberCount={memberCounts[dao.daoId] ?? 0}
                 />
-              ))}
+              ))
+            ) : (
+              <EmptyState
+                title={localeDict.noDaoFound ?? 'No DAO found.'}
+                subtitle={
+                  localeDict.tryDifferentSearch ?? 'Try a different search.'
+                }
+              />
+            )}
+          </TabsContent>
+          <TabsContent
+            value="my"
+            className="flex flex-col w-full items-center justify-center"
+          >
+            {pagedMyDaos.length > 0 ? (
+              pagedMyDaos.map((dao) => (
+                <DaoCard
+                  key={dao.id}
+                  dao={dao}
+                  locale={locale}
+                  localeDict={localeDict}
+                  router={router}
+                  chainId={chainId || 0}
+                  memberCount={memberCounts[dao.daoId] ?? 0}
+                />
+              ))
+            ) : (
+              <EmptyState
+                title={localeDict.noDaoFound ?? 'No DAO found.'}
+                subtitle={
+                  localeDict.tryDifferentSearch ?? 'Try a different search.'
+                }
+              />
+            )}
           </TabsContent>
         </Tabs>
+        {filteredDaos.length > daoPageSize && (
+          <div className="flex items-center justify-between gap-2 mt-3">
+            <span className="text-xs text-muted-foreground">
+              Page {daoSafePage} of {daoTotalPages}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDaoPage((prev) => Math.max(1, prev - 1))}
+                disabled={daoSafePage <= 1}
+              >
+                Previous
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setDaoPage((prev) => Math.min(daoTotalPages, prev + 1))
+                }
+                disabled={daoSafePage >= daoTotalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+        {filteredMyDaos.length > myDaoPageSize && (
+          <div className="flex items-center justify-between gap-2 mt-3">
+            <span className="text-xs text-muted-foreground">
+              Page {myDaoSafePage} of {myDaoTotalPages}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setMyDaoPage((prev) => Math.max(1, prev - 1))}
+                disabled={myDaoSafePage <= 1}
+              >
+                Previous
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setMyDaoPage((prev) => Math.min(myDaoTotalPages, prev + 1))
+                }
+                disabled={myDaoSafePage >= myDaoTotalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <RingLoader

@@ -72,7 +72,7 @@ import { ProposalBadges } from '~/components/custom/proposal-badges'
 import { FormattedValue } from '~/components/custom/formatted-value'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { MULTIPLE_VOTINGS_ABI } from '~/app/ABIs/MultipleVotings'
-import { defaultChainId } from '~/app/constants/constants'
+import { defaultChainId, pceAddress } from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { daoStudioAddress } from '~/app/constants/constants'
 import { pinata } from '~/lib/config'
@@ -548,10 +548,10 @@ export default function ForDaoDetailPage({
     }
 
     return (
-      <article className="flex flex-col bg-blue-50 p-6 rounded-xl gap-4 shadow-sm">
+      <article className="flex flex-col w-full max-w-full bg-blue-50 p-4 sm:p-6 rounded-xl gap-4 shadow-sm">
         <div className="flex flex-col gap-2">
-          <div className="flex flex-row items-center justify-between w-full">
-            <h1 className="text-xl font-bold text-gray-800 flex-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-2">
+            <h1 className="text-base sm:text-xl font-bold text-gray-800 flex-1 break-words">
               {description || 'Description'}
             </h1>
             <span
@@ -565,7 +565,7 @@ export default function ForDaoDetailPage({
               ? 'bg-gray-300 text-gray-700'
               : 'bg-gray-200 text-gray-800'
       }`}
-              style={{ minWidth: 73, textAlign: 'center' }}
+              style={{ textAlign: 'center' }}
             >
               {status}
             </span>
@@ -584,17 +584,17 @@ export default function ForDaoDetailPage({
 
             return (
               <div key={index} className="flex flex-col gap-2">
-                <div className="flex flex-row items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center items-start gap-2">
                   <Checkbox
                     checked={selectedOption === index}
                     onCheckedChange={() => setSelectedOption(index)}
                     className="h-5 w-5"
                     disabled={status !== 'Active' || hasVoted}
                   />
-                  <span className="flex-1 text-gray-700 whitespace-pre-line break-words">
+                  <span className="flex-1 text-gray-700 whitespace-pre-line break-words text-sm sm:text-base">
                     {option}
                   </span>
-                  <span className="text-gray-700 font-medium">
+                  <span className="text-gray-700 font-medium text-xs sm:text-sm sm:whitespace-nowrap">
                     {formatString(formatEther(value))}: {`(${percentageStr}%) `}
                   </span>
                 </div>
@@ -719,7 +719,7 @@ export default function ForDaoDetailPage({
     index: number
   }) => (
     <article
-      className="flex flex-col w-full bg-gray-100 p-4 rounded-xl gap-2 cursor-pointer"
+      className="flex flex-col w-full max-w-full bg-gray-100 p-4 sm:p-6 rounded-xl gap-3 cursor-pointer"
       onClick={(e) => {
         // Prevent onClick if a button inside the card was pressed
         if ((e.target as HTMLElement).closest('button')) {
@@ -729,12 +729,14 @@ export default function ForDaoDetailPage({
         setIsProposalDetailDialogOpened(true)
       }}
     >
-      <div className="flex flex-row items-center justify-between w-full rounded-xl">
-        <h1 className="flex flex-row text-xl font-bold w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full rounded-xl gap-2">
+        <h1 className="flex flex-row text-base sm:text-xl font-bold w-full break-words">
           {proposal[9] || 'Description'}
         </h1>
       </div>
-      <p className="description">{proposal[9] || 'Description'}</p>
+      <p className="description text-sm sm:text-base break-words">
+        {proposal[9] || 'Description'}
+      </p>
       <ProposalBadges
         label={localDict.transferTokens ?? 'Transfer tokens'}
         status={status}
@@ -742,9 +744,11 @@ export default function ForDaoDetailPage({
 
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
-          <div className="flex flex-row justify-between">
-            <h1>{localDict.voteFor ?? 'Vote For'}</h1>
-            <h1>
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+            <h1 className="text-sm sm:text-base">
+              {localDict.voteFor ?? 'Vote For'}
+            </h1>
+            <h1 className="text-xs sm:text-sm">
               {Number(formatEther(proposal[5] || 0)).toLocaleString()} (
               {proposal[5] && proposal[6] !== undefined
                 ? proposal[6] === 0 && proposal[5] > 0
@@ -776,9 +780,11 @@ export default function ForDaoDetailPage({
         </div>
 
         <div className="flex flex-col gap-2">
-          <div className="flex flex-row justify-between">
-            <h1>{localDict.voteAgainst ?? 'Vote Against'}</h1>
-            <h1>
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+            <h1 className="text-sm sm:text-base">
+              {localDict.voteAgainst ?? 'Vote Against'}
+            </h1>
+            <h1 className="text-xs sm:text-sm">
               {Number(formatEther(proposal[6] || 0)).toLocaleString()} (
               {proposal[5] && proposal[6] !== undefined
                 ? proposal[5] === 0 && proposal[6] > 0
@@ -811,9 +817,11 @@ export default function ForDaoDetailPage({
         </div>
 
         <div className="flex flex-col gap-2">
-          <div className="flex flex-row justify-between">
-            <h1>{localDict.votingPeriod ?? 'Voting Period'}</h1>
-            <h1>
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+            <h1 className="text-sm sm:text-base">
+              {localDict.votingPeriod ?? 'Voting Period'}
+            </h1>
+            <h1 className="text-xs sm:text-sm">
               {localDict.currentBlock ?? 'Current Block'}: {Number(blockNumber)}
             </h1>
           </div>
@@ -836,11 +844,11 @@ export default function ForDaoDetailPage({
             trailWidth={1}
           />
 
-          <div className="flex flex-row justify-between">
-            <h1>
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+            <h1 className="text-xs sm:text-sm">
               {localDict.startedAt ?? 'Started at'} {Number(proposal[3])}
             </h1>
-            <h1>
+            <h1 className="text-xs sm:text-sm">
               {localDict.endingAt ?? 'Ending at'} {Number(proposal[4])}
             </h1>
           </div>
@@ -848,9 +856,13 @@ export default function ForDaoDetailPage({
 
         {Number(proposal[2]) !== 0 && status === 'Queued' && (
           <div className="flex flex-col justify-between gap-2">
-            <div className="flex flex-row justify-between">
-              <h1>{localDict.timelockDelay ?? 'Timelock Delay'}</h1>
-              <h1>{timestampToDate(Number(proposal[2]))}</h1>
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+              <h1 className="text-sm sm:text-base">
+                {localDict.timelockDelay ?? 'Timelock Delay'}
+              </h1>
+              <h1 className="text-xs sm:text-sm">
+                {timestampToDate(Number(proposal[2]))}
+              </h1>
             </div>
 
             <Line
@@ -871,14 +883,14 @@ export default function ForDaoDetailPage({
               trailWidth={1}
             />
 
-            <div className="flex flex-row justify-between">
-              <h1>
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+              <h1 className="text-xs sm:text-sm">
                 {localDict.startedAt ?? 'Started at'}
                 {Number(proposal[2]) > 0
                   ? timestampToDate(Number(proposal[2]) - Number(timelockDelay))
                   : '-'}
               </h1>
-              <h1>
+              <h1 className="text-xs sm:text-sm">
                 {localDict.endingAt ?? 'Ending at'}
                 {Number(proposal[2]) > 0
                   ? timestampToDate(Number(proposal[2]))
@@ -888,7 +900,7 @@ export default function ForDaoDetailPage({
           </div>
         )}
 
-        <div className="flex flex-row gap-1 md:gap-4 w-full">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:gap-4 w-full">
           <Button
             className="w-full"
             disabled={status !== 'Active'}
@@ -1328,8 +1340,14 @@ export default function ForDaoDetailPage({
         return
       }
 
+      const resolvedTokenAddress =
+        category === '1' || category === '3'
+          ? pceAddress[chainId || defaultChainId]
+          : tokenAddress
+      const resolvedValues = category === '1' || category === '3' ? '0' : values
+
       if (
-        tokenAddress.length === 0 &&
+        (!resolvedTokenAddress || resolvedTokenAddress.length === 0) &&
         category !== '4' &&
         category !== '5' &&
         category !== '6'
@@ -1347,10 +1365,10 @@ export default function ForDaoDetailPage({
       if (category === '2') {
         _calldata = new ethers.AbiCoder().encode(
           ['address', 'uint256'],
-          [address, parseEther(values)]
+          [address, parseEther(resolvedValues)]
         )
         _signature = 'transfer(address,uint256)'
-        _address = tokenAddress as `0x${string}`
+        _address = resolvedTokenAddress as `0x${string}`
       } else if (category === '4') {
         _signature = 'deploy(bytes)'
         _calldata = new ethers.AbiCoder().encode(['bytes'], [bytescode])
@@ -1370,10 +1388,10 @@ export default function ForDaoDetailPage({
           [parseEther(variable1), parseEther(variable2), parseEther(variable3)]
         )
       } else {
-        _address = tokenAddress as `0x${string}`
+        _address = resolvedTokenAddress as `0x${string}`
         _calldata = new ethers.AbiCoder().encode(
           ['address', 'uint256'],
-          [address, parseEther(values)]
+          [address, parseEther(resolvedValues)]
         )
       }
 
@@ -2887,13 +2905,13 @@ export default function ForDaoDetailPage({
             ) : (
               <div className="w-full flex flex-col gap-4">
                 <Input
-                  className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+                  className={`${category == '1' || category == '3' || category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
                   onChange={(e) => setTokenAddress(e.target.value)}
                   placeholder={localDict.address ?? 'Address'}
                 />
 
                 <Input
-                  className={`${category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+                  className={`${category == '1' || category == '3' || category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
                   type="number"
                   min="0"
                   step="0.1"

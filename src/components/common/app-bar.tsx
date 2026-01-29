@@ -25,6 +25,7 @@ import { UserNav } from '../user-nav'
 
 function AppBar({ locale }: { locale: Locale }) {
   const [dict, setDict] = useState<Dictionary | null>(null)
+  const [isWalletMenuOpen, setIsWalletMenuOpen] = useState(false)
 
   const { disconnect } = useDisconnect()
   const { openConnectModal } = useConnectModal()
@@ -45,6 +46,12 @@ function AppBar({ locale }: { locale: Locale }) {
     }
     fetchDict()
   }, [locale])
+
+  useEffect(() => {
+    if (!isConnected) {
+      setIsWalletMenuOpen(false)
+    }
+  }, [isConnected])
 
   const navigation = dict?.navigation ?? {}
 
@@ -71,13 +78,21 @@ function AppBar({ locale }: { locale: Locale }) {
             {chain ? chain.name : 'Localhost'}
           </Button>
 
-          <DropdownMenu>
+          <DropdownMenu
+            open={isConnected ? isWalletMenuOpen : false}
+            onOpenChange={(open) => {
+              if (isConnected) {
+                setIsWalletMenuOpen(open)
+              }
+            }}
+          >
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
                 onClick={() => {
                   if (!isConnected && openConnectModal) {
                     openConnectModal()
+                    setIsWalletMenuOpen(false)
                   }
                 }}
               >
@@ -106,6 +121,7 @@ function AppBar({ locale }: { locale: Locale }) {
                 <DropdownMenuItem
                   onClick={() => {
                     disconnect()
+                    setIsWalletMenuOpen(false)
                   }}
                 >
                   {navigation.disconnect ?? ''}

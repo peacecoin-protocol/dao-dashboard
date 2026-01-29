@@ -16,28 +16,28 @@ export const pceCommunity = {
 } as Record<number, `0x${string}`>
 
 export const daoStudioAddress = {
-  [sepolia.id]: '0x05cc398C83852BdDE741590bc8Aa64851BFDB3A8',
+  [sepolia.id]: '0x167F0B2D2aA5e76170201d0a14BA7fDA649EA25E',
   [localhost.id]: '0x809d550fca64d94Bd9F66E60752A544199cfAC3D',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
 export const timelockAddress = {
-  [sepolia.id]: '0xEA90E703E8b278722e91e2fef49aE33FAa34B24C',
+  [sepolia.id]: '0x2A5cAD7c3b0A21Cc0B62a7C806A867d5cAb74f23',
   [localhost.id]: '0x0E801D84Fa97b50751Dbf25036d067dCf18858bF',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x0F4E3eEEA64268926454aF8C38D62938637fd18e',
 } as Record<number, `0x${string}`>
 
 export const governorAddress = {
-  [sepolia.id]: '0xa94d4f4244a5E36446c2989e45E02C7C4D77d3Dd',
+  [sepolia.id]: '0x92faEbDeCC0c838c03d6c7b2d95542CDDBe0F524',
   [localhost.id]: '0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x4a1EBA4B4895b6562B8d67510FF07c95F90049d8',
 } as Record<number, `0x${string}`>
 
 export const campaignAddress = {
-  [sepolia.id]: '0x9C635B1291A4B8Ccb40Fc911953a71686eA2295b',
+  [sepolia.id]: '0x9B7A9e12AC261491534FDCf94ceBe11940a257b8',
   [localhost.id]: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',
@@ -51,7 +51,7 @@ export const WPCE_ADDRESS = {
 } as Record<number, `0x${string}`>
 
 export const bountyAddress = {
-  [sepolia.id]: '0x596498124076F57a9C36c01d587448E01f49972d',
+  [sepolia.id]: '0xcD76D8018DF78b5de9f9Be52a4FB2511B6dd37A3',
   [localhost.id]: '0x9d4454B023096f34B160D6B654540c56A1F81688',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0xEb0978C48aced59209242d677A404bBB2126413c',
@@ -72,7 +72,7 @@ export const MultipleVotingAddress = {
 } as Record<number, `0x${string}`>
 
 export const PCE_DAO_ID =
-  '0x73e0e7c87aac974cbceb4526c70b90ea77c15845eb9f90d819a754cd6a288f8d'
+  '0x6341c772c3e6500085764a9316cb328acd2f1aae43136cd521f00ac4d6872a90'
 
 export const SUBGRAPH_URL = {
   [sepolia.id]:
@@ -83,51 +83,6 @@ export const SUBGRAPH_URL = {
   [hoodi.id]:
     'https://api.studio.thegraph.com/query/81073/dao_dashboard/version/latest',
 } as Record<number, string>
-
-export const SBT_SUBGRAPH_URL = {
-  [sepolia.id]:
-    'https://api.goldsky.com/api/public/project_cmh9yq5lf9mwv01xhb96l1gbh/subgraphs/Peacecoin-SBT/1.0.0/gn',
-  [localhost.id]: 'http://localhost:8000/subgraphs/name/sbt',
-  [polygon.id]:
-    'https://api.goldsky.com/api/public/project_cmh9yq5lf9mwv01xhb96l1gbh/subgraphs/Peacecoin-SBT/1.0.0/gn',
-  [hoodi.id]:
-    'https://api.goldsky.com/api/public/project_cmh9yq5lf9mwv01xhb96l1gbh/subgraphs/Peacecoin-SBT/1.0.0/gn',
-} as Record<number, string>
-
-export const NFT_SUBGRAPH_URL = {
-  [sepolia.id]:
-    'https://api.goldsky.com/api/public/project_cmh9yq5lf9mwv01xhb96l1gbh/subgraphs/Peacecoin-NFT/1.0.0/gn',
-  [localhost.id]: 'http://localhost:8000/subgraphs/name/nft',
-  [polygon.id]:
-    'https://api.goldsky.com/api/public/project_cmh9yq5lf9mwv01xhb96l1gbh/subgraphs/Peacecoin-NFT/1.0.0/gn',
-  [hoodi.id]:
-    'https://api.goldsky.com/api/public/project_cmh9yq5lf9mwv01xhb96l1gbh/subgraphs/Peacecoin-NFT/1.0.0/gn',
-} as Record<number, string>
-
-export const DAO_STUDIO_SUBGRAPH_URL = {
-  [sepolia.id]:
-    'https://api.goldsky.com/api/public/project_cmh9yq5lf9mwv01xhb96l1gbh/subgraphs/Peacecoin-DaoStudio/1.0.0/gn',
-  [localhost.id]: 'http://localhost:8000/subgraphs/name/dao_studio',
-  [polygon.id]:
-    'https://api.goldsky.com/api/public/project_cmh9yq5lf9mwv01xhb96l1gbh/subgraphs/Peacecoin-DaoStudio/1.0.0/gn',
-  [hoodi.id]:
-    'https://api.goldsky.com/api/public/project_cmh9yq5lf9mwv01xhb96l1gbh/subgraphs/Peacecoin-DaoStudio/1.0.0/gn',
-} as Record<number, string>
-
-export const CAMPAIGNS_SUBGRAPH_URL = {
-  [sepolia.id]:
-    'https://api.goldsky.com/api/public/project_cmhau3g2q32y301wj6eog3f0i/subgraphs/Peacecoin-Campaigns/1.0.0/gn',
-  [localhost.id]: 'http://localhost:8000/subgraphs/name/campaigns',
-  [polygon.id]:
-    'https://api.goldsky.com/api/public/project_cmhau3g2q32y301wj6eog3f0i/subgraphs/Peacecoin-Campaigns/1.0.0/gn',
-  [hoodi.id]:
-    'https://api.goldsky.com/api/public/project_cmhau3g2q32y301wj6eog3f0i/subgraphs/Peacecoin-Campaigns/1.0.0/gn',
-} as Record<number, string>
-
-export const OWNER_ADDRESSES = [
-  '0x0641A3E6BCBa53336d773cE94A6f8BB3033bb813',
-  '0x59178bAc7A9BBfa287F39887EAA2826666f14A2a',
-]
 
 export const createdAt = {
   [sepolia.id]: '1714857600',
