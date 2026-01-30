@@ -2021,6 +2021,34 @@ export default function ForDaoDetailPage({
                       message={shortenAddress(multipleVotingAddress)}
                     ></CustomLink.default>
                   </div>
+
+                  <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
+                    <TooltipComponent
+                      title={localDict.sbt ?? 'SBT'}
+                      tooltipText="The SBT contract represents unique, self-sovereign tokens that can be issued by the DAO."
+                      className="font-bold rounded-xl flex"
+                    />
+                    <CustomLink.default
+                      chainId={chainId}
+                      type="address"
+                      address={sbtAddress}
+                      message={shortenAddress(sbtAddress)}
+                    ></CustomLink.default>
+                  </div>
+
+                  <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
+                    <TooltipComponent
+                      title={localDict.nft ?? 'NFT'}
+                      tooltipText="The NFT contract represents unique, non-fungible tokens that can be issued by the DAO."
+                      className="font-bold rounded-xl flex"
+                    />
+                    <CustomLink.default
+                      chainId={chainId}
+                      type="address"
+                      address={nftAddress}
+                      message={shortenAddress(nftAddress)}
+                    ></CustomLink.default>
+                  </div>
                 </div>
 
                 <div className="flex flex-col border rounded-xl p-4 bg-gray-100 gap-4">
