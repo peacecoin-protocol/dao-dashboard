@@ -249,8 +249,10 @@ export default function ManagementDetailPage({
         } while (cursor)
 
         const uniqueOwners = Array.from(new Set(owners)).filter(Boolean)
+        const resolvedChainId = (chainId ??
+          defaultChainId) as (typeof config)['chains'][number]['id']
         const publicClient = getPublicClient(config, {
-          chainId: chainId || defaultChainId,
+          chainId: resolvedChainId,
         })
 
         const filteredOwners: string[] = []
