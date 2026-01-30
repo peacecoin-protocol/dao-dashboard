@@ -101,7 +101,6 @@ import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
-import { WebSocketProvider } from 'ethers'
 
 type TokenBalance = {
   contractAddress: string
@@ -218,7 +217,7 @@ export default function ForDaoDetailPage({
     telegram: '',
   })
 
-  const provider = new WebSocketProvider(Env.NEXT_PUBLIC_SEPOLIA_WEBSOCKET_URL)
+  const provider = new ethers.JsonRpcProvider(Env.NEXT_PUBLIC_SEPOLIA_RPC_URL)
 
   const [blockNumber, setBlockNumber] = useState<number | undefined>(undefined)
   const { address, chainId } = useAccount()
@@ -556,15 +555,14 @@ export default function ForDaoDetailPage({
             </h1>
             <span
               className={`text-xs font-semibold px-3 py-1 rounded-full
-      ${
-        status === 'Active'
-          ? 'bg-green-200 text-green-900'
-          : status === 'Pending'
-            ? 'bg-yellow-200 text-yellow-900'
-            : status === 'Ended'
-              ? 'bg-gray-300 text-gray-700'
-              : 'bg-gray-200 text-gray-800'
-      }`}
+      ${status === 'Active'
+                  ? 'bg-green-200 text-green-900'
+                  : status === 'Pending'
+                    ? 'bg-yellow-200 text-yellow-900'
+                    : status === 'Ended'
+                      ? 'bg-gray-300 text-gray-700'
+                      : 'bg-gray-200 text-gray-800'
+                }`}
               style={{ textAlign: 'center' }}
             >
               {status}
@@ -682,9 +680,8 @@ export default function ForDaoDetailPage({
                       return (
                         <li
                           key={idx}
-                          className={`flex items-center gap-2 ${
-                            isMostChosen ? 'font-bold text-green-700' : ''
-                          }`}
+                          className={`flex items-center gap-2 ${isMostChosen ? 'font-bold text-green-700' : ''
+                            }`}
                         >
                           <span className="font-medium">{opt}</span>
                           <span className="ml-auto">
@@ -754,11 +751,11 @@ export default function ForDaoDetailPage({
                 ? proposal[6] === 0 && proposal[5] > 0
                   ? 100
                   : (
-                      (Number(formatEther(proposal[5])) /
-                        (Number(formatEther(proposal[5])) +
-                          Number(formatEther(proposal[6])))) *
-                      100
-                    ).toFixed(2)
+                    (Number(formatEther(proposal[5])) /
+                      (Number(formatEther(proposal[5])) +
+                        Number(formatEther(proposal[6])))) *
+                    100
+                  ).toFixed(2)
                 : '0'}
               %)
             </h1>
@@ -766,10 +763,10 @@ export default function ForDaoDetailPage({
           <Line
             percent={
               Number(proposal[5] || 0) > 0 &&
-              Number(BigInt(quorum?.toString() || '0')) > 0
+                Number(BigInt(quorum?.toString() || '0')) > 0
                 ? (Number(formatEther(proposal[5])) /
-                    Number(formatEther(quorum?.toString() || '0'))) *
-                  100
+                  Number(formatEther(quorum?.toString() || '0'))) *
+                100
                 : 0
             }
             strokeColor="#1995AD"
@@ -790,11 +787,11 @@ export default function ForDaoDetailPage({
                 ? proposal[5] === 0 && proposal[6] > 0
                   ? 100
                   : (
-                      (Number(formatEther(proposal[6])) /
-                        (Number(formatEther(proposal[5])) +
-                          Number(formatEther(proposal[6])))) *
-                      100
-                    ).toFixed(2)
+                    (Number(formatEther(proposal[6])) /
+                      (Number(formatEther(proposal[5])) +
+                        Number(formatEther(proposal[6])))) *
+                    100
+                  ).toFixed(2)
                 : '0'}
               %)
             </h1>
@@ -803,10 +800,10 @@ export default function ForDaoDetailPage({
           <Line
             percent={
               Number(proposal[6] || 0) > 0 &&
-              Number(BigInt(quorum?.toString() || '0')) > 0
+                Number(BigInt(quorum?.toString() || '0')) > 0
                 ? (Number(formatEther(proposal[6])) /
-                    Number(formatEther(quorum?.toString() || '0'))) *
-                  100
+                  Number(formatEther(quorum?.toString() || '0'))) *
+                100
                 : 0
             }
             strokeColor="#1995AD"
@@ -830,11 +827,11 @@ export default function ForDaoDetailPage({
             percent={
               Number(proposal[3]) < Number(blockNumber)
                 ? Math.min(
-                    ((Number(blockNumber) - Number(proposal[3])) /
-                      Number(votingPeriod)) *
-                      100,
-                    100
-                  )
+                  ((Number(blockNumber) - Number(proposal[3])) /
+                    Number(votingPeriod)) *
+                  100,
+                  100
+                )
                 : 0
             }
             className="w-full"
@@ -869,12 +866,12 @@ export default function ForDaoDetailPage({
               percent={
                 Number(proposal[2]) > 0
                   ? Math.min(
-                      ((getCurrentTimestamp() -
-                        (Number(proposal[2]) - Number(timelockDelay))) *
-                        100) /
-                        Number(timelockDelay),
-                      100
-                    )
+                    ((getCurrentTimestamp() -
+                      (Number(proposal[2]) - Number(timelockDelay))) *
+                      100) /
+                    Number(timelockDelay),
+                    100
+                  )
                   : 0
               }
               strokeColor="#1995AD"
@@ -2555,10 +2552,10 @@ export default function ForDaoDetailPage({
                         <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 w-full text-right">
                           {communityTokenBalance
                             ? formatNumber(
-                                parseFloat(
-                                  formatEther(toBigInt(communityTokenBalance))
-                                )
+                              parseFloat(
+                                formatEther(toBigInt(communityTokenBalance))
                               )
+                            )
                             : '0'}{' '}
                           {communityTokenSymbol ?? 'TOKEN'}
                         </span>
@@ -2571,10 +2568,10 @@ export default function ForDaoDetailPage({
                         <span className="text-lg font-semibold text-purple-600 dark:text-purple-400 w-full text-right">
                           {governanceTokenBalance
                             ? formatNumber(
-                                parseFloat(
-                                  formatEther(toBigInt(governanceTokenBalance))
-                                )
+                              parseFloat(
+                                formatEther(toBigInt(governanceTokenBalance))
                               )
+                            )
                             : '0'}{' '}
                           {communityTokenSymbol ?? 'TOKEN'}
                         </span>
@@ -2632,8 +2629,8 @@ export default function ForDaoDetailPage({
                       <div className="text-3xl sm:text-4xl font-bold text-teal-600 dark:text-teal-400 mb-4">
                         {getVotes
                           ? formatNumber(
-                              Number(formatEther(getVotes as bigint))
-                            )
+                            Number(formatEther(getVotes as bigint))
+                          )
                           : '0'}
                       </div>
 
@@ -2646,8 +2643,8 @@ export default function ForDaoDetailPage({
                           <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                             {tokenVote
                               ? formatNumber(
-                                  parseFloat(formatEther(toBigInt(tokenVote)))
-                                )
+                                parseFloat(formatEther(toBigInt(tokenVote)))
+                              )
                               : '0'}
                           </span>
                         </div>
@@ -2660,8 +2657,8 @@ export default function ForDaoDetailPage({
                           <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                             {sbtVotingPower
                               ? formatNumber(
-                                  Number(formatEther(toBigInt(sbtVotingPower)))
-                                )
+                                Number(formatEther(toBigInt(sbtVotingPower)))
+                              )
                               : '0'}
                           </span>
                         </div>
@@ -2674,8 +2671,8 @@ export default function ForDaoDetailPage({
                           <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                             {nftVotingPower
                               ? formatNumber(
-                                  Number(formatEther(toBigInt(nftVotingPower)))
-                                )
+                                Number(formatEther(toBigInt(nftVotingPower)))
+                              )
                               : '0'}
                           </span>
                         </div>
@@ -3002,7 +2999,7 @@ export default function ForDaoDetailPage({
             </DialogTitle>
             <DialogDescription>
               {selectedProposalIndex !== null &&
-              proposals[selectedProposalIndex] ? (
+                proposals[selectedProposalIndex] ? (
                 <div className="flex flex-col gap-2">
                   <h1>
                     {localDict.proposalId ?? 'Proposal ID'}:{' '}
