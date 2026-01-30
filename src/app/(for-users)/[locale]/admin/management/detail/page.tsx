@@ -7,6 +7,7 @@ import { useAccount, useReadContract, useWriteContract } from 'wagmi'
 import { sepolia } from 'wagmi/chains'
 import {
   readContract,
+  getPublicClient,
   simulateContract,
   waitForTransactionReceipt,
 } from '@wagmi/core'
@@ -248,7 +249,34 @@ export default function ManagementDetailPage({
         } while (cursor)
 
         const uniqueOwners = Array.from(new Set(owners)).filter(Boolean)
-        const rows: MemberRow[] = uniqueOwners.map((addr) => ({
+        const publicClient = getPublicClient(config, {
+          chainId: chainId || defaultChainId,
+        })
+
+        const filteredOwners: string[] = []
+        const batchSize = 20
+        for (let i = 0; i < uniqueOwners.length; i += batchSize) {
+          const batch = uniqueOwners.slice(i, i + batchSize)
+          const results = await Promise.all(
+            batch.map(async (addr) => {
+              try {
+                const bytecode = await publicClient.getBytecode({
+                  address: addr as `0x${string}`,
+                })
+                const isContract = !!bytecode && bytecode !== '0x'
+                return isContract ? null : addr
+              } catch (error) {
+                console.warn('Failed to check address code:', addr, error)
+                return addr
+              }
+            })
+          )
+          results.forEach((addr) => {
+            if (addr) filteredOwners.push(addr)
+          })
+        }
+
+        const rows: MemberRow[] = filteredOwners.map((addr) => ({
           id: addr,
           userAddr: addr,
           created_at: '',
@@ -583,19 +611,19 @@ export default function ManagementDetailPage({
         (entry) => entry.metricValue >= minMetricValueParsed
       )
     }
+
+    const sorted = [...filtered].sort((a, b) => {
+      if (a.metricValue === b.metricValue) {
+        return a.member.userAddr.localeCompare(b.member.userAddr)
+      }
+      return a.metricValue > b.metricValue ? -1 : 1
+    })
+
     if (!Number.isNaN(topCountValue) && topCountValue > 0) {
-      filtered = [...filtered]
-        .sort((a, b) =>
-          a.metricValue === b.metricValue
-            ? 0
-            : a.metricValue > b.metricValue
-              ? -1
-              : 1
-        )
-        .slice(0, topCountValue)
+      return sorted.slice(0, topCountValue)
     }
 
-    return filtered
+    return sorted
   }, [members, memberStats, minMetricValue, selectedMetric, topCount])
 
   useEffect(() => {
@@ -710,7 +738,7 @@ export default function ManagementDetailPage({
   return (
     <div className="w-full mx-auto flex flex-col items-center justify-center">
       <div className="flex w-full flex-col items-center justify-center">
-        <PageHeaderSection title="Management Detail" />
+        <PageHeaderSection title="SBT/NFT Distribution" />
         <div className="flex w-full flex-col gap-4 rounded-xl border p-4 sm:p-6 mt-4">
           <div className="w-full rounded-lg border bg-muted/30 p-4">
             <div className="flex flex-col gap-4">
@@ -740,10 +768,10 @@ export default function ManagementDetailPage({
                     onValueChange={(value) =>
                       setSelectedMetric(
                         value as
-                          | 'send_count'
-                          | 'receive_count'
-                          | 'send_volume'
-                          | 'receive_volume'
+                        | 'send_count'
+                        | 'receive_count'
+                        | 'send_volume'
+                        | 'receive_volume'
                       )
                     }
                   >
