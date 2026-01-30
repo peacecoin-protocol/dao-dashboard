@@ -770,10 +770,10 @@ export default function ManagementDetailPage({
                     onValueChange={(value) =>
                       setSelectedMetric(
                         value as
-                        | 'send_count'
-                        | 'receive_count'
-                        | 'send_volume'
-                        | 'receive_volume'
+                          | 'send_count'
+                          | 'receive_count'
+                          | 'send_volume'
+                          | 'receive_volume'
                       )
                     }
                   >
