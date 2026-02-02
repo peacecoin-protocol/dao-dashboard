@@ -617,10 +617,9 @@ export default function ManagementDetailPage({
         }
 
         Object.keys(baseStats).forEach((addr) => {
-          baseStats[addr] = {
-            ...baseStats[addr],
-            sendAmount: baseStats[addr].sendAmount / currentFactor,
-            receiveAmount: baseStats[addr].receiveAmount / currentFactor,
+          if (baseStats[addr]) {
+            baseStats[addr].sendAmount = baseStats[addr].sendAmount / currentFactor
+            baseStats[addr].receiveAmount = baseStats[addr].receiveAmount / currentFactor
           }
         })
 
@@ -883,10 +882,10 @@ export default function ManagementDetailPage({
                     onValueChange={(value) =>
                       setSelectedMetric(
                         value as
-                          | 'send_count'
-                          | 'receive_count'
-                          | 'send_volume'
-                          | 'receive_volume'
+                        | 'send_count'
+                        | 'receive_count'
+                        | 'send_volume'
+                        | 'receive_volume'
                       )
                     }
                   >
