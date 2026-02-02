@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 import { Button } from '~/components/ui/button'
 import {
@@ -14,6 +14,13 @@ import { Locale } from '~/i18n/types'
 
 export function UserNav({ locale }: { locale: Locale }) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const queryString = searchParams?.toString()
+
+  const buildHref = (nextLocale: Locale) => {
+    const basePath = pathname.replace(`/${locale}`, `/${nextLocale}`)
+    return queryString ? `${basePath}?${queryString}` : basePath
+  }
 
   return (
     <DropdownMenu>
@@ -35,32 +42,32 @@ export function UserNav({ locale }: { locale: Locale }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-24" align="end" forceMount>
         <DropdownMenuItem>
-          <Link className="w-full" href={pathname.replace(`/${locale}`, '/cn')}>
+          <Link className="w-full" href={buildHref('cn')}>
             中文
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link className="w-full" href={pathname.replace(`/${locale}`, '/en')}>
+          <Link className="w-full" href={buildHref('en')}>
             English
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link className="w-full" href={pathname.replace(`/${locale}`, '/es')}>
+          <Link className="w-full" href={buildHref('es')}>
             Español
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link className="w-full" href={pathname.replace(`/${locale}`, '/fr')}>
+          <Link className="w-full" href={buildHref('fr')}>
             Français
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link className="w-full" href={pathname.replace(`/${locale}`, '/ja')}>
+          <Link className="w-full" href={buildHref('ja')}>
             日本語
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link className="w-full" href={pathname.replace(`/${locale}`, '/pt')}>
+          <Link className="w-full" href={buildHref('pt')}>
             Português
           </Link>
         </DropdownMenuItem>

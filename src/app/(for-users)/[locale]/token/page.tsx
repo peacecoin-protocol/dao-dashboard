@@ -67,7 +67,7 @@ export default function ForTokenPage({
   const [transferAddress, setTransferAddress] = useState('')
   const [tokenPage, setTokenPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
-  const tokenPageSize = 3
+  const tokenPageSize = 5
 
   useEffect(() => {
     const fetchDict = async () => {

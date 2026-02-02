@@ -334,6 +334,8 @@ export default function SBTBuilderPage({
 
   const [tokenData, setTokenData] = useState<SBTInfo[]>([])
   const [filteredTokenData, setFilteredTokenData] = useState<SBTInfo[]>([])
+  const [tokenPage, setTokenPage] = useState(1)
+  const tokenPageSize = 5
 
   const [allDAOs, setAllDAOs] = useState<SupabaseDao[]>([])
   const [refetchTokenData, setRefetchTokenData] = useState(false)
@@ -409,6 +411,20 @@ export default function SBTBuilderPage({
       ])
     }
   }, [tokenData, filter, tokenType])
+
+  useEffect(() => {
+    setTokenPage(1)
+  }, [filter, tokenType])
+
+  useEffect(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(filteredTokenData.length / tokenPageSize)
+    )
+    if (tokenPage > totalPages) {
+      setTokenPage(totalPages)
+    }
+  }, [filteredTokenData.length, tokenPage, tokenPageSize])
 
   useEffect(() => {
     const fetchTokenData = async () => {
@@ -721,6 +737,17 @@ export default function SBTBuilderPage({
     [address, refetchTokenData, supabase, toast, writeContractAsync]
   )
 
+  const tokenTotalPages = Math.max(
+    1,
+    Math.ceil(filteredTokenData.length / tokenPageSize)
+  )
+  const tokenSafePage = Math.min(tokenPage, tokenTotalPages)
+  const tokenStartIndex = (tokenSafePage - 1) * tokenPageSize
+  const pagedTokenData = filteredTokenData.slice(
+    tokenStartIndex,
+    tokenStartIndex + tokenPageSize
+  )
+
   return (
     <div className="flex flex-col">
       {loading && <LoadingOverlay />}
@@ -760,7 +787,8 @@ export default function SBTBuilderPage({
         </div>
 
         <SBTTableComponent
-          sbtInfo={filteredTokenData}
+          sbtInfo={pagedTokenData}
+          totalCount={filteredTokenData.length}
           action={{
             title: {
               revoke: currentLabels.revoked,
@@ -771,6 +799,36 @@ export default function SBTBuilderPage({
             handleRevokeToken(token)
           }}
         />
+
+        {filteredTokenData.length > tokenPageSize && (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-muted-foreground">
+              Page {tokenSafePage} of {tokenTotalPages}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setTokenPage((prev) => Math.max(1, prev - 1))}
+                disabled={tokenSafePage <= 1}
+              >
+                Previous
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setTokenPage((prev) => Math.min(tokenTotalPages, prev + 1))
+                }
+                disabled={tokenSafePage >= tokenTotalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
 
         <CreateTokenModal
           isOpen={isCreateModalOpen}

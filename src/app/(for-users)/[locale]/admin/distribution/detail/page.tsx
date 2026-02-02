@@ -191,12 +191,12 @@ export default function ManagementDetailPage({
   const [selectedTokenKey, setSelectedTokenKey] = useState('')
   const [isDistributing, setIsDistributing] = useState(false)
   const [memberPage, setMemberPage] = useState(1)
-  const memberPageSize = 3
+  const memberPageSize = 5
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const [historyRows, setHistoryRows] = useState<DistributeHistoryRow[]>([])
   const [isHistoryLoading, setIsHistoryLoading] = useState(false)
   const [historyPage, setHistoryPage] = useState(1)
-  const historyPageSize = 3
+  const historyPageSize = 5
 
   useEffect(() => {
     const fetchDict = async () => {
@@ -350,7 +350,7 @@ export default function ManagementDetailPage({
     }
 
     fetchCommunityTokenUsers()
-  }, [daoId, communityTokenAddress, chainId])
+  }, [daoId, communityTokenAddress, chainId, locale])
 
   useEffect(() => {
     const fetchDaoTokens = async () => {
@@ -505,7 +505,7 @@ export default function ManagementDetailPage({
     return () => {
       isCancelled = true
     }
-  }, [communityTokenAddress])
+  }, [communityTokenAddress, locale])
 
   useEffect(() => {
     let isCancelled = false
@@ -618,8 +618,10 @@ export default function ManagementDetailPage({
 
         Object.keys(baseStats).forEach((addr) => {
           if (baseStats[addr]) {
-            baseStats[addr].sendAmount = baseStats[addr].sendAmount / currentFactor
-            baseStats[addr].receiveAmount = baseStats[addr].receiveAmount / currentFactor
+            baseStats[addr].sendAmount =
+              baseStats[addr].sendAmount / currentFactor
+            baseStats[addr].receiveAmount =
+              baseStats[addr].receiveAmount / currentFactor
           }
         })
 
@@ -882,10 +884,10 @@ export default function ManagementDetailPage({
                     onValueChange={(value) =>
                       setSelectedMetric(
                         value as
-                        | 'send_count'
-                        | 'receive_count'
-                        | 'send_volume'
-                        | 'receive_volume'
+                          | 'send_count'
+                          | 'receive_count'
+                          | 'send_volume'
+                          | 'receive_volume'
                       )
                     }
                   >
