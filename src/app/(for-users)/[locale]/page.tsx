@@ -14,6 +14,7 @@ import {
 
 import {
   readContract,
+  getPublicClient,
   simulateContract,
   waitForTransactionReceipt,
 } from '@wagmi/core'
@@ -23,6 +24,8 @@ import { ringStyle } from '~/app/constants/styles'
 
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
 import { daoStudioAddress } from '~/app/constants/constants'
+import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
+import { SBT_ABI } from '~/app/ABIs/SBT'
 
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { Input } from '~/components/ui/input'
@@ -39,7 +42,7 @@ import { useRouter } from 'next/navigation'
 import { getDict } from '~/i18n/get-dict'
 
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { parseEther } from 'viem'
+import { formatEther, parseEther } from 'viem'
 
 import { Env } from '~/env'
 import { PCE_DAO_ID } from '~/app/constants/constants'
@@ -104,7 +107,7 @@ import RingLoader from 'react-spinners/RingLoader'
 import { config } from '~/lib/config'
 import { sepolia } from 'wagmi/chains'
 import { defaultChainId } from '~/app/constants/constants'
-import { shortenAddress } from '~/components/utils'
+import { formatNumber, shortenAddress } from '~/components/utils'
 import { CopyIcon } from 'lucide-react'
 import { useHasDaoManagerRole } from '~/hooks/use-has-role'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
@@ -113,6 +116,11 @@ import { createClient } from '~/utils/supabase/client'
 
 const supabase = createClient()
 
+const toBigInt = (value?: string | bigint) => {
+  if (value === undefined || value === null) return BigInt(0)
+  return typeof value === 'bigint' ? value : BigInt(value)
+}
+
 const DaoCard = ({
   dao,
   locale,
@@ -120,6 +128,7 @@ const DaoCard = ({
   chainId,
   localeDict,
   memberCount,
+  votingPower,
 }: {
   dao: SupabaseDao
   locale: string
@@ -127,6 +136,7 @@ const DaoCard = ({
   router: any
   chainId: number
   memberCount: number
+  votingPower?: bigint
 }) => {
   const [identicon, setIdenticon] = useState<string>('')
   useEffect(() => {
@@ -199,7 +209,14 @@ const DaoCard = ({
       </div>
 
       <div className="flex flex-row gap-4 items-center justify-center w-full">
-        <StatItem label={localeDict.myPower} value={0} />
+        <StatItem
+          label={localeDict.myPower}
+          value={
+            votingPower === undefined
+              ? 0
+              : formatNumber(Number(formatEther(votingPower)))
+          }
+        />
 
         <StatItem label={localeDict.members} value={memberCount} />
       </div>
@@ -241,6 +258,7 @@ export default function ForDAOPage({
   const [daos, setDaos] = useState<SupabaseDao[]>([])
   const [refetchDaos, setRefetchDaos] = useState(false)
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({})
+  const [votingPowers, setVotingPowers] = useState<Record<string, bigint>>({})
   const [daoPage, setDaoPage] = useState(1)
   const daoPageSize = 3
   const [search, setSearch] = useState('')
@@ -306,6 +324,129 @@ export default function ForDAOPage({
 
     fetchMemberDaos()
   }, [address, supabase])
+
+  useEffect(() => {
+    let isCancelled = false
+
+    const fetchVotingPowers = async () => {
+      if (!address || daos.length === 0) {
+        setVotingPowers({})
+        return
+      }
+
+      const resolvedChainId = (chainId ||
+        defaultChainId) as (typeof config)['chains'][number]['id']
+      const publicClient = getPublicClient(config, {
+        chainId: resolvedChainId,
+      })
+
+      if (!publicClient) {
+        setVotingPowers({})
+        return
+      }
+
+      const safeRead = async <T,>(fn: () => Promise<T>) => {
+        try {
+          return await fn()
+        } catch (error) {
+          console.error('Error reading voting power data:', error)
+          return undefined
+        }
+      }
+
+      try {
+        const blockNumber = await publicClient.getBlockNumber()
+
+        const entries = await Promise.all(
+          daos.map(async (dao) => {
+            const daoConfigs = (await safeRead(() =>
+              readContract(config, {
+                chainId: resolvedChainId,
+                address: daoStudioAddress[resolvedChainId] as `0x${string}`,
+                abi: DAO_STUDIO_ABI,
+                functionName: 'daoConfigs',
+                args: [dao.daoId],
+              })
+            )) as string[] | undefined
+
+            if (!daoConfigs || daoConfigs.length < 6) {
+              return [dao.daoId, BigInt(0)] as const
+            }
+
+            const sbtAddress = daoConfigs[2]
+            const nftAddress = daoConfigs[3]
+            const governanceTokenAddress = daoConfigs[5]
+
+            const [tokenVote, sbtVote, nftVote] = await Promise.all([
+              governanceTokenAddress
+                ? safeRead(() =>
+                    readContract(config, {
+                      chainId: resolvedChainId,
+                      address: governanceTokenAddress as `0x${string}`,
+                      abi: PCE_C_GOV_TOKEN_ABI,
+                      functionName: 'getVotes',
+                      args: [address],
+                    })
+                  )
+                : undefined,
+              sbtAddress
+                ? safeRead(() =>
+                    readContract(config, {
+                      chainId: resolvedChainId,
+                      address: sbtAddress as `0x${string}`,
+                      abi: SBT_ABI,
+                      functionName: 'getPastVotes',
+                      args: [address, blockNumber.toString()],
+                    })
+                  )
+                : undefined,
+              nftAddress
+                ? safeRead(() =>
+                    readContract(config, {
+                      chainId: resolvedChainId,
+                      address: nftAddress as `0x${string}`,
+                      abi: SBT_ABI,
+                      functionName: 'getPastVotes',
+                      args: [address, blockNumber.toString()],
+                    })
+                  )
+                : undefined,
+            ])
+
+            const total =
+              toBigInt(tokenVote as string | bigint | undefined) +
+              toBigInt(sbtVote as string | bigint | undefined) +
+              toBigInt(nftVote as string | bigint | undefined)
+
+            return [dao.daoId, total] as const
+          })
+        )
+
+        if (isCancelled) return
+
+        const nextMap = entries.reduce(
+          (acc, [daoId, total]) => {
+            acc[daoId] = total
+            return acc
+          },
+          {} as Record<string, bigint>
+        )
+
+        setVotingPowers(nextMap)
+      } catch (error) {
+        console.error('Error fetching voting powers:', error)
+        if (!isCancelled) {
+          setVotingPowers({})
+        }
+      }
+    }
+
+    fetchVotingPowers()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [address, chainId, daos])
 
   const showConnectWalletAlert = () => {
     toast({ title: 'Please connect wallet' })
@@ -682,6 +823,7 @@ export default function ForDAOPage({
                   router={router}
                   chainId={chainId || 0}
                   memberCount={memberCounts[dao.daoId] ?? 0}
+                  votingPower={votingPowers[dao.daoId]}
                 />
               ))
             ) : (
@@ -707,6 +849,7 @@ export default function ForDAOPage({
                   router={router}
                   chainId={chainId || 0}
                   memberCount={memberCounts[dao.daoId] ?? 0}
+                  votingPower={votingPowers[dao.daoId]}
                 />
               ))
             ) : (

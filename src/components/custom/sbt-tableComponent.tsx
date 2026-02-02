@@ -31,12 +31,14 @@ export interface SBTInfo {
 
 interface SBTTableProps {
   sbtInfo: SBTInfo[]
+  totalCount?: number
   action?: ActionInfo
   onRevoke?: (token: SBTInfo) => void
 }
 
 export function SBTTableComponent({
   sbtInfo,
+  totalCount,
   action,
   onRevoke,
 }: SBTTableProps) {
@@ -113,6 +115,9 @@ export function SBTTableComponent({
     }
     return shortenAddress(daoId)
   }
+
+  const totalValue =
+    typeof totalCount === 'number' ? totalCount : (sbtInfo?.length ?? 0)
   return (
     <div className="w-full space-y-6">
       {/* Mobile/Tablet View - Card layout for all screens */}
@@ -244,7 +249,7 @@ export function SBTTableComponent({
 
       {/* Total Footer */}
       <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-900/70 p-4 text-center font-medium text-sm text-gray-900 dark:text-white">
-        {dict?.sbt?.total || 'Total:'} {(sbtInfo && sbtInfo.length) ?? '0'}
+        {dict?.sbt?.total || 'Total:'} {totalValue}
       </div>
     </div>
   )
