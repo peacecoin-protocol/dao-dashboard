@@ -213,7 +213,7 @@ export const useSideLinks = (locale: Locale, isOwner: boolean): SideLink[] => {
         {
           title: sidebar.management ?? 'Management',
           label: '',
-          href: '/admin/management/',
+          href: '/admin/distribution/',
           icon: <IconHexagonNumber3 size={18} />,
         },
       ],

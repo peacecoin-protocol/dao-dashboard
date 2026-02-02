@@ -108,7 +108,7 @@ export default function ForManagementPage({
                         className="cursor-pointer transition-colors hover:bg-muted/60"
                         onClick={() =>
                           router.push(
-                            `/${locale}/admin/management/detail?daoId=${dao.daoId}`
+                            `/${locale}/admin/distribution/detail?daoId=${dao.daoId}`
                           )
                         }
                       >
@@ -157,7 +157,7 @@ export default function ForManagementPage({
                   className="flex w-full flex-col gap-3 rounded-lg border p-4 text-left shadow-sm transition hover:border-primary/40"
                   onClick={() =>
                     router.push(
-                      `/${locale}/admin/management/detail?daoId=${dao.daoId}`
+                      `/${locale}/admin/distribution/detail?daoId=${dao.daoId}`
                     )
                   }
                 >

@@ -28,6 +28,7 @@ import {
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Button } from '~/components/ui/button'
+import { DateTimePicker } from '~/components/ui/date-time-picker'
 import {
   Select,
   SelectContent,
@@ -176,6 +177,8 @@ export default function ManagementDetailPage({
   )
   const [isLoading, setIsLoading] = useState(true)
   const [isStatsLoading, setIsStatsLoading] = useState(false)
+  const [allTransfers, setAllTransfers] = useState<AlchemyTransfer[]>([])
+  const [isTransferLoading, setIsTransferLoading] = useState(false)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [topCount, setTopCount] = useState('')
@@ -425,38 +428,7 @@ export default function ManagementDetailPage({
   useEffect(() => {
     let isCancelled = false
 
-    const parseTransferValue = (transfer: AlchemyTransfer) => {
-      const rawValue = transfer.rawContract?.value
-      if (rawValue) {
-        try {
-          return BigInt(rawValue)
-        } catch {
-          return BigInt(0)
-        }
-      }
-      if (typeof transfer.value === 'number') {
-        try {
-          return parseUnits(transfer.value.toString(), 18)
-        } catch {
-          return BigInt(0)
-        }
-      }
-      if (typeof transfer.value === 'string') {
-        try {
-          return parseUnits(transfer.value, 18)
-        } catch {
-          return BigInt(0)
-        }
-      }
-      return BigInt(0)
-    }
-
-    const fetchAllTransfers = async (params: {
-      fromAddress?: string
-      toAddress?: string
-    }) => {
-      setIsLoading(true)
-
+    const fetchAllTransfers = async () => {
       const transfers: AlchemyTransfer[] = []
       let pageKey: string | undefined
 
@@ -468,7 +440,6 @@ export default function ManagementDetailPage({
           withMetadata: true,
           category: ['erc20'],
           contractAddresses: [communityTokenAddress],
-          ...params,
         }
 
         if (pageKey) {
@@ -500,80 +471,69 @@ export default function ManagementDetailPage({
         pageKey = result.pageKey || undefined
       } while (pageKey)
 
-      setIsLoading(false)
       return transfers
     }
 
-    const fetchMemberStats = async (memberAddr: string) => {
-      const address = memberAddr.toLowerCase()
-      const [sent, received] = await Promise.all([
-        fetchAllTransfers({ fromAddress: address }),
-        fetchAllTransfers({ toAddress: address }),
-      ])
-
-      const startTime = startDate ? new Date(startDate).getTime() : null
-      const endTime = endDate ? new Date(endDate).getTime() : null
-      const inDateRange = (transfer: AlchemyTransfer) => {
-        if (!startTime && !endTime) return true
-        const timestamp =
-          transfer.metadata?.blockTimestamp ?? transfer.blockTimestamp
-        const transferTime = timestamp ? new Date(timestamp).getTime() : null
-        if (!transferTime) return false
-        if (startTime && transferTime < startTime) return false
-        if (endTime && transferTime > endTime) return false
-        return true
+    const loadTransfers = async () => {
+      if (!communityTokenAddress) {
+        setAllTransfers([])
+        setIsTransferLoading(false)
+        return
       }
 
-      const uniqueTransferCount = (transfers: AlchemyTransfer[]) => {
-        const hashes = new Set<string>()
-        transfers.forEach((transfer) => {
-          if (transfer.hash) {
-            hashes.add(transfer.hash.toLowerCase())
-          }
-        })
-        return hashes.size || transfers.length
+      setIsTransferLoading(true)
+      setAllTransfers([])
+      try {
+        const transfers = await fetchAllTransfers()
+        if (!isCancelled) {
+          setAllTransfers(transfers)
+        }
+      } catch (error) {
+        console.error('Error fetching token transfers:', error)
+        if (!isCancelled) {
+          setAllTransfers([])
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsTransferLoading(false)
+        }
       }
+    }
 
-      const sentTransfers = sent.filter(
-        (transfer) =>
-          transfer.from?.toLowerCase() === address && inDateRange(transfer)
-      )
-      const receivedTransfers = received.filter(
-        (transfer) =>
-          transfer.to?.toLowerCase() === address && inDateRange(transfer)
-      )
+    loadTransfers()
 
-      let currentFactor = (await readContract(config, {
-        address: communityTokenAddress as `0x${string}`,
-        abi: COMMUNITY_TOKEN_ABI,
-        functionName: 'getCurrentFactor',
-        args: [],
-      })) as bigint
+    return () => {
+      isCancelled = true
+    }
+  }, [communityTokenAddress])
 
-      if (currentFactor < BigInt(1)) {
-        currentFactor = BigInt(1)
+  useEffect(() => {
+    let isCancelled = false
+
+    const parseTransferValue = (transfer: AlchemyTransfer) => {
+      const rawValue = transfer.rawContract?.value
+      if (rawValue) {
+        try {
+          return BigInt(rawValue)
+        } catch {
+          return BigInt(0)
+        }
       }
-
-      const receiveAmount =
-        receivedTransfers.reduce(
-          (sum, transfer) => sum + parseTransferValue(transfer),
-          BigInt(0)
-        ) / currentFactor
-      const sendAmount =
-        sentTransfers.reduce(
-          (sum, transfer) => sum + parseTransferValue(transfer),
-          BigInt(0)
-        ) / currentFactor
-
-      return {
-        address,
-        stats: {
-          sendCount: uniqueTransferCount(sentTransfers),
-          receiveCount: uniqueTransferCount(receivedTransfers),
-          sendAmount,
-          receiveAmount,
-        },
+      if (typeof transfer.value === 'number') {
+        try {
+          return parseUnits(transfer.value.toString(), 18)
+        } catch {
+          return BigInt(0)
+        }
       }
+      if (typeof transfer.value === 'string') {
+        try {
+          return parseUnits(transfer.value, 18)
+        } catch {
+          return BigInt(0)
+        }
+      }
+      return BigInt(0)
     }
 
     const loadStats = async () => {
@@ -583,24 +543,92 @@ export default function ManagementDetailPage({
         return
       }
 
+      if (isTransferLoading) {
+        setIsStatsLoading(true)
+        return
+      }
+
+      const baseStats = members.reduce(
+        (acc, member) => {
+          const addr = member.userAddr.toLowerCase()
+          acc[addr] = {
+            sendCount: 0,
+            receiveCount: 0,
+            sendAmount: BigInt(0),
+            receiveAmount: BigInt(0),
+          }
+          return acc
+        },
+        {} as Record<string, MemberStats>
+      )
+
+      if (allTransfers.length === 0) {
+        setMemberStats(baseStats)
+        setIsStatsLoading(false)
+        return
+      }
+
       setIsStatsLoading(true)
       try {
-        const statsEntries = await Promise.all(
-          members.map((member) => fetchMemberStats(member.userAddr))
-        )
-        if (isCancelled) return
+        let currentFactor = BigInt(1)
+        try {
+          currentFactor = (await readContract(config, {
+            address: communityTokenAddress as `0x${string}`,
+            abi: COMMUNITY_TOKEN_ABI,
+            functionName: 'getCurrentFactor',
+            args: [],
+          })) as bigint
+        } catch (error) {
+          console.error('Error fetching current factor:', error)
+        }
 
-        const nextStats = statsEntries.reduce(
-          (acc, entry) => {
-            acc[entry.address] = entry.stats
-            return acc
-          },
-          {} as Record<string, MemberStats>
-        )
+        if (currentFactor < BigInt(1)) {
+          currentFactor = BigInt(1)
+        }
 
-        setMemberStats(nextStats)
+        const startTime = startDate ? new Date(startDate).getTime() : null
+        const endTime = endDate ? new Date(endDate).getTime() : null
+        const inDateRange = (transfer: AlchemyTransfer) => {
+          if (!startTime && !endTime) return true
+          const timestamp =
+            transfer.metadata?.blockTimestamp ?? transfer.blockTimestamp
+          const transferTime = timestamp ? new Date(timestamp).getTime() : null
+          if (!transferTime) return false
+          if (startTime && transferTime < startTime) return false
+          if (endTime && transferTime > endTime) return false
+          return true
+        }
+
+        for (const transfer of allTransfers) {
+          if (!inDateRange(transfer)) continue
+          const from = transfer.from?.toLowerCase()
+          const to = transfer.to?.toLowerCase()
+          const value = parseTransferValue(transfer)
+
+          if (from && baseStats[from]) {
+            baseStats[from].sendCount += 1
+            baseStats[from].sendAmount += value
+          }
+
+          if (to && baseStats[to]) {
+            baseStats[to].receiveCount += 1
+            baseStats[to].receiveAmount += value
+          }
+        }
+
+        Object.keys(baseStats).forEach((addr) => {
+          baseStats[addr] = {
+            ...baseStats[addr],
+            sendAmount: baseStats[addr].sendAmount / currentFactor,
+            receiveAmount: baseStats[addr].receiveAmount / currentFactor,
+          }
+        })
+
+        if (!isCancelled) {
+          setMemberStats(baseStats)
+        }
       } catch (error) {
-        console.error('Error fetching token transfer stats:', error)
+        console.error('Error building token transfer stats:', error)
       } finally {
         if (!isCancelled) {
           setIsStatsLoading(false)
@@ -613,7 +641,14 @@ export default function ManagementDetailPage({
     return () => {
       isCancelled = true
     }
-  }, [communityTokenAddress, members, startDate, endDate])
+  }, [
+    allTransfers,
+    communityTokenAddress,
+    isTransferLoading,
+    members,
+    startDate,
+    endDate,
+  ])
 
   const filteredMembers = useMemo(() => {
     const topCountValue = Number(topCount)
@@ -809,22 +844,34 @@ export default function ManagementDetailPage({
                   <Label htmlFor="startDate">
                     {managementDict.startDateTime ?? 'Start date/time'}
                   </Label>
-                  <Input
+                  <DateTimePicker
                     id="startDate"
-                    type="datetime-local"
                     value={startDate}
-                    onChange={(event) => setStartDate(event.target.value)}
+                    onChange={setStartDate}
+                    placeholder={
+                      managementDict.selectDateTime ?? 'Select date & time'
+                    }
+                    dateLabel={managementDict.dateLabel ?? 'Date'}
+                    timeLabel={managementDict.timeLabel ?? 'Time'}
+                    okLabel={managementDict.confirm ?? 'OK'}
+                    cancelLabel={managementDict.cancel ?? 'Cancel'}
                   />
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="endDate">
                     {managementDict.endDateTime ?? 'End date/time'}
                   </Label>
-                  <Input
+                  <DateTimePicker
                     id="endDate"
-                    type="datetime-local"
                     value={endDate}
-                    onChange={(event) => setEndDate(event.target.value)}
+                    onChange={setEndDate}
+                    placeholder={
+                      managementDict.selectDateTime ?? 'Select date & time'
+                    }
+                    dateLabel={managementDict.dateLabel ?? 'Date'}
+                    timeLabel={managementDict.timeLabel ?? 'Time'}
+                    okLabel={managementDict.confirm ?? 'OK'}
+                    cancelLabel={managementDict.cancel ?? 'Cancel'}
                   />
                 </div>
                 <div className="flex flex-col gap-2">
@@ -956,7 +1003,8 @@ export default function ManagementDetailPage({
                     pagedMembers.map((entry, index) => {
                       const member = entry.member
                       const stats = entry.stats
-                      const isStatsPending = isStatsLoading && !stats
+                      const isStatsPending =
+                        (isStatsLoading || isTransferLoading) && !stats
                       const receiveCount = stats?.receiveCount ?? 0
                       const sendAmount = stats?.sendAmount ?? BigInt(0)
                       const receiveAmount = stats?.receiveAmount ?? BigInt(0)
@@ -1070,7 +1118,8 @@ export default function ManagementDetailPage({
               pagedMembers.map((entry, index) => {
                 const member = entry.member
                 const stats = entry.stats
-                const isStatsPending = isStatsLoading && !stats
+                const isStatsPending =
+                  (isStatsLoading || isTransferLoading) && !stats
                 const receiveCount = stats?.receiveCount ?? 0
                 const sendAmount = stats?.sendAmount ?? BigInt(0)
                 const receiveAmount = stats?.receiveAmount ?? BigInt(0)

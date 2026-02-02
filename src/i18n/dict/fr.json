@@ -59,7 +59,7 @@
     "createCampaign": "Créer une Campagne",
     "createSBT_NFT": "Créer SBT",
     "allProposals": "Toutes les Propositions",
-    "management": "Gestion"
+    "management": "Distribution"
   },
   "home": {
     "title": "Tableau de Bord DAO PEACECOIN",
@@ -114,7 +114,9 @@
     "symbol": "Symbole",
     "transfer": "Transférer",
     "swap": "Échanger",
-    "balance": "Solde"
+    "balance": "Solde",
+    "searchPlaceholder": "Rechercher par nom ou adresse du token",
+    "noTokens": "Aucun token disponible."
   },
   "bounty": {
     "title": "Programme de Primes",
@@ -343,7 +345,11 @@
     "nft": "NFT",
     "sbt": "SBT",
     "telegram": "Telegram",
-    "tokenAddressToDeposit": "Adresse du token à déposer"
+    "tokenAddressToDeposit": "Adresse du token à déposer",
+    "dateLabel": "Date",
+    "timeLabel": "Heure",
+    "selectDateTime": "Sélectionner la date et l'heure",
+    "confirm": "Valider"
   },
   "pceDetail": {
     "transferTokens": "Transférer des Jetons",
@@ -449,7 +455,12 @@
     "startLabel": "Début:",
     "endLabel": "Fin:",
     "noCampaignsFound": "Aucune campagne trouvée",
-    "totalLabel": "Total:"
+    "totalLabel": "Total:",
+    "dateLabel": "Date",
+    "timeLabel": "Heure",
+    "selectDateTime": "Sélectionner la date et l'heure",
+    "confirm": "Valider",
+    "cancel": "Annuler"
   },
   "pipAll": {
     "title": "TOUTES les Propositions",
@@ -551,13 +562,13 @@
     "nft": "NFT"
   },
   "management": {
-    "title": "Gestion",
+    "title": "Distribution",
     "daoName": "Nom de la DAO",
     "daoId": "ID de la DAO",
     "createdAt": "Créé le",
     "loading": "Chargement...",
     "noDaos": "Aucune DAO trouvée",
-    "distributionTitle": "Distribution de SBT/NFT",
+    "distributionTitle": "SBT/NFT Distribution",
     "startDateTime": "Date/heure de début",
     "endDateTime": "Date/heure de fin",
     "metrics": "Indicateurs",
@@ -608,6 +619,11 @@
     "distributionRule": "La distribution est activée lorsque les utilisateurs filtrés sont plus de 1.",
     "distributing": "Distribution...",
     "distributionCompleted": "Distribution terminée.",
-    "distributionFailed": "Échec de la distribution."
+    "distributionFailed": "Échec de la distribution.",
+    "dateLabel": "Date",
+    "timeLabel": "Heure",
+    "selectDateTime": "Sélectionner la date et l'heure",
+    "confirm": "Valider",
+    "cancel": "Annuler"
   }
 }

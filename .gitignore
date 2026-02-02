@@ -38,4 +38,5 @@ next-env.d.ts
 
 *storybook.log
 
+scripts/transfer-erc20.js
 .env

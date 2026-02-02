@@ -59,7 +59,7 @@
     "createCampaign": "キャンペーンを作成",
     "createSBT_NFT": "SBTを作成",
     "allProposals": "すべての提案",
-    "management": "管理"
+    "management": "配布"
   },
   "home": {
     "title": "ピースコインDAOダッシュボード",
@@ -114,7 +114,9 @@
     "symbol": "シンボル",
     "transfer": "送金",
     "swap": "スワップ",
-    "balance": "残高"
+    "balance": "残高",
+    "searchPlaceholder": "名前またはトークンアドレスで検索",
+    "noTokens": "トークンがありません。"
   },
   "bounty": {
     "title": "報酬プログラム",
@@ -343,7 +345,11 @@
     "nft": "NFT",
     "sbt": "SBT",
     "telegram": "Telegram",
-    "tokenAddressToDeposit": "入金するトークンアドレス"
+    "tokenAddressToDeposit": "入金するトークンアドレス",
+    "dateLabel": "日付",
+    "timeLabel": "時間",
+    "selectDateTime": "日時を選択",
+    "confirm": "OK"
   },
   "pceDetail": {
     "transferTokens": "トークンを送金",
@@ -449,7 +455,12 @@
     "startLabel": "開始:",
     "endLabel": "終了:",
     "noCampaignsFound": "キャンペーンが見つかりません",
-    "totalLabel": "合計:"
+    "totalLabel": "合計:",
+    "dateLabel": "日付",
+    "timeLabel": "時間",
+    "selectDateTime": "日時を選択",
+    "confirm": "OK",
+    "cancel": "キャンセル"
   },
   "pipAll": {
     "title": "すべての提案",
@@ -551,13 +562,13 @@
     "nft": "NFT"
   },
   "management": {
-    "title": "管理",
+    "title": "配布",
     "daoName": "DAO名",
     "daoId": "DAO ID",
     "createdAt": "作成日時",
     "loading": "読み込み中...",
     "noDaos": "DAOが見つかりません",
-    "distributionTitle": "SBT/NFT配布",
+    "distributionTitle": "SBT/NFT Distribution",
     "startDateTime": "開始日時",
     "endDateTime": "終了日時",
     "metrics": "指標",
@@ -608,6 +619,11 @@
     "distributionRule": "フィルターされたユーザーが1人を超えると配布が有効になります。",
     "distributing": "配布中...",
     "distributionCompleted": "配布が完了しました。",
-    "distributionFailed": "配布に失敗しました。"
+    "distributionFailed": "配布に失敗しました。",
+    "dateLabel": "日付",
+    "timeLabel": "時間",
+    "selectDateTime": "日時を選択",
+    "confirm": "OK",
+    "cancel": "キャンセル"
   }
 }

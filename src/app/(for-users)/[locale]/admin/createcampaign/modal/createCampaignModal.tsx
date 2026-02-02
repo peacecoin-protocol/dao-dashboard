@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Modal from '~/components/custom/Modal'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
+import { DateTimePicker } from '~/components/ui/date-time-picker'
 import { useToast } from '~/hooks/use-toast'
 import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 
@@ -391,26 +392,32 @@ export const CreateCampaignModal = ({
               <Label htmlFor="start-date">
                 {campaign.startDateTime ?? 'Start Date & Time'}
               </Label>
-              <Input
+              <DateTimePicker
                 id="start-date"
-                type="datetime-local"
-                name="startDate"
                 value={form.startDate}
-                onChange={handleChange}
-                className="w-full h-8 text-sm"
+                onChange={(value) => onFormChange('startDate', value)}
+                placeholder={campaign.selectDateTime ?? 'Select date & time'}
+                dateLabel={campaign.dateLabel ?? 'Date'}
+                timeLabel={campaign.timeLabel ?? 'Time'}
+                okLabel={campaign.confirm ?? 'OK'}
+                cancelLabel={campaign.cancel ?? 'Cancel'}
+                className="h-8 text-sm"
               />
             </div>
             <div className="space-y-1">
               <Label htmlFor="end-date">
                 {campaign.endDateTime ?? 'End Date & Time'}
               </Label>
-              <Input
+              <DateTimePicker
                 id="end-date"
-                type="datetime-local"
-                name="endDate"
                 value={form.endDate}
-                onChange={handleChange}
-                className="w-full h-8 text-sm"
+                onChange={(value) => onFormChange('endDate', value)}
+                placeholder={campaign.selectDateTime ?? 'Select date & time'}
+                dateLabel={campaign.dateLabel ?? 'Date'}
+                timeLabel={campaign.timeLabel ?? 'Time'}
+                okLabel={campaign.confirm ?? 'OK'}
+                cancelLabel={campaign.cancel ?? 'Cancel'}
+                className="h-8 text-sm"
               />
             </div>
           </div>

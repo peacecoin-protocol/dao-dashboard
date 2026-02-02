@@ -59,7 +59,7 @@
     "createCampaign": "创建活动",
     "createSBT_NFT": "创建SBT",
     "allProposals": "所有提案",
-    "management": "管理"
+    "management": "分发"
   },
   "home": {
     "title": "和平币DAO仪表板",
@@ -114,7 +114,9 @@
     "symbol": "符号",
     "transfer": "转账",
     "swap": "兑换",
-    "balance": "余额"
+    "balance": "余额",
+    "searchPlaceholder": "按名称或代币地址搜索",
+    "noTokens": "没有可用的代币。"
   },
   "bounty": {
     "title": "奖励计划",
@@ -343,7 +345,11 @@
     "nft": "NFT",
     "sbt": "SBT",
     "telegram": "Telegram",
-    "tokenAddressToDeposit": "要存入的代币地址"
+    "tokenAddressToDeposit": "要存入的代币地址",
+    "dateLabel": "日期",
+    "timeLabel": "时间",
+    "selectDateTime": "选择日期和时间",
+    "confirm": "确定"
   },
   "pceDetail": {
     "transferTokens": "转账代币",
@@ -449,7 +455,12 @@
     "startLabel": "开始:",
     "endLabel": "结束:",
     "noCampaignsFound": "未找到活动",
-    "totalLabel": "总计:"
+    "totalLabel": "总计:",
+    "dateLabel": "日期",
+    "timeLabel": "时间",
+    "selectDateTime": "选择日期和时间",
+    "confirm": "确定",
+    "cancel": "取消"
   },
   "pipAll": {
     "title": "所有提案",
@@ -551,13 +562,13 @@
     "nft": "NFT"
   },
   "management": {
-    "title": "管理",
+    "title": "分发",
     "daoName": "DAO 名称",
     "daoId": "DAO ID",
     "createdAt": "创建时间",
     "loading": "加载中...",
     "noDaos": "未找到 DAO",
-    "distributionTitle": "SBT/NFT 分发",
+    "distributionTitle": "SBT/NFT Distribution",
     "startDateTime": "开始日期/时间",
     "endDateTime": "结束日期/时间",
     "metrics": "指标",
@@ -608,6 +619,11 @@
     "distributionRule": "当筛选用户数量大于 1 时可分发。",
     "distributing": "分发中...",
     "distributionCompleted": "分发完成。",
-    "distributionFailed": "分发失败。"
+    "distributionFailed": "分发失败。",
+    "dateLabel": "日期",
+    "timeLabel": "时间",
+    "selectDateTime": "选择日期和时间",
+    "confirm": "确定",
+    "cancel": "取消"
   }
 }

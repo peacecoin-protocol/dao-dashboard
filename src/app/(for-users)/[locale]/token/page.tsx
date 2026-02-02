@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, ChangeEvent } from 'react'
+import React, { useEffect, useMemo, useState, ChangeEvent } from 'react'
 import { formatEther, parseEther } from 'ethers'
 import { readContract } from '@wagmi/core'
 import { useToast } from '~/hooks/use-toast'
@@ -66,6 +66,7 @@ export default function ForTokenPage({
   const [transferAmount, setTransferAmount] = useState('')
   const [transferAddress, setTransferAddress] = useState('')
   const [tokenPage, setTokenPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
   const tokenPageSize = 3
 
   useEffect(() => {
@@ -303,17 +304,28 @@ export default function ForTokenPage({
 
   useEffect(() => {
     setTokenPage(1)
-  }, [communityTokenInfo.length])
+  }, [communityTokenInfo.length, searchQuery])
+
+  const filteredCommunityTokenInfo = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return communityTokenInfo
+
+    return communityTokenInfo.filter((tokenInfo) => {
+      const name = (tokenInfo?.name ?? '').toLowerCase()
+      const address = (tokenInfo?.address ?? '').toLowerCase()
+      return name.includes(query) || address.includes(query)
+    })
+  }, [communityTokenInfo, searchQuery])
 
   useEffect(() => {
     const totalPages = Math.max(
       1,
-      Math.ceil(communityTokenInfo.length / tokenPageSize)
+      Math.ceil(filteredCommunityTokenInfo.length / tokenPageSize)
     )
     if (tokenPage > totalPages) {
       setTokenPage(totalPages)
     }
-  }, [communityTokenInfo.length, tokenPage, tokenPageSize])
+  }, [filteredCommunityTokenInfo.length, tokenPage, tokenPageSize])
 
   useEffect(() => {
     if (isConfirmed) {
@@ -506,11 +518,11 @@ export default function ForTokenPage({
   const token = dict?.token ?? {}
   const tokenTotalPages = Math.max(
     1,
-    Math.ceil(communityTokenInfo.length / tokenPageSize)
+    Math.ceil(filteredCommunityTokenInfo.length / tokenPageSize)
   )
   const tokenSafePage = Math.min(tokenPage, tokenTotalPages)
   const tokenStartIndex = (tokenSafePage - 1) * tokenPageSize
-  const pagedCommunityTokenInfo = communityTokenInfo.slice(
+  const pagedCommunityTokenInfo = filteredCommunityTokenInfo.slice(
     tokenStartIndex,
     tokenStartIndex + tokenPageSize
   )
@@ -537,6 +549,15 @@ export default function ForTokenPage({
         >
           {token.createToken ?? ''}
         </Button>
+        <div className="w-full max-w-md">
+          <Input
+            placeholder={
+              token.searchPlaceholder ?? 'Search by name or token address'
+            }
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+        </div>
         <Dialog
           open={isOpened}
           onOpenChange={() => {
@@ -661,7 +682,7 @@ export default function ForTokenPage({
           handleSwapToLocalToken={handleSwapToLocalToken}
           handleTransfer={handleTransfer}
         />
-        {communityTokenInfo.length > tokenPageSize && (
+        {filteredCommunityTokenInfo.length > tokenPageSize && (
           <div className="flex items-center justify-between gap-2 mt-3">
             <span className="text-xs text-muted-foreground">
               Page {tokenSafePage} of {tokenTotalPages}

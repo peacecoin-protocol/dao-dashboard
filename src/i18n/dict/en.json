@@ -59,7 +59,7 @@
     "createCampaign": "Create Campaign",
     "createSBT_NFT": "Create SBT/NFT",
     "allProposals": "All Proposals",
-    "management": "Management"
+    "management": "Distribution"
   },
   "home": {
     "title": "PEACECOIN DAO Dashboard",
@@ -114,7 +114,9 @@
     "symbol": "Symbol",
     "transfer": "Transfer",
     "swap": "Swap",
-    "balance": "Balance"
+    "balance": "Balance",
+    "searchPlaceholder": "Search by name or token address",
+    "noTokens": "No tokens available."
   },
   "bounty": {
     "title": "Bounty Program",
@@ -343,7 +345,11 @@
     "nft": "NFT",
     "sbt": "SBT",
     "telegram": "Telegram",
-    "tokenAddressToDeposit": "Token address to deposit"
+    "tokenAddressToDeposit": "Token address to deposit",
+    "dateLabel": "Date",
+    "timeLabel": "Time",
+    "selectDateTime": "Select date & time",
+    "confirm": "OK"
   },
   "pceDetail": {
     "transferTokens": "Transfer Tokens",
@@ -449,7 +455,12 @@
     "startLabel": "Start:",
     "endLabel": "End:",
     "noCampaignsFound": "No campaigns found",
-    "totalLabel": "Total:"
+    "totalLabel": "Total:",
+    "dateLabel": "Date",
+    "timeLabel": "Time",
+    "selectDateTime": "Select date & time",
+    "confirm": "OK",
+    "cancel": "Cancel"
   },
   "pipAll": {
     "title": "ALL Proposals",
@@ -551,7 +562,7 @@
     "nft": "NFT"
   },
   "management": {
-    "title": "Management",
+    "title": "Distribution",
     "daoName": "DAO Name",
     "daoId": "DAO ID",
     "createdAt": "Created At",
@@ -608,6 +619,11 @@
     "distributionRule": "Distribution is enabled when filtered users are more than 1.",
     "distributing": "Distributing...",
     "distributionCompleted": "Distribution completed.",
-    "distributionFailed": "Distribution failed."
+    "distributionFailed": "Distribution failed.",
+    "dateLabel": "Date",
+    "timeLabel": "Time",
+    "selectDateTime": "Select date & time",
+    "confirm": "OK",
+    "cancel": "Cancel"
   }
 }
