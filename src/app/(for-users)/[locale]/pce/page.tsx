@@ -14,7 +14,7 @@ import { ringStyle } from '~/app/constants/styles'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
 import { Button } from '~/components/ui/button'
 import { Checkbox } from '~/components/ui/checkbox'
-import { Plus, X, ChevronsUpDown, Calendar } from 'lucide-react'
+import { Plus, X, ChevronsUpDown } from 'lucide-react'
 
 import {
   Table,
@@ -25,6 +25,7 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { Input } from '~/components/ui/input'
+import { DateTimePicker } from '~/components/ui/date-time-picker'
 import {
   readContract,
   waitForTransactionReceipt,
@@ -1844,28 +1845,38 @@ export default function PCEPage({
 
                   <div className="flex flex-col gap-2">
                     <div className="flex flex-col gap-1">
-                      <label className="text-sm font-medium">Start Time</label>
-                      <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                          type="datetime-local"
-                          value={startTime}
-                          onChange={(e) => setStartTime(e.target.value)}
-                          className="pl-10 pr-10 w-full"
-                        />
-                      </div>
+                      <label className="text-sm font-medium">
+                        {localDict.startTimeLabel ?? 'Start Time'}
+                      </label>
+                      <DateTimePicker
+                        value={startTime}
+                        onChange={setStartTime}
+                        placeholder={
+                          localDict.selectDateTime ?? 'Select date & time'
+                        }
+                        dateLabel={localDict.dateLabel ?? 'Date'}
+                        timeLabel={localDict.timeLabel ?? 'Time'}
+                        okLabel={localDict.confirm ?? 'OK'}
+                        cancelLabel={localDict.cancel ?? 'Cancel'}
+                        className="w-full"
+                      />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-sm font-medium">End Time</label>
-                      <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                          type="datetime-local"
-                          value={endTime}
-                          onChange={(e) => setEndTime(e.target.value)}
-                          className="pl-10 pr-10 w-full"
-                        />
-                      </div>
+                      <label className="text-sm font-medium">
+                        {localDict.endTimeLabel ?? 'End Time'}
+                      </label>
+                      <DateTimePicker
+                        value={endTime}
+                        onChange={setEndTime}
+                        placeholder={
+                          localDict.selectDateTime ?? 'Select date & time'
+                        }
+                        dateLabel={localDict.dateLabel ?? 'Date'}
+                        timeLabel={localDict.timeLabel ?? 'Time'}
+                        okLabel={localDict.confirm ?? 'OK'}
+                        cancelLabel={localDict.cancel ?? 'Cancel'}
+                        className="w-full"
+                      />
                     </div>
                   </div>
 

@@ -14,7 +14,8 @@ import {
 import { formatUnits, parseUnits } from 'viem'
 import { formatEther } from 'ethers'
 import { createClient } from '~/utils/supabase/client'
-import { PagePropsWithLocale } from '~/i18n/types'
+import { Dictionary, PagePropsWithLocale } from '~/i18n/types'
+import { getDict } from '~/i18n/get-dict'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 import {
   Table,
@@ -27,6 +28,7 @@ import {
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Button } from '~/components/ui/button'
+import { DateTimePicker } from '~/components/ui/date-time-picker'
 import {
   Select,
   SelectContent,
@@ -153,6 +155,11 @@ const formatAmount = (amount: bigint) => {
   return roundAndTrim(formatted)
 }
 
+const formatTemplate = (
+  template: string,
+  values: Record<string, string | number>
+) => template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ''))
+
 export default function ManagementDetailPage({
   params: { locale },
 }: PagePropsWithLocale<{}>) {
@@ -163,12 +170,15 @@ export default function ManagementDetailPage({
   const { toast } = useToast()
   const { writeContractAsync } = useWriteContract()
 
+  const [dict, setDict] = useState<Dictionary | null>(null)
   const [members, setMembers] = useState<MemberRow[]>([])
   const [memberStats, setMemberStats] = useState<Record<string, MemberStats>>(
     {}
   )
   const [isLoading, setIsLoading] = useState(true)
   const [isStatsLoading, setIsStatsLoading] = useState(false)
+  const [allTransfers, setAllTransfers] = useState<AlchemyTransfer[]>([])
+  const [isTransferLoading, setIsTransferLoading] = useState(false)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [topCount, setTopCount] = useState('')
@@ -188,6 +198,18 @@ export default function ManagementDetailPage({
   const [historyPage, setHistoryPage] = useState(1)
   const historyPageSize = 3
 
+  useEffect(() => {
+    const fetchDict = async () => {
+      try {
+        const fetchedDict = await getDict(locale)
+        setDict(fetchedDict)
+      } catch (error) {
+        console.error('Error fetching dictionary:', error)
+      }
+    }
+    fetchDict()
+  }, [locale])
+
   const { data: daoConfigs } = useReadContract({
     address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
     abi: DAO_STUDIO_ABI,
@@ -201,6 +223,40 @@ export default function ManagementDetailPage({
     }
     return ''
   }, [daoConfigs])
+
+  const managementDict = dict?.management ?? {}
+  const sbtDict = dict?.sbt ?? {}
+  const loadingLabel = managementDict.loading ?? 'Loading...'
+  const sbtLabel = sbtDict.sbt ?? 'SBT'
+  const nftLabel = sbtDict.nft ?? 'NFT'
+
+  const metricOptions = useMemo(
+    () => [
+      {
+        value: 'send_count',
+        label: managementDict.metricSendCount ?? 'Send count',
+      },
+      {
+        value: 'receive_count',
+        label: managementDict.metricReceiveCount ?? 'Receive count',
+      },
+      {
+        value: 'send_volume',
+        label: managementDict.metricSendVolume ?? 'Send volume',
+      },
+      {
+        value: 'receive_volume',
+        label: managementDict.metricReceiveVolume ?? 'Receive volume',
+      },
+    ],
+    [managementDict]
+  )
+
+  const getMetricLabel = (metric?: string | null) => {
+    if (!metric) return '-'
+    const match = metricOptions.find((option) => option.value === metric)
+    return match?.label ?? metric
+  }
 
   useEffect(() => {
     const fetchCommunityTokenUsers = async () => {
@@ -372,38 +428,7 @@ export default function ManagementDetailPage({
   useEffect(() => {
     let isCancelled = false
 
-    const parseTransferValue = (transfer: AlchemyTransfer) => {
-      const rawValue = transfer.rawContract?.value
-      if (rawValue) {
-        try {
-          return BigInt(rawValue)
-        } catch {
-          return BigInt(0)
-        }
-      }
-      if (typeof transfer.value === 'number') {
-        try {
-          return parseUnits(transfer.value.toString(), 18)
-        } catch {
-          return BigInt(0)
-        }
-      }
-      if (typeof transfer.value === 'string') {
-        try {
-          return parseUnits(transfer.value, 18)
-        } catch {
-          return BigInt(0)
-        }
-      }
-      return BigInt(0)
-    }
-
-    const fetchAllTransfers = async (params: {
-      fromAddress?: string
-      toAddress?: string
-    }) => {
-      setIsLoading(true)
-
+    const fetchAllTransfers = async () => {
       const transfers: AlchemyTransfer[] = []
       let pageKey: string | undefined
 
@@ -415,7 +440,6 @@ export default function ManagementDetailPage({
           withMetadata: true,
           category: ['erc20'],
           contractAddresses: [communityTokenAddress],
-          ...params,
         }
 
         if (pageKey) {
@@ -447,80 +471,69 @@ export default function ManagementDetailPage({
         pageKey = result.pageKey || undefined
       } while (pageKey)
 
-      setIsLoading(false)
       return transfers
     }
 
-    const fetchMemberStats = async (memberAddr: string) => {
-      const address = memberAddr.toLowerCase()
-      const [sent, received] = await Promise.all([
-        fetchAllTransfers({ fromAddress: address }),
-        fetchAllTransfers({ toAddress: address }),
-      ])
-
-      const startTime = startDate ? new Date(startDate).getTime() : null
-      const endTime = endDate ? new Date(endDate).getTime() : null
-      const inDateRange = (transfer: AlchemyTransfer) => {
-        if (!startTime && !endTime) return true
-        const timestamp =
-          transfer.metadata?.blockTimestamp ?? transfer.blockTimestamp
-        const transferTime = timestamp ? new Date(timestamp).getTime() : null
-        if (!transferTime) return false
-        if (startTime && transferTime < startTime) return false
-        if (endTime && transferTime > endTime) return false
-        return true
+    const loadTransfers = async () => {
+      if (!communityTokenAddress) {
+        setAllTransfers([])
+        setIsTransferLoading(false)
+        return
       }
 
-      const uniqueTransferCount = (transfers: AlchemyTransfer[]) => {
-        const hashes = new Set<string>()
-        transfers.forEach((transfer) => {
-          if (transfer.hash) {
-            hashes.add(transfer.hash.toLowerCase())
-          }
-        })
-        return hashes.size || transfers.length
+      setIsTransferLoading(true)
+      setAllTransfers([])
+      try {
+        const transfers = await fetchAllTransfers()
+        if (!isCancelled) {
+          setAllTransfers(transfers)
+        }
+      } catch (error) {
+        console.error('Error fetching token transfers:', error)
+        if (!isCancelled) {
+          setAllTransfers([])
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsTransferLoading(false)
+        }
       }
+    }
 
-      const sentTransfers = sent.filter(
-        (transfer) =>
-          transfer.from?.toLowerCase() === address && inDateRange(transfer)
-      )
-      const receivedTransfers = received.filter(
-        (transfer) =>
-          transfer.to?.toLowerCase() === address && inDateRange(transfer)
-      )
+    loadTransfers()
 
-      let currentFactor = (await readContract(config, {
-        address: communityTokenAddress as `0x${string}`,
-        abi: COMMUNITY_TOKEN_ABI,
-        functionName: 'getCurrentFactor',
-        args: [],
-      })) as bigint
+    return () => {
+      isCancelled = true
+    }
+  }, [communityTokenAddress])
 
-      if (currentFactor < BigInt(1)) {
-        currentFactor = BigInt(1)
+  useEffect(() => {
+    let isCancelled = false
+
+    const parseTransferValue = (transfer: AlchemyTransfer) => {
+      const rawValue = transfer.rawContract?.value
+      if (rawValue) {
+        try {
+          return BigInt(rawValue)
+        } catch {
+          return BigInt(0)
+        }
       }
-
-      const receiveAmount =
-        receivedTransfers.reduce(
-          (sum, transfer) => sum + parseTransferValue(transfer),
-          BigInt(0)
-        ) / currentFactor
-      const sendAmount =
-        sentTransfers.reduce(
-          (sum, transfer) => sum + parseTransferValue(transfer),
-          BigInt(0)
-        ) / currentFactor
-
-      return {
-        address,
-        stats: {
-          sendCount: uniqueTransferCount(sentTransfers),
-          receiveCount: uniqueTransferCount(receivedTransfers),
-          sendAmount,
-          receiveAmount,
-        },
+      if (typeof transfer.value === 'number') {
+        try {
+          return parseUnits(transfer.value.toString(), 18)
+        } catch {
+          return BigInt(0)
+        }
       }
+      if (typeof transfer.value === 'string') {
+        try {
+          return parseUnits(transfer.value, 18)
+        } catch {
+          return BigInt(0)
+        }
+      }
+      return BigInt(0)
     }
 
     const loadStats = async () => {
@@ -530,24 +543,91 @@ export default function ManagementDetailPage({
         return
       }
 
+      if (isTransferLoading) {
+        setIsStatsLoading(true)
+        return
+      }
+
+      const baseStats = members.reduce(
+        (acc, member) => {
+          const addr = member.userAddr.toLowerCase()
+          acc[addr] = {
+            sendCount: 0,
+            receiveCount: 0,
+            sendAmount: BigInt(0),
+            receiveAmount: BigInt(0),
+          }
+          return acc
+        },
+        {} as Record<string, MemberStats>
+      )
+
+      if (allTransfers.length === 0) {
+        setMemberStats(baseStats)
+        setIsStatsLoading(false)
+        return
+      }
+
       setIsStatsLoading(true)
       try {
-        const statsEntries = await Promise.all(
-          members.map((member) => fetchMemberStats(member.userAddr))
-        )
-        if (isCancelled) return
+        let currentFactor = BigInt(1)
+        try {
+          currentFactor = (await readContract(config, {
+            address: communityTokenAddress as `0x${string}`,
+            abi: COMMUNITY_TOKEN_ABI,
+            functionName: 'getCurrentFactor',
+            args: [],
+          })) as bigint
+        } catch (error) {
+          console.error('Error fetching current factor:', error)
+        }
 
-        const nextStats = statsEntries.reduce(
-          (acc, entry) => {
-            acc[entry.address] = entry.stats
-            return acc
-          },
-          {} as Record<string, MemberStats>
-        )
+        if (currentFactor < BigInt(1)) {
+          currentFactor = BigInt(1)
+        }
 
-        setMemberStats(nextStats)
+        const startTime = startDate ? new Date(startDate).getTime() : null
+        const endTime = endDate ? new Date(endDate).getTime() : null
+        const inDateRange = (transfer: AlchemyTransfer) => {
+          if (!startTime && !endTime) return true
+          const timestamp =
+            transfer.metadata?.blockTimestamp ?? transfer.blockTimestamp
+          const transferTime = timestamp ? new Date(timestamp).getTime() : null
+          if (!transferTime) return false
+          if (startTime && transferTime < startTime) return false
+          if (endTime && transferTime > endTime) return false
+          return true
+        }
+
+        for (const transfer of allTransfers) {
+          if (!inDateRange(transfer)) continue
+          const from = transfer.from?.toLowerCase()
+          const to = transfer.to?.toLowerCase()
+          const value = parseTransferValue(transfer)
+
+          if (from && baseStats[from]) {
+            baseStats[from].sendCount += 1
+            baseStats[from].sendAmount += value
+          }
+
+          if (to && baseStats[to]) {
+            baseStats[to].receiveCount += 1
+            baseStats[to].receiveAmount += value
+          }
+        }
+
+        Object.keys(baseStats).forEach((addr) => {
+          if (baseStats[addr]) {
+            baseStats[addr].sendAmount = baseStats[addr].sendAmount / currentFactor
+            baseStats[addr].receiveAmount = baseStats[addr].receiveAmount / currentFactor
+          }
+        })
+
+        if (!isCancelled) {
+          setMemberStats(baseStats)
+        }
       } catch (error) {
-        console.error('Error fetching token transfer stats:', error)
+        console.error('Error building token transfer stats:', error)
       } finally {
         if (!isCancelled) {
           setIsStatsLoading(false)
@@ -560,7 +640,14 @@ export default function ManagementDetailPage({
     return () => {
       isCancelled = true
     }
-  }, [communityTokenAddress, members, startDate, endDate])
+  }, [
+    allTransfers,
+    communityTokenAddress,
+    isTransferLoading,
+    members,
+    startDate,
+    endDate,
+  ])
 
   const filteredMembers = useMemo(() => {
     const topCountValue = Number(topCount)
@@ -727,11 +814,16 @@ export default function ManagementDetailPage({
         minValue: minMetricValue ? Number(minMetricValue) : null,
       })
 
-      toast({ title: 'Distribution completed.' })
+      toast({
+        title:
+          managementDict.distributionCompleted ?? 'Distribution completed.',
+      })
       setIsDistributeOpen(false)
     } catch (error) {
       console.error('Error distributing SBT/NFT:', error)
-      toast({ title: 'Distribution failed.' })
+      toast({
+        title: managementDict.distributionFailed ?? 'Distribution failed.',
+      })
     } finally {
       setIsDistributing(false)
     }
@@ -740,60 +832,83 @@ export default function ManagementDetailPage({
   return (
     <div className="w-full mx-auto flex flex-col items-center justify-center">
       <div className="flex w-full flex-col items-center justify-center">
-        <PageHeaderSection title="SBT/NFT Distribution" />
+        <PageHeaderSection
+          title={managementDict.distributionTitle ?? 'SBT/NFT Distribution'}
+        />
         <div className="flex w-full flex-col gap-4 rounded-xl border p-4 sm:p-6 mt-4">
           <div className="w-full rounded-lg border bg-muted/30 p-4">
             <div className="flex flex-col gap-4">
               <div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-2">
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="startDate">Start date/time</Label>
-                  <Input
+                  <Label htmlFor="startDate">
+                    {managementDict.startDateTime ?? 'Start date/time'}
+                  </Label>
+                  <DateTimePicker
                     id="startDate"
-                    type="datetime-local"
                     value={startDate}
-                    onChange={(event) => setStartDate(event.target.value)}
+                    onChange={setStartDate}
+                    placeholder={
+                      managementDict.selectDateTime ?? 'Select date & time'
+                    }
+                    dateLabel={managementDict.dateLabel ?? 'Date'}
+                    timeLabel={managementDict.timeLabel ?? 'Time'}
+                    okLabel={managementDict.confirm ?? 'OK'}
+                    cancelLabel={managementDict.cancel ?? 'Cancel'}
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="endDate">End date/time</Label>
-                  <Input
+                  <Label htmlFor="endDate">
+                    {managementDict.endDateTime ?? 'End date/time'}
+                  </Label>
+                  <DateTimePicker
                     id="endDate"
-                    type="datetime-local"
                     value={endDate}
-                    onChange={(event) => setEndDate(event.target.value)}
+                    onChange={setEndDate}
+                    placeholder={
+                      managementDict.selectDateTime ?? 'Select date & time'
+                    }
+                    dateLabel={managementDict.dateLabel ?? 'Date'}
+                    timeLabel={managementDict.timeLabel ?? 'Time'}
+                    okLabel={managementDict.confirm ?? 'OK'}
+                    cancelLabel={managementDict.cancel ?? 'Cancel'}
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="metricSelect">Metrics</Label>
+                  <Label htmlFor="metricSelect">
+                    {managementDict.metrics ?? 'Metrics'}
+                  </Label>
                   <Select
                     value={selectedMetric}
                     onValueChange={(value) =>
                       setSelectedMetric(
                         value as
-                          | 'send_count'
-                          | 'receive_count'
-                          | 'send_volume'
-                          | 'receive_volume'
+                        | 'send_count'
+                        | 'receive_count'
+                        | 'send_volume'
+                        | 'receive_volume'
                       )
                     }
                   >
                     <SelectTrigger id="metricSelect">
-                      <SelectValue placeholder="Select metric" />
+                      <SelectValue
+                        placeholder={
+                          managementDict.selectMetric ?? 'Select metric'
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="send_count">send_count</SelectItem>
-                      <SelectItem value="receive_count">
-                        receive_count
-                      </SelectItem>
-                      <SelectItem value="send_volume">send_volume</SelectItem>
-                      <SelectItem value="receive_volume">
-                        receive_volume
-                      </SelectItem>
+                      {metricOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="topCount">Top X by metric</Label>
+                  <Label htmlFor="topCount">
+                    {managementDict.topXByMetric ?? 'Top X by metric'}
+                  </Label>
                   <Input
                     id="topCount"
                     type="number"
@@ -801,11 +916,13 @@ export default function ManagementDetailPage({
                     inputMode="numeric"
                     value={topCount}
                     onChange={(event) => setTopCount(event.target.value)}
-                    placeholder="e.g. 50"
+                    placeholder={managementDict.topXPlaceholder ?? 'e.g. 50'}
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="minMetricValue">Min metric value</Label>
+                  <Label htmlFor="minMetricValue">
+                    {managementDict.minMetricValue ?? 'Min metric value'}
+                  </Label>
                   <Input
                     id="minMetricValue"
                     type="number"
@@ -813,12 +930,16 @@ export default function ManagementDetailPage({
                     inputMode="numeric"
                     value={minMetricValue}
                     onChange={(event) => setMinMetricValue(event.target.value)}
-                    placeholder="e.g. 0"
+                    placeholder={
+                      managementDict.minMetricPlaceholder ?? 'e.g. 0'
+                    }
                   />
                 </div>
 
                 <div className="flex flex-col gap-2 justify-end">
-                  <Label className="invisible">Spacer</Label>
+                  <Label className="invisible">
+                    {managementDict.spacerLabel ?? 'Spacer'}
+                  </Label>
 
                   <Button
                     type="button"
@@ -833,13 +954,14 @@ export default function ManagementDetailPage({
                       setMinMetricValue('')
                     }}
                   >
-                    Clear filters
+                    {managementDict.clearFilters ?? 'Clear filters'}
                   </Button>
                 </div>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-muted-foreground">
-                  Filters apply to transfer stats shown below.
+                  {managementDict.filtersHelper ??
+                    'Filters apply to transfer stats shown below.'}
                 </p>
               </div>
             </div>
@@ -849,26 +971,39 @@ export default function ManagementDetailPage({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="font-bold">No</TableHead>
-                    <TableHead className="font-bold">address</TableHead>
-                    <TableHead className="font-bold">send_count</TableHead>
-                    <TableHead className="font-bold">receive_count</TableHead>
-                    <TableHead className="font-bold">send_volume</TableHead>
-                    <TableHead className="font-bold">receive_volume</TableHead>
+                    <TableHead className="font-bold">
+                      {managementDict.tableNo ?? 'No'}
+                    </TableHead>
+                    <TableHead className="font-bold">
+                      {managementDict.tableAddress ?? 'Address'}
+                    </TableHead>
+                    <TableHead className="font-bold">
+                      {getMetricLabel('send_count')}
+                    </TableHead>
+                    <TableHead className="font-bold">
+                      {getMetricLabel('receive_count')}
+                    </TableHead>
+                    <TableHead className="font-bold">
+                      {getMetricLabel('send_volume')}
+                    </TableHead>
+                    <TableHead className="font-bold">
+                      {getMetricLabel('receive_volume')}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center">
-                        Loading...
+                        {loadingLabel}
                       </TableCell>
                     </TableRow>
                   ) : pagedMembers.length > 0 ? (
                     pagedMembers.map((entry, index) => {
                       const member = entry.member
                       const stats = entry.stats
-                      const isStatsPending = isStatsLoading && !stats
+                      const isStatsPending =
+                        (isStatsLoading || isTransferLoading) && !stats
                       const receiveCount = stats?.receiveCount ?? 0
                       const sendAmount = stats?.sendAmount ?? BigInt(0)
                       const receiveAmount = stats?.receiveAmount ?? BigInt(0)
@@ -883,20 +1018,20 @@ export default function ManagementDetailPage({
                           </TableCell>
                           <TableCell className="font-bold">
                             {isStatsPending
-                              ? 'Loading...'
+                              ? loadingLabel
                               : (stats?.sendCount ?? 0)}
                           </TableCell>
                           <TableCell className="font-bold">
-                            {isStatsPending ? 'Loading...' : receiveCount}
+                            {isStatsPending ? loadingLabel : receiveCount}
                           </TableCell>
                           <TableCell className="font-bold">
                             {isStatsPending
-                              ? 'Loading...'
+                              ? loadingLabel
                               : formatAmount(sendAmount)}
                           </TableCell>
                           <TableCell className="font-bold">
                             {isStatsPending
-                              ? 'Loading...'
+                              ? loadingLabel
                               : formatAmount(receiveAmount)}
                           </TableCell>
                         </TableRow>
@@ -905,7 +1040,11 @@ export default function ManagementDetailPage({
                   ) : (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center">
-                        <EmptyState title="No members found" />
+                        <EmptyState
+                          title={
+                            managementDict.noMembersFound ?? 'No members found'
+                          }
+                        />
                       </TableCell>
                     </TableRow>
                   )}
@@ -916,10 +1055,15 @@ export default function ManagementDetailPage({
             {filteredMembers.length > memberPageSize && (
               <div className="flex items-center justify-between gap-2 mt-3">
                 <span className="text-xs text-muted-foreground">
-                  Page {memberPage} of{' '}
-                  {Math.max(
-                    1,
-                    Math.ceil(filteredMembers.length / memberPageSize)
+                  {formatTemplate(
+                    managementDict.pageOf ?? 'Page {page} of {total}',
+                    {
+                      page: memberPage,
+                      total: Math.max(
+                        1,
+                        Math.ceil(filteredMembers.length / memberPageSize)
+                      ),
+                    }
                   )}
                 </span>
                 <div className="flex gap-2">
@@ -932,7 +1076,7 @@ export default function ManagementDetailPage({
                     }
                     disabled={memberPage <= 1}
                   >
-                    Previous
+                    {managementDict.previous ?? 'Previous'}
                   </Button>
                   <Button
                     type="button"
@@ -957,7 +1101,7 @@ export default function ManagementDetailPage({
                       )
                     }
                   >
-                    Next
+                    {managementDict.next ?? 'Next'}
                   </Button>
                 </div>
               </div>
@@ -967,13 +1111,14 @@ export default function ManagementDetailPage({
           <div className="flex w-full flex-col gap-3 md:hidden">
             {isLoading ? (
               <div className="rounded-lg border px-4 py-6 text-center text-sm">
-                Loading...
+                {loadingLabel}
               </div>
             ) : pagedMembers.length > 0 ? (
               pagedMembers.map((entry, index) => {
                 const member = entry.member
                 const stats = entry.stats
-                const isStatsPending = isStatsLoading && !stats
+                const isStatsPending =
+                  (isStatsLoading || isTransferLoading) && !stats
                 const receiveCount = stats?.receiveCount ?? 0
                 const sendAmount = stats?.sendAmount ?? BigInt(0)
                 const receiveAmount = stats?.receiveAmount ?? BigInt(0)
@@ -985,7 +1130,7 @@ export default function ManagementDetailPage({
                   >
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between text-sm font-semibold">
-                        <span>Member</span>
+                        <span>{managementDict.memberLabel ?? 'Member'}</span>
                         <span>
                           #{(memberPage - 1) * memberPageSize + index + 1}
                         </span>
@@ -996,39 +1141,39 @@ export default function ManagementDetailPage({
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div className="flex flex-col gap-1">
                           <span className="text-xs text-muted-foreground">
-                            send_count
+                            {getMetricLabel('send_count')}
                           </span>
                           <span className="font-semibold">
                             {isStatsPending
-                              ? 'Loading...'
+                              ? loadingLabel
                               : (stats?.sendCount ?? 0)}
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
                           <span className="text-xs text-muted-foreground">
-                            receive_count
+                            {getMetricLabel('receive_count')}
                           </span>
                           <span className="font-semibold">
-                            {isStatsPending ? 'Loading...' : receiveCount}
+                            {isStatsPending ? loadingLabel : receiveCount}
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
                           <span className="text-xs text-muted-foreground">
-                            send_volume
+                            {getMetricLabel('send_volume')}
                           </span>
                           <span className="font-semibold">
                             {isStatsPending
-                              ? 'Loading...'
+                              ? loadingLabel
                               : formatAmount(sendAmount)}
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
                           <span className="text-xs text-muted-foreground">
-                            receive_volume
+                            {getMetricLabel('receive_volume')}
                           </span>
                           <span className="font-semibold">
                             {isStatsPending
-                              ? 'Loading...'
+                              ? loadingLabel
                               : formatAmount(receiveAmount)}
                           </span>
                         </div>
@@ -1038,16 +1183,23 @@ export default function ManagementDetailPage({
                 )
               })
             ) : (
-              <EmptyState title="No members found" />
+              <EmptyState
+                title={managementDict.noMembersFound ?? 'No members found'}
+              />
             )}
 
             {filteredMembers.length > memberPageSize && (
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-muted-foreground">
-                  Page {memberPage} of{' '}
-                  {Math.max(
-                    1,
-                    Math.ceil(filteredMembers.length / memberPageSize)
+                  {formatTemplate(
+                    managementDict.pageOf ?? 'Page {page} of {total}',
+                    {
+                      page: memberPage,
+                      total: Math.max(
+                        1,
+                        Math.ceil(filteredMembers.length / memberPageSize)
+                      ),
+                    }
                   )}
                 </span>
                 <div className="flex gap-2">
@@ -1060,7 +1212,7 @@ export default function ManagementDetailPage({
                     }
                     disabled={memberPage <= 1}
                   >
-                    Previous
+                    {managementDict.previous ?? 'Previous'}
                   </Button>
                   <Button
                     type="button"
@@ -1085,7 +1237,7 @@ export default function ManagementDetailPage({
                       )
                     }
                   >
-                    Next
+                    {managementDict.next ?? 'Next'}
                   </Button>
                 </div>
               </div>
@@ -1099,7 +1251,7 @@ export default function ManagementDetailPage({
             className="w-full sm:w-48"
             onClick={() => setIsHistoryOpen(true)}
           >
-            History
+            {managementDict.history ?? 'History'}
           </Button>
           <Button
             type="button"
@@ -1107,7 +1259,7 @@ export default function ManagementDetailPage({
             className="w-full sm:w-48"
             onClick={() => setIsDistributeOpen(true)}
           >
-            Distribute
+            {managementDict.distribute ?? 'Distribute'}
           </Button>
         </div>
       </div>
@@ -1120,7 +1272,7 @@ export default function ManagementDetailPage({
         <div className="w-full max-w-2xl mx-auto p-2 sm:p-3 space-y-4">
           <div className="text-center">
             <h2 className="text-lg sm:text-xl font-bold tracking-tight">
-              Distribute History
+              {managementDict.distributeHistoryTitle ?? 'Distribution History'}
             </h2>
           </div>
 
@@ -1142,19 +1294,31 @@ export default function ManagementDetailPage({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="font-bold">Date</TableHead>
-                        <TableHead className="font-bold">Start</TableHead>
-                        <TableHead className="font-bold">End</TableHead>
-                        <TableHead className="font-bold">Metric</TableHead>
-                        <TableHead className="font-bold">Top X</TableHead>
-                        <TableHead className="font-bold">Min</TableHead>
+                        <TableHead className="font-bold">
+                          {managementDict.historyTableDate ?? 'Date'}
+                        </TableHead>
+                        <TableHead className="font-bold">
+                          {managementDict.historyTableStart ?? 'Start'}
+                        </TableHead>
+                        <TableHead className="font-bold">
+                          {managementDict.historyTableEnd ?? 'End'}
+                        </TableHead>
+                        <TableHead className="font-bold">
+                          {managementDict.historyTableMetric ?? 'Metric'}
+                        </TableHead>
+                        <TableHead className="font-bold">
+                          {managementDict.historyTableTopX ?? 'Top X'}
+                        </TableHead>
+                        <TableHead className="font-bold">
+                          {managementDict.historyTableMin ?? 'Min'}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {isHistoryLoading ? (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center">
-                            Loading...
+                            {loadingLabel}
                           </TableCell>
                         </TableRow>
                       ) : pageRows.length > 0 ? (
@@ -1172,7 +1336,7 @@ export default function ManagementDetailPage({
                               {row.endTime || '-'}
                             </TableCell>
                             <TableCell className="text-xs">
-                              {row.metric || '-'}
+                              {row.metric ? getMetricLabel(row.metric) : '-'}
                             </TableCell>
                             <TableCell className="text-xs">
                               {row.topX ?? '-'}
@@ -1185,7 +1349,8 @@ export default function ManagementDetailPage({
                       ) : (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center">
-                            No history found
+                            {managementDict.noHistoryFound ??
+                              'No history found'}
                           </TableCell>
                         </TableRow>
                       )}
@@ -1196,7 +1361,13 @@ export default function ManagementDetailPage({
                 {historyRows.length > historyPageSize && (
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-muted-foreground">
-                      Page {safePage} of {totalPages}
+                      {formatTemplate(
+                        managementDict.pageOf ?? 'Page {page} of {total}',
+                        {
+                          page: safePage,
+                          total: totalPages,
+                        }
+                      )}
                     </span>
                     <div className="flex gap-2">
                       <Button
@@ -1208,7 +1379,7 @@ export default function ManagementDetailPage({
                         }
                         disabled={safePage <= 1}
                       >
-                        Previous
+                        {managementDict.previous ?? 'Previous'}
                       </Button>
                       <Button
                         type="button"
@@ -1221,7 +1392,7 @@ export default function ManagementDetailPage({
                         }
                         disabled={safePage >= totalPages}
                       >
-                        Next
+                        {managementDict.next ?? 'Next'}
                       </Button>
                     </div>
                   </div>
@@ -1240,21 +1411,24 @@ export default function ManagementDetailPage({
         <div className="w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto p-2 sm:p-3 space-y-4">
           <div className="text-center">
             <h2 className="text-lg sm:text-xl font-bold tracking-tight">
-              Distribute SBT/NFT
+              {managementDict.distributeModalTitle ?? 'Distribute SBT/NFT'}
             </h2>
             <p className="text-xs text-muted-foreground mt-1">
-              Select one token and distribute to filtered users.
+              {managementDict.distributeModalSubtitle ??
+                'Select one token and distribute to filtered users.'}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tokenSelect">SBT/NFT</Label>
+            <Label htmlFor="tokenSelect">{`${sbtLabel}/${nftLabel}`}</Label>
             <Select
               value={selectedTokenKey}
               onValueChange={(value) => setSelectedTokenKey(value)}
             >
               <SelectTrigger id="tokenSelect" className="w-full">
-                <SelectValue placeholder="Select token" />
+                <SelectValue
+                  placeholder={managementDict.selectToken ?? 'Select token'}
+                />
               </SelectTrigger>
               <SelectContent>
                 {daoTokens.length > 0 ? (
@@ -1263,13 +1437,13 @@ export default function ManagementDetailPage({
                       key={`${token.address}-${token.tokenId}`}
                       value={`${token.address}-${token.tokenId}`}
                     >
-                      {token.name || 'Token'} #{token.tokenId} ·{' '}
-                      {token.isSBT ? 'SBT' : 'NFT'}
+                      {token.name || (managementDict.tokenFallback ?? 'Token')}{' '}
+                      #{token.tokenId} · {token.isSBT ? sbtLabel : nftLabel}
                     </SelectItem>
                   ))
                 ) : (
                   <SelectItem value="none" disabled>
-                    No tokens found
+                    {managementDict.noTokensFound ?? 'No tokens found'}
                   </SelectItem>
                 )}
               </SelectContent>
@@ -1282,7 +1456,10 @@ export default function ManagementDetailPage({
                 <div className="relative h-16 w-16 overflow-hidden rounded-md border">
                   <Image
                     src={getTokenImage(selectedToken.image)}
-                    alt={selectedToken.name || 'Token'}
+                    alt={
+                      selectedToken.name ||
+                      (managementDict.tokenFallback ?? 'Token')
+                    }
                     fill
                     className="object-cover"
                     sizes="64px"
@@ -1290,27 +1467,29 @@ export default function ManagementDetailPage({
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-semibold">
-                    {selectedToken.name || 'Token'}
+                    {selectedToken.name ||
+                      (managementDict.tokenFallback ?? 'Token')}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     #{selectedToken.tokenId} ·{' '}
-                    {selectedToken.isSBT ? 'SBT' : 'NFT'}
+                    {selectedToken.isSBT ? sbtLabel : nftLabel}
                   </span>
                 </div>
               </div>
               <div className="text-sm text-muted-foreground">
-                {selectedToken.description || 'No description'}
+                {selectedToken.description ||
+                  (managementDict.noDescription ?? 'No description')}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
                 <div>
                   <span className="font-medium text-foreground">
-                    Voting Power:
+                    {managementDict.votingPowerLabel ?? 'Voting Power:'}
                   </span>{' '}
                   {formatVotingPower(selectedToken.votingPower)}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-foreground">
-                    Token Address:
+                    {managementDict.tokenAddressLabel ?? 'Token Address:'}
                   </span>
                   <span>{shortenAddress(selectedToken.address)}</span>
                   <button
@@ -1318,30 +1497,42 @@ export default function ManagementDetailPage({
                     className="p-1 hover:bg-gray-200 rounded"
                     onClick={() => {
                       navigator.clipboard.writeText(selectedToken.address)
-                      toast({ title: 'Token address copied!' })
+                      toast({
+                        title:
+                          managementDict.tokenAddressCopied ??
+                          'Token address copied!',
+                      })
                     }}
-                    title="Copy token address"
+                    title={
+                      managementDict.copyTokenAddress ?? 'Copy token address'
+                    }
                   >
                     <CopyIcon className="h-4 w-4 text-gray-400" />
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-foreground">DAO ID:</span>
+                  <span className="font-medium text-foreground">
+                    {managementDict.daoIdLabel ?? 'DAO ID:'}
+                  </span>
                   <span>{shortenAddress(selectedToken.daoId)}</span>
                   <button
                     type="button"
                     className="p-1 hover:bg-gray-200 rounded"
                     onClick={() => {
                       navigator.clipboard.writeText(selectedToken.daoId)
-                      toast({ title: 'DAO ID copied!' })
+                      toast({
+                        title: managementDict.daoIdCopied ?? 'DAO ID copied!',
+                      })
                     }}
-                    title="Copy DAO ID"
+                    title={managementDict.copyDaoId ?? 'Copy DAO ID'}
                   >
                     <CopyIcon className="h-4 w-4 text-gray-400" />
                   </button>
                 </div>
                 <div>
-                  <span className="font-medium text-foreground">Created:</span>{' '}
+                  <span className="font-medium text-foreground">
+                    {managementDict.createdLabel ?? 'Created:'}
+                  </span>{' '}
                   {selectedToken.created_at
                     ? new Date(selectedToken.created_at).toLocaleString()
                     : '-'}
@@ -1351,9 +1542,15 @@ export default function ManagementDetailPage({
           )}
 
           <div className="flex flex-col gap-2 text-xs text-muted-foreground">
-            <span>Filtered users: {filteredMembers.length}</span>
             <span>
-              Distribution is enabled when filtered users are more than 1.
+              {formatTemplate(
+                managementDict.filteredUsers ?? 'Filtered users: {count}',
+                { count: filteredMembers.length }
+              )}
+            </span>
+            <span>
+              {managementDict.distributionRule ??
+                'Distribution is enabled when filtered users are more than 1.'}
             </span>
           </div>
 
@@ -1364,7 +1561,9 @@ export default function ManagementDetailPage({
               isDistributing || !selectedToken || filteredMembers.length < 1
             }
           >
-            {isDistributing ? 'Distributing...' : 'Distribute'}
+            {isDistributing
+              ? (managementDict.distributing ?? 'Distributing...')
+              : (managementDict.distribute ?? 'Distribute')}
           </Button>
         </div>
       </Modal>

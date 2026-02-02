@@ -80,7 +80,9 @@ export default function ForManagementPage({
               <Table>
                 <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
                   <TableRow>
-                    <TableHead className="font-bold">No</TableHead>
+                    <TableHead className="font-bold">
+                      {managementDict.tableNo ?? 'No'}
+                    </TableHead>
                     <TableHead className="font-bold">
                       {managementDict.daoName ?? 'DAO Name'}
                     </TableHead>
@@ -106,7 +108,7 @@ export default function ForManagementPage({
                         className="cursor-pointer transition-colors hover:bg-muted/60"
                         onClick={() =>
                           router.push(
-                            `/${locale}/admin/management/detail?daoId=${dao.daoId}`
+                            `/${locale}/admin/distribution/detail?daoId=${dao.daoId}`
                           )
                         }
                       >
@@ -155,7 +157,7 @@ export default function ForManagementPage({
                   className="flex w-full flex-col gap-3 rounded-lg border p-4 text-left shadow-sm transition hover:border-primary/40"
                   onClick={() =>
                     router.push(
-                      `/${locale}/admin/management/detail?daoId=${dao.daoId}`
+                      `/${locale}/admin/distribution/detail?daoId=${dao.daoId}`
                     )
                   }
                 >
