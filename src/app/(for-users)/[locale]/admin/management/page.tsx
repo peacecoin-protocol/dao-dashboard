@@ -80,7 +80,9 @@ export default function ForManagementPage({
               <Table>
                 <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
                   <TableRow>
-                    <TableHead className="font-bold">No</TableHead>
+                    <TableHead className="font-bold">
+                      {managementDict.tableNo ?? 'No'}
+                    </TableHead>
                     <TableHead className="font-bold">
                       {managementDict.daoName ?? 'DAO Name'}
                     </TableHead>

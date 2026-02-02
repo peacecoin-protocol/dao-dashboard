@@ -319,8 +319,10 @@ export default function ForDaoDetailPage({
 
     if (!id) {
       toast({
-        title: 'Error',
-        description: 'DAO ID not found. Please refresh the page and try again.',
+        title: localDict.errorTitle ?? 'Error',
+        description:
+          localDict.daoIdNotFound ??
+          'DAO ID not found. Please refresh the page and try again.',
         variant: 'destructive',
       })
       return
@@ -328,8 +330,9 @@ export default function ForDaoDetailPage({
 
     if (!chainId || !daoStudioAddress[chainId]) {
       toast({
-        title: 'Error',
+        title: localDict.errorTitle ?? 'Error',
         description:
+          localDict.unsupportedNetwork ??
           'Unsupported network. Please switch to a supported network.',
         variant: 'destructive',
       })
@@ -515,6 +518,20 @@ export default function ForDaoDetailPage({
     let description = multipleOptionProposalData?.description ?? ''
     let status = multipleOptionProposalData?.status ?? ''
     let hasVoted = multipleOptionProposalData?.hasVoted ?? false
+    const statusLabel =
+      status === 'Active'
+        ? (localDict.active ?? status)
+        : status === 'Pending'
+          ? (localDict.pending ?? status)
+          : status === 'Ended'
+            ? (localDict.ended ?? status)
+            : status === 'Succeeded'
+              ? (localDict.succeeded ?? status)
+              : status === 'Queued'
+                ? (localDict.queued ?? status)
+                : status === 'Cancelled' || status === 'Canceled'
+                  ? (localDict.cancelled ?? status)
+                  : status
 
     const totalVotes = optionVotes.reduce((acc: bigint, curr: any) => {
       const currValue =
@@ -551,7 +568,7 @@ export default function ForDaoDetailPage({
         <div className="flex flex-col gap-2">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-2">
             <h1 className="text-base sm:text-xl font-bold text-gray-800 flex-1 break-words">
-              {description || 'Description'}
+              {description || localDict.description || 'Description'}
             </h1>
             <span
               className={`text-xs font-semibold px-3 py-1 rounded-full
@@ -566,7 +583,7 @@ export default function ForDaoDetailPage({
       }`}
               style={{ textAlign: 'center' }}
             >
-              {status}
+              {statusLabel}
             </span>
           </div>
         </div>
@@ -640,7 +657,7 @@ export default function ForDaoDetailPage({
             display: hasVoted || status !== 'Active' ? 'none' : undefined,
           }}
         >
-          Submit
+          {localDict.submitVote ?? 'Submit'}
         </Button>
         {status === 'Ended' && (
           <div className="mt-4">
@@ -693,7 +710,7 @@ export default function ForDaoDetailPage({
                           </span>
                           {isMostChosen && (
                             <span className="ml-2 text-xs text-green-600 font-semibold">
-                              {`has beeen choose the most`}
+                              {localDict.mostChosenLabel ?? 'Most chosen'}
                             </span>
                           )}
                         </li>
@@ -730,11 +747,11 @@ export default function ForDaoDetailPage({
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full rounded-xl gap-2">
         <h1 className="flex flex-row text-base sm:text-xl font-bold w-full break-words">
-          {proposal[9] || 'Description'}
+          {proposal[9] || localDict.description || 'Description'}
         </h1>
       </div>
       <p className="description text-sm sm:text-base break-words">
-        {proposal[9] || 'Description'}
+        {proposal[9] || localDict.description || 'Description'}
       </p>
       <ProposalBadges
         label={localDict.transferTokens ?? 'Transfer tokens'}
@@ -1257,21 +1274,29 @@ export default function ForDaoDetailPage({
 
     try {
       if (category.length === 0) {
-        toast({ title: 'Please Select Category' })
+        toast({
+          title: localDict.selectCategoryPrompt ?? 'Please select a category',
+        })
         setLoading(false)
         return
       }
 
       if (category === '7') {
         if (description === '') {
-          toast({ title: 'Please enter a valid description' })
+          toast({
+            title:
+              localDict.invalidDescription ??
+              'Please enter a valid description',
+          })
           setLoading(false)
           return
         }
 
         for (let i = 0; i < options.length; i++) {
           if (options[i] === '') {
-            toast({ title: 'Please enter a valid option' })
+            toast({
+              title: localDict.invalidOption ?? 'Please enter a valid option',
+            })
             setLoading(false)
             return
           }
@@ -1351,7 +1376,11 @@ export default function ForDaoDetailPage({
         category !== '5' &&
         category !== '6'
       ) {
-        toast({ title: 'Please enter a valid token address' })
+        toast({
+          title:
+            localDict.invalidTokenAddress ??
+            'Please enter a valid token address',
+        })
         setLoading(false)
         return
       }
@@ -1465,7 +1494,9 @@ export default function ForDaoDetailPage({
   const handleStake = async () => {
     if (stakingAmount === '' || stakingAmount === '0') {
       toast({
-        title: 'Please enter a valid amount',
+        title:
+          votingPowerDict.pleaseEnterValidAmount ??
+          'Please enter a valid amount',
       })
       return
     }
@@ -1646,9 +1677,14 @@ export default function ForDaoDetailPage({
 
   useEffect(() => {
     if (isConfirmed) {
-      toast({ title: 'Transaction Succeeded!' })
+      toast({
+        title: votingPowerDict.transactionSucceed ?? 'Transaction Succeeded!',
+      })
     } else if (isConfirming) {
-      toast({ title: 'Transaction Pending, Please Wait...' })
+      toast({
+        title:
+          votingPowerDict.txPending ?? 'Transaction Pending, Please Wait...',
+      })
     } else if (error) {
       toast({ title: (error as BaseError).shortMessage })
     }
@@ -1694,7 +1730,9 @@ export default function ForDaoDetailPage({
         const upload = await addFilesToGroupPublic(file, DAO_GROUP_ID)
 
         if (!upload?.cid) {
-          toast({ title: 'Failed to update image' })
+          toast({
+            title: localDict.failedToUpdateImage ?? 'Failed to update image',
+          })
           return
         }
 
@@ -1710,7 +1748,9 @@ export default function ForDaoDetailPage({
 
         if (daoErr) {
           console.error('Error updating DAO image in Supabase:', daoErr)
-          toast({ title: 'Failed to update image' })
+          toast({
+            title: localDict.failedToUpdateImage ?? 'Failed to update image',
+          })
           return
         }
 
@@ -1726,7 +1766,7 @@ export default function ForDaoDetailPage({
       } catch (error) {
         console.error('Error updating image:', error)
         toast({
-          title: 'Failed to update image',
+          title: localDict.failedToUpdateImage ?? 'Failed to update image',
         })
       }
     }
@@ -1742,7 +1782,7 @@ export default function ForDaoDetailPage({
       if (!id) return
 
       toast({
-        title: 'Deleting image...',
+        title: localDict.deletingImage ?? 'Deleting image...',
       })
       const prevImages = await fetchImage(id)
       if (prevImages) {
@@ -1756,13 +1796,14 @@ export default function ForDaoDetailPage({
         setImageHash('')
 
         toast({
-          title: 'Image deleted successfully',
+          title:
+            localDict.imageDeletedSuccessfully ?? 'Image deleted successfully',
         })
       }
     } catch (error) {
       console.error('Error deleting image:', error)
       toast({
-        title: 'Failed to delete image',
+        title: localDict.failedToDeleteImage ?? 'Failed to delete image',
       })
     }
   }
@@ -1791,7 +1832,7 @@ export default function ForDaoDetailPage({
           ) : imageHash ? (
             <Image
               src={`${Env.PINATA_GATEWAY_URL}/ipfs/${imageHash}`}
-              alt="DAO Image"
+              alt={localDict.daoImageAlt ?? 'DAO Image'}
               width={96}
               priority
               height={96}
@@ -1799,7 +1840,12 @@ export default function ForDaoDetailPage({
           ) : (
             <>
               {identicon && (
-                <Image src={identicon} alt="DAO Image" width={96} height={96} />
+                <Image
+                  src={identicon}
+                  alt={localDict.daoImageAlt ?? 'DAO Image'}
+                  width={96}
+                  height={96}
+                />
               )}
             </>
           )}
@@ -1829,7 +1875,9 @@ export default function ForDaoDetailPage({
                   onClick={() => {
                     if (daoInfo?.creator !== address) {
                       toast({
-                        title: 'You are not the creator of this DAO',
+                        title:
+                          localDict.notCreator ??
+                          'You are not the creator of this DAO',
                         variant: 'destructive',
                       })
                       return
@@ -1851,7 +1899,9 @@ export default function ForDaoDetailPage({
                   onClick={async () => {
                     if (daoInfo?.creator !== address) {
                       toast({
-                        title: 'You are not the creator of this DAO',
+                        title:
+                          localDict.notCreator ??
+                          'You are not the creator of this DAO',
                         variant: 'destructive',
                       })
                       return
@@ -1874,7 +1924,7 @@ export default function ForDaoDetailPage({
               e.stopPropagation()
               navigator.clipboard.writeText(id as string)
               toast({
-                title: 'DAO ID copied!',
+                title: localDict.daoIdCopied ?? 'DAO ID copied!',
               })
             }}
           >
@@ -1971,7 +2021,10 @@ export default function ForDaoDetailPage({
                   <div className="flex flex-row justify-between items-center rounded-xl mt-2 w-full">
                     <TooltipComponent
                       title={localDict.govenorToken ?? 'Governor Token'}
-                      tooltipText="A token that represents voting power in the DAO. Holders can vote on proposals and participate in governance decisions."
+                      tooltipText={
+                        localDict.tooltipGovernorToken ??
+                        'A token that represents voting power in the DAO. Holders can vote on proposals and participate in governance decisions.'
+                      }
                       className="font-bold rounded-xl flex"
                     />
                     <CustomLink.default
@@ -1985,7 +2038,10 @@ export default function ForDaoDetailPage({
                   <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
                     <TooltipComponent
                       title={localDict.timelock ?? 'Timelock'}
-                      tooltipText="A smart contract that adds a delay between when a proposal passes and when it can be executed. This delay gives token holders time to review and react to approved proposals before they take effect."
+                      tooltipText={
+                        localDict.tooltipTimelock ??
+                        'A smart contract that adds a delay between when a proposal passes and when it can be executed. This delay gives token holders time to review and react to approved proposals before they take effect.'
+                      }
                       className="font-bold rounded-xl flex"
                     />
                     <CustomLink.default
@@ -1999,7 +2055,10 @@ export default function ForDaoDetailPage({
                   <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
                     <TooltipComponent
                       title={localDict.governor ?? 'Governor'}
-                      tooltipText="The core contract that manages the DAO's governance process. It handles proposal creation, voting, and execution of approved proposals. This contract implements the rules and parameters for how governance works."
+                      tooltipText={
+                        localDict.tooltipGovernor ??
+                        "The core contract that manages the DAO's governance process. It handles proposal creation, voting, and execution of approved proposals. This contract implements the rules and parameters for how governance works."
+                      }
                       className="font-bold rounded-xl flex"
                     />
                     <CustomLink.default
@@ -2013,7 +2072,10 @@ export default function ForDaoDetailPage({
                   <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
                     <TooltipComponent
                       title={localDict.multipleVoting ?? 'Multiple Voting'}
-                      tooltipText="The contract that manages the DAO's multiple voting process."
+                      tooltipText={
+                        localDict.tooltipMultipleVoting ??
+                        "The contract that manages the DAO's multiple voting process."
+                      }
                       className="font-bold rounded-xl flex"
                     />
                     <CustomLink.default
@@ -2027,7 +2089,10 @@ export default function ForDaoDetailPage({
                   <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
                     <TooltipComponent
                       title={localDict.sbt ?? 'SBT'}
-                      tooltipText="The SBT contract represents unique, self-sovereign tokens that can be issued by the DAO."
+                      tooltipText={
+                        localDict.tooltipSbt ??
+                        'The SBT contract represents unique, self-sovereign tokens that can be issued by the DAO.'
+                      }
                       className="font-bold rounded-xl flex"
                     />
                     <CustomLink.default
@@ -2041,7 +2106,10 @@ export default function ForDaoDetailPage({
                   <div className="flex flex-row justify-between items-center rounded-xl mt-2  w-full">
                     <TooltipComponent
                       title={localDict.nft ?? 'NFT'}
-                      tooltipText="The NFT contract represents unique, non-fungible tokens that can be issued by the DAO."
+                      tooltipText={
+                        localDict.tooltipNft ??
+                        'The NFT contract represents unique, non-fungible tokens that can be issued by the DAO.'
+                      }
                       className="font-bold rounded-xl flex"
                     />
                     <CustomLink.default
@@ -2057,7 +2125,10 @@ export default function ForDaoDetailPage({
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
                       title={localDict.voteDelay ?? 'Vote Delay'}
-                      tooltipText="The number of blocks that must pass between when a proposal is created and when voting begins. This delay gives token holders time to research and discuss the proposal before voting starts."
+                      tooltipText={
+                        localDict.tooltipVoteDelay ??
+                        'The number of blocks that must pass between when a proposal is created and when voting begins. This delay gives token holders time to research and discuss the proposal before voting starts.'
+                      }
                       className="font-bold rounded-xl flex"
                     />
                     <FormattedValue value={votingDelay} />
@@ -2065,7 +2136,10 @@ export default function ForDaoDetailPage({
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
                       title={localDict.votingPeriod ?? 'Voting Period'}
-                      tooltipText="The duration (in blocks) during which token holders can cast their votes on a proposal. Once this period ends, no more votes can be cast and the proposal's outcome is determined based on the votes received."
+                      tooltipText={
+                        localDict.tooltipVotingPeriod ??
+                        "The duration (in blocks) during which token holders can cast their votes on a proposal. Once this period ends, no more votes can be cast and the proposal's outcome is determined based on the votes received."
+                      }
                       className="font-bold rounded-xl flex"
                     />
                     <FormattedValue value={votingPeriod} />
@@ -2073,7 +2147,10 @@ export default function ForDaoDetailPage({
                   <div className="flex flex-row justify-between items-center">
                     <TooltipComponent
                       title={localDict.timelockDelay ?? 'Timelock Delay'}
-                      tooltipText="The mandatory waiting period between when a proposal passes and when it can be executed. This delay gives token holders time to prepare for the changes and exit the protocol if they disagree with a passed proposal. Longer delays provide more security but reduce governance agility."
+                      tooltipText={
+                        localDict.tooltipTimelockDelay ??
+                        'The mandatory waiting period between when a proposal passes and when it can be executed. This delay gives token holders time to prepare for the changes and exit the protocol if they disagree with a passed proposal. Longer delays provide more security but reduce governance agility.'
+                      }
                       className="font-bold rounded-xl flex"
                     />
 
@@ -2084,7 +2161,10 @@ export default function ForDaoDetailPage({
                       title={
                         localDict.proposalThreshold ?? 'Proposal Threshold'
                       }
-                      tooltipText="The minimum number of votes a delegate must have to create a proposal. This threshold ensures that only members with sufficient stake in the DAO can initiate governance actions."
+                      tooltipText={
+                        localDict.tooltipProposalThreshold ??
+                        'The minimum number of votes a delegate must have to create a proposal. This threshold ensures that only members with sufficient stake in the DAO can initiate governance actions.'
+                      }
                       className="font-bold rounded-xl flex"
                     />
 
@@ -2097,7 +2177,10 @@ export default function ForDaoDetailPage({
                   <div className="flex flex-row gap-4 justify-between items-center">
                     <TooltipComponent
                       title={localDict.quorum ?? 'Quorum Votes'}
-                      tooltipText="The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
+                      tooltipText={
+                        localDict.tooltipQuorum ??
+                        "The minimum number of votes required for a proposal to be considered valid. This ensures that major decisions have sufficient participation from the community. If a proposal doesn't reach the quorum threshold, it fails regardless of the voting outcome."
+                      }
                       className="font-bold rounded-xl flex"
                     />
                     <FormattedValue
@@ -2111,10 +2194,8 @@ export default function ForDaoDetailPage({
                   <TooltipComponent
                     title={localDict.myPower ?? 'My Power'}
                     tooltipText={
-                      'Your current voting power in this DAO, ' +
-                      'determined by the number of governance tokens you hold ' +
-                      'or have been delegated. This power allows you to vote on proposals ' +
-                      'and create new ones if you meet the proposal threshold.'
+                      localDict.tooltipMyPower ??
+                      'Your current voting power in this DAO, determined by the number of governance tokens you hold or have been delegated. This power allows you to vote on proposals and create new ones if you meet the proposal threshold.'
                     }
                     className="font-bold rounded-xl flex"
                   />
@@ -2173,7 +2254,9 @@ export default function ForDaoDetailPage({
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium">LinkedIn</label>
+                        <label className="text-sm font-medium">
+                          {localDict.linkedin ?? 'LinkedIn'}
+                        </label>
                         <Input
                           value={editingSocials.linkedin}
                           onChange={(e) =>
@@ -2187,7 +2270,9 @@ export default function ForDaoDetailPage({
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium">Twitter</label>
+                        <label className="text-sm font-medium">
+                          {localDict.twitter ?? 'Twitter'}
+                        </label>
                         <Input
                           value={editingSocials.twitter}
                           onChange={(e) =>
@@ -2201,7 +2286,9 @@ export default function ForDaoDetailPage({
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium">Telegram</label>
+                        <label className="text-sm font-medium">
+                          {localDict.telegram ?? 'Telegram'}
+                        </label>
                         <Input
                           value={editingSocials.telegram}
                           onChange={(e) =>
@@ -2219,7 +2306,9 @@ export default function ForDaoDetailPage({
                           onClick={handleUpdateSocials}
                           className="flex-1"
                         >
-                          {isEditingSocials ? 'Saving...' : 'Save Changes'}
+                          {isEditingSocials
+                            ? (localDict.saving ?? 'Saving...')
+                            : (localDict.saveChanges ?? 'Save Changes')}
                         </Button>
                         <Button
                           variant="outline"
@@ -2234,14 +2323,16 @@ export default function ForDaoDetailPage({
                           }}
                           className="flex-1"
                         >
-                          Cancel
+                          {localDict.cancel ?? 'Cancel'}
                         </Button>
                       </div>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-row justify-between items-center">
-                        <span className="font-medium">DAO Site:</span>
+                        <span className="font-medium">
+                          {localDict.daoSiteLabel ?? 'DAO Site:'}
+                        </span>
                         <Link
                           href={
                             socials.website
@@ -2252,12 +2343,16 @@ export default function ForDaoDetailPage({
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {socials.website ? socials.website : 'Not set'}
+                          {socials.website
+                            ? socials.website
+                            : (localDict.notSet ?? 'Not set')}
                         </Link>
                       </div>
 
                       <div className="flex flex-row justify-between items-center">
-                        <span className="font-medium">LinkedIn:</span>
+                        <span className="font-medium">
+                          {(localDict.linkedin ?? 'LinkedIn') + ':'}
+                        </span>
                         <Link
                           href={
                             socials.linkedin
@@ -2268,12 +2363,16 @@ export default function ForDaoDetailPage({
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {socials.linkedin ? socials.linkedin : 'Not set'}
+                          {socials.linkedin
+                            ? socials.linkedin
+                            : (localDict.notSet ?? 'Not set')}
                         </Link>
                       </div>
 
                       <div className="flex flex-row justify-between items-center">
-                        <span className="font-medium">Twitter:</span>
+                        <span className="font-medium">
+                          {(localDict.twitter ?? 'Twitter') + ':'}
+                        </span>
                         <Link
                           href={
                             socials.twitter
@@ -2284,12 +2383,16 @@ export default function ForDaoDetailPage({
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {socials.twitter ? socials.twitter : 'Not set'}
+                          {socials.twitter
+                            ? socials.twitter
+                            : (localDict.notSet ?? 'Not set')}
                         </Link>
                       </div>
 
                       <div className="flex flex-row justify-between items-center">
-                        <span className="font-medium">Telegram:</span>
+                        <span className="font-medium">
+                          {(localDict.telegram ?? 'Telegram') + ':'}
+                        </span>
                         <Link
                           href={
                             socials.telegram
@@ -2300,7 +2403,9 @@ export default function ForDaoDetailPage({
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {socials.telegram ? socials.telegram : 'Not set'}
+                          {socials.telegram
+                            ? socials.telegram
+                            : (localDict.notSet ?? 'Not set')}
                         </Link>
                       </div>
                     </div>
@@ -2439,7 +2544,7 @@ export default function ForDaoDetailPage({
                       ) : (
                         <TableRow>
                           <TableCell colSpan={2} className="text-center">
-                            No tokens found
+                            {localDict.noTokensFound ?? 'No tokens found'}
                           </TableCell>
                         </TableRow>
                       )}
@@ -2489,7 +2594,9 @@ export default function ForDaoDetailPage({
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader className="flex flex-col gap-2">
-                        <DialogTitle>Address</DialogTitle>
+                        <DialogTitle>
+                          {localDict.address ?? 'Address'}
+                        </DialogTitle>
                         <DialogDescription>
                           {localDict.tokenAddressToDeposit ??
                             'Token address to deposit'}
@@ -2566,7 +2673,10 @@ export default function ForDaoDetailPage({
                   <div className="rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
                     <div className="text-center mb-6">
                       <PageHeaderSection
-                        title={'Stake your community tokens'}
+                        title={
+                          votingPowerDict.stakeYourCommunityTokens ??
+                          'Stake your community tokens'
+                        }
                         description={
                           votingPowerDict.stakeDescription ??
                           'Start earning by staking your tokens in the pool.'
@@ -2577,7 +2687,7 @@ export default function ForDaoDetailPage({
                     <div className="gap-4">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-center sm:text-left gap-1 rounded-lg py-4">
                         <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 w-full">
-                          {'Token Balance'}
+                          {votingPowerDict.tokenBalance ?? 'Token Balance'}
                         </span>
                         <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 w-full text-right">
                           {communityTokenBalance
@@ -2815,7 +2925,8 @@ export default function ForDaoDetailPage({
             {localDict.createProposal ?? 'Create a Proposal'}
           </DialogTitle>
           <DialogDescription>
-            Configure the proposal details below
+            {localDict.configureProposalHelp ??
+              'Configure the proposal details below'}
           </DialogDescription>
           <div className="flex flex-col gap-4 mt-4 mb-2">
             <Select onValueChange={handleSelect}>
@@ -2854,7 +2965,9 @@ export default function ForDaoDetailPage({
 
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">Start Time</label>
+                    <label className="text-sm font-medium">
+                      {localDict.startTimeLabel ?? 'Start Time'}
+                    </label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
@@ -2866,7 +2979,9 @@ export default function ForDaoDetailPage({
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium">End Time</label>
+                    <label className="text-sm font-medium">
+                      {localDict.endTimeLabel ?? 'End Time'}
+                    </label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
@@ -2880,7 +2995,9 @@ export default function ForDaoDetailPage({
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium">Options</label>
+                  <label className="text-sm font-medium">
+                    {localDict.optionsLabel ?? 'Options'}
+                  </label>
                   <div className="flex flex-col gap-3">
                     {options.map((option, index) => (
                       <div
@@ -2888,7 +3005,9 @@ export default function ForDaoDetailPage({
                         className="flex flex-row gap-2 items-center"
                       >
                         <Input
-                          placeholder={`Option ${index + 1}`}
+                          placeholder={`${localDict.optionLabel ?? 'Option'} ${
+                            index + 1
+                          }`}
                           value={option}
                           onChange={(e) => {
                             const newOptions = [...options]
@@ -2924,7 +3043,7 @@ export default function ForDaoDetailPage({
                       }}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Option
+                      {localDict.addOption ?? 'Add Option'}
                     </Button>
                   </div>
                 </div>
