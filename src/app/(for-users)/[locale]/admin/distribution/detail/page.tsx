@@ -172,6 +172,7 @@ export default function ManagementDetailPage({
 
   const [dict, setDict] = useState<Dictionary | null>(null)
   const [members, setMembers] = useState<MemberRow[]>([])
+  const [ownerAddresses, setOwnerAddresses] = useState<string[]>([])
   const [memberStats, setMemberStats] = useState<Record<string, MemberStats>>(
     {}
   )
@@ -258,15 +259,67 @@ export default function ManagementDetailPage({
     return match?.label ?? metric
   }
 
+  const filterExternalAccounts = async (
+    addresses: string[],
+    resolvedChainId: (typeof config)['chains'][number]['id']
+  ) => {
+    const unique = Array.from(
+      new Set(
+        addresses
+          .map((addr) => addr?.trim())
+          .filter(Boolean)
+          .map((addr) => addr.toLowerCase())
+          .filter(
+            (addr) =>
+              addr.startsWith('0x') &&
+              addr !== '0x0000000000000000000000000000000000000000'
+          )
+      )
+    )
+
+    if (unique.length === 0) return []
+
+    const publicClient = getPublicClient(config, {
+      chainId: resolvedChainId,
+    })
+
+    if (!publicClient) {
+      return unique
+    }
+
+    const filteredOwners: string[] = []
+    const batchSize = 20
+    for (let i = 0; i < unique.length; i += batchSize) {
+      const batch = unique.slice(i, i + batchSize)
+      const results = await Promise.all(
+        batch.map(async (addr) => {
+          try {
+            const bytecode = await publicClient.getBytecode({
+              address: addr as `0x${string}`,
+            })
+            const isContract = !!bytecode && bytecode !== '0x'
+            return isContract ? null : addr
+          } catch (error) {
+            console.warn('Failed to check address code:', addr, error)
+            return addr
+          }
+        })
+      )
+      results.forEach((addr) => {
+        if (addr) filteredOwners.push(addr)
+      })
+    }
+
+    return filteredOwners
+  }
+
   useEffect(() => {
     const fetchCommunityTokenUsers = async () => {
       if (!daoId || !communityTokenAddress) {
-        setMembers([])
-        setIsLoading(false)
+        setOwnerAddresses([])
         return
       }
 
-      setIsLoading(true)
       try {
         const apiKey = Env.MORALIS_API_KEY
         if (!apiKey) {
@@ -305,34 +358,41 @@ export default function ManagementDetailPage({
         } while (cursor)
 
         const uniqueOwners = Array.from(new Set(owners)).filter(Boolean)
-        const resolvedChainId = (chainId ??
-          defaultChainId) as (typeof config)['chains'][number]['id']
-        const publicClient = getPublicClient(config, {
-          chainId: resolvedChainId,
-        })
+        setOwnerAddresses(uniqueOwners)
+      } catch (error) {
+        console.error('Error fetching community token users:', error)
+        setOwnerAddresses([])
+      }
+    }
 
-        const filteredOwners: string[] = []
-        const batchSize = 20
-        for (let i = 0; i < uniqueOwners.length; i += batchSize) {
-          const batch = uniqueOwners.slice(i, i + batchSize)
-          const results = await Promise.all(
-            batch.map(async (addr) => {
-              try {
-                const bytecode = await publicClient.getBytecode({
-                  address: addr as `0x${string}`,
-                })
-                const isContract = !!bytecode && bytecode !== '0x'
-                return isContract ? null : addr
-              } catch (error) {
-                console.warn('Failed to check address code:', addr, error)
-                return addr
-              }
-            })
-          )
-          results.forEach((addr) => {
-            if (addr) filteredOwners.push(addr)
-          })
-        }
+    fetchCommunityTokenUsers()
+  }, [daoId, communityTokenAddress, chainId, locale])
+
+  useEffect(() => {
+    let isCancelled = false
+
+    const buildMembers = async () => {
+      if (!communityTokenAddress) {
+        setMembers([])
+        setIsLoading(false)
+        return
+      }
+
+      const transferAddresses = allTransfers.flatMap((transfer) => [
+        transfer.from ?? '',
+        transfer.to ?? '',
+      ])
+
+      const resolvedChainId = (chainId ??
+        defaultChainId) as (typeof config)['chains'][number]['id']
+
+      setIsLoading(true)
+      try {
+        const combined = [...ownerAddresses, ...transferAddresses]
+        const filteredOwners = await filterExternalAccounts(
+          combined,
+          resolvedChainId
+        )
 
         const rows: MemberRow[] = filteredOwners.map((addr) => ({
           id: addr,
@@ -340,17 +400,27 @@ export default function ManagementDetailPage({
           created_at: '',
         }))
 
-        setMembers(rows)
+        if (!isCancelled) {
+          setMembers(rows)
+        }
       } catch (error) {
-        console.error('Error fetching community token users:', error)
-        setMembers([])
+        console.error('Error building member list:', error)
+        if (!isCancelled) {
+          setMembers([])
+        }
       } finally {
-        setIsLoading(false)
+        if (!isCancelled) {
+          setIsLoading(false)
+        }
       }
     }
 
-    fetchCommunityTokenUsers()
-  }, [daoId, communityTokenAddress, chainId, locale])
+    buildMembers()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [allTransfers, chainId, communityTokenAddress, ownerAddresses])
 
   useEffect(() => {
     const fetchDaoTokens = async () => {
