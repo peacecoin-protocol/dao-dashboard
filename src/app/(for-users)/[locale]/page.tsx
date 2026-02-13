@@ -377,36 +377,36 @@ export default function ForDAOPage({
             const [tokenVote, sbtVote, nftVote] = await Promise.all([
               governanceTokenAddress
                 ? safeRead(() =>
-                  readContract(config, {
-                    chainId: resolvedChainId,
-                    address: governanceTokenAddress as `0x${string}`,
-                    abi: PCE_C_GOV_TOKEN_ABI,
-                    functionName: 'getVotes',
-                    args: [address],
-                  })
-                )
+                    readContract(config, {
+                      chainId: resolvedChainId,
+                      address: governanceTokenAddress as `0x${string}`,
+                      abi: PCE_C_GOV_TOKEN_ABI,
+                      functionName: 'getVotes',
+                      args: [address],
+                    })
+                  )
                 : undefined,
               sbtAddress
                 ? safeRead(() =>
-                  readContract(config, {
-                    chainId: resolvedChainId,
-                    address: sbtAddress as `0x${string}`,
-                    abi: SBT_ABI,
-                    functionName: 'getVotes',
-                    args: [address],
-                  })
-                )
+                    readContract(config, {
+                      chainId: resolvedChainId,
+                      address: sbtAddress as `0x${string}`,
+                      abi: SBT_ABI,
+                      functionName: 'getVotes',
+                      args: [address],
+                    })
+                  )
                 : undefined,
               nftAddress
                 ? safeRead(() =>
-                  readContract(config, {
-                    chainId: resolvedChainId,
-                    address: nftAddress as `0x${string}`,
-                    abi: SBT_ABI,
-                    functionName: 'getVotes',
-                    args: [address],
-                  })
-                )
+                    readContract(config, {
+                      chainId: resolvedChainId,
+                      address: nftAddress as `0x${string}`,
+                      abi: SBT_ABI,
+                      functionName: 'getVotes',
+                      args: [address],
+                    })
+                  )
                 : undefined,
             ])
 
