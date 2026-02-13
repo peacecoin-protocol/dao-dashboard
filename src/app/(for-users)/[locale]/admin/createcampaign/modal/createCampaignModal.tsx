@@ -75,6 +75,17 @@ export const CreateCampaignModal = ({
     fetchTokenData()
   }, [address, form.tokenType, form.sbtId, supabase])
 
+  const shouldValidateToken = form.tokenType != 0 && form.sbtId != 0
+  const isOwner = tokenInfo?.creator == address
+
+  useEffect(() => {
+    if (!shouldValidateToken) {
+      setIsInvalidToken(false)
+      return
+    }
+    setIsInvalidToken(!isOwner)
+  }, [shouldValidateToken, isOwner, setIsInvalidToken])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
 
@@ -151,6 +162,21 @@ export const CreateCampaignModal = ({
       tokenAddress: '',
     })
   }
+
+  const hasTokenIdentifier =
+    form.tokenType === 0
+      ? form.tokenAddress.trim().length > 0
+      : Number(form.sbtId) > 0
+  const isFormComplete = Boolean(
+    form.daoId &&
+      hasTokenIdentifier &&
+      form.title.trim() &&
+      form.description.trim() &&
+      form.totalAmount.trim() &&
+      form.claimAmount.trim() &&
+      form.startDate &&
+      form.endDate
+  )
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -257,32 +283,27 @@ export const CreateCampaignModal = ({
 
             {form.tokenType != 0 &&
               form.sbtId != 0 &&
-              (() => {
-                const isOwner = tokenInfo?.creator == address
-                setIsInvalidToken(!isOwner)
-
-                return (
-                  <div className="flex justify-center flex-col items-center">
-                    <Image
-                      src={
-                        tokenInfo
-                          ? `${Env.PINATA_GATEWAY_URL}/ipfs/${tokenInfo?.image}`
-                          : EMPTY_NFT_IMAGE
-                      }
-                      alt={tokenInfo?.name || ''}
-                      width={56}
-                      height={56}
-                      className="object-cover h-14 w-14"
-                    />
-                    {!isOwner && tokenInfo && (
-                      <span className="text-xs text-gray-500 mt-1">
-                        {campaign.youAreNotTheOwnerOfThisToken ??
-                          'You are not the owner of this Token'}
-                      </span>
-                    )}
-                  </div>
-                )
-              })()}
+              (
+                <div className="flex justify-center flex-col items-center">
+                  <Image
+                    src={
+                      tokenInfo
+                        ? `${Env.PINATA_GATEWAY_URL}/ipfs/${tokenInfo?.image}`
+                        : EMPTY_NFT_IMAGE
+                    }
+                    alt={tokenInfo?.name || ''}
+                    width={56}
+                    height={56}
+                    className="object-cover h-14 w-14"
+                  />
+                  {!isOwner && tokenInfo && (
+                    <span className="text-xs text-gray-500 mt-1">
+                      {campaign.youAreNotTheOwnerOfThisToken ??
+                        'You are not the owner of this Token'}
+                    </span>
+                  )}
+                </div>
+              )}
           </div>
 
           {/* Title Input */}
@@ -402,6 +423,7 @@ export const CreateCampaignModal = ({
                 okLabel={campaign.confirm ?? 'OK'}
                 cancelLabel={campaign.cancel ?? 'Cancel'}
                 className="h-8 text-sm"
+                portalled={false}
               />
             </div>
             <div className="space-y-1">
@@ -418,12 +440,17 @@ export const CreateCampaignModal = ({
                 okLabel={campaign.confirm ?? 'OK'}
                 cancelLabel={campaign.cancel ?? 'Cancel'}
                 className="h-8 text-sm"
+                portalled={false}
               />
             </div>
           </div>
 
           {/* Submit Button */}
-          <Button onClick={handleSubmit} className="w-full h-9 text-sm">
+          <Button
+            onClick={handleSubmit}
+            className="w-full h-9 text-sm"
+            disabled={!isFormComplete}
+          >
             {campaign.createCampaign ?? 'Create Campaign'}
           </Button>
         </div>

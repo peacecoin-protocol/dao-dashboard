@@ -273,12 +273,15 @@ export default function ForDAOPage({
         .select()
         .order('id', { ascending: false })
 
+
       let sortedDaos = (dao as SupabaseDao[]) || []
       sortedDaos = sortedDaos.sort((a, b) => {
         if (a.daoId === PCE_DAO_ID) return -1
         if (b.daoId === PCE_DAO_ID) return 1
         return 0
       })
+
+      sortedDaos = sortedDaos?.filter((item) => item.daoId !== "0x71f4f0fbb8a0ea68476f5b4838c3e5ab4f3d193900fcbbb2facc5b72c7abf2f5")
 
       setDaos(sortedDaos)
       if (sortedDaos.length > 0) {
@@ -355,7 +358,6 @@ export default function ForDAOPage({
       }
 
       try {
-        const blockNumber = await publicClient.getBlockNumber()
 
         const entries = await Promise.all(
           daos.map(async (dao) => {
@@ -380,36 +382,36 @@ export default function ForDAOPage({
             const [tokenVote, sbtVote, nftVote] = await Promise.all([
               governanceTokenAddress
                 ? safeRead(() =>
-                    readContract(config, {
-                      chainId: resolvedChainId,
-                      address: governanceTokenAddress as `0x${string}`,
-                      abi: PCE_C_GOV_TOKEN_ABI,
-                      functionName: 'getVotes',
-                      args: [address],
-                    })
-                  )
+                  readContract(config, {
+                    chainId: resolvedChainId,
+                    address: governanceTokenAddress as `0x${string}`,
+                    abi: PCE_C_GOV_TOKEN_ABI,
+                    functionName: 'getVotes',
+                    args: [address],
+                  })
+                )
                 : undefined,
               sbtAddress
                 ? safeRead(() =>
-                    readContract(config, {
-                      chainId: resolvedChainId,
-                      address: sbtAddress as `0x${string}`,
-                      abi: SBT_ABI,
-                      functionName: 'getPastVotes',
-                      args: [address, blockNumber.toString()],
-                    })
-                  )
+                  readContract(config, {
+                    chainId: resolvedChainId,
+                    address: sbtAddress as `0x${string}`,
+                    abi: SBT_ABI,
+                    functionName: 'getVotes',
+                    args: [address],
+                  })
+                )
                 : undefined,
               nftAddress
                 ? safeRead(() =>
-                    readContract(config, {
-                      chainId: resolvedChainId,
-                      address: nftAddress as `0x${string}`,
-                      abi: SBT_ABI,
-                      functionName: 'getPastVotes',
-                      args: [address, blockNumber.toString()],
-                    })
-                  )
+                  readContract(config, {
+                    chainId: resolvedChainId,
+                    address: nftAddress as `0x${string}`,
+                    abi: SBT_ABI,
+                    functionName: 'getVotes',
+                    args: [address],
+                  })
+                )
                 : undefined,
             ])
 
@@ -505,7 +507,7 @@ export default function ForDAOPage({
       const { result: daoId } = await simulateContract(config, {
         abi: DAO_STUDIO_ABI,
         address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
-        functionName: 'createDAO',
+        functionName: 'createDao',
         args: [
           daoForm.name,
           daoForm.metadata,
@@ -522,7 +524,7 @@ export default function ForDAOPage({
       const tx = await writeContractAsync({
         abi: DAO_STUDIO_ABI,
         address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
-        functionName: 'createDAO',
+        functionName: 'createDao',
         args: [
           daoForm.name,
           daoForm.metadata,

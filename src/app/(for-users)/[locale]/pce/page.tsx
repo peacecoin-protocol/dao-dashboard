@@ -324,8 +324,8 @@ export default function PCEPage({
   const { data: getVotes, refetch: refetchGetVotes } = useReadContract({
     address: governorAddress as `0x${string}`,
     abi: GOVERNOR_ABI,
-    functionName: 'getPastVotes',
-    args: [address, blockNumber?.toString()],
+    functionName: 'getVotes',
+    args: [address],
   }) as { data?: bigint; refetch: () => void }
 
   const { data: timelockDelay, refetch: refetchTimelockDelay } =
@@ -397,15 +397,14 @@ export default function PCEPage({
             </h1>
             <span
               className={`text-xs font-semibold px-3 py-1 rounded-full
-      ${
-        status === 'Active'
-          ? 'bg-green-200 text-green-900'
-          : status === 'Pending'
-            ? 'bg-yellow-200 text-yellow-900'
-            : status === 'Ended'
-              ? 'bg-gray-300 text-gray-700'
-              : 'bg-gray-200 text-gray-800'
-      }`}
+      ${status === 'Active'
+                  ? 'bg-green-200 text-green-900'
+                  : status === 'Pending'
+                    ? 'bg-yellow-200 text-yellow-900'
+                    : status === 'Ended'
+                      ? 'bg-gray-300 text-gray-700'
+                      : 'bg-gray-200 text-gray-800'
+                }`}
               style={{ minWidth: 73, textAlign: 'center' }}
             >
               {status}
@@ -530,9 +529,8 @@ export default function PCEPage({
                       return (
                         <li
                           key={idx}
-                          className={`flex items-center gap-2 ${
-                            isMostChosen ? 'font-bold text-green-700' : ''
-                          }`}
+                          className={`flex items-center gap-2 ${isMostChosen ? 'font-bold text-green-700' : ''
+                            }`}
                         >
                           <span className="font-medium">{opt}</span>
                           <span className="ml-auto">
@@ -618,15 +616,14 @@ export default function PCEPage({
             </h1>
             <span
               className={`text-xs font-semibold px-3 py-1 rounded-full
-      ${
-        status === 'Active'
-          ? 'bg-green-200 text-green-900'
-          : status === 'Pending'
-            ? 'bg-yellow-200 text-yellow-900'
-            : status === 'Ended'
-              ? 'bg-gray-300 text-gray-700'
-              : 'bg-gray-200 text-gray-800'
-      }`}
+      ${status === 'Active'
+                  ? 'bg-green-200 text-green-900'
+                  : status === 'Pending'
+                    ? 'bg-yellow-200 text-yellow-900'
+                    : status === 'Ended'
+                      ? 'bg-gray-300 text-gray-700'
+                      : 'bg-gray-200 text-gray-800'
+                }`}
               style={{ minWidth: 73, textAlign: 'center' }}
             >
               {status}
@@ -746,9 +743,8 @@ export default function PCEPage({
                     return (
                       <li
                         key={idx}
-                        className={`flex items-center gap-2 ${
-                          isMostChosen ? 'font-bold text-green-700' : ''
-                        }`}
+                        className={`flex items-center gap-2 ${isMostChosen ? 'font-bold text-green-700' : ''
+                          }`}
                       >
                         <span className="font-medium">{opt}</span>
                         <span className="ml-auto">
@@ -1234,12 +1230,12 @@ export default function PCEPage({
                         type="address"
                         address={
                           WPCE_ADDRESS[
-                            chainId || defaultChainId
+                          chainId || defaultChainId
                           ] as `0x${string}`
                         }
                         message={shortenAddress(
                           WPCE_ADDRESS[
-                            chainId || defaultChainId
+                          chainId || defaultChainId
                           ] as `0x${string}`
                         )}
                       ></CustomLink.default>
@@ -1256,12 +1252,12 @@ export default function PCEPage({
                         type="address"
                         address={
                           timelockAddress[
-                            chainId || defaultChainId
+                          chainId || defaultChainId
                           ] as `0x${string}`
                         }
                         message={shortenAddress(
                           timelockAddress[
-                            chainId || defaultChainId
+                          chainId || defaultChainId
                           ] as `0x${string}`
                         )}
                       ></CustomLink.default>
@@ -1767,7 +1763,7 @@ export default function PCEPage({
                                   functionName: 'transfer',
                                   args: [
                                     timelockAddress[
-                                      chainId || defaultChainId
+                                    chainId || defaultChainId
                                     ] as `0x${string}`,
                                     parseEther(transferAmount),
                                   ],

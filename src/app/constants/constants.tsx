@@ -16,28 +16,28 @@ export const pceCommunity = {
 } as Record<number, `0x${string}`>
 
 export const daoStudioAddress = {
-  [sepolia.id]: '0x167F0B2D2aA5e76170201d0a14BA7fDA649EA25E',
+  [sepolia.id]: '0x997EF5B0D3916e6ecF1191570Bc8cC96546053e4',
   [localhost.id]: '0x809d550fca64d94Bd9F66E60752A544199cfAC3D',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
 export const timelockAddress = {
-  [sepolia.id]: '0x2A5cAD7c3b0A21Cc0B62a7C806A867d5cAb74f23',
+  [sepolia.id]: '0x9C16Bd171780Feac7796cE6d82dAf4cec43D55B7',
   [localhost.id]: '0x0E801D84Fa97b50751Dbf25036d067dCf18858bF',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x0F4E3eEEA64268926454aF8C38D62938637fd18e',
 } as Record<number, `0x${string}`>
 
 export const governorAddress = {
-  [sepolia.id]: '0x92faEbDeCC0c838c03d6c7b2d95542CDDBe0F524',
+  [sepolia.id]: '0xC0383Ae89d88a582a92574F05Ee056EFE12BE8A9',
   [localhost.id]: '0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x4a1EBA4B4895b6562B8d67510FF07c95F90049d8',
 } as Record<number, `0x${string}`>
 
 export const campaignAddress = {
-  [sepolia.id]: '0xc24Ba18585CaFfCE66D9ce0Dd658D8661763Ac17',
+  [sepolia.id]: '0x2f50E8D943E7C017daEEa05E78Df1038c9018f24',
   [localhost.id]: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',
@@ -65,7 +65,7 @@ export const stakingAddress = {
 } as Record<number, `0x${string}`>
 
 export const MultipleVotingAddress = {
-  [sepolia.id]: '0x9557172CF11eDE354f6EaB565bf52acE5DE3E4a5',
+  [sepolia.id]: '0xc0ce5f8b4B60964f055190C932beE43061938CdC',
   [localhost.id]: '0x3c91bbb25c59544cac77e67f50ec3f2d5c30e733',
   [polygon.id]: '0x0000000000000000000000000000000000000000',
   [hoodi.id]: '0x3c91bbb25c59544cac77e67f50ec3f2d5c30e733',
