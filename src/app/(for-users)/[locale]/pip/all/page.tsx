@@ -24,12 +24,14 @@ import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { STATUS } from '~/app/constants/constants'
 import { PIP } from '~/i18n/types'
+import { Spinner } from '~/components/ui/Spinner'
 
 export default function ForPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
   const [dict, setDict] = useState<Dictionary | null>(null)
   const [open, setOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false)
 
@@ -41,12 +43,10 @@ export default function ForPage({
   const [pipContents, setPipContents] = useState<PIP[]>([])
   const [pip, setPip] = useState<PIP | null>(null)
 
-  let octokit: Octokit | null = null
-
   const githubAccessToken = process.env.NEXT_PUBLIC_GITHUB_ACCESS
-
-  useEffect(() => {
-    octokit = new Octokit({
+  const octokit = useMemo(() => {
+    if (!githubAccessToken) return null
+    return new Octokit({
       auth: githubAccessToken,
     })
   }, [githubAccessToken])
@@ -94,7 +94,11 @@ export default function ForPage({
   useEffect(() => {
     const fetchAllPip = async () => {
       try {
-        if (!octokit) return []
+        if (!octokit) {
+          setIsLoading(false)
+          return
+        }
+        setIsLoading(true)
         let pullRequestFiles: any[] = []
         let pipContents: PIP[] = []
 
@@ -130,10 +134,12 @@ export default function ForPage({
         setPipContents(pipContents)
       } catch (error) {
         console.error('Error fetching all files in branch:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
     fetchAllPip()
-  }, [])
+  }, [octokit])
 
   const fetchClosedPip = async (): Promise<any[]> => {
     // Get files from the repository
@@ -189,6 +195,11 @@ export default function ForPage({
 
   return (
     <div className="w-full gap-4 flex flex-col">
+      {isLoading && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
+          <Spinner show={true} size="large" />
+        </div>
+      )}
       <div className="w-full mx-auto gap-4 flex flex-col">
         <h2 className="text-3xl font-bold tracking-tight mt-4">
           {dict?.pipAll?.title || 'ALL Proposals'}

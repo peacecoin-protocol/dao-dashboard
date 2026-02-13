@@ -5,8 +5,6 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
 import Image from 'next/image'
-import RingLoader from 'react-spinners/RingLoader'
-import { ringStyle } from '~/app/constants/styles'
 import { Line } from 'rc-progress'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
@@ -102,6 +100,7 @@ import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
+import { Spinner } from '~/components/ui/Spinner'
 
 type TokenBalance = {
   contractAddress: string
@@ -3130,19 +3129,11 @@ export default function ForDaoDetailPage({
         </DialogContent>
       </Dialog>
 
-      <RingLoader
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 9999,
-        }}
-        color={'#000000'}
-        loading={loading}
-        cssOverride={ringStyle}
-        size={50}
-      />
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
+          <Spinner show={true} size="large" />
+        </div>
+      )}
     </div>
   )
 }

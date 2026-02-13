@@ -8,8 +8,6 @@ import * as CustomLink from '~/components/custom/Link'
 import { useRouter } from 'next/navigation'
 import { Alchemy, Network } from 'alchemy-sdk'
 
-import RingLoader from 'react-spinners/RingLoader'
-import { ringStyle } from '~/app/constants/styles'
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
 import { Button } from '~/components/ui/button'
@@ -103,6 +101,7 @@ import { InfoCell } from '~/components/custom/info-cell'
 import { MULTIPLE_VOTINGS_ABI } from '~/app/ABIs/MultipleVotings'
 import { createClient } from '~/utils/supabase/client'
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
+import { Spinner } from '~/components/ui/Spinner'
 
 type TokenBalance = {
   contractAddress: string
@@ -2007,19 +2006,11 @@ export default function PCEPage({
           </DialogContent>
         </Dialog>
       </div>
-      <RingLoader
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 9999,
-        }}
-        color={'#000000'}
-        loading={loading}
-        cssOverride={ringStyle}
-        size={50}
-      />
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
+          <Spinner show={true} size="large" />
+        </div>
+      )}
     </div>
   )
 }
