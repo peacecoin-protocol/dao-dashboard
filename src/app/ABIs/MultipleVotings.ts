@@ -93,18 +93,11 @@ export const MULTIPLE_VOTINGS_ABI = [
     type: 'function',
     name: 'initialize',
     inputs: [
-      { name: '_governor', type: 'address', internalType: 'address' },
-      { name: '_admin', type: 'address', internalType: 'address' },
+      { name: 'governorAddress', type: 'address', internalType: 'address' },
+      { name: 'adminAddress', type: 'address', internalType: 'address' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'latestProposalIds',
-    inputs: [{ name: '', type: 'address', internalType: 'address' }],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -155,7 +148,7 @@ export const MULTIPLE_VOTINGS_ABI = [
   {
     type: 'function',
     name: 'setAdmin',
-    inputs: [{ name: '_admin', type: 'address', internalType: 'address' }],
+    inputs: [{ name: 'newAdmin', type: 'address', internalType: 'address' }],
     outputs: [],
     stateMutability: 'nonpayable',
   },

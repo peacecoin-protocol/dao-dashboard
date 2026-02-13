@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, useId } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useId,
+  useRef,
+  type ChangeEvent,
+} from 'react'
 import { Calendar } from 'lucide-react'
 
 import { Button } from '~/components/ui/button'
@@ -22,6 +29,7 @@ type DateTimePickerProps = {
   timeLabel?: string
   className?: string
   disabled?: boolean
+  portalled?: boolean
 }
 
 const splitDateTime = (value?: string) => {
@@ -49,6 +57,7 @@ export function DateTimePicker({
   timeLabel = 'Time',
   className,
   disabled,
+  portalled = true,
 }: DateTimePickerProps) {
   const internalId = useId()
   const triggerId = id ?? `datetime-trigger-${internalId}`
@@ -58,6 +67,7 @@ export function DateTimePicker({
   const [open, setOpen] = useState(false)
   const [draftDate, setDraftDate] = useState('')
   const [draftTime, setDraftTime] = useState('')
+  const timeInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -73,6 +83,17 @@ export function DateTimePicker({
     if (!canConfirm) return
     onChange(`${draftDate}T${draftTime}`)
     setOpen(false)
+  }
+
+  const handleTimeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextValue = event.target.value
+    setDraftTime(nextValue)
+
+    if (/^\d{2}:\d{2}$/.test(nextValue)) {
+      requestAnimationFrame(() => {
+        timeInputRef.current?.blur()
+      })
+    }
   }
 
   return (
@@ -93,7 +114,7 @@ export function DateTimePicker({
           <Calendar className="ml-2 h-4 w-4 text-gray-400" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-4">
+      <PopoverContent className="w-80 p-4" portalled={portalled}>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2">
             <Label htmlFor={dateId}>{dateLabel}</Label>
@@ -110,7 +131,8 @@ export function DateTimePicker({
               id={timeId}
               type="time"
               value={draftTime}
-              onChange={(event) => setDraftTime(event.target.value)}
+              onChange={handleTimeChange}
+              ref={timeInputRef}
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">

@@ -5,8 +5,6 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
 import Image from 'next/image'
-import RingLoader from 'react-spinners/RingLoader'
-import { ringStyle } from '~/app/constants/styles'
 import { Line } from 'rc-progress'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
@@ -102,6 +100,7 @@ import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
+import { Spinner } from '~/components/ui/Spinner'
 
 type TokenBalance = {
   contractAddress: string
@@ -163,10 +162,6 @@ export default function ForDaoDetailPage({
   >('')
   const [sbtAddress, setSbtAddress] = useState<string | undefined>('')
   const [nftAddress, setNftAddress] = useState<string | undefined>('')
-  const [nftVotingPower, setNftVotingPower] = useState<string | undefined>(
-    undefined
-  )
-  const [refetchVotingPower, setRefetchVotingPower] = useState(false)
 
   const [tokenData, setTokenData] = useState<SBTInfo[]>([])
   const [refetchTokenData, setRefetchTokenData] = useState(false)
@@ -1006,14 +1001,7 @@ export default function ForDaoDetailPage({
     setCategory(value)
   }
 
-  // const { data: votes, refetch: refetchVotes } = useReadContract({
-  //   address: governorAddress as `0x${string}`,
-  //   abi: GOVERNOR_ABI,
-  //   functionName: 'getPastVotes',
-  //   args: [address, blockNumber?.toString()],
-  // }) as { data?: string; refetch: () => void }
-
-  const { data: tokenVote, refetch: refetchTokenVote } = useReadContract({
+  const { data: tokenVote, refetch: refetchGetTokenVote } = useReadContract({
     address: governanceTokenAddress as `0x${string}`,
     abi: PCE_C_GOV_TOKEN_ABI,
     functionName: 'getVotes',
@@ -1024,33 +1012,17 @@ export default function ForDaoDetailPage({
     useReadContract({
       abi: SBT_ABI,
       address: sbtAddress as `0x${string}`,
-      functionName: 'getPastVotes',
-      args: [address, blockNumber?.toString()],
+      functionName: 'getVotes',
+      args: [address],
     }) as { data?: string | bigint; refetch: () => void }
 
-  // const { data: nftVotingPower, refetch: refetchGetNFTVotingPower } =
-  //   useReadContract({
-  //     abi: SBT_ABI,
-  //     address: nftAddress as `0x${string}`,
-  //     functionName: 'getPastVotes',
-  //     args: [address, blockNumber?.toString()],
-  //   }) as { data?: string | bigint; refetch: () => void }
-
-  useEffect(() => {
-    const fetchNFTVotingPower = async () => {
-      if (nftAddress && address && blockNumber) {
-        const nftVotingPower = await readContract(config, {
-          abi: SBT_ABI,
-          address: nftAddress as `0x${string}`,
-          functionName: 'getPastVotes',
-          args: [address, blockNumber?.toString()],
-        })
-
-        setNftVotingPower(nftVotingPower as string)
-      }
-    }
-    fetchNFTVotingPower()
-  }, [nftAddress, address, blockNumber, refetchVotingPower])
+  const { data: nftVotingPower, refetch: refetchGetNFTVotingPower } =
+    useReadContract({
+      abi: SBT_ABI,
+      address: nftAddress as `0x${string}`,
+      functionName: 'getVotes',
+      args: [address],
+    }) as { data?: string | bigint; refetch: () => void }
 
   useEffect(() => {
     setGetVotes(
@@ -1549,9 +1521,6 @@ export default function ForDaoDetailPage({
         hash: tx,
         confirmations: 1,
       })
-
-      const blockNumber = await provider.getBlockNumber()
-      setBlockNumber(blockNumber)
     } catch (error) {
       console.error('Error depositing tokens:', error)
 
@@ -1562,7 +1531,7 @@ export default function ForDaoDetailPage({
 
     refetchGovTokenBalance()
     refetchCommunityTokenBalance()
-    refetchTokenVote()
+    refetchGetTokenVote()
   }
 
   const handleWithdraw = async () => {
@@ -1580,9 +1549,6 @@ export default function ForDaoDetailPage({
           hash: tx,
           confirmations: 1,
         })
-
-        const blockNumber = await provider.getBlockNumber()
-        setBlockNumber(blockNumber)
       } catch (error) {
         console.error('Error withdrawing tokens:', error)
 
@@ -1590,7 +1556,7 @@ export default function ForDaoDetailPage({
       }
       refetchGovTokenBalance()
       refetchCommunityTokenBalance()
-      refetchTokenVote()
+      refetchGetTokenVote()
     }
   }
 
@@ -1609,8 +1575,6 @@ export default function ForDaoDetailPage({
         confirmations: 1,
       })
 
-      const blockNumber = await provider.getBlockNumber()
-      setBlockNumber(blockNumber)
       refetchGetSBTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
@@ -1634,10 +1598,7 @@ export default function ForDaoDetailPage({
         confirmations: 1,
       })
 
-      const blockNumber = await provider.getBlockNumber()
-      setBlockNumber(blockNumber)
-
-      setRefetchVotingPower(!refetchVotingPower)
+      refetchGetNFTVotingPower()
     } catch (error) {
       console.error('Error delegating voting power:', error)
     } finally {
@@ -1665,10 +1626,7 @@ export default function ForDaoDetailPage({
         confirmations: 1,
       })
 
-      const blockNumber = await provider.getBlockNumber()
-      setBlockNumber(blockNumber)
-
-      refetchGetSBTVotingPower()
+      refetchGetTokenVote()
     } catch (error) {
       console.error('Error delegating voting power:', error)
     } finally {
@@ -3172,19 +3130,11 @@ export default function ForDaoDetailPage({
         </DialogContent>
       </Dialog>
 
-      <RingLoader
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 9999,
-        }}
-        color={'#000000'}
-        loading={loading}
-        cssOverride={ringStyle}
-        size={50}
-      />
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
+          <Spinner show={true} size="large" />
+        </div>
+      )}
     </div>
   )
 }

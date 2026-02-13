@@ -71,28 +71,35 @@ export default function ForCampaignPage({
 
   useEffect(() => {
     const fetchCampaignData = async () => {
-      const { data: campaignData } = await supabase
-        .from('Campaign')
-        .select()
-        .eq('creator', address as `0x${string}`)
-        .order('campaignId', { ascending: true })
+      setIsFetchingCampaigns(true)
+      try {
+        const { data: campaignData } = await supabase
+          .from('Campaign')
+          .select()
+          .eq('creator', address as `0x${string}`)
+          .order('campaignId', { ascending: true })
 
-      if (campaignData && campaignData.length > 0) {
-        const _tokenData = await Promise.all(
-          campaignData.map(async (campaign, index) => {
-            const { data } = await supabase
-              .from('Token')
-              .select()
-              .eq('tokenId', campaign.sbtId.toString())
-              .eq('isSBT', campaign.tokenType == 1 ? true : false)
-              .eq('daoId', campaign.daoId)
+        if (campaignData && campaignData.length > 0) {
+          await Promise.all(
+            campaignData.map(async (campaign, index) => {
+              const { data } = await supabase
+                .from('Token')
+                .select()
+                .eq('tokenId', campaign.sbtId.toString())
+                .eq('isSBT', campaign.tokenType == 1 ? true : false)
+                .eq('daoId', campaign.daoId)
 
-            campaignData[index].daoId = data?.[0]?.daoId
-            campaignData[index].image = data?.[0]?.image
-          })
-        )
+              campaignData[index].daoId = data?.[0]?.daoId
+              campaignData[index].image = data?.[0]?.image
+            })
+          )
 
-        setCampaignData(campaignData as CAMPAIGN[])
+          setCampaignData(campaignData as CAMPAIGN[])
+        } else {
+          setCampaignData([])
+        }
+      } finally {
+        setIsFetchingCampaigns(false)
       }
     }
     fetchCampaignData()
@@ -100,19 +107,29 @@ export default function ForCampaignPage({
 
   useEffect(() => {
     const fetchAllDAOs = async () => {
-      const { data: daos } = await supabase
-        .from('DAO')
-        .select()
-        .eq('creator', address as `0x${string}`)
-      setAllDAOs(daos as SupabaseDao[])
+      setIsFetchingDaos(true)
+      try {
+        const { data: daos } = await supabase
+          .from('DAO')
+          .select()
+          .eq('creator', address as `0x${string}`)
+        setAllDAOs(daos as SupabaseDao[])
+      } finally {
+        setIsFetchingDaos(false)
+      }
     }
     fetchAllDAOs()
   }, [supabase, address])
 
   useEffect(() => {
     const fetchAllTokens = async () => {
-      const { data: tokens } = await supabase.from('Token').select()
-      setAllTokens(tokens as SBTInfo[])
+      setIsFetchingTokens(true)
+      try {
+        const { data: tokens } = await supabase.from('Token').select()
+        setAllTokens(tokens as SBTInfo[])
+      } finally {
+        setIsFetchingTokens(false)
+      }
     }
     fetchAllTokens()
   }, [supabase, address])
@@ -126,6 +143,9 @@ export default function ForCampaignPage({
   })
 
   const [loading, setLoading] = useState<boolean>(false)
+  const [isFetchingCampaigns, setIsFetchingCampaigns] = useState(true)
+  const [isFetchingDaos, setIsFetchingDaos] = useState(true)
+  const [isFetchingTokens, setIsFetchingTokens] = useState(true)
   const [isInvalidToken, setIsInvalidToken] = useState(false)
   const [selectedCampaignId, setSelectedCampaignId] = useState<
     number | undefined
@@ -375,7 +395,10 @@ export default function ForCampaignPage({
 
   return (
     <div className="w-full">
-      {loading && (
+      {(loading ||
+        isFetchingCampaigns ||
+        isFetchingDaos ||
+        isFetchingTokens) && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
           <Spinner show={true} size="large" />
         </div>

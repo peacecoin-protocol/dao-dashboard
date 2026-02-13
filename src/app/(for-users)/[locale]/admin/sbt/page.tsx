@@ -74,7 +74,7 @@ const MAX_VOTING_POWER = 10000
 
 // Components
 const LoadingOverlay = () => (
-  <div className="fixed inset-0 flex items-center justify-center z-50 bg-white/60">
+  <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
     <Spinner show={true} size="large" />
   </div>
 )
@@ -340,6 +340,7 @@ export default function SBTBuilderPage({
   const [allDAOs, setAllDAOs] = useState<SupabaseDao[]>([])
   const [refetchTokenData, setRefetchTokenData] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isTxLoading, setIsTxLoading] = useState(false)
 
   const [FILTER_OPTIONS, setFILTER_OPTIONS] = useState<FilterOption[]>([])
   const [TOKEN_TYPE_OPTIONS, setTOKEN_TYPE_OPTIONS] = useState<FilterOption[]>(
@@ -511,112 +512,116 @@ export default function SBTBuilderPage({
   const uploadImage = useCallback(async () => {
     if (!croppedImage || !address) return
 
-    setIsCreateModalOpen(false)
+    setIsTxLoading(true)
+    try {
+      setIsCreateModalOpen(false)
 
-    const { data: _daoInfo } = await supabase
-      .from('DAO')
-      .select()
-      .eq('daoId', cardForm.daoId)
+      const { data: _daoInfo } = await supabase
+        .from('DAO')
+        .select()
+        .eq('daoId', cardForm.daoId)
 
-    const contractAddress = cardForm.isSBT
-      ? _daoInfo?.[0]?.sbtAddress
-      : _daoInfo?.[0]?.nftAddress
+      const contractAddress = cardForm.isSBT
+        ? _daoInfo?.[0]?.sbtAddress
+        : _daoInfo?.[0]?.nftAddress
 
-    // try {
-    toast({ title: 'Uploading image...' })
+      toast({ title: 'Uploading image...' })
 
-    const timestamp = Date.now()
-    const imageName = `${uuidv4()}-${timestamp}.png`
+      const timestamp = Date.now()
+      const imageName = `${uuidv4()}-${timestamp}.png`
 
-    // Upload image
-    const file = await createFile(croppedImage, imageName)
-    const uploadResult = await addFilesToGroupPublic(
-      file,
-      cardForm.isSBT ? SBT_GROUP_ID : NFT_GROUP_ID
-    )
+      // Upload image
+      const file = await createFile(croppedImage, imageName)
+      const uploadResult = await addFilesToGroupPublic(
+        file,
+        cardForm.isSBT ? SBT_GROUP_ID : NFT_GROUP_ID
+      )
 
-    const jsonFile = new File(
-      [
-        JSON.stringify({
-          name: cardForm.name,
-          description: cardForm.description,
-          attributes: [
-            {
-              trait_type: 'votingPower',
-              value: parseEther(cardForm.votingPower).toString(),
-            },
-          ],
-          image: Env.PINATA_GATEWAY_URL + '/ipfs/' + uploadResult?.cid,
-        }),
-      ],
-      uploadResult?.cid + '.json',
-      { type: 'application/json' }
-    )
+      const jsonFile = new File(
+        [
+          JSON.stringify({
+            name: cardForm.name,
+            description: cardForm.description,
+            attributes: [
+              {
+                trait_type: 'votingPower',
+                value: parseEther(cardForm.votingPower).toString(),
+              },
+            ],
+            image: Env.PINATA_GATEWAY_URL + '/ipfs/' + uploadResult?.cid,
+          }),
+        ],
+        uploadResult?.cid + '.json',
+        { type: 'application/json' }
+      )
 
-    const jsonUploadResult = await addFilesToGroupPublic(
-      jsonFile,
-      JSON_GROUP_ID
-    )
+      const jsonUploadResult = await addFilesToGroupPublic(
+        jsonFile,
+        JSON_GROUP_ID
+      )
 
-    if (!jsonUploadResult?.cid) {
-      throw new Error('Failed to upload metadata')
-    } else {
-      toast({ title: 'Creating token...' })
-      try {
-        const createTokenTx = await writeContractAsync({
-          abi: SBT_ABI,
-          address: contractAddress as `0x${string}`,
-          functionName: 'createToken',
-          args: [
-            jsonUploadResult?.cid,
-            parseEther(cardForm.votingPower).toString(),
-          ],
-        })
+      if (!jsonUploadResult?.cid) {
+        throw new Error('Failed to upload metadata')
+      } else {
+        toast({ title: 'Creating token...' })
+        try {
+          const createTokenTx = await writeContractAsync({
+            abi: SBT_ABI,
+            address: contractAddress as `0x${string}`,
+            functionName: 'createToken',
+            args: [
+              jsonUploadResult?.cid,
+              parseEther(cardForm.votingPower).toString(),
+            ],
+          })
 
-        await waitForTransactionReceipt(config, {
-          hash: createTokenTx,
-          confirmations: 1,
-        })
+          await waitForTransactionReceipt(config, {
+            hash: createTokenTx,
+            confirmations: 1,
+          })
 
-        const currentTokenId = await readContract(config, {
-          abi: SBT_ABI,
-          address: contractAddress as `0x${string}`,
-          functionName: 'numberOfTokens',
-        })
-        const tokenId = currentTokenId ? currentTokenId.toString() : '0'
+          const currentTokenId = await readContract(config, {
+            abi: SBT_ABI,
+            address: contractAddress as `0x${string}`,
+            functionName: 'numberOfTokens',
+          })
+          const tokenId = currentTokenId ? currentTokenId.toString() : '0'
 
-        await supabase.from('Token').insert({
-          tokenId: Number(tokenId),
-          name: cardForm.name,
-          description: cardForm.description,
-          votingPower: parseEther(cardForm.votingPower).toString(),
-          image: uploadResult?.cid,
-          creator: address,
-          daoId: cardForm.daoId,
-          isSBT: cardForm.isSBT,
-          address: contractAddress as `0x${string}`,
-        })
+          await supabase.from('Token').insert({
+            tokenId: Number(tokenId),
+            name: cardForm.name,
+            description: cardForm.description,
+            votingPower: parseEther(cardForm.votingPower).toString(),
+            image: uploadResult?.cid,
+            creator: address,
+            daoId: cardForm.daoId,
+            isSBT: cardForm.isSBT,
+            address: contractAddress as `0x${string}`,
+          })
 
-        setRefetchTokenData(!refetchTokenData)
+          setRefetchTokenData(!refetchTokenData)
 
-        toast({ title: 'Token created successfully!' })
-      } catch (error) {
-        console.error('Error creating token:', error)
-        toast({ title: 'Failed to create token' })
-      } finally {
-        setCroppedImage(null)
-        setSelectedImage(null)
-        setCardForm({
-          name: '',
-          daoSearch: '',
-          description: '',
-          votingPower: '',
-          isSBT: true,
-          daoId: '',
-        })
-        setIsTokenTypeOpen(false)
-        setIsFilterOpen(false)
+          toast({ title: 'Token created successfully!' })
+        } catch (error) {
+          console.error('Error creating token:', error)
+          toast({ title: 'Failed to create token' })
+        } finally {
+          setCroppedImage(null)
+          setSelectedImage(null)
+          setCardForm({
+            name: '',
+            daoSearch: '',
+            description: '',
+            votingPower: '',
+            isSBT: true,
+            daoId: '',
+          })
+          setIsTokenTypeOpen(false)
+          setIsFilterOpen(false)
+        }
       }
+    } finally {
+      setIsTxLoading(false)
     }
   }, [
     croppedImage,
@@ -697,6 +702,7 @@ export default function SBTBuilderPage({
     async (token: SBTInfo) => {
       if (!address) return
 
+      setIsTxLoading(true)
       try {
         toast({
           title: token.isRevoked ? 'Unrevoking token...' : 'Revoking token...',
@@ -732,6 +738,8 @@ export default function SBTBuilderPage({
       } catch (error) {
         console.error('Error revoking token:', error)
         toast({ title: 'Failed to revoke token' })
+      } finally {
+        setIsTxLoading(false)
       }
     },
     [address, refetchTokenData, supabase, toast, writeContractAsync]
@@ -750,7 +758,7 @@ export default function SBTBuilderPage({
 
   return (
     <div className="flex flex-col">
-      {loading && <LoadingOverlay />}
+      {(loading || isTxLoading) && <LoadingOverlay />}
 
       <div className="w-full mx-auto flex flex-col gap-4">
         <PageHeader title={currentLabels.sbtList} />

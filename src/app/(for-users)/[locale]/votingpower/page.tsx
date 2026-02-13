@@ -129,16 +129,16 @@ export default function StakingPage({
     useReadContract({
       abi: SBT_ABI,
       address: sbtAddress as `0x${string}`,
-      functionName: 'getPastVotes',
-      args: [address, blockNumber?.toString()],
+      functionName: 'getVotes',
+      args: [address],
     }) as { data?: bigint; refetch: () => void }
 
   const { data: nftVotingPower, refetch: refetchGetNFTVotingPower } =
     useReadContract({
       abi: SBT_ABI,
       address: nftAddress as `0x${string}`,
-      functionName: 'getPastVotes',
-      args: [address, blockNumber?.toString()],
+      functionName: 'getVotes',
+      args: [address],
     }) as { data?: bigint; refetch: () => void }
 
   const { data: getTokenVote, refetch: refetchGetTokenVote } = useReadContract({

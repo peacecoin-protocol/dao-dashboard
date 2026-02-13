@@ -1,13 +1,6 @@
 export const DAO_STUDIO_ABI = [
   {
     type: 'function',
-    name: 'DAO_MANAGER_ROLE',
-    inputs: [],
-    outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'DEFAULT_ADMIN_ROLE',
     inputs: [],
     outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
@@ -22,14 +15,21 @@ export const DAO_STUDIO_ABI = [
   },
   {
     type: 'function',
-    name: 'MAX_VOTING_DELAY',
+    name: 'MIN_TIMELOCK_DELAY',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'MAX_VOTING_PERIOD',
+    name: 'MIN_VOTING_DELAY',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'MIN_VOTING_PERIOD',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
@@ -50,7 +50,7 @@ export const DAO_STUDIO_ABI = [
   },
   {
     type: 'function',
-    name: 'createDAO',
+    name: 'createDao',
     inputs: [
       { name: 'daoName', type: 'string', internalType: 'string' },
       {
@@ -93,9 +93,9 @@ export const DAO_STUDIO_ABI = [
   },
   {
     type: 'function',
-    name: 'daoNames',
-    inputs: [{ name: '', type: 'string', internalType: 'string' }],
-    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+    name: 'daoManagerRole',
+    inputs: [],
+    outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'view',
   },
   {
@@ -212,7 +212,7 @@ export const DAO_STUDIO_ABI = [
     type: 'function',
     name: 'setCampaignFactory',
     inputs: [
-      { name: '_campaignFactory', type: 'address', internalType: 'address' },
+      { name: 'newCampaignFactory', type: 'address', internalType: 'address' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -222,27 +222,35 @@ export const DAO_STUDIO_ABI = [
     name: 'setImplementation',
     inputs: [
       {
-        name: '_timelockImplementation',
+        name: 'newTimelockImplementation',
         type: 'address',
         internalType: 'address',
       },
       {
-        name: '_governorImplementation',
+        name: 'newGovernorImplementation',
         type: 'address',
         internalType: 'address',
       },
       {
-        name: '_governanceTokenImplementation',
+        name: 'newGovernanceTokenImplementation',
         type: 'address',
         internalType: 'address',
       },
       {
-        name: '_multipleVotingImplementation',
+        name: 'newMultipleVotingImplementation',
         type: 'address',
         internalType: 'address',
       },
-      { name: '_sbtImplementation', type: 'address', internalType: 'address' },
-      { name: '_nftImplementation', type: 'address', internalType: 'address' },
+      {
+        name: 'newSbtImplementation',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'newNftImplementation',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -250,7 +258,7 @@ export const DAO_STUDIO_ABI = [
   {
     type: 'function',
     name: 'setURI',
-    inputs: [{ name: '_uri', type: 'string', internalType: 'string' }],
+    inputs: [{ name: 'uri', type: 'string', internalType: 'string' }],
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -327,19 +335,19 @@ export const DAO_STUDIO_ABI = [
       {
         name: 'timelockImplementation',
         type: 'address',
-        indexed: false,
+        indexed: true,
         internalType: 'address',
       },
       {
         name: 'governorImplementation',
         type: 'address',
-        indexed: false,
+        indexed: true,
         internalType: 'address',
       },
       {
         name: 'governanceTokenImplementation',
         type: 'address',
-        indexed: false,
+        indexed: true,
         internalType: 'address',
       },
       {
@@ -507,7 +515,6 @@ export const DAO_STUDIO_ABI = [
   { type: 'error', name: 'InvalidCommunityTokenOwner', inputs: [] },
   { type: 'error', name: 'InvalidContributor', inputs: [] },
   { type: 'error', name: 'InvalidCreator', inputs: [] },
-  { type: 'error', name: 'InvalidDAOManager', inputs: [] },
   { type: 'error', name: 'InvalidGistsLength', inputs: [] },
   { type: 'error', name: 'InvalidInitialization', inputs: [] },
   { type: 'error', name: 'InvalidMinter', inputs: [] },
@@ -525,6 +532,7 @@ export const DAO_STUDIO_ABI = [
   { type: 'error', name: 'InvalidVotingDelay', inputs: [] },
   { type: 'error', name: 'InvalidVotingPeriod', inputs: [] },
   { type: 'error', name: 'InvalidWPCEAddress', inputs: [] },
+  { type: 'error', name: 'InvalidateDaoManager', inputs: [] },
   { type: 'error', name: 'MultipleVotingImplementationNotSet', inputs: [] },
   { type: 'error', name: 'NoUnusedTokens', inputs: [] },
   { type: 'error', name: 'NoWinners', inputs: [] },

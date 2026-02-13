@@ -20,7 +20,6 @@ import {
 } from '@wagmi/core'
 import { SupabaseDao } from '~/i18n/types'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
-import { ringStyle } from '~/app/constants/styles'
 
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
 import { daoStudioAddress } from '~/app/constants/constants'
@@ -102,7 +101,6 @@ type DaoFormState = {
   timelockDelay: string
 }
 import { TabsContent } from '@radix-ui/react-tabs'
-import RingLoader from 'react-spinners/RingLoader'
 
 import { config } from '~/lib/config'
 import { sepolia } from 'wagmi/chains'
@@ -113,6 +111,7 @@ import { useHasDaoManagerRole } from '~/hooks/use-has-role'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 import { EmptyState } from '~/components/custom/empty-state'
 import { createClient } from '~/utils/supabase/client'
+import { Spinner } from '~/components/ui/Spinner'
 
 const supabase = createClient()
 
@@ -355,8 +354,6 @@ export default function ForDAOPage({
       }
 
       try {
-        const blockNumber = await publicClient.getBlockNumber()
-
         const entries = await Promise.all(
           daos.map(async (dao) => {
             const daoConfigs = (await safeRead(() =>
@@ -395,8 +392,8 @@ export default function ForDAOPage({
                       chainId: resolvedChainId,
                       address: sbtAddress as `0x${string}`,
                       abi: SBT_ABI,
-                      functionName: 'getPastVotes',
-                      args: [address, blockNumber.toString()],
+                      functionName: 'getVotes',
+                      args: [address],
                     })
                   )
                 : undefined,
@@ -406,8 +403,8 @@ export default function ForDAOPage({
                       chainId: resolvedChainId,
                       address: nftAddress as `0x${string}`,
                       abi: SBT_ABI,
-                      functionName: 'getPastVotes',
-                      args: [address, blockNumber.toString()],
+                      functionName: 'getVotes',
+                      args: [address],
                     })
                   )
                 : undefined,
@@ -505,7 +502,7 @@ export default function ForDAOPage({
       const { result: daoId } = await simulateContract(config, {
         abi: DAO_STUDIO_ABI,
         address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
-        functionName: 'createDAO',
+        functionName: 'createDao',
         args: [
           daoForm.name,
           daoForm.metadata,
@@ -522,7 +519,7 @@ export default function ForDAOPage({
       const tx = await writeContractAsync({
         abi: DAO_STUDIO_ABI,
         address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
-        functionName: 'createDAO',
+        functionName: 'createDao',
         args: [
           daoForm.name,
           daoForm.metadata,
@@ -922,19 +919,11 @@ export default function ForDAOPage({
         )}
       </div>
 
-      <RingLoader
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 9999,
-        }}
-        color={'#000000'}
-        loading={loading}
-        cssOverride={ringStyle}
-        size={50}
-      />
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
+          <Spinner show={true} size="large" />
+        </div>
+      )}
     </div>
   )
 }

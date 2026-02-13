@@ -12,7 +12,6 @@ import {
   type BaseError,
 } from 'wagmi'
 import { useToast } from '~/hooks/use-toast'
-import RingLoader from 'react-spinners/RingLoader'
 
 import {
   Table,
@@ -33,9 +32,9 @@ import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 import { config } from '~/lib/config'
 import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
-import { ringStyle } from '~/app/constants/styles'
 import { defaultChainId } from '~/app/constants/constants'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
+import { Spinner } from '~/components/ui/Spinner'
 
 export default function ForClosedPage({
   params: { locale, ...params },
@@ -189,12 +188,11 @@ export default function ForClosedPage({
           </Table>
         </div>
 
-        <RingLoader
-          color={'#000000'}
-          loading={loading}
-          cssOverride={ringStyle}
-          size={50}
-        />
+        {loading && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
+            <Spinner show={true} size="large" />
+          </div>
+        )}
       </div>
     </div>
   )

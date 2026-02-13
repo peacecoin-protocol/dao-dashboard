@@ -10,9 +10,9 @@ export const CAMPAIGN_ABI = [
     type: 'function',
     name: 'addCampWinners',
     inputs: [
-      { name: '_campaignId', type: 'uint256', internalType: 'uint256' },
-      { name: '_addresses', type: 'address[]', internalType: 'address[]' },
-      { name: '_gists', type: 'bytes32[]', internalType: 'bytes32[]' },
+      { name: 'campaignId_', type: 'uint256', internalType: 'uint256' },
+      { name: 'winners', type: 'address[]', internalType: 'address[]' },
+      { name: 'gists', type: 'bytes32[]', internalType: 'bytes32[]' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -92,10 +92,10 @@ export const CAMPAIGN_ABI = [
     type: 'function',
     name: 'claimCampaign',
     inputs: [
-      { name: '_campaignId', type: 'uint256', internalType: 'uint256' },
-      { name: '_gist', type: 'bytes32', internalType: 'bytes32' },
-      { name: '_message', type: 'string', internalType: 'string' },
-      { name: '_signature', type: 'bytes', internalType: 'bytes' },
+      { name: 'campaignId_', type: 'uint256', internalType: 'uint256' },
+      { name: 'gist', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'message', type: 'string', internalType: 'string' },
+      { name: 'signature', type: 'bytes', internalType: 'bytes' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -105,7 +105,7 @@ export const CAMPAIGN_ABI = [
     name: 'createCampaign',
     inputs: [
       {
-        name: '_campaign',
+        name: 'campaign',
         type: 'tuple',
         internalType: 'struct Campaigns.Campaign',
         components: [
@@ -141,14 +141,14 @@ export const CAMPAIGN_ABI = [
   {
     type: 'function',
     name: 'getCreator',
-    inputs: [{ name: '_campaignId', type: 'uint256', internalType: 'uint256' }],
+    inputs: [{ name: 'campaignId_', type: 'uint256', internalType: 'uint256' }],
     outputs: [{ name: '', type: 'address', internalType: 'address' }],
     stateMutability: 'view',
   },
   {
     type: 'function',
     name: 'getStatus',
-    inputs: [{ name: '_campaignId', type: 'uint256', internalType: 'uint256' }],
+    inputs: [{ name: 'campaignId_', type: 'uint256', internalType: 'uint256' }],
     outputs: [
       { name: '', type: 'uint8', internalType: 'enum Campaigns.Status' },
     ],
@@ -157,7 +157,9 @@ export const CAMPAIGN_ABI = [
   {
     type: 'function',
     name: 'initialize',
-    inputs: [{ name: '_daoFactory', type: 'address', internalType: 'address' }],
+    inputs: [
+      { name: 'daoFactoryAddress', type: 'address', internalType: 'address' },
+    ],
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -165,8 +167,8 @@ export const CAMPAIGN_ABI = [
     type: 'function',
     name: 'isWinner',
     inputs: [
-      { name: '_campaignId', type: 'uint256', internalType: 'uint256' },
-      { name: '_winner', type: 'address', internalType: 'address' },
+      { name: 'campaignId_', type: 'uint256', internalType: 'uint256' },
+      { name: 'winner', type: 'address', internalType: 'address' },
     ],
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
     stateMutability: 'view',
@@ -209,7 +211,7 @@ export const CAMPAIGN_ABI = [
     name: 'recoverERC20',
     inputs: [
       {
-        name: '_token',
+        name: 'token',
         type: 'address',
         internalType: 'contract ERC20Upgradeable',
       },
@@ -249,9 +251,9 @@ export const CAMPAIGN_ABI = [
     type: 'function',
     name: 'verify',
     inputs: [
-      { name: '_signer', type: 'address', internalType: 'address' },
-      { name: '_message', type: 'string', internalType: 'string' },
-      { name: '_sig', type: 'bytes', internalType: 'bytes' },
+      { name: 'signer', type: 'address', internalType: 'address' },
+      { name: 'message', type: 'string', internalType: 'string' },
+      { name: 'signature', type: 'bytes', internalType: 'bytes' },
     ],
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
     stateMutability: 'pure',
@@ -431,7 +433,6 @@ export const CAMPAIGN_ABI = [
   { type: 'error', name: 'InvalidCommunityTokenOwner', inputs: [] },
   { type: 'error', name: 'InvalidContributor', inputs: [] },
   { type: 'error', name: 'InvalidCreator', inputs: [] },
-  { type: 'error', name: 'InvalidDAOManager', inputs: [] },
   { type: 'error', name: 'InvalidGistsLength', inputs: [] },
   { type: 'error', name: 'InvalidInitialization', inputs: [] },
   { type: 'error', name: 'InvalidMinter', inputs: [] },
@@ -449,6 +450,8 @@ export const CAMPAIGN_ABI = [
   { type: 'error', name: 'InvalidVotingDelay', inputs: [] },
   { type: 'error', name: 'InvalidVotingPeriod', inputs: [] },
   { type: 'error', name: 'InvalidWPCEAddress', inputs: [] },
+  { type: 'error', name: 'InvalidateDaoManager', inputs: [] },
+  { type: 'error', name: 'MultipleVotingImplementationNotSet', inputs: [] },
   { type: 'error', name: 'NoUnusedTokens', inputs: [] },
   { type: 'error', name: 'NoWinners', inputs: [] },
   { type: 'error', name: 'NonTransferable', inputs: [] },

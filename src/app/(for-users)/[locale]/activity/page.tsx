@@ -24,7 +24,6 @@ import {
   bountyAddress,
   defaultChainId,
 } from '~/app/constants/constants'
-import { ringStyle } from '~/app/constants/styles'
 
 import { formatString } from '~/components/utils'
 import { BOUNTY_ABI } from '~/app/ABIs/Bounty'
@@ -35,9 +34,9 @@ import { getDict } from '~/i18n/get-dict'
 import { useEffect, useState } from 'react'
 import { formatEther } from 'ethers'
 import { useAccount, useReadContract } from 'wagmi'
-import RingLoader from 'react-spinners/RingLoader'
 import { createClient } from '~/utils/supabase/client'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
+import { Spinner } from '~/components/ui/Spinner'
 
 export default function ForUsersIndexPage({
   params: { locale, ...params },
@@ -291,12 +290,11 @@ export default function ForUsersIndexPage({
             </Card>
           </div>
         </div>
-        <RingLoader
-          color={'#000000'}
-          loading={loading}
-          cssOverride={ringStyle}
-          size={50}
-        />
+        {loading && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
+            <Spinner show={true} size="large" />
+          </div>
+        )}
       </div>
     </>
   )

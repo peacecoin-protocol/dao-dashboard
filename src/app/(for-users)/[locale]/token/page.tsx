@@ -38,6 +38,7 @@ import { defaultChainId } from '~/app/constants/constants'
 
 import { TOKEN } from '~/i18n/types'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
+import { Spinner } from '~/components/ui/Spinner'
 
 export default function ForTokenPage({
   params: { locale, ...params },
@@ -67,6 +68,7 @@ export default function ForTokenPage({
   const [transferAddress, setTransferAddress] = useState('')
   const [tokenPage, setTokenPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isTokenLoading, setIsTokenLoading] = useState(true)
   const tokenPageSize = 5
 
   useEffect(() => {
@@ -154,10 +156,6 @@ export default function ForTokenPage({
 
     setExchangeRate(_exchangeRates)
   }
-
-  useEffect(() => {
-    _tokens && setTokens(_tokens as [])
-  }, [_tokens])
 
   useEffect(() => {
     if (tokens) {
@@ -295,12 +293,35 @@ export default function ForTokenPage({
   )
 
   useEffect(() => {
-    if (tokens) {
-      tokens.map((token) => {
-        getCommunityTokenInfo(token)
-      })
+    if (_tokens === undefined) {
+      setIsTokenLoading(true)
+      return
     }
-  }, [tokens])
+
+    const nextTokens = Array.isArray(_tokens) ? (_tokens as string[]) : []
+    setTokens(nextTokens as [])
+
+    if (nextTokens.length === 0) {
+      setIsTokenLoading(false)
+      return
+    }
+
+    const uniqueTokens = Array.from(new Set(nextTokens.filter(Boolean)))
+    let cancelled = false
+    setIsTokenLoading(true)
+
+    Promise.allSettled(
+      uniqueTokens.map((token) => getCommunityTokenInfo(token))
+    ).then(() => {
+      if (!cancelled) {
+        setIsTokenLoading(false)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [_tokens, getCommunityTokenInfo])
 
   useEffect(() => {
     setTokenPage(1)
@@ -712,6 +733,11 @@ export default function ForTokenPage({
           </div>
         )}
       </div>
+      {isTokenLoading && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
+          <Spinner show={true} size="large" />
+        </div>
+      )}
     </div>
   )
 }
