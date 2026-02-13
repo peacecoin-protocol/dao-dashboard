@@ -169,13 +169,13 @@ export const CreateCampaignModal = ({
       : Number(form.sbtId) > 0
   const isFormComplete = Boolean(
     form.daoId &&
-      hasTokenIdentifier &&
-      form.title.trim() &&
-      form.description.trim() &&
-      form.totalAmount.trim() &&
-      form.claimAmount.trim() &&
-      form.startDate &&
-      form.endDate
+    hasTokenIdentifier &&
+    form.title.trim() &&
+    form.description.trim() &&
+    form.totalAmount.trim() &&
+    form.claimAmount.trim() &&
+    form.startDate &&
+    form.endDate
   )
 
   return (
@@ -281,29 +281,27 @@ export const CreateCampaignModal = ({
               />
             )}
 
-            {form.tokenType != 0 &&
-              form.sbtId != 0 &&
-              (
-                <div className="flex justify-center flex-col items-center">
-                  <Image
-                    src={
-                      tokenInfo
-                        ? `${Env.PINATA_GATEWAY_URL}/ipfs/${tokenInfo?.image}`
-                        : EMPTY_NFT_IMAGE
-                    }
-                    alt={tokenInfo?.name || ''}
-                    width={56}
-                    height={56}
-                    className="object-cover h-14 w-14"
-                  />
-                  {!isOwner && tokenInfo && (
-                    <span className="text-xs text-gray-500 mt-1">
-                      {campaign.youAreNotTheOwnerOfThisToken ??
-                        'You are not the owner of this Token'}
-                    </span>
-                  )}
-                </div>
-              )}
+            {form.tokenType != 0 && form.sbtId != 0 && (
+              <div className="flex justify-center flex-col items-center">
+                <Image
+                  src={
+                    tokenInfo
+                      ? `${Env.PINATA_GATEWAY_URL}/ipfs/${tokenInfo?.image}`
+                      : EMPTY_NFT_IMAGE
+                  }
+                  alt={tokenInfo?.name || ''}
+                  width={56}
+                  height={56}
+                  className="object-cover h-14 w-14"
+                />
+                {!isOwner && tokenInfo && (
+                  <span className="text-xs text-gray-500 mt-1">
+                    {campaign.youAreNotTheOwnerOfThisToken ??
+                      'You are not the owner of this Token'}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Title Input */}

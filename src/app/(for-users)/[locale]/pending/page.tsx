@@ -15,7 +15,6 @@ import {
 import { readContract } from '@wagmi/core'
 import { useToast } from '~/hooks/use-toast'
 
-
 import { governorAddress } from '~/app/constants/constants'
 import {
   Table,

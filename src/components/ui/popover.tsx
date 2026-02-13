@@ -50,7 +50,11 @@ const PopoverContent = React.forwardRef<
       return content
     }
 
-    return <PopoverPrimitive.Portal container={container}>{content}</PopoverPrimitive.Portal>
+    return (
+      <PopoverPrimitive.Portal container={container}>
+        {content}
+      </PopoverPrimitive.Portal>
+    )
   }
 )
 PopoverContent.displayName = PopoverPrimitive.Content.displayName
