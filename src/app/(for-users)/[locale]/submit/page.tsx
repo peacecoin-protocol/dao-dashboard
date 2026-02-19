@@ -122,10 +122,10 @@ export default function ForSubmitPage({
           <SelectContent>
             <SelectItem value="1">{submit.category1 ?? ''}</SelectItem>
             <SelectItem value="2">{submit.category2 ?? ''}</SelectItem>
-            <SelectItem value="3">{submit.category3 ?? ''}</SelectItem>
             <SelectItem value="4">{submit.category4 ?? ''}</SelectItem>
             <SelectItem value="5">{submit.category5 ?? ''}</SelectItem>
             <SelectItem value="6">{submit.category6 ?? ''}</SelectItem>
+            <SelectItem value="3">{submit.category3 ?? ''}</SelectItem>
           </SelectContent>
         </Select>
 

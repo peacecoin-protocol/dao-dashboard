@@ -38,7 +38,6 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   type BaseError,
-  useBlockNumber,
 } from 'wagmi'
 
 import {
@@ -83,7 +82,6 @@ import {
   defaultChainId,
   MultipleVotingAddress,
 } from '~/app/constants/constants'
-import { useBlock } from 'wagmi'
 import {
   pceAddress,
   timelockAddress,
@@ -118,11 +116,6 @@ export default function PCEPage({
   const [dict, setDict] = useState<Dictionary | null>(null)
 
   const localDict = dict?.daoInfo ?? {}
-
-  const { data: blockNumber } = useBlockNumber()
-  const { data: block } = useBlock({
-    blockNumber,
-  })
 
   const [delegateAddr, setDelegateAddr] = useState('')
   const [description, setDescription] = useState('')
@@ -395,15 +388,14 @@ export default function PCEPage({
             </h1>
             <span
               className={`text-xs font-semibold px-3 py-1 rounded-full
-      ${
-        status === 'Active'
-          ? 'bg-green-200 text-green-900'
-          : status === 'Pending'
-            ? 'bg-yellow-200 text-yellow-900'
-            : status === 'Ended'
-              ? 'bg-gray-300 text-gray-700'
-              : 'bg-gray-200 text-gray-800'
-      }`}
+      ${status === 'Active'
+                  ? 'bg-green-200 text-green-900'
+                  : status === 'Pending'
+                    ? 'bg-yellow-200 text-yellow-900'
+                    : status === 'Ended'
+                      ? 'bg-gray-300 text-gray-700'
+                      : 'bg-gray-200 text-gray-800'
+                }`}
               style={{ minWidth: 73, textAlign: 'center' }}
             >
               {status}
@@ -528,9 +520,8 @@ export default function PCEPage({
                       return (
                         <li
                           key={idx}
-                          className={`flex items-center gap-2 ${
-                            isMostChosen ? 'font-bold text-green-700' : ''
-                          }`}
+                          className={`flex items-center gap-2 ${isMostChosen ? 'font-bold text-green-700' : ''
+                            }`}
                         >
                           <span className="font-medium">{opt}</span>
                           <span className="ml-auto">
@@ -616,15 +607,14 @@ export default function PCEPage({
             </h1>
             <span
               className={`text-xs font-semibold px-3 py-1 rounded-full
-      ${
-        status === 'Active'
-          ? 'bg-green-200 text-green-900'
-          : status === 'Pending'
-            ? 'bg-yellow-200 text-yellow-900'
-            : status === 'Ended'
-              ? 'bg-gray-300 text-gray-700'
-              : 'bg-gray-200 text-gray-800'
-      }`}
+      ${status === 'Active'
+                  ? 'bg-green-200 text-green-900'
+                  : status === 'Pending'
+                    ? 'bg-yellow-200 text-yellow-900'
+                    : status === 'Ended'
+                      ? 'bg-gray-300 text-gray-700'
+                      : 'bg-gray-200 text-gray-800'
+                }`}
               style={{ minWidth: 73, textAlign: 'center' }}
             >
               {status}
@@ -744,9 +734,8 @@ export default function PCEPage({
                     return (
                       <li
                         key={idx}
-                        className={`flex items-center gap-2 ${
-                          isMostChosen ? 'font-bold text-green-700' : ''
-                        }`}
+                        className={`flex items-center gap-2 ${isMostChosen ? 'font-bold text-green-700' : ''
+                          }`}
                       >
                         <span className="font-medium">{opt}</span>
                         <span className="ml-auto">
@@ -1232,12 +1221,12 @@ export default function PCEPage({
                         type="address"
                         address={
                           WPCE_ADDRESS[
-                            chainId || defaultChainId
+                          chainId || defaultChainId
                           ] as `0x${string}`
                         }
                         message={shortenAddress(
                           WPCE_ADDRESS[
-                            chainId || defaultChainId
+                          chainId || defaultChainId
                           ] as `0x${string}`
                         )}
                       ></CustomLink.default>
@@ -1254,12 +1243,12 @@ export default function PCEPage({
                         type="address"
                         address={
                           timelockAddress[
-                            chainId || defaultChainId
+                          chainId || defaultChainId
                           ] as `0x${string}`
                         }
                         message={shortenAddress(
                           timelockAddress[
-                            chainId || defaultChainId
+                          chainId || defaultChainId
                           ] as `0x${string}`
                         )}
                       ></CustomLink.default>
@@ -1765,7 +1754,7 @@ export default function PCEPage({
                                   functionName: 'transfer',
                                   args: [
                                     timelockAddress[
-                                      chainId || defaultChainId
+                                    chainId || defaultChainId
                                     ] as `0x${string}`,
                                     parseEther(transferAmount),
                                   ],
@@ -1815,11 +1804,11 @@ export default function PCEPage({
                 <SelectContent>
                   <SelectItem value="1">{dict?.submit?.category1}</SelectItem>
                   <SelectItem value="2">{dict?.submit?.category2}</SelectItem>
-                  <SelectItem value="3">{dict?.submit?.category3}</SelectItem>
                   <SelectItem value="4">{dict?.submit?.category4}</SelectItem>
                   <SelectItem value="5">{dict?.submit?.category5}</SelectItem>
                   <SelectItem value="6">{dict?.submit?.category6}</SelectItem>
                   <SelectItem value="7">{dict?.submit?.category7}</SelectItem>
+                  <SelectItem value="3">{dict?.submit?.category3}</SelectItem>
                 </SelectContent>
               </Select>
 

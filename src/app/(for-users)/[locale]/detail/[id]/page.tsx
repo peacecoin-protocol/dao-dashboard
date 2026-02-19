@@ -111,6 +111,35 @@ type TokenBalance = {
   logo: string
 }
 
+type CustomAction = {
+  id: string
+  target: string
+  value: string
+  abiJson: string
+  abiFileName: string
+  abiError?: string
+  functionSignature: string
+  args: string[]
+}
+
+type SimulationStatus = 'idle' | 'success' | 'error'
+
+const createActionId = () =>
+  `${Date.now()}-${Math.random().toString(16).slice(2)}`
+
+const createEmptyCustomAction = (): CustomAction => ({
+  id: createActionId(),
+  target: '',
+  value: '',
+  abiJson: '',
+  abiFileName: '',
+  abiError: '',
+  functionSignature: '',
+  args: [],
+})
+
+const getInitialCustomActions = () => [createEmptyCustomAction()]
+
 const toBigInt = (value?: string | bigint) => {
   if (value === undefined || value === null) return BigInt(0)
   return typeof value === 'bigint' ? value : BigInt(value)
@@ -170,6 +199,13 @@ export default function ForDaoDetailPage({
   const [options, setOptions] = useState<string[]>(['', ''])
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
+  const [customActions, setCustomActions] = useState<CustomAction[]>(
+    getInitialCustomActions
+  )
+  const [selectedActionIndex, setSelectedActionIndex] = useState(0)
+  const [simulationStatus, setSimulationStatus] =
+    useState<SimulationStatus>('idle')
+  const [simulationMessage, setSimulationMessage] = useState('')
   const [filteredProposals, setFilteredProposals] = useState<any[]>([])
   const [statusFilter, setStatusFilter] = useState('all')
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false)
@@ -997,9 +1033,397 @@ export default function ForDaoDetailPage({
     }
   }
 
+  const resetSimulation = () => {
+    setSimulationStatus('idle')
+    setSimulationMessage('')
+  }
+
+  const resetCreateProposalForm = () => {
+    setCategory('')
+    setDescription('')
+    setTokenAddress('')
+    setValues('')
+    setBytesCodes('')
+    setVariable1('')
+    setVariable2('')
+    setVariable3('')
+    setOptions(['', ''])
+    setStartTime('')
+    setEndTime('')
+    setCustomActions(getInitialCustomActions())
+    setSelectedActionIndex(0)
+    resetSimulation()
+  }
+
+  const handleCreateProposalDialogOpenChange = (open: boolean) => {
+    setIsCreateProposalDialogOpened(open)
+    if (!open) {
+      resetCreateProposalForm()
+    }
+  }
+
+  const updateCustomAction = (
+    index: number,
+    updates: Partial<CustomAction>
+  ) => {
+    setCustomActions((prev) =>
+      prev.map((action, i) =>
+        i === index ? { ...action, ...updates } : action
+      )
+    )
+  }
+
+  const normalizeAbiJsonValue = (value: any) => {
+    if (Array.isArray(value)) return value
+    if (value && typeof value === 'object' && Array.isArray(value.abi)) {
+      return value.abi
+    }
+    return null
+  }
+
+  const parseAbiJson = (abiJson: string) => {
+    if (!abiJson.trim()) return null
+    try {
+      const parsed = JSON.parse(abiJson)
+      return normalizeAbiJsonValue(parsed)
+    } catch (error) {
+      return null
+    }
+  }
+
+  const handleCustomActionAbiFileUpload = async (
+    index: number,
+    file: File | null
+  ) => {
+    if (!file) return
+    resetSimulation()
+    try {
+      const fileText = await file.text()
+      const parsed = JSON.parse(fileText)
+      const normalized = normalizeAbiJsonValue(parsed)
+      if (!normalized) {
+        updateCustomAction(index, {
+          abiJson: '',
+          abiFileName: file.name,
+          abiError: 'Unsupported ABI file format.',
+          functionSignature: '',
+          args: [],
+        })
+        return
+      }
+
+      updateCustomAction(index, {
+        abiJson: JSON.stringify(normalized, null, 2),
+        abiFileName: file.name,
+        abiError: '',
+        functionSignature: '',
+        args: [],
+      })
+    } catch (error) {
+      updateCustomAction(index, {
+        abiJson: '',
+        abiFileName: file.name,
+        abiError: 'Invalid ABI JSON file.',
+        functionSignature: '',
+        args: [],
+      })
+    }
+  }
+
+  const getFunctionFragments = (abiJson: string) => {
+    const parsedAbi = parseAbiJson(abiJson)
+    if (!parsedAbi) return []
+    try {
+      const iface = new ethers.Interface(parsedAbi)
+      return iface.fragments.filter((fragment) => fragment.type === 'function')
+    } catch (error) {
+      return []
+    }
+  }
+
+  const formatFunctionSignature = (fragment: any) => {
+    const inputTypes = Array.isArray(fragment.inputs)
+      ? fragment.inputs.map((input: any) => input.type).join(',')
+      : ''
+    return `${fragment.name}(${inputTypes})`
+  }
+
+  const getFunctionFragmentBySignature = (
+    abiJson: string,
+    signature: string
+  ) => {
+    if (!signature) return null
+    const fragments = getFunctionFragments(abiJson)
+    return (
+      fragments.find(
+        (fragment) => formatFunctionSignature(fragment) === signature
+      ) ?? null
+    )
+  }
+
+  const parseArrayValue = (raw: string, baseType: string) => {
+    const trimmed = raw.trim()
+    if (!trimmed) return []
+    let values: any[] = []
+    if (trimmed.startsWith('[')) {
+      const parsed = JSON.parse(trimmed)
+      if (!Array.isArray(parsed)) {
+        throw new Error('Array inputs must be a JSON array')
+      }
+      values = parsed
+    } else {
+      values = trimmed
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+    }
+    return values.map((item) => parseArgValue(String(item), baseType))
+  }
+
+  const parseArgValue = (raw: string, type: string): any => {
+    const trimmed = raw.trim()
+    if (!trimmed && !type.endsWith(']')) {
+      throw new Error('Missing input value')
+    }
+    if (type.endsWith(']')) {
+      const baseType = type.replace(/\[[^\]]*\]$/, '')
+      return parseArrayValue(raw, baseType)
+    }
+    if (type === 'bool') {
+      if (trimmed === 'true' || trimmed === '1') return true
+      if (trimmed === 'false' || trimmed === '0') return false
+      throw new Error('Boolean values must be true or false')
+    }
+    if (type.startsWith('uint') || type.startsWith('int')) {
+      try {
+        return BigInt(trimmed)
+      } catch (error) {
+        throw new Error('Integer values must be whole numbers')
+      }
+    }
+    return trimmed
+  }
+
+  const buildCustomActionPayloads = () => {
+    if (customActions.length === 0) {
+      throw new Error('Add at least one action')
+    }
+
+    const targets: `0x${string}`[] = []
+    const values: bigint[] = []
+    const signatures: string[] = []
+    const calldatas: `0x${string}`[] = []
+    const simulations: {
+      abi: any[]
+      address: `0x${string}`
+      functionName: string
+      args: any[]
+      value: bigint
+    }[] = []
+
+    customActions.forEach((action, index) => {
+      if (!ethers.isAddress(action.target)) {
+        throw new Error(`Action #${index + 1}: invalid target address`)
+      }
+      const parsedAbi = parseAbiJson(action.abiJson)
+      if (!parsedAbi) {
+        throw new Error(`Action #${index + 1}: invalid ABI JSON`)
+      }
+      const fragment = getFunctionFragmentBySignature(
+        action.abiJson,
+        action.functionSignature
+      )
+      if (!fragment) {
+        throw new Error(`Action #${index + 1}: select a contract method`)
+      }
+
+      const inputTypes = fragment.inputs.map((input: any) => input.type)
+      const args = fragment.inputs.map((input: any, inputIndex: number) => {
+        const rawValue = action.args[inputIndex] ?? ''
+        if (!rawValue.trim()) {
+          throw new Error(
+            `Action #${index + 1}: missing value for ${
+              input.name || `arg${inputIndex + 1}`
+            }`
+          )
+        }
+        return parseArgValue(rawValue, input.type)
+      })
+
+      const signature = formatFunctionSignature(fragment)
+      const functionName = signature.split('(')[0] ?? ''
+      if (!functionName) {
+        throw new Error(`Action #${index + 1}: invalid contract method`)
+      }
+      const calldata = new ethers.AbiCoder().encode(inputTypes, args)
+
+      let value = BigInt(0)
+      if (action.value.trim()) {
+        try {
+          value = parseEther(action.value)
+        } catch (error) {
+          throw new Error(`Action #${index + 1}: invalid ETH value`)
+        }
+      }
+
+      let simulationAbi = parsedAbi
+      if (typeof fragment.format === 'function') {
+        try {
+          const fragmentJson = fragment.format('json')
+          const fragmentEntry =
+            typeof fragmentJson === 'string'
+              ? JSON.parse(fragmentJson)
+              : fragmentJson
+          if (fragmentEntry) {
+            simulationAbi = [fragmentEntry]
+          }
+        } catch (error) {
+          simulationAbi = parsedAbi
+        }
+      }
+
+      targets.push(action.target as `0x${string}`)
+      values.push(value)
+      signatures.push(signature)
+      calldatas.push(calldata as `0x${string}`)
+      simulations.push({
+        abi: simulationAbi,
+        address: action.target as `0x${string}`,
+        functionName,
+        args,
+        value,
+      })
+    })
+
+    return { targets, values, signatures, calldatas, simulations }
+  }
+
+  const handleSimulateCustomActions = async () => {
+    resetSimulation()
+    try {
+      const { simulations } = buildCustomActionPayloads()
+      for (const simulation of simulations) {
+        await simulateContract(config, {
+          abi: simulation.abi,
+          address: simulation.address,
+          functionName: simulation.functionName,
+          args: simulation.args,
+          value: simulation.value,
+          account: address ?? undefined,
+        })
+      }
+      setSimulationStatus('success')
+      setSimulationMessage('Simulation succeeded.')
+    } catch (error) {
+      const message =
+        error && typeof error === 'object' && 'shortMessage' in error
+          ? String((error as BaseError).shortMessage)
+          : error instanceof Error
+            ? error.message
+            : 'Simulation failed.'
+      setSimulationStatus('error')
+      setSimulationMessage(message)
+    }
+  }
+
   function handleSelect(value: any) {
     setCategory(value)
+    resetSimulation()
   }
+
+  const handleAddCustomAction = () => {
+    const newAction: CustomAction = {
+      id: createActionId(),
+      target: '',
+      value: '',
+      abiJson: '',
+      abiFileName: '',
+      abiError: '',
+      functionSignature: '',
+      args: [],
+    }
+    setCustomActions((prev) => {
+      const next = [...prev, newAction]
+      setSelectedActionIndex(next.length - 1)
+      return next
+    })
+    resetSimulation()
+  }
+
+  const handleRemoveCustomAction = (index: number) => {
+    if (customActions.length <= 1) return
+    setCustomActions((prev) => prev.filter((_, i) => i !== index))
+    setSelectedActionIndex((current) => {
+      if (current === index) return Math.max(0, index - 1)
+      if (current > index) return current - 1
+      return current
+    })
+    resetSimulation()
+  }
+
+  const handleSelectCustomAction = (index: number) => {
+    setSelectedActionIndex(index)
+    resetSimulation()
+  }
+
+  const handleCustomActionAbiChange = (index: number, value: string) => {
+    const signature = customActions[index]?.functionSignature ?? ''
+    const signatures = getFunctionFragments(value).map(formatFunctionSignature)
+    const isSignatureValid = signature && signatures.includes(signature)
+    updateCustomAction(index, {
+      abiJson: value,
+      abiFileName: '',
+      abiError: '',
+      functionSignature: isSignatureValid ? signature : '',
+      args: isSignatureValid ? customActions[index]?.args ?? [] : [],
+    })
+    resetSimulation()
+  }
+
+  const handleCustomActionFunctionChange = (
+    index: number,
+    signature: string
+  ) => {
+    const fragment = getFunctionFragmentBySignature(
+      customActions[index]?.abiJson ?? '',
+      signature
+    )
+    const nextArgs = fragment?.inputs?.map(() => '') ?? []
+    updateCustomAction(index, { functionSignature: signature, args: nextArgs })
+    resetSimulation()
+  }
+
+  const handleCustomActionArgChange = (
+    actionIndex: number,
+    argIndex: number,
+    value: string
+  ) => {
+    setCustomActions((prev) => {
+      const next = [...prev]
+      const action = next[actionIndex]
+      if (!action) return prev
+      const args = [...action.args]
+      args[argIndex] = value
+      next[actionIndex] = { ...action, args }
+      return next
+    })
+    resetSimulation()
+  }
+
+  const selectedAction = customActions[selectedActionIndex] ?? customActions[0]
+  const selectedActionFunctions = selectedAction
+    ? getFunctionFragments(selectedAction.abiJson)
+    : []
+  const selectedActionFragment =
+    selectedAction && selectedAction.functionSignature
+      ? getFunctionFragmentBySignature(
+          selectedAction.abiJson,
+          selectedAction.functionSignature
+        )
+      : null
+  const isSelectedActionAbiInvalid =
+    !!selectedAction?.abiError ||
+    (!!selectedAction?.abiJson?.trim() && !parseAbiJson(selectedAction.abiJson))
 
   const { data: tokenVote, refetch: refetchGetTokenVote } = useReadContract({
     address: governanceTokenAddress as `0x${string}`,
@@ -1242,7 +1666,7 @@ export default function ForDaoDetailPage({
   }, [governorAddress, id])
 
   const handleCreateProposal = async () => {
-    setIsCreateProposalDialogOpened(false)
+    handleCreateProposalDialogOpenChange(false)
     setLoading(true)
 
     try {
@@ -1337,76 +1761,121 @@ export default function ForDaoDetailPage({
         return
       }
 
-      const resolvedTokenAddress =
-        category === '1' || category === '3'
-          ? pceAddress[chainId || defaultChainId]
-          : tokenAddress
-      const resolvedValues = category === '1' || category === '3' ? '0' : values
+      if (category === '3') {
+        let payloads: ReturnType<typeof buildCustomActionPayloads>
+        try {
+          payloads = buildCustomActionPayloads()
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'Invalid custom action configuration.'
+          toast({ title: message })
+          setLoading(false)
+          return
+        }
 
-      if (
-        (!resolvedTokenAddress || resolvedTokenAddress.length === 0) &&
-        category !== '4' &&
-        category !== '5' &&
-        category !== '6'
-      ) {
-        toast({
-          title:
-            localDict.invalidTokenAddress ??
-            'Please enter a valid token address',
-        })
-        setLoading(false)
-        return
-      }
+        try {
+          const proposeTx = await writeContractAsync({
+            abi: GOVERNOR_ABI,
+            address: governorAddress as `0x${string}`,
+            functionName: 'propose',
+            args: [
+              payloads.targets,
+              payloads.values,
+              payloads.signatures,
+              payloads.calldatas,
+              description,
+            ],
+          })
 
-      let _signature = 'approve(address,uint256)'
-      let _value = '0'
-      let _calldata = ''
-      let _address: `0x${string}` | undefined
-
-      if (category === '2') {
-        _calldata = new ethers.AbiCoder().encode(
-          ['address', 'uint256'],
-          [address, parseEther(resolvedValues)]
-        )
-        _signature = 'transfer(address,uint256)'
-        _address = resolvedTokenAddress as `0x${string}`
-      } else if (category === '4') {
-        _signature = 'deploy(bytes)'
-        _calldata = new ethers.AbiCoder().encode(['bytes'], [bytescode])
-        _address = daoStudioAddress[chainId || defaultChainId] as `0x${string}`
-      } else if (category === '5') {
-        _address = timelockAddress as `0x${string}`
-        _signature = 'updateVariables(uint256,uint256,uint256)'
-        _calldata = new ethers.AbiCoder().encode(
-          ['uint256', 'uint256', 'uint256'],
-          [variable1, variable2, variable3]
-        )
-      } else if (category === '6') {
-        _address = governorAddress as `0x${string}`
-        _signature = 'updateVariables(uint256,uint256,uint256)'
-        _calldata = new ethers.AbiCoder().encode(
-          ['uint256', 'uint256', 'uint256'],
-          [parseEther(variable1), parseEther(variable2), parseEther(variable3)]
-        )
+          await waitForTransactionReceipt(config, {
+            hash: proposeTx,
+            confirmations: 1,
+          })
+        } catch (error) {
+          console.error('Error creating proposal:', error)
+          setLoading(false)
+          return
+        }
       } else {
-        _address = resolvedTokenAddress as `0x${string}`
-        _calldata = new ethers.AbiCoder().encode(
-          ['address', 'uint256'],
-          [address, parseEther(resolvedValues)]
-        )
+        const resolvedTokenAddress =
+          category === '1'
+            ? pceAddress[chainId || defaultChainId]
+            : tokenAddress
+        const resolvedValues = category === '1' ? '0' : values
+
+        if (
+          (!resolvedTokenAddress || resolvedTokenAddress.length === 0) &&
+          category !== '4' &&
+          category !== '5' &&
+          category !== '6'
+        ) {
+          toast({
+            title:
+              localDict.invalidTokenAddress ??
+              'Please enter a valid token address',
+          })
+          setLoading(false)
+          return
+        }
+
+        let _signature = 'approve(address,uint256)'
+        let _value = '0'
+        let _calldata = ''
+        let _address: `0x${string}` | undefined
+
+        if (category === '2') {
+          _calldata = new ethers.AbiCoder().encode(
+            ['address', 'uint256'],
+            [address, parseEther(resolvedValues)]
+          )
+          _signature = 'transfer(address,uint256)'
+          _address = resolvedTokenAddress as `0x${string}`
+        } else if (category === '4') {
+          _signature = 'deploy(bytes)'
+          _calldata = new ethers.AbiCoder().encode(['bytes'], [bytescode])
+          _address = daoStudioAddress[
+            chainId || defaultChainId
+          ] as `0x${string}`
+        } else if (category === '5') {
+          _address = timelockAddress as `0x${string}`
+          _signature = 'updateVariables(uint256,uint256,uint256)'
+          _calldata = new ethers.AbiCoder().encode(
+            ['uint256', 'uint256', 'uint256'],
+            [variable1, variable2, variable3]
+          )
+        } else if (category === '6') {
+          _address = governorAddress as `0x${string}`
+          _signature = 'updateVariables(uint256,uint256,uint256)'
+          _calldata = new ethers.AbiCoder().encode(
+            ['uint256', 'uint256', 'uint256'],
+            [
+              parseEther(variable1),
+              parseEther(variable2),
+              parseEther(variable3),
+            ]
+          )
+        } else {
+          _address = resolvedTokenAddress as `0x${string}`
+          _calldata = new ethers.AbiCoder().encode(
+            ['address', 'uint256'],
+            [address, parseEther(resolvedValues)]
+          )
+        }
+
+        const proposeTx = await writeContractAsync({
+          abi: GOVERNOR_ABI,
+          address: governorAddress as `0x${string}`,
+          functionName: 'propose',
+          args: [[_address], [_value], [_signature], [_calldata], description],
+        })
+
+        await waitForTransactionReceipt(config, {
+          hash: proposeTx,
+          confirmations: 1,
+        })
       }
-
-      const proposeTx = await writeContractAsync({
-        abi: GOVERNOR_ABI,
-        address: governorAddress as `0x${string}`,
-        functionName: 'propose',
-        args: [[_address], [_value], [_signature], [_calldata], description],
-      })
-
-      await waitForTransactionReceipt(config, {
-        hash: proposeTx,
-        confirmations: 1,
-      })
     } catch (error) {
       console.error('Error creating proposal:', error)
       setLoading(false)
@@ -2877,9 +3346,9 @@ export default function ForDaoDetailPage({
       </div>
       <Dialog
         open={isCreateProposalDialogOpened}
-        onOpenChange={setIsCreateProposalDialogOpened}
+        onOpenChange={handleCreateProposalDialogOpenChange}
       >
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogTitle>
             {localDict.createProposal ?? 'Create a Proposal'}
           </DialogTitle>
@@ -2897,11 +3366,11 @@ export default function ForDaoDetailPage({
               <SelectContent>
                 <SelectItem value="1">{dict?.submit?.category1}</SelectItem>
                 <SelectItem value="2">{dict?.submit?.category2}</SelectItem>
-                <SelectItem value="3">{dict?.submit?.category3}</SelectItem>
                 <SelectItem value="4">{dict?.submit?.category4}</SelectItem>
                 <SelectItem value="5">{dict?.submit?.category5}</SelectItem>
                 <SelectItem value="6">{dict?.submit?.category6}</SelectItem>
                 <SelectItem value="7">{dict?.submit?.category7}</SelectItem>
+                <SelectItem value="3">{dict?.submit?.category3}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -3013,16 +3482,298 @@ export default function ForDaoDetailPage({
                   </div>
                 </div>
               </div>
+            ) : category === '3' ? (
+              <div className="w-full flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">
+                    {localDict.proposalText ?? 'Proposal text'}
+                  </label>
+                  <p className="text-xs text-gray-500">
+                    {localDict.proposalTextHelp ??
+                      'Explain what this proposal does and why it matters.'}
+                  </p>
+                  <Textarea
+                    className="max-sm:h-60 h-40 w-full align-center p-3 rounded-md border-[1px] border-gray94"
+                    placeholder={
+                      localDict.enterDescription ?? 'Enter proposal description'
+                    }
+                    name="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold">
+                        {localDict.actionsLabel ?? 'Actions'}
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        {localDict.actionsHelp ??
+                          'Add one or more on-chain actions this proposal will execute.'}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAddCustomAction}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      {localDict.addAction ?? 'Add Action'}
+                    </Button>
+                  </div>
+
+                  <div className="flex gap-3 overflow-x-auto pb-2">
+                    {customActions.map((action, index) => (
+                      <button
+                        key={action.id}
+                        type="button"
+                        onClick={() => handleSelectCustomAction(index)}
+                        className={`min-w-[170px] rounded-lg border px-3 py-2 text-left transition-colors ${
+                          index === selectedActionIndex
+                            ? 'border-primary_blue bg-primary_blue/10'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="text-sm font-semibold">{`Action #${index + 1}`}</div>
+                        <div className="text-xs text-gray-500">
+                          {action.functionSignature
+                            ? action.functionSignature
+                            : (localDict.customAction ?? 'Custom action')}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-6 rounded-xl border bg-white p-5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold">
+                        {`Action #${selectedActionIndex + 1}`}
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        {localDict.configureAction ??
+                          'Choose a target contract and method.'}
+                      </p>
+                    </div>
+                    {customActions.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() =>
+                          handleRemoveCustomAction(selectedActionIndex)
+                        }
+                      >
+                        {localDict.removeAction ?? 'Remove action'}
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium">
+                        {localDict.targetContractAddress ??
+                          'Target contract address'}
+                      </label>
+                      <Input
+                        value={selectedAction?.target ?? ''}
+                        onChange={(e) => {
+                          updateCustomAction(selectedActionIndex, {
+                            target: e.target.value,
+                          })
+                          resetSimulation()
+                        }}
+                        placeholder="0x..."
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium">
+                        {localDict.ethValueOptional ?? 'ETH value (optional)'}
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.0001"
+                        placeholder="0"
+                        value={selectedAction?.value ?? ''}
+                        onChange={(e) => {
+                          updateCustomAction(selectedActionIndex, {
+                            value: e.target.value,
+                          })
+                          resetSimulation()
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 rounded-lg border bg-gray-50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">
+                          {localDict.abiJson ?? 'ABI'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {localDict.uploadAbiHelp ??
+                            'Upload your ABI file to list available methods.'}
+                        </p>
+                      </div>
+                      <label className="inline-flex items-center gap-2 rounded-md border bg-white px-3 py-2 text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100">
+                        {localDict.chooseFile ?? 'Choose file'}
+                        <input
+                          type="file"
+                          accept=".json,application/json"
+                          className="hidden"
+                          onChange={(e) =>
+                            handleCustomActionAbiFileUpload(
+                              selectedActionIndex,
+                              e.target.files?.[0] ?? null
+                            )
+                          }
+                        />
+                      </label>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {selectedAction?.abiFileName
+                        ? selectedAction.abiFileName
+                        : (localDict.noFileSelected ?? 'No file selected')}
+                    </div>
+
+                    <details className="rounded-lg border bg-white px-3 py-2">
+                      <summary className="cursor-pointer text-xs font-medium text-gray-600">
+                        {localDict.pasteAbiOptional ??
+                          'Paste ABI JSON (advanced)'}
+                      </summary>
+                      <Textarea
+                        className="mt-3 max-sm:h-40 h-32 w-full align-center p-2 rounded-md border-[1px] border-gray94 bg-white"
+                        value={selectedAction?.abiJson ?? ''}
+                        onChange={(e) =>
+                          handleCustomActionAbiChange(
+                            selectedActionIndex,
+                            e.target.value
+                          )
+                        }
+                        placeholder='[{"inputs":[],"name":"...","type":"function"}]'
+                      />
+                    </details>
+
+                    {isSelectedActionAbiInvalid && (
+                      <p className="text-sm text-red-600">
+                        {selectedAction?.abiError ||
+                          localDict.invalidAbi ||
+                          'Invalid ABI JSON.'}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium">
+                      {localDict.contractMethod ?? 'Contract method'}
+                    </label>
+                    <Select
+                      value={selectedAction?.functionSignature ?? ''}
+                      onValueChange={(value) =>
+                        handleCustomActionFunctionChange(
+                          selectedActionIndex,
+                          value
+                        )
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue
+                          placeholder={
+                            localDict.selectMethod ?? 'Select a method'
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedActionFunctions.map((fragment) => {
+                          const signature = formatFunctionSignature(fragment)
+                          return (
+                            <SelectItem key={signature} value={signature}>
+                              {signature}
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedActionFragment?.inputs?.length ? (
+                    <div className="flex flex-col gap-3">
+                      <label className="text-sm font-medium">
+                        {localDict.calldatas ?? 'Inputs'}
+                      </label>
+                      {selectedActionFragment.inputs.map(
+                        (input: any, inputIndex: number) => (
+                          <div
+                            key={`${input.name}-${inputIndex}`}
+                            className="flex flex-col gap-1"
+                          >
+                            <label className="text-xs text-gray-500">
+                              {input.name
+                                ? `${input.name} (${input.type})`
+                                : input.type}
+                            </label>
+                            <Input
+                              value={selectedAction?.args?.[inputIndex] ?? ''}
+                              onChange={(e) =>
+                                handleCustomActionArgChange(
+                                  selectedActionIndex,
+                                  inputIndex,
+                                  e.target.value
+                                )
+                              }
+                              placeholder={input.type}
+                            />
+                          </div>
+                        )
+                      )}
+                    </div>
+                  ) : selectedAction?.functionSignature ? (
+                    <p className="text-sm text-gray-500">
+                      {localDict.noInputsRequired ?? 'No inputs required.'}
+                    </p>
+                  ) : null}
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium">
+                      {localDict.simulationLabel ?? 'Simulation'}
+                    </label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleSimulateCustomActions}
+                    >
+                      {localDict.simulateTransaction ?? 'Simulate transaction'}
+                    </Button>
+                    {simulationMessage && (
+                      <p
+                        className={`text-sm ${
+                          simulationStatus === 'success'
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }`}
+                      >
+                        {simulationMessage}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="w-full flex flex-col gap-4">
                 <Input
-                  className={`${category == '1' || category == '3' || category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+                  className={`${category == '1' || category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
                   onChange={(e) => setTokenAddress(e.target.value)}
                   placeholder={localDict.address ?? 'Address'}
                 />
 
                 <Input
-                  className={`${category == '1' || category == '3' || category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
+                  className={`${category == '1' || category == '4' || category == '5' || category == '6' ? 'hidden' : ''}`}
                   type="number"
                   min="0"
                   step="0.1"
