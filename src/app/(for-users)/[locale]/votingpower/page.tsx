@@ -15,7 +15,7 @@ import {
   useReadContract,
   useWriteContract,
   useWaitForTransactionReceipt,
-  type BaseError
+  type BaseError,
 } from 'wagmi'
 
 import { getDict } from '~/i18n/get-dict'
@@ -149,8 +149,8 @@ export default function StakingPage({
     if (getTokenVote && sbtVotingPower && nftVotingPower) {
       setGetVotes(
         BigInt(getTokenVote as unknown as string) +
-        BigInt(sbtVotingPower as unknown as string) +
-        BigInt(nftVotingPower as unknown as string)
+          BigInt(sbtVotingPower as unknown as string) +
+          BigInt(nftVotingPower as unknown as string)
       )
     }
   }, [getTokenVote, sbtVotingPower, nftVotingPower])
@@ -446,8 +446,8 @@ export default function StakingPage({
               <span className="text-lg font-semibold text-purple-600 dark:text-purple-400 w-full text-right">
                 {wPCEBalance
                   ? formatNumber(
-                    parseFloat(formatEther(wPCEBalance as unknown as bigint))
-                  )
+                      parseFloat(formatEther(wPCEBalance as unknown as bigint))
+                    )
                   : '0'}{' '}
                 PCE
               </span>
@@ -505,8 +505,8 @@ export default function StakingPage({
             <div className="text-3xl sm:text-4xl font-bold text-teal-600 dark:text-teal-400 mb-4">
               {getVotes
                 ? formatNumber(
-                  Number(formatEther(getVotes as unknown as bigint))
-                )
+                    Number(formatEther(getVotes as unknown as bigint))
+                  )
                 : '0'}
             </div>
 
@@ -518,10 +518,10 @@ export default function StakingPage({
                 <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                   {getTokenVote
                     ? formatNumber(
-                      parseFloat(
-                        formatEther(getTokenVote as unknown as bigint)
+                        parseFloat(
+                          formatEther(getTokenVote as unknown as bigint)
+                        )
                       )
-                    )
                     : '0'}
                 </span>
               </div>
@@ -533,8 +533,8 @@ export default function StakingPage({
                 <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                   {sbtVotingPower
                     ? formatNumber(
-                      Number(formatEther(sbtVotingPower as unknown as bigint))
-                    )
+                        Number(formatEther(sbtVotingPower as unknown as bigint))
+                      )
                     : '0'}
                 </span>
               </div>
@@ -546,8 +546,8 @@ export default function StakingPage({
                 <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                   {nftVotingPower
                     ? formatNumber(
-                      Number(formatEther(nftVotingPower as unknown as bigint))
-                    )
+                        Number(formatEther(nftVotingPower as unknown as bigint))
+                      )
                     : '0'}
                 </span>
               </div>
