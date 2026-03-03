@@ -98,7 +98,7 @@ type DistributeHistoryRow = {
   minValue: number | null
 }
 
-const ALCHEMY_URL = `https://eth-sepolia.g.alchemy.com/v2/${Env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+const ALCHEMY_URL = `https://polygon-mainnet.g.alchemy.com/v2/${Env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
 const roundAndTrim = (value: string) => {
   if (!value || value === '0') return '0'
   const [intPartRaw, fracPartRaw = ''] = value.split('.')
@@ -954,10 +954,10 @@ export default function ManagementDetailPage({
                     onValueChange={(value) =>
                       setSelectedMetric(
                         value as
-                          | 'send_count'
-                          | 'receive_count'
-                          | 'send_volume'
-                          | 'receive_volume'
+                        | 'send_count'
+                        | 'receive_count'
+                        | 'send_volume'
+                        | 'receive_volume'
                       )
                     }
                   >

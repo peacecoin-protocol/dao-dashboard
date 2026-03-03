@@ -4,7 +4,7 @@ import { localhost } from '~/lib/config'
 export const pceAddress = {
   [sepolia.id]: '0x951E69b565924c0b846Ed0E779f190c53d29F62e',
   [localhost.id]: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
+  [polygon.id]: '0x62Ef93EAa5bB3E47E0e855C323ef156c8E3D8913',
   [hoodi.id]: '0x1F9FcC5f8DF936b8E3c9617565FfAd7fF6222b14',
 } as Record<number, `0x${string}`>
 
@@ -18,28 +18,28 @@ export const pceCommunity = {
 export const daoStudioAddress = {
   [sepolia.id]: '0x997EF5B0D3916e6ecF1191570Bc8cC96546053e4',
   [localhost.id]: '0x809d550fca64d94Bd9F66E60752A544199cfAC3D',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
+  [polygon.id]: '0x1A94F2393590Ae64c3B5465bD18947A3aDFdacc4',
   [hoodi.id]: '0x0000000000000000000000000000000000000000',
 } as Record<number, `0x${string}`>
 
 export const timelockAddress = {
   [sepolia.id]: '0x9C16Bd171780Feac7796cE6d82dAf4cec43D55B7',
   [localhost.id]: '0x0E801D84Fa97b50751Dbf25036d067dCf18858bF',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
+  [polygon.id]: '0x5F12E3CBF5124627317EC69f04aa89312C4EaE0B',
   [hoodi.id]: '0x0F4E3eEEA64268926454aF8C38D62938637fd18e',
 } as Record<number, `0x${string}`>
 
 export const governorAddress = {
   [sepolia.id]: '0xC0383Ae89d88a582a92574F05Ee056EFE12BE8A9',
   [localhost.id]: '0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
+  [polygon.id]: '0x93bC97C053b1Dcb89b43dAC447c9dbd425feBc90',
   [hoodi.id]: '0x4a1EBA4B4895b6562B8d67510FF07c95F90049d8',
 } as Record<number, `0x${string}`>
 
 export const campaignAddress = {
   [sepolia.id]: '0x2f50E8D943E7C017daEEa05E78Df1038c9018f24',
   [localhost.id]: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
+  [polygon.id]: '0xcf9e1b664781A078F7250A7303c830a329a809A6',
   [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',
 } as Record<number, `0x${string}`>
 
@@ -91,7 +91,7 @@ export const createdAt = {
   [hoodi.id]: '1714857600',
 } as Record<number, string>
 
-export const defaultChainId = sepolia.id
+export const defaultChainId = polygon.id
 
 export const STATUS = [
   'Draft',

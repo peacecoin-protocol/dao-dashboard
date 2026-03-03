@@ -175,7 +175,7 @@ export default function PCEPage({
 
   const alchemyConfig = {
     apiKey: Env.NEXT_PUBLIC_ALCHEMY_API_KEY,
-    network: Network.ETH_SEPOLIA,
+    network: Network.MATIC_MAINNET,
   }
 
   const alchemy = new Alchemy(alchemyConfig)
