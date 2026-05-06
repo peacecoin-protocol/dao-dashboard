@@ -22,7 +22,7 @@ import { SupabaseDao } from '~/i18n/types'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
-import { daoStudioAddress } from '~/app/constants/constants'
+import { appDeploymentEnv, daoStudioAddress } from '~/app/constants/constants'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 
@@ -270,6 +270,7 @@ export default function ForDAOPage({
       const { data: dao } = await supabase
         .from('DAO')
         .select()
+        .eq('environment', appDeploymentEnv)
         .order('id', { ascending: false })
 
       let sortedDaos = (dao as SupabaseDao[]) || []
@@ -377,36 +378,36 @@ export default function ForDAOPage({
             const [tokenVote, sbtVote, nftVote] = await Promise.all([
               governanceTokenAddress
                 ? safeRead(() =>
-                    readContract(config, {
-                      chainId: resolvedChainId,
-                      address: governanceTokenAddress as `0x${string}`,
-                      abi: PCE_C_GOV_TOKEN_ABI,
-                      functionName: 'getVotes',
-                      args: [address],
-                    })
-                  )
+                  readContract(config, {
+                    chainId: resolvedChainId,
+                    address: governanceTokenAddress as `0x${string}`,
+                    abi: PCE_C_GOV_TOKEN_ABI,
+                    functionName: 'getVotes',
+                    args: [address],
+                  })
+                )
                 : undefined,
               sbtAddress
                 ? safeRead(() =>
-                    readContract(config, {
-                      chainId: resolvedChainId,
-                      address: sbtAddress as `0x${string}`,
-                      abi: SBT_ABI,
-                      functionName: 'getVotes',
-                      args: [address],
-                    })
-                  )
+                  readContract(config, {
+                    chainId: resolvedChainId,
+                    address: sbtAddress as `0x${string}`,
+                    abi: SBT_ABI,
+                    functionName: 'getVotes',
+                    args: [address],
+                  })
+                )
                 : undefined,
               nftAddress
                 ? safeRead(() =>
-                    readContract(config, {
-                      chainId: resolvedChainId,
-                      address: nftAddress as `0x${string}`,
-                      abi: SBT_ABI,
-                      functionName: 'getVotes',
-                      args: [address],
-                    })
-                  )
+                  readContract(config, {
+                    chainId: resolvedChainId,
+                    address: nftAddress as `0x${string}`,
+                    abi: SBT_ABI,
+                    functionName: 'getVotes',
+                    args: [address],
+                  })
+                )
                 : undefined,
             ])
 
@@ -559,6 +560,7 @@ export default function ForDAOPage({
           image: '',
           sbtAddress: sbtAddress,
           nftAddress: nftAddress,
+          environment: appDeploymentEnv,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })

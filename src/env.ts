@@ -1,3 +1,24 @@
+type AppEnv = 'dev' | 'stg' | 'prod'
+
+const resolveAppEnv = (): AppEnv => {
+  const value = process.env.NEXT_PUBLIC_APP_ENV ?? 'dev'
+
+  switch (value.toLowerCase()) {
+    case 'dev':
+      return 'dev'
+    case 'stg':
+    case 'staging':
+    case 'preview':
+      return 'stg'
+    default:
+      return 'prod'
+  }
+}
+
+const appEnv = resolveAppEnv()
+
+const pickByAppEnv = (values: Record<AppEnv, string>): string => values[appEnv]
+
 export const Env = {
   NEXT_PUBLIC_WC_PROJECT_ID: '71e7256c9ebc4818fd7d76d7fcae403a',
   NEXT_PUBLIC_ENABLE_TESTNETS: 'true',
@@ -15,4 +36,48 @@ export const Env = {
   MORALIS_API_KEY:
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6ImUzZTUzMTg0LWRlYTctNGNjZS1iYmUyLTA5YzVlNTAxNTg4MiIsIm9yZ0lkIjoiMzk1MzE2IiwidXNlcklkIjoiNDA2MjE2IiwidHlwZUlkIjoiYTdiZTM0YzEtZjdmOS00ZWM3LTlmNmQtMjQyNzEyZTk1MzRhIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3MTc2ODM3NjksImV4cCI6NDg3MzQ0Mzc2OX0.DY1svaKLFchcxzHR1_HNXA-vDS4NbVHzn9o3cjro8W0',
   PINATA_GATEWAY_URL: 'https://ipfs-dao-studio.mypinata.cloud',
+  PINATA_SBT_GROUP_ID: pickByAppEnv({
+    dev:
+      process.env.NEXT_PUBLIC_PINATA_SBT_GROUP_ID_DEV ??
+      'ec1ac640-dd34-4da3-b7f9-9ca9826dcb50',
+    stg:
+      process.env.NEXT_PUBLIC_PINATA_SBT_GROUP_ID_STG ??
+      'ec1ac640-dd34-4da3-b7f9-9ca9826dcb50',
+    prod:
+      process.env.NEXT_PUBLIC_PINATA_SBT_GROUP_ID_PROD ??
+      'ec1ac640-dd34-4da3-b7f9-9ca9826dcb50',
+  }),
+  PINATA_NFT_GROUP_ID: pickByAppEnv({
+    dev:
+      process.env.NEXT_PUBLIC_PINATA_NFT_GROUP_ID_DEV ??
+      '12757d64-9c40-48d1-b2b2-616d0fe9708f',
+    stg:
+      process.env.NEXT_PUBLIC_PINATA_NFT_GROUP_ID_STG ??
+      '12757d64-9c40-48d1-b2b2-616d0fe9708f',
+    prod:
+      process.env.NEXT_PUBLIC_PINATA_NFT_GROUP_ID_PROD ??
+      '12757d64-9c40-48d1-b2b2-616d0fe9708f',
+  }),
+  PINATA_DAO_GROUP_ID: pickByAppEnv({
+    dev:
+      process.env.NEXT_PUBLIC_PINATA_DAO_GROUP_ID_DEV ??
+      '3f83ddff-6587-4430-b4d9-da5c8ef56985',
+    stg:
+      process.env.NEXT_PUBLIC_PINATA_DAO_GROUP_ID_STG ??
+      '3f83ddff-6587-4430-b4d9-da5c8ef56985',
+    prod:
+      process.env.NEXT_PUBLIC_PINATA_DAO_GROUP_ID_PROD ??
+      '3f83ddff-6587-4430-b4d9-da5c8ef56985',
+  }),
+  PINATA_JSON_GROUP_ID: pickByAppEnv({
+    dev:
+      process.env.NEXT_PUBLIC_PINATA_JSON_GROUP_ID_DEV ??
+      'e9cea556-1e9d-4d16-a247-feb8d32e7de5',
+    stg:
+      process.env.NEXT_PUBLIC_PINATA_JSON_GROUP_ID_STG ??
+      'e9cea556-1e9d-4d16-a247-feb8d32e7de5',
+    prod:
+      process.env.NEXT_PUBLIC_PINATA_JSON_GROUP_ID_PROD ??
+      'e9cea556-1e9d-4d16-a247-feb8d32e7de5',
+  }),
 }

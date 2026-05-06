@@ -25,6 +25,7 @@ import {
   defaultChainId,
   campaignTableHeaders,
   GAS_LIMIT,
+  appDeploymentEnv,
 } from '~/app/constants/constants'
 
 import { CAMPAIGN_ABI } from '~/app/ABIs/Campaigns'
@@ -76,6 +77,7 @@ export default function ForCampaignPage({
         const { data: campaignData } = await supabase
           .from('Campaign')
           .select()
+          .eq('environment', appDeploymentEnv)
           .eq('creator', address as `0x${string}`)
           .order('campaignId', { ascending: true })
 
@@ -88,7 +90,7 @@ export default function ForCampaignPage({
                 .eq('tokenId', campaign.sbtId.toString())
                 .eq('isSBT', campaign.tokenType == 1 ? true : false)
                 .eq('daoId', campaign.daoId)
-
+                .eq('environment', appDeploymentEnv)
               campaignData[index].daoId = data?.[0]?.daoId
               campaignData[index].image = data?.[0]?.image
             })
@@ -113,6 +115,7 @@ export default function ForCampaignPage({
           .from('DAO')
           .select()
           .eq('creator', address as `0x${string}`)
+          .eq('environment', appDeploymentEnv)
         setAllDAOs(daos as SupabaseDao[])
       } finally {
         setIsFetchingDaos(false)
@@ -125,7 +128,11 @@ export default function ForCampaignPage({
     const fetchAllTokens = async () => {
       setIsFetchingTokens(true)
       try {
-        const { data: tokens } = await supabase.from('Token').select()
+        const { data: tokens } = await supabase.from('Token').select().eq('environment', appDeploymentEnv)
+        if (!tokens || tokens.length == 0) {
+          setIsFetchingTokens(false)
+          return
+        }
         setAllTokens(tokens as SBTInfo[])
       } finally {
         setIsFetchingTokens(false)
@@ -180,7 +187,7 @@ export default function ForCampaignPage({
       try {
         const fetchedDict = await getDict(locale)
         setDict(fetchedDict)
-      } catch (error) {}
+      } catch (error) { }
     }
     fetchDict()
   }, [locale])
@@ -369,6 +376,7 @@ export default function ForCampaignPage({
             ...campaign,
             created_at: new Date().toISOString(),
             campaignId: (Number(campaignId) || 0) + 1,
+            environment: appDeploymentEnv,
           })
         }
 
@@ -399,10 +407,10 @@ export default function ForCampaignPage({
         isFetchingCampaigns ||
         isFetchingDaos ||
         isFetchingTokens) && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
-          <Spinner show={true} size="large" />
-        </div>
-      )}
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
+            <Spinner show={true} size="large" />
+          </div>
+        )}
 
       <div className="w-full mx-auto space-y-4">
         {/* Header Section */}

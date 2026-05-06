@@ -35,6 +35,7 @@ import {
   campaignAddress,
   defaultChainId,
   GAS_LIMIT,
+  appDeploymentEnv,
 } from '~/app/constants/constants'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 
@@ -264,6 +265,7 @@ export default function ForCampaignPage({
       const { data: campaignData } = await supabase
         .from('Campaign')
         .select()
+        .eq('environment', appDeploymentEnv)
         .order('campaignId', { ascending: true })
 
       if (campaignData && campaignData.length > 0) {
@@ -275,7 +277,7 @@ export default function ForCampaignPage({
               .eq('tokenId', campaign.sbtId.toString())
               .eq('isSBT', campaign.tokenType == 1 ? true : false)
               .eq('daoId', campaign.daoId)
-
+              .eq('environment', appDeploymentEnv)
             campaignData[index].daoId = data?.[0]?.daoId
             campaignData[index].image = data?.[0]?.image
           })
@@ -291,7 +293,7 @@ export default function ForCampaignPage({
               .from('DAO')
               .select('daoId, daoName')
               .in('daoId', uniqueDaoIds)
-
+              .eq('environment', appDeploymentEnv)
             if (!error && daoData) {
               const daoNameMap: Record<string, string> = {}
               daoData.forEach((dao) => {
@@ -332,7 +334,7 @@ export default function ForCampaignPage({
       try {
         const fetchedDict = await getDict(locale)
         setDict(fetchedDict)
-      } catch (error) {}
+      } catch (error) { }
     }
     fetchDict()
   }, [locale])
@@ -340,9 +342,14 @@ export default function ForCampaignPage({
   useEffect(() => {
     const fetchTokenData = async () => {
       setLoading(true)
-      const { data: tokens } = await supabase.from('Token').select()
-
+      const { data: tokens } = await supabase.from('Token').select().eq('environment', appDeploymentEnv)
+      if (!tokens || tokens.length == 0) {
+        setTokenData([])
+        setLoading(false)
+        return
+      }
       const _tokenData = tokens as SBTInfo[]
+
 
       const tokenBalances = await Promise.all(
         _tokenData.map(async (token: SBTInfo) => {
@@ -535,6 +542,7 @@ export default function ForCampaignPage({
           .from('Campaign')
           .select()
           .eq('campaignId', campaignId)
+          .eq('environment', appDeploymentEnv)
           .order('campaignId', { ascending: true })
 
         if (_campaignData && _campaignData.length > 0) {
@@ -546,6 +554,7 @@ export default function ForCampaignPage({
                 Number(_campaignData[0].claimAmount),
             })
             .eq('campaignId', campaignId)
+            .eq('environment', appDeploymentEnv)
         }
         setRefetchCampaignData(!refetchCampaignData)
         setRefetchTokenData(!refetchTokenData)

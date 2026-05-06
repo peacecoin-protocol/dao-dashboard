@@ -39,6 +39,7 @@ import {
 import Modal from '~/components/custom/Modal'
 import { Env } from '~/env'
 import {
+  appDeploymentEnv,
   daoStudioAddress,
   defaultChainId,
   EMPTY_NFT_IMAGE,
@@ -434,7 +435,13 @@ export default function ManagementDetailPage({
         .select()
         .eq('creator', address)
         .eq('daoId', daoId)
+        .eq('environment', appDeploymentEnv)
         .order('created_at', { ascending: false })
+
+      if (!data || data.length == 0) {
+        setDaoTokens([])
+        return
+      }
 
       setDaoTokens((data as SBTInfo[]) || [])
     }
@@ -454,6 +461,11 @@ export default function ManagementDetailPage({
         )
         .eq('daoId', daoId)
         .order('created_at', { ascending: false })
+
+      if (!data || data.length == 0) {
+        setHistoryRows([])
+        return
+      }
 
       setHistoryRows((data as DistributeHistoryRow[]) || [])
       setIsHistoryLoading(false)
@@ -954,10 +966,10 @@ export default function ManagementDetailPage({
                     onValueChange={(value) =>
                       setSelectedMetric(
                         value as
-                          | 'send_count'
-                          | 'receive_count'
-                          | 'send_volume'
-                          | 'receive_volume'
+                        | 'send_count'
+                        | 'receive_count'
+                        | 'send_volume'
+                        | 'receive_volume'
                       )
                     }
                   >

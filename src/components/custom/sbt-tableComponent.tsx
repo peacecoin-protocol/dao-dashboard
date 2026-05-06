@@ -6,7 +6,7 @@ import { ActionInfo, Dictionary, Locale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { Button } from '~/components/ui/button'
 import Image from 'next/image'
-import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
+import { appDeploymentEnv, EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import { shortenAddress } from '../utils'
 import { Env } from '~/env'
 import { createClient } from '~/utils/supabase/client'
@@ -77,7 +77,7 @@ export function SBTTableComponent({
           .from('DAO')
           .select('daoId, daoName')
           .in('daoId', uniqueDaoIds)
-
+          .eq('environment', appDeploymentEnv)
         if (error) {
           console.error('Error fetching DAO names:', error)
           return
@@ -210,15 +210,15 @@ export function SBTTableComponent({
                       <dd className="break-words">
                         {sbt.created_at
                           ? new Date(sbt.created_at).toLocaleDateString(
-                              undefined,
-                              {
-                                year: 'numeric',
-                                month: 'short',
-                                day: '2-digit',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              }
-                            )
+                            undefined,
+                            {
+                              year: 'numeric',
+                              month: 'short',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            }
+                          )
                           : '-'}
                       </dd>
                     </div>

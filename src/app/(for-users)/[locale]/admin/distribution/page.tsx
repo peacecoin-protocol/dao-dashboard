@@ -8,7 +8,7 @@ import { createClient } from '~/utils/supabase/client'
 import { useAccount } from 'wagmi'
 import { shortenAddress } from '~/components/utils'
 import { useRouter } from 'next/navigation'
-import { PCE_DAO_ID } from '~/app/constants/constants'
+import { appDeploymentEnv, PCE_DAO_ID } from '~/app/constants/constants'
 import {
   Table,
   TableBody,
@@ -53,6 +53,7 @@ export default function ForManagementPage({
         .from('DAO')
         .select()
         .eq('creator', address)
+        .eq('environment', appDeploymentEnv)
         .order('created_at', { ascending: false })
 
       let sortedDaos = (data as SupabaseDao[]) || []

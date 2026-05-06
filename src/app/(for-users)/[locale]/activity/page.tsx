@@ -23,6 +23,7 @@ import {
   governorAddress,
   bountyAddress,
   defaultChainId,
+  appDeploymentEnv,
 } from '~/app/constants/constants'
 
 import { formatString } from '~/components/utils'
@@ -73,6 +74,7 @@ export default function ForUsersIndexPage({
         .from('DAO')
         .select('*')
         .eq('daoId', daoId)
+        .eq('environment', appDeploymentEnv)
         .single()
 
       if (error) {

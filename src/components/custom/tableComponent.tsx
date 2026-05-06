@@ -8,7 +8,7 @@ import { timestampToDate } from '../utils'
 import { formatEther } from 'ethers'
 import Image from 'next/image'
 import { Env } from '~/env'
-import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
+import { appDeploymentEnv, EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import { shortenAddress } from '../utils'
 import { Badge } from '~/components/ui/badge'
 import { createClient } from '~/utils/supabase/client'
@@ -69,7 +69,7 @@ export function TableComponent({
           .from('DAO')
           .select('daoId, daoName')
           .in('daoId', uniqueDaoIds)
-
+          .eq('environment', appDeploymentEnv)
         if (error) {
           console.error('Error fetching DAO names:', error)
           return
@@ -161,9 +161,8 @@ export function TableComponent({
                               {rewardType}
                             </Badge>
                             <span
-                              className={`rounded-full px-3 py-1 text-xs font-semibold text-white ${
-                                isEnded ? 'bg-red-500' : 'bg-green-500'
-                              }`}
+                              className={`rounded-full px-3 py-1 text-xs font-semibold text-white ${isEnded ? 'bg-red-500' : 'bg-green-500'
+                                }`}
                             >
                               {isEnded
                                 ? dict?.campaign?.ended || 'Ended'

@@ -17,7 +17,7 @@ import {
 import { useAccount } from 'wagmi'
 import { createClient } from '~/utils/supabase/client'
 import { Env } from '~/env'
-import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
+import { appDeploymentEnv, EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import Image from 'next/image'
 import { SupabaseDao } from '~/i18n/types'
 import { DaoSearchSelect } from '~/components/custom/dao-search-select'
@@ -65,6 +65,7 @@ export const CreateCampaignModal = ({
         .eq('isSBT', form.tokenType == 1 ? true : false)
         .eq('daoId', form.daoId)
         .eq('tokenId', form.sbtId.toString())
+        .eq('environment', appDeploymentEnv)
 
       if (data && data.length > 0) {
         setTokenInfo(data[0])
@@ -73,7 +74,7 @@ export const CreateCampaignModal = ({
       }
     }
     fetchTokenData()
-  }, [address, form.tokenType, form.sbtId, supabase])
+  }, [address, form.tokenType, form.sbtId, supabase, form.daoId])
 
   const shouldValidateToken = form.tokenType != 0 && form.sbtId != 0
   const isOwner = tokenInfo?.creator == address
