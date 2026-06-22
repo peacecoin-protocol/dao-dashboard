@@ -1,33 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { ActionInfo, Dictionary, Locale } from '~/i18n/types'
-import { getDict } from '~/i18n/get-dict'
+import { type ActionInfo, type Locale, type SBTInfo } from '~/i18n/types'
 import { Button } from '~/components/ui/button'
 import Image from 'next/image'
-import { appDeploymentEnv, EMPTY_NFT_IMAGE } from '~/app/constants/constants'
+import { EMPTY_NFT_IMAGE } from '~/app/constants/constants'
 import { shortenAddress } from '../utils'
 import { Env } from '~/env'
 import { createClient } from '~/utils/supabase/client'
 import { formatEther } from 'ethers'
 import CopyIcon from '../../../public/svg/copy'
 import { useToast } from '~/hooks/use-toast'
-export interface SBTInfo {
-  tokenId: string
-  creator: string
-  address: string
-  daoId: string
-  balance: number
-  votingPower: string
-  isRevoked: boolean
-  isSBT: boolean
-  description: string
-  name: string
-  image: string
-  created_at: string
-  updated_at: string
-}
+import { useDictionary } from '~/hooks/use-dictionary'
+import { fetchDaoNamesByIds } from '~/lib/campaigns'
 
 interface SBTTableProps {
   sbtInfo: SBTInfo[]
@@ -36,6 +22,8 @@ interface SBTTableProps {
   onRevoke?: (token: SBTInfo) => void
 }
 
+export type { SBTInfo }
+
 export function SBTTableComponent({
   sbtInfo,
   totalCount,
@@ -43,65 +31,41 @@ export function SBTTableComponent({
   onRevoke,
 }: SBTTableProps) {
   const [daoNames, setDaoNames] = useState<Record<string, string>>({})
-  const [dict, setDict] = useState<Dictionary | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const pathname = usePathname()
   const { toast } = useToast()
 
   // Extract locale from pathname
   const locale: Locale =
     (pathname?.match(/^\/([a-z]{2})(\/|$)/)?.[1] as Locale) || 'en'
+  const dict = useDictionary(locale)
 
   useEffect(() => {
-    const fetchDict = async () => {
-      try {
-        const fetchedDict = await getDict(locale)
-        setDict(fetchedDict)
-      } catch (error) {
-        console.error('Error fetching dictionary:', error)
-      }
-    }
-    fetchDict()
-  }, [locale])
+    let cancelled = false
 
-  useEffect(() => {
-    const fetchDaoNames = async () => {
+    const loadDaoNames = async () => {
       if (!sbtInfo || sbtInfo.length === 0) return
 
-      // Get unique DAO IDs
-      const uniqueDaoIds = [...new Set(sbtInfo.map((sbt) => sbt.daoId))]
-
-      // Fetch DAO names for all unique DAO IDs
       try {
-        const { data, error } = await supabase
-          .from('DAO')
-          .select('daoId, daoName')
-          .in('daoId', uniqueDaoIds)
-          .eq('environment', appDeploymentEnv)
-        if (error) {
-          console.error('Error fetching DAO names:', error)
-          return
-        }
+        const nextDaoNames = await fetchDaoNamesByIds(
+          supabase,
+          sbtInfo.map((sbt) => sbt.daoId)
+        )
 
-        // Create a map of daoId -> daoName
-        const daoNameMap: Record<string, string> = {}
-        if (data) {
-          data.forEach((dao) => {
-            daoNameMap[dao.daoId] = dao.daoName
-          })
+        if (!cancelled) {
+          setDaoNames(nextDaoNames)
         }
-        setDaoNames(daoNameMap)
       } catch (error) {
         console.error('Error fetching DAO names:', error)
       }
     }
 
-    fetchDaoNames()
-  }, [sbtInfo, supabase])
+    loadDaoNames()
 
-  const handleRevoke = (token: SBTInfo) => {
-    onRevoke?.(token)
-  }
+    return () => {
+      cancelled = true
+    }
+  }, [sbtInfo, supabase])
 
   const getImageSrc = (image?: string) => {
     if (!image) return EMPTY_NFT_IMAGE
@@ -210,15 +174,15 @@ export function SBTTableComponent({
                       <dd className="break-words">
                         {sbt.created_at
                           ? new Date(sbt.created_at).toLocaleDateString(
-                            undefined,
-                            {
-                              year: 'numeric',
-                              month: 'short',
-                              day: '2-digit',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            }
-                          )
+                              undefined,
+                              {
+                                year: 'numeric',
+                                month: 'short',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              }
+                            )
                           : '-'}
                       </dd>
                     </div>
@@ -228,7 +192,7 @@ export function SBTTableComponent({
                 {action && (
                   <div className="flex md:items-center md:justify-end">
                     <Button
-                      onClick={() => handleRevoke(sbt)}
+                      onClick={() => onRevoke?.(sbt)}
                       className="w-full md:w-auto whitespace-nowrap"
                     >
                       {sbt.isRevoked

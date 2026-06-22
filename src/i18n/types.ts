@@ -87,6 +87,22 @@ export interface TOKEN {
   swapToLocalAllowance: number
 }
 
+export interface SBTInfo {
+  tokenId: string
+  creator: string
+  address: string
+  daoId: string
+  balance: number
+  votingPower: string
+  isRevoked: boolean
+  isSBT: boolean
+  description: string
+  name: string
+  image: string
+  created_at: string
+  updated_at: string
+}
+
 export interface PIP {
   number: string
   title: string

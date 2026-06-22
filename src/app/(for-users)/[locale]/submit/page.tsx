@@ -107,7 +107,7 @@ export default function ForSubmitPage({
     } else if (error) {
       toast({ title: (error as BaseError).shortMessage })
     }
-  }, [isConfirmed, isConfirming, error, hash])
+  }, [error, hash, isConfirmed, isConfirming, toast])
 
   const submit = dict?.submit ?? {}
 

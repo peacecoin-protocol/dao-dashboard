@@ -6,7 +6,7 @@
     "dev": "PORT=3010 next dev",
     "build": "next build",
     "start": "next start",
-    "tsc": "tsc -p . -noEmit",
+    "tsc": "tsc -p . --noEmit --incremental false",
     "lint": "next lint",
     "format": "prettier --check '**/*.{js,ts,tsx}'",
     "fix": "next lint --fix && prettier --write '**/*.{js,ts,tsx}'",

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { formatEther } from 'ethers'
 import {
@@ -113,7 +113,7 @@ export default function ForPendingPage({
     functionName: 'votingDelay',
   })
 
-  const fetchData = async (count: number) => {
+  const fetchData = useCallback(async (count: number) => {
     if (count == 0) return
     let temp = []
     let _status = []
@@ -156,11 +156,11 @@ export default function ForPendingPage({
     setProposals(temp)
     setStatus(_status)
     setLoading(false)
-  }
+  }, [chainId])
 
   useEffect(() => {
     fetchData(Number(proposalCount))
-  }, [proposalCount, isConfirmed])
+  }, [fetchData, proposalCount, isConfirmed])
 
   const propose = dict?.proposal ?? {}
   const pending = dict?.pending ?? {}

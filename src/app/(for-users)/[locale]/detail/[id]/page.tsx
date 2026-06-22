@@ -1,7 +1,7 @@
 'use client'
 
 import { CopyIcon, Plus, X, ChevronsUpDown } from 'lucide-react'
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
 import Image from 'next/image'
@@ -47,7 +47,6 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   type BaseError,
-  useSwitchChain,
 } from 'wagmi'
 
 import {
@@ -58,9 +57,8 @@ import {
   DialogTitle,
 } from '~/components/ui/dialog'
 import { createClient } from '~/utils/supabase/client'
-import { getDict } from '~/i18n/get-dict'
 
-import { Dictionary, Locale } from '~/i18n/types'
+import { Locale } from '~/i18n/types'
 
 import { formatNumber, formatString, shortenAddress } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
@@ -71,7 +69,11 @@ import { ProposalBadges } from '~/components/custom/proposal-badges'
 import { FormattedValue } from '~/components/custom/formatted-value'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { MULTIPLE_VOTINGS_ABI } from '~/app/ABIs/MultipleVotings'
-import { appDeploymentEnv, defaultChainId, pceAddress } from '~/app/constants/constants'
+import {
+  appDeploymentEnv,
+  defaultChainId,
+  pceAddress,
+} from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { daoStudioAddress } from '~/app/constants/constants'
 import { pinata } from '~/lib/config'
@@ -100,7 +102,11 @@ import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
-import { Spinner } from '~/components/ui/Spinner'
+import { LoadingOverlay } from '~/components/ui/loading-overlay'
+import { useDictionary } from '~/hooks/use-dictionary'
+import { useEnsureSupportedChain } from '~/hooks/use-ensure-supported-chain'
+import { useTransactionToast } from '~/hooks/use-transaction-toast'
+import { fetchOwnedTokenBalances } from '~/lib/campaigns'
 
 type TokenBalance = {
   contractAddress: string
@@ -152,9 +158,8 @@ export default function ForDaoDetailPage({
 }) {
   const { locale } = params
   const { toast } = useToast()
-  const supabase = createClient()
-
-  const [dict, setDict] = useState<Dictionary | null>(null)
+  const supabase = useMemo(() => createClient(), [])
+  const dict = useDictionary(locale)
   const localDict = useMemo(() => dict?.daoInfo ?? {}, [dict])
   const votingPowerDict = dict?.votingPower ?? {}
 
@@ -250,33 +255,27 @@ export default function ForDaoDetailPage({
   })
 
   const { address, chainId } = useAccount()
+  useEnsureSupportedChain()
 
-  const provider = new ethers.JsonRpcProvider(
-    chainId === 137
-      ? Env.NEXT_PUBLIC_POLYGON_RPC_URL
-      : Env.NEXT_PUBLIC_SEPOLIA_RPC_URL
+  const provider = useMemo(
+    () =>
+      new ethers.JsonRpcProvider(
+        chainId === 137
+          ? Env.NEXT_PUBLIC_POLYGON_RPC_URL
+          : Env.NEXT_PUBLIC_SEPOLIA_RPC_URL
+      ),
+    [chainId]
   )
 
   const [blockNumber, setBlockNumber] = useState<number | undefined>(undefined)
-  const { chains, switchChain } = useSwitchChain()
-
-  useEffect(() => {
-    const switchChainAndReload = async () => {
-      if (!chainId || !chains.some((chain) => chain.id === chainId)) {
-        switchChain({ chainId: defaultChainId })
-      }
-    }
-    switchChainAndReload()
-  }, [chainId, chains, switchChain])
 
   useEffect(() => {
     const fetchBlockNumber = async () => {
       const blockNumber = await provider.getBlockNumber()
-      console.log('fetching block number', blockNumber)
       setBlockNumber(blockNumber)
     }
     fetchBlockNumber()
-  }, [])
+  }, [provider])
 
   const getTreasuryBalances = async (address: string) => {
     // Fetch ERC20 token balances for the given address using Moralis API
@@ -508,45 +507,17 @@ export default function ForDaoDetailPage({
       }
 
       setLoading(true)
-      const { data: tokens } = await supabase
-        .from('Token')
-        .select()
-        .eq('daoId', id)
-        .eq('environment', appDeploymentEnv)
-
-      if (!tokens || tokens.length == 0) {
-        setTokenData([])
-        return
+      try {
+        setTokenData(
+          await fetchOwnedTokenBalances({
+            account: address,
+            daoId: id,
+            supabase,
+          })
+        )
+      } finally {
+        setLoading(false)
       }
-
-      const _tokenData = tokens as SBTInfo[]
-
-      const tokenBalances = await Promise.all(
-        _tokenData.map(async (token: SBTInfo) => {
-          let balance = 0
-
-          try {
-            balance = (await readContract(config, {
-              abi: SBT_ABI,
-              address: token.address as `0x${string}`,
-              functionName: 'balanceOf',
-              args: [address, token.tokenId],
-            })) as number
-
-            return balance
-          } catch (error) {
-            console.error('Error fetching token balance:', error)
-            return 0
-          }
-        })
-      )
-
-      _tokenData.forEach((token: SBTInfo, index: number) => {
-        token.balance = tokenBalances[index] ?? 0
-      })
-      setTokenData(_tokenData.filter((token: SBTInfo) => token.balance > 0))
-
-      setLoading(false)
     }
     fetchTokenData()
   }, [address, refetchTokenData, supabase, chainId, id])
@@ -616,14 +587,15 @@ export default function ForDaoDetailPage({
             </h1>
             <span
               className={`text-xs font-semibold px-3 py-1 rounded-full
-      ${status === 'Active'
-                  ? 'bg-green-200 text-green-900'
-                  : status === 'Pending'
-                    ? 'bg-yellow-200 text-yellow-900'
-                    : status === 'Ended'
-                      ? 'bg-gray-300 text-gray-700'
-                      : 'bg-gray-200 text-gray-800'
-                }`}
+      ${
+        status === 'Active'
+          ? 'bg-green-200 text-green-900'
+          : status === 'Pending'
+            ? 'bg-yellow-200 text-yellow-900'
+            : status === 'Ended'
+              ? 'bg-gray-300 text-gray-700'
+              : 'bg-gray-200 text-gray-800'
+      }`}
               style={{ textAlign: 'center' }}
             >
               {statusLabel}
@@ -741,8 +713,9 @@ export default function ForDaoDetailPage({
                       return (
                         <li
                           key={idx}
-                          className={`flex items-center gap-2 ${isMostChosen ? 'font-bold text-green-700' : ''
-                            }`}
+                          className={`flex items-center gap-2 ${
+                            isMostChosen ? 'font-bold text-green-700' : ''
+                          }`}
                         >
                           <span className="font-medium">{opt}</span>
                           <span className="ml-auto">
@@ -812,11 +785,11 @@ export default function ForDaoDetailPage({
                 ? proposal[6] === 0 && proposal[5] > 0
                   ? 100
                   : (
-                    (Number(formatEther(proposal[5])) /
-                      (Number(formatEther(proposal[5])) +
-                        Number(formatEther(proposal[6])))) *
-                    100
-                  ).toFixed(2)
+                      (Number(formatEther(proposal[5])) /
+                        (Number(formatEther(proposal[5])) +
+                          Number(formatEther(proposal[6])))) *
+                      100
+                    ).toFixed(2)
                 : '0'}
               %)
             </h1>
@@ -824,10 +797,10 @@ export default function ForDaoDetailPage({
           <Line
             percent={
               Number(proposal[5] || 0) > 0 &&
-                Number(BigInt(quorum?.toString() || '0')) > 0
+              Number(BigInt(quorum?.toString() || '0')) > 0
                 ? (Number(formatEther(proposal[5])) /
-                  Number(formatEther(quorum?.toString() || '0'))) *
-                100
+                    Number(formatEther(quorum?.toString() || '0'))) *
+                  100
                 : 0
             }
             strokeColor="#1995AD"
@@ -848,11 +821,11 @@ export default function ForDaoDetailPage({
                 ? proposal[5] === 0 && proposal[6] > 0
                   ? 100
                   : (
-                    (Number(formatEther(proposal[6])) /
-                      (Number(formatEther(proposal[5])) +
-                        Number(formatEther(proposal[6])))) *
-                    100
-                  ).toFixed(2)
+                      (Number(formatEther(proposal[6])) /
+                        (Number(formatEther(proposal[5])) +
+                          Number(formatEther(proposal[6])))) *
+                      100
+                    ).toFixed(2)
                 : '0'}
               %)
             </h1>
@@ -861,10 +834,10 @@ export default function ForDaoDetailPage({
           <Line
             percent={
               Number(proposal[6] || 0) > 0 &&
-                Number(BigInt(quorum?.toString() || '0')) > 0
+              Number(BigInt(quorum?.toString() || '0')) > 0
                 ? (Number(formatEther(proposal[6])) /
-                  Number(formatEther(quorum?.toString() || '0'))) *
-                100
+                    Number(formatEther(quorum?.toString() || '0'))) *
+                  100
                 : 0
             }
             strokeColor="#1995AD"
@@ -888,11 +861,11 @@ export default function ForDaoDetailPage({
             percent={
               Number(proposal[3]) < Number(blockNumber)
                 ? Math.min(
-                  ((Number(blockNumber) - Number(proposal[3])) /
-                    Number(votingPeriod)) *
-                  100,
-                  100
-                )
+                    ((Number(blockNumber) - Number(proposal[3])) /
+                      Number(votingPeriod)) *
+                      100,
+                    100
+                  )
                 : 0
             }
             className="w-full"
@@ -927,12 +900,12 @@ export default function ForDaoDetailPage({
               percent={
                 Number(proposal[2]) > 0
                   ? Math.min(
-                    ((getCurrentTimestamp() -
-                      (Number(proposal[2]) - Number(timelockDelay))) *
-                      100) /
-                    Number(timelockDelay),
-                    100
-                  )
+                      ((getCurrentTimestamp() -
+                        (Number(proposal[2]) - Number(timelockDelay))) *
+                        100) /
+                        Number(timelockDelay),
+                      100
+                    )
                   : 0
               }
               strokeColor="#1995AD"
@@ -1252,7 +1225,8 @@ export default function ForDaoDetailPage({
         const rawValue = action.args[inputIndex] ?? ''
         if (!rawValue.trim()) {
           throw new Error(
-            `Action #${index + 1}: missing value for ${input.name || `arg${inputIndex + 1}`
+            `Action #${index + 1}: missing value for ${
+              input.name || `arg${inputIndex + 1}`
             }`
           )
         }
@@ -1426,9 +1400,9 @@ export default function ForDaoDetailPage({
   const selectedActionFragment =
     selectedAction && selectedAction.functionSignature
       ? getFunctionFragmentBySignature(
-        selectedAction.abiJson,
-        selectedAction.functionSignature
-      )
+          selectedAction.abiJson,
+          selectedAction.functionSignature
+        )
       : null
   const isSelectedActionAbiInvalid =
     !!selectedAction?.abiError ||
@@ -1525,7 +1499,7 @@ export default function ForDaoDetailPage({
       functionName: 'proposalCount',
     }) as { data?: number; refetch: () => void }
 
-  const fetchData = async (count: number) => {
+  const fetchData = useCallback(async (count: number) => {
     setLoading(true)
     if (!count || !governorAddress || count === 0) {
       setProposals([])
@@ -1598,12 +1572,12 @@ export default function ForDaoDetailPage({
     setProposals(temp)
     setStatus(_status)
     setLoading(false)
-  }
+  }, [governorAddress])
   useEffect(() => {
     if (governorAddress) {
       fetchData(Number(proposalCount))
     }
-  }, [proposalCount, isConfirmed, governorAddress])
+  }, [fetchData, proposalCount, isConfirmed, governorAddress])
 
   useEffect(() => {
     async function fetchMultipleProposals() {
@@ -1663,7 +1637,7 @@ export default function ForDaoDetailPage({
       setLoading(false)
     }
     fetchMultipleProposals()
-  }, [multipleProposalCount, address, chainId, isRefetching])
+  }, [multipleProposalCount, address, chainId, isRefetching, multipleVotingAddress])
 
   useEffect(() => {
     const fetchIdenticon = async () => {
@@ -2112,32 +2086,15 @@ export default function ForDaoDetailPage({
     }
   }
 
-  useEffect(() => {
-    if (isConfirmed) {
-      toast({
-        title: votingPowerDict.transactionSucceed ?? 'Transaction Succeeded!',
-      })
-    } else if (isConfirming) {
-      toast({
-        title:
-          votingPowerDict.txPending ?? 'Transaction Pending, Please Wait...',
-      })
-    } else if (error) {
-      toast({ title: (error as BaseError).shortMessage })
-    }
-  }, [isConfirmed, isConfirming, error, toast])
-
-  useEffect(() => {
-    const fetchDict = async () => {
-      try {
-        const fetchedDict = await getDict(locale)
-        setDict(fetchedDict)
-      } catch (error) {
-        console.error('Error fetching dictionary:', error)
-      }
-    }
-    fetchDict()
-  }, [locale])
+  useTransactionToast({
+    error,
+    isConfirmed,
+    isConfirming,
+    pendingMessage:
+      votingPowerDict.txPending ?? 'Transaction Pending, Please Wait...',
+    successMessage:
+      votingPowerDict.transactionSucceed ?? 'Transaction Succeeded!',
+  })
 
   useEffect(() => {
     const updateImage = async () => {
@@ -3130,10 +3087,10 @@ export default function ForDaoDetailPage({
                         <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 w-full text-right">
                           {communityTokenBalance
                             ? formatNumber(
-                              parseFloat(
-                                formatEther(toBigInt(communityTokenBalance))
+                                parseFloat(
+                                  formatEther(toBigInt(communityTokenBalance))
+                                )
                               )
-                            )
                             : '0'}{' '}
                           {communityTokenSymbol ?? 'TOKEN'}
                         </span>
@@ -3146,10 +3103,10 @@ export default function ForDaoDetailPage({
                         <span className="text-lg font-semibold text-purple-600 dark:text-purple-400 w-full text-right">
                           {governanceTokenBalance
                             ? formatNumber(
-                              parseFloat(
-                                formatEther(toBigInt(governanceTokenBalance))
+                                parseFloat(
+                                  formatEther(toBigInt(governanceTokenBalance))
+                                )
                               )
-                            )
                             : '0'}{' '}
                           {communityTokenSymbol ?? 'TOKEN'}
                         </span>
@@ -3207,8 +3164,8 @@ export default function ForDaoDetailPage({
                       <div className="text-3xl sm:text-4xl font-bold text-teal-600 dark:text-teal-400 mb-4">
                         {getVotes
                           ? formatNumber(
-                            Number(formatEther(getVotes as bigint))
-                          )
+                              Number(formatEther(getVotes as bigint))
+                            )
                           : '0'}
                       </div>
 
@@ -3221,8 +3178,8 @@ export default function ForDaoDetailPage({
                           <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                             {tokenVote
                               ? formatNumber(
-                                parseFloat(formatEther(toBigInt(tokenVote)))
-                              )
+                                  parseFloat(formatEther(toBigInt(tokenVote)))
+                                )
                               : '0'}
                           </span>
                         </div>
@@ -3235,8 +3192,8 @@ export default function ForDaoDetailPage({
                           <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                             {sbtVotingPower
                               ? formatNumber(
-                                Number(formatEther(toBigInt(sbtVotingPower)))
-                              )
+                                  Number(formatEther(toBigInt(sbtVotingPower)))
+                                )
                               : '0'}
                           </span>
                         </div>
@@ -3249,8 +3206,8 @@ export default function ForDaoDetailPage({
                           <span className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white w-full text-right">
                             {nftVotingPower
                               ? formatNumber(
-                                Number(formatEther(toBigInt(nftVotingPower)))
-                              )
+                                  Number(formatEther(toBigInt(nftVotingPower)))
+                                )
                               : '0'}
                           </span>
                         </div>
@@ -3449,8 +3406,9 @@ export default function ForDaoDetailPage({
                         className="flex flex-row gap-2 items-center"
                       >
                         <Input
-                          placeholder={`${localDict.optionLabel ?? 'Option'} ${index + 1
-                            }`}
+                          placeholder={`${localDict.optionLabel ?? 'Option'} ${
+                            index + 1
+                          }`}
                           value={option}
                           onChange={(e) => {
                             const newOptions = [...options]
@@ -3539,10 +3497,11 @@ export default function ForDaoDetailPage({
                         key={action.id}
                         type="button"
                         onClick={() => handleSelectCustomAction(index)}
-                        className={`min-w-[170px] rounded-lg border px-3 py-2 text-left transition-colors ${index === selectedActionIndex
-                          ? 'border-primary_blue bg-primary_blue/10'
-                          : 'border-gray-200 bg-white hover:border-gray-300'
-                          }`}
+                        className={`min-w-[170px] rounded-lg border px-3 py-2 text-left transition-colors ${
+                          index === selectedActionIndex
+                            ? 'border-primary_blue bg-primary_blue/10'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
                       >
                         <div className="text-sm font-semibold">{`Action #${index + 1}`}</div>
                         <div className="text-xs text-gray-500">
@@ -3760,10 +3719,11 @@ export default function ForDaoDetailPage({
                     </Button>
                     {simulationMessage && (
                       <p
-                        className={`text-sm ${simulationStatus === 'success'
-                          ? 'text-green-600'
-                          : 'text-red-600'
-                          }`}
+                        className={`text-sm ${
+                          simulationStatus === 'success'
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }`}
                       >
                         {simulationMessage}
                       </p>
@@ -3871,7 +3831,7 @@ export default function ForDaoDetailPage({
             </DialogTitle>
             <DialogDescription>
               {selectedProposalIndex !== null &&
-                proposals[selectedProposalIndex] ? (
+              proposals[selectedProposalIndex] ? (
                 <div className="flex flex-col gap-2">
                   <h1>
                     {localDict.proposalId ?? 'Proposal ID'}:{' '}
@@ -3888,11 +3848,7 @@ export default function ForDaoDetailPage({
         </DialogContent>
       </Dialog>
 
-      {loading && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
-          <Spinner show={true} size="large" />
-        </div>
-      )}
+      <LoadingOverlay isLoading={loading} />
     </div>
   )
 }

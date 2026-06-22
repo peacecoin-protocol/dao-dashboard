@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { formatEther } from 'ethers'
 import { readContract } from '@wagmi/core'
@@ -85,7 +85,7 @@ export default function ForClosedPage({
     }
   }, [isConfirmed, isConfirming, error, toast])
 
-  const fetchData = async (count: number) => {
+  const fetchData = useCallback(async (count: number) => {
     if (count == 0) return
 
     let temp = []
@@ -130,11 +130,11 @@ export default function ForClosedPage({
     setProposals(temp)
     setStatus(_status)
     setLoading(false)
-  }
+  }, [chainId])
 
   useEffect(() => {
     fetchData(Number(proposalCount))
-  }, [proposalCount])
+  }, [fetchData, proposalCount])
 
   const dashboard = dict?.dashboard ?? {}
   const proposal = dict?.proposal ?? {}

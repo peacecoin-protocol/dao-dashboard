@@ -226,8 +226,8 @@ export default function ManagementDetailPage({
     return ''
   }, [daoConfigs])
 
-  const managementDict = dict?.management ?? {}
-  const sbtDict = dict?.sbt ?? {}
+  const managementDict = useMemo(() => dict?.management ?? {}, [dict?.management])
+  const sbtDict = useMemo(() => dict?.sbt ?? {}, [dict?.sbt])
   const loadingLabel = managementDict.loading ?? 'Loading...'
   const sbtLabel = sbtDict.sbt ?? 'SBT'
   const nftLabel = sbtDict.nft ?? 'NFT'

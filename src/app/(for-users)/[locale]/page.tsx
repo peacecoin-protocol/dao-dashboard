@@ -303,7 +303,7 @@ export default function ForDAOPage({
       setLoading(false)
     }
     fetchDAO()
-  }, [supabase, refetchDaos])
+  }, [refetchDaos])
 
   useEffect(() => {
     const fetchMemberDaos = async () => {
@@ -323,7 +323,7 @@ export default function ForDAOPage({
     }
 
     fetchMemberDaos()
-  }, [address, supabase])
+  }, [address])
 
   useEffect(() => {
     let isCancelled = false
@@ -465,11 +465,11 @@ export default function ForDAOPage({
       }
     }
     switchChainAndReload()
-  }, [chainId])
+  }, [chainId, chains, switchChain])
 
   useEffect(() => {
     switchChain({ chainId: defaultChainId })
-  }, [])
+  }, [switchChain])
 
   let [loading, setLoading] = useState(true)
 

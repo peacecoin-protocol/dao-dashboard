@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { type ChangeEvent, useEffect, useMemo, useState } from 'react'
 import Modal from '~/components/custom/Modal'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 import { DateTimePicker } from '~/components/ui/date-time-picker'
 import { useToast } from '~/hooks/use-toast'
-import { SBTInfo } from '~/components/custom/sbt-tableComponent'
+import { type SBTInfo } from '~/i18n/types'
 
 import { Label } from '~/components/ui/label'
 import {
@@ -22,6 +22,36 @@ import Image from 'next/image'
 import { SupabaseDao } from '~/i18n/types'
 import { DaoSearchSelect } from '~/components/custom/dao-search-select'
 
+interface CampaignFormState {
+  daoId: string
+  daoSearch: string
+  sbtId: number
+  title: string
+  description: string
+  totalAmount: string
+  claimAmount: string
+  startDate: string
+  endDate: string
+  isVerifySignature: boolean
+  tokenType: number
+  tokenAddress: string
+}
+
+const initialFormState: CampaignFormState = {
+  daoId: '',
+  daoSearch: '',
+  sbtId: 0,
+  title: '',
+  description: '',
+  totalAmount: '',
+  claimAmount: '',
+  startDate: '',
+  endDate: '',
+  isVerifySignature: true,
+  tokenType: 0,
+  tokenAddress: '',
+}
+
 export const CreateCampaignModal = ({
   isOpen,
   onClose,
@@ -36,26 +66,12 @@ export const CreateCampaignModal = ({
   campaign: any
   setIsInvalidToken: (value: boolean) => void
   allDAOs: SupabaseDao[]
-  allTokens: SBTInfo[]
 }) => {
   const { toast } = useToast()
   const { address } = useAccount()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const [tokenInfo, setTokenInfo] = useState<SBTInfo | null>(null)
-  const [form, setForm] = useState({
-    daoId: '',
-    daoSearch: '',
-    sbtId: 0,
-    title: '',
-    description: '',
-    totalAmount: '',
-    claimAmount: '',
-    startDate: '',
-    endDate: '',
-    isVerifySignature: true,
-    tokenType: 0,
-    tokenAddress: '',
-  })
+  const [form, setForm] = useState<CampaignFormState>(initialFormState)
 
   useEffect(() => {
     const fetchTokenData = async () => {
@@ -87,17 +103,12 @@ export const CreateCampaignModal = ({
     setIsInvalidToken(!isOwner)
   }, [shouldValidateToken, isOwner, setIsInvalidToken])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
 
-    if (name === 'sbtId' && value == '0' && form.tokenType == 1) {
+    if (name === 'sbtId' && value == '0' && (form.tokenType == 1 || form.tokenType == 2)) {
       toast({
-        title: 'SBT ID must be greater than 0',
-      })
-      return
-    } else if (name === 'sbtId' && value == '0' && form.tokenType == 2) {
-      toast({
-        title: 'NFT ID must be greater than 0',
+        title: form.tokenType == 1 ? 'SBT ID must be greater than 0' : 'NFT ID must be greater than 0',
       })
       return
     }
@@ -148,20 +159,7 @@ export const CreateCampaignModal = ({
     }
 
     onSubmit(form)
-    setForm({
-      daoId: '',
-      daoSearch: '',
-      sbtId: 0,
-      title: '',
-      description: '',
-      totalAmount: '',
-      claimAmount: '',
-      startDate: '',
-      endDate: '',
-      isVerifySignature: true,
-      tokenType: 0,
-      tokenAddress: '',
-    })
+    setForm(initialFormState)
   }
 
   const hasTokenIdentifier =
