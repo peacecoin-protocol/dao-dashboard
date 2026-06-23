@@ -1,17 +1,20 @@
 'use client'
 
-import React, { useEffect, useMemo, useState, ChangeEvent } from 'react'
+import {
+  type ChangeEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { formatEther, parseEther } from 'ethers'
-import { readContract } from '@wagmi/core'
-import { useToast } from '~/hooks/use-toast'
+import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import {
   useAccount,
   useReadContract,
   useWriteContract,
   useWaitForTransactionReceipt,
-  type BaseError,
 } from 'wagmi'
-import { waitForTransactionReceipt } from '@wagmi/core'
 import { TokenTable } from '~/components/custom/token-table'
 import { Input } from '~/components/ui/input'
 
@@ -27,61 +30,145 @@ import { Button } from '~/components/ui/button'
 import { formatString } from '~/components/utils'
 import useWindowWidth from '~/components/useWindWidth'
 
-import { pceAddress } from '~/app/constants/constants'
+import { defaultChainId, pceAddress } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { getDict } from '~/i18n/get-dict'
+import { PagePropsWithLocale, TOKEN } from '~/i18n/types'
 import { COMMUNITY_TOKEN_ABI } from '~/app/ABIs/CommunityToken'
 
 import { config } from '~/lib/config'
-import { defaultChainId } from '~/app/constants/constants'
-
-import { TOKEN } from '~/i18n/types'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
-import { Spinner } from '~/components/ui/Spinner'
+import { LoadingOverlay } from '~/components/ui/loading-overlay'
+import { useDictionary } from '~/hooks/use-dictionary'
+import { useEnsureSupportedChain } from '~/hooks/use-ensure-supported-chain'
+import { useTransactionToast } from '~/hooks/use-transaction-toast'
+import { usePagination } from '~/hooks/use-pagination'
+
+type TokenFormFieldName =
+  | 'name'
+  | 'symbol'
+  | 'amountToExchange'
+  | 'dilutionFactor'
+  | 'decreaseIntervalDays'
+  | 'afterDecreaseBp'
+  | 'maxIncreaseOfTotalSupplyBp'
+  | 'maxIncreaseBp'
+  | 'maxUsageBp'
+  | 'changeBp'
+
+interface TokenCreationState {
+  name: string
+  symbol: string
+  amountToExchange: string
+  dilutionFactor: string
+  decreaseIntervalDays: string
+  afterDecreaseBp: string
+  maxIncreaseOfTotalSupplyBp: string
+  maxIncreaseBp: string
+  maxUsageBp: string
+  changeBp: string
+  incomeExchangeAllowMethod: 3
+  outgoExchangeAllowMethod: 3
+  incomeTargetTokens: string[]
+  outgoTargetTokens: string[]
+}
+
+const tokenAmountFields = new Set<TokenFormFieldName>([
+  'amountToExchange',
+  'dilutionFactor',
+])
+
+const initialTokenInfo: TokenCreationState = {
+  name: '',
+  symbol: '',
+  amountToExchange: '0',
+  dilutionFactor: '0',
+  decreaseIntervalDays: '',
+  afterDecreaseBp: '',
+  maxIncreaseOfTotalSupplyBp: '',
+  maxIncreaseBp: '',
+  maxUsageBp: '',
+  changeBp: '',
+  incomeExchangeAllowMethod: 3,
+  outgoExchangeAllowMethod: 3,
+  incomeTargetTokens: [],
+  outgoTargetTokens: [],
+}
+
+const tokenCreationFields: Array<{
+  name: TokenFormFieldName
+  placeholder: string
+  type?: 'number'
+}> = [
+  { name: 'name', placeholder: 'Name - PeaceCoin, Ethereum, Bitcoin, etc.' },
+  { name: 'symbol', placeholder: 'Symbol - PCE, ETH, BTC, etc.' },
+  {
+    name: 'amountToExchange',
+    placeholder: 'amountToExchange - 100',
+    type: 'number',
+  },
+  {
+    name: 'dilutionFactor',
+    placeholder: 'dilutionFactor - 1',
+    type: 'number',
+  },
+  {
+    name: 'decreaseIntervalDays',
+    placeholder: 'decreaseIntervalDays - 7',
+    type: 'number',
+  },
+  {
+    name: 'afterDecreaseBp',
+    placeholder: 'afterDecreaseBp - 9980',
+    type: 'number',
+  },
+  {
+    name: 'maxIncreaseOfTotalSupplyBp',
+    placeholder: 'maxIncreaseOfTotalSupplyBp - 20',
+    type: 'number',
+  },
+  {
+    name: 'maxIncreaseBp',
+    placeholder: 'maxIncreaseBp - 2000',
+    type: 'number',
+  },
+  {
+    name: 'maxUsageBp',
+    placeholder: 'maxUsageBp - 3000',
+    type: 'number',
+  },
+  {
+    name: 'changeBp',
+    placeholder: 'changeBp - 3000',
+    type: 'number',
+  },
+]
+
+const tokenPageSize = 5
 
 export default function ForTokenPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const { toast } = useToast()
-  const [dict, setDict] = useState<Dictionary | null>(null)
+  const dict = useDictionary(locale)
   const width = useWindowWidth()
   const colSpan = width < 1280
 
   const { address, chainId } = useAccount()
-  const {
-    data: hash,
-    error,
-    writeContract,
-    writeContractAsync,
-  } = useWriteContract()
+  useEnsureSupportedChain()
+  const { data: hash, error, writeContractAsync } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
     })
   const [isOpened, setDialogStatus] = useState(false)
-  const [tokenInfo, setTokenInfo] = useState<any>()
+  const [tokenInfo, setTokenInfo] =
+    useState<TokenCreationState>(initialTokenInfo)
   const [exchangeRates, setExchangeRate] = useState<Record<string, bigint>>({})
-  const [tokens, setTokens] = useState<any[]>([])
+  const [tokens, setTokens] = useState<string[]>([])
   const [swapAmount, setSwapAmount] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
   const [transferAddress, setTransferAddress] = useState('')
-  const [tokenPage, setTokenPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [isTokenLoading, setIsTokenLoading] = useState(true)
-  const tokenPageSize = 5
-
-  useEffect(() => {
-    const fetchDict = async () => {
-      try {
-        const fetchedDict = await getDict(locale)
-        setDict(fetchedDict)
-      } catch (error) {
-        console.error('Error fetching dictionary:', error)
-      }
-    }
-    fetchDict()
-  }, [locale])
 
   const { data: balance, refetch: refetchBalance } = useReadContract({
     address: pceAddress[chainId || defaultChainId] as `0x${string}`,
@@ -97,13 +184,12 @@ export default function ForTokenPage({
     args: [],
   })
 
-  const { data: lastModifiedFactor, refetch: refetchLastModifiedFactor } =
-    useReadContract({
-      address: pceAddress[chainId || defaultChainId] as `0x${string}`,
-      abi: PCE_ABI,
-      functionName: 'lastModifiedFactor',
-      args: [],
-    })
+  const { data: lastModifiedFactor } = useReadContract({
+    address: pceAddress[chainId || defaultChainId] as `0x${string}`,
+    abi: PCE_ABI,
+    functionName: 'lastModifiedFactor',
+    args: [],
+  })
 
   const { data: factor } = useReadContract({
     address: pceAddress[chainId || defaultChainId] as `0x${string}`,
@@ -112,145 +198,122 @@ export default function ForTokenPage({
     args: [],
   })
 
-  const { data: INITIAL_FACTOR, refetch: refetchINITIAL_FACTOR } =
-    useReadContract({
-      address: pceAddress[chainId || defaultChainId] as `0x${string}`,
-      abi: PCE_ABI,
-      functionName: 'INITIAL_FACTOR',
-      args: [],
-    })
-
-  const {
-    data: swapableToPCEIndividualRate,
-    refetch: refetchSwapableToPCEIndividualRate,
-  } = useReadContract({
+  const { data: INITIAL_FACTOR } = useReadContract({
     address: pceAddress[chainId || defaultChainId] as `0x${string}`,
     abi: PCE_ABI,
-    functionName: 'swapableToPCEIndividualRate',
+    functionName: 'INITIAL_FACTOR',
     args: [],
   })
 
-  const fetchExchangeRate = async (_tokens: string[]) => {
-    if (!_tokens || _tokens.length == 0) return
-    if (!pceAddress[chainId || defaultChainId]) return
-
-    const _exchangeRates: Record<string, bigint> = {}
-
-    for (let i = 0; i < _tokens.length; i++) {
-      try {
-        const tokenAddress = _tokens[i]
-        if (!tokenAddress) continue // Skip if undefined
-
-        const exchangeRate = await readContract(config, {
-          address: pceAddress[chainId || defaultChainId] as `0x${string}`,
-          abi: PCE_ABI,
-          functionName: 'getExchangeRate',
-          args: [tokenAddress],
-        })
-
-        _exchangeRates[tokenAddress] = exchangeRate as bigint
-      } catch (error) {
-        console.error('Error getting exchange rate:', error)
+  const fetchExchangeRate = useCallback(
+    async (_tokens: string[]) => {
+      if (_tokens.length === 0 || !pceAddress[chainId || defaultChainId]) {
+        setExchangeRate({})
+        return
       }
-    }
 
-    setExchangeRate(_exchangeRates)
-  }
+      const exchangeRateEntries = await Promise.all(
+        _tokens.map(async (tokenAddress) => {
+          if (!tokenAddress) return null
+
+          try {
+            const exchangeRate = await readContract(config, {
+              address: pceAddress[chainId || defaultChainId] as `0x${string}`,
+              abi: PCE_ABI,
+              functionName: 'getExchangeRate',
+              args: [tokenAddress],
+            })
+
+            return [tokenAddress, exchangeRate as bigint] as const
+          } catch (error) {
+            console.error('Error getting exchange rate:', error)
+            return null
+          }
+        })
+      )
+
+      setExchangeRate(
+        Object.fromEntries(
+          exchangeRateEntries.filter(
+            (entry): entry is readonly [string, bigint] => entry !== null
+          )
+        )
+      )
+    },
+    [chainId]
+  )
 
   useEffect(() => {
-    if (tokens) {
-      fetchExchangeRate(tokens as [])
+    if (tokens.length > 0) {
+      fetchExchangeRate(tokens)
+      return
     }
-  }, [tokens])
+
+    setExchangeRate({})
+  }, [fetchExchangeRate, tokens])
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
-    const name = event.target.name
+    const name = event.target.name as TokenFormFieldName
     const value = event.target.value
+    const isAmountField = tokenAmountFields.has(name)
+    const nextValue = isAmountField
+      ? value !== '' && value !== '0'
+        ? parseEther(value).toString()
+        : '0'
+      : value
 
-    let _tokenInfo = tokenInfo || {}
-
-    switch (name) {
-      case 'name':
-        _tokenInfo.name = value
-        break
-      case 'symbol':
-        _tokenInfo.symbol = value
-        break
-      case 'amountToExchange':
-        _tokenInfo.amountToExchange =
-          value == '0' || value == '' ? '0' : parseEther(value).toString()
-        break
-      case 'dilutionFactor':
-        _tokenInfo.dilutionFactor =
-          value == '0' || value == '' ? '0' : parseEther(value).toString()
-        break
-      case 'decreaseIntervalDays':
-        _tokenInfo.decreaseIntervalDays = value
-        break
-      case 'afterDecreaseBp':
-        _tokenInfo.afterDecreaseBp = value
-        break
-      case 'maxIncreaseOfTotalSupplyBp':
-        _tokenInfo.maxIncreaseOfTotalSupplyBp = value
-        break
-      case 'maxIncreaseBp':
-        _tokenInfo.maxIncreaseBp = value
-        break
-      case 'maxUsageBp':
-        _tokenInfo.maxUsageBp = value
-        break
-      case 'changeBp':
-        _tokenInfo.changeBp = value
-        break
-    }
-
-    _tokenInfo.incomeExchangeAllowMethod = 3
-    _tokenInfo.outgoExchangeAllowMethod = 3
-    _tokenInfo.incomeTargetTokens = []
-    _tokenInfo.outgoTargetTokens = []
-    setTokenInfo(_tokenInfo)
+    setTokenInfo((prev) => ({
+      ...prev,
+      [name]: nextValue,
+    }))
   }
 
   const [communityTokenInfo, setCommunityTokenInfo] = useState<TOKEN[]>([])
 
-  const getCommunityTokenInfo = React.useCallback(
+  const getCommunityTokenInfo = useCallback(
     async (tokenAddress: string) => {
       if (!tokenAddress || !tokenAddress.startsWith('0x')) return
+
       try {
-        const name = (await readContract(config, {
-          address: tokenAddress as `0x${string}`,
-          abi: PCE_ABI,
-          functionName: 'name',
-          args: [],
-        })) as string
-
-        const symbol = (await readContract(config, {
-          address: tokenAddress as `0x${string}`,
-          abi: PCE_ABI,
-          functionName: 'symbol',
-          args: [],
-        })) as string
-
-        const balance = (await readContract(config, {
-          address: tokenAddress as `0x${string}`,
-          abi: PCE_ABI,
-          functionName: 'balanceOf',
-          args: [address],
-        })) as bigint
-
-        const swappableBalanceToday = (await readContract(config, {
-          address: tokenAddress as `0x${string}`,
-          abi: COMMUNITY_TOKEN_ABI,
-          functionName: 'getTodaySwapableToPCEBalance',
-          args: [],
-        })) as string
-
-        const swappableBalanceForIndividual = (await readContract(config, {
-          address: tokenAddress as `0x${string}`,
-          abi: COMMUNITY_TOKEN_ABI,
-          functionName: 'getTodaySwapableToPCEBalanceForIndividual',
-          args: [address],
-        })) as string
+        const addr = tokenAddress as `0x${string}`
+        const [
+          name,
+          symbol,
+          balance,
+          swappableBalanceToday,
+          swappableBalanceForIndividual,
+        ] = await Promise.all([
+          readContract(config, {
+            address: addr,
+            abi: PCE_ABI,
+            functionName: 'name',
+            args: [],
+          }) as Promise<string>,
+          readContract(config, {
+            address: addr,
+            abi: PCE_ABI,
+            functionName: 'symbol',
+            args: [],
+          }) as Promise<string>,
+          readContract(config, {
+            address: addr,
+            abi: PCE_ABI,
+            functionName: 'balanceOf',
+            args: [address],
+          }) as Promise<bigint>,
+          readContract(config, {
+            address: addr,
+            abi: COMMUNITY_TOKEN_ABI,
+            functionName: 'getTodaySwapableToPCEBalance',
+            args: [],
+          }) as Promise<string>,
+          readContract(config, {
+            address: addr,
+            abi: COMMUNITY_TOKEN_ABI,
+            functionName: 'getTodaySwapableToPCEBalanceForIndividual',
+            args: [address],
+          }) as Promise<string>,
+        ])
 
         setCommunityTokenInfo((prev) => {
           const existingTokenIndex = prev.findIndex(
@@ -289,7 +352,7 @@ export default function ForTokenPage({
         return null
       }
     },
-    [config, address]
+    [address]
   )
 
   useEffect(() => {
@@ -299,14 +362,18 @@ export default function ForTokenPage({
     }
 
     const nextTokens = Array.isArray(_tokens) ? (_tokens as string[]) : []
-    setTokens(nextTokens as [])
+    setTokens(nextTokens)
 
     if (nextTokens.length === 0) {
+      setCommunityTokenInfo([])
       setIsTokenLoading(false)
       return
     }
 
     const uniqueTokens = Array.from(new Set(nextTokens.filter(Boolean)))
+    setCommunityTokenInfo((prev) =>
+      prev.filter((tokenInfo) => uniqueTokens.includes(tokenInfo.address))
+    )
     let cancelled = false
     setIsTokenLoading(true)
 
@@ -323,10 +390,6 @@ export default function ForTokenPage({
     }
   }, [_tokens, getCommunityTokenInfo])
 
-  useEffect(() => {
-    setTokenPage(1)
-  }, [communityTokenInfo.length, searchQuery])
-
   const filteredCommunityTokenInfo = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
     if (!query) return communityTokenInfo
@@ -339,53 +402,82 @@ export default function ForTokenPage({
   }, [communityTokenInfo, searchQuery])
 
   useEffect(() => {
-    const totalPages = Math.max(
-      1,
-      Math.ceil(filteredCommunityTokenInfo.length / tokenPageSize)
-    )
-    if (tokenPage > totalPages) {
-      setTokenPage(totalPages)
-    }
-  }, [filteredCommunityTokenInfo.length, tokenPage, tokenPageSize])
-
-  useEffect(() => {
     if (isConfirmed) {
-      toast({
-        title: 'Transaction Succeed!',
-      })
       refetchBalance()
       refetchTokens()
-    } else if (isConfirming) {
-      toast({ title: 'TX is Pending, Please Wait...' })
-    } else if (error) {
-      toast({ title: (error as BaseError).shortMessage })
     }
-  }, [isConfirmed, isConfirming, error, hash, refetchBalance])
+  }, [isConfirmed, refetchBalance, refetchTokens])
+
+  useTransactionToast({
+    error,
+    isConfirmed,
+    isConfirming,
+    pendingMessage: 'TX is Pending, Please Wait...',
+    successMessage: 'Transaction Succeed!',
+  })
+
+  const waitForHash = useCallback(
+    async (transactionHash: `0x${string}`) =>
+      waitForTransactionReceipt(config, {
+        hash: transactionHash,
+        confirmations: 1,
+      }),
+    []
+  )
+
+  const ensureTokenAllowance = useCallback(
+    async ({
+      amount,
+      spender,
+      tokenAddress,
+    }: {
+      amount: bigint
+      spender: `0x${string}`
+      tokenAddress: `0x${string}`
+    }) => {
+      if (!address) {
+        return
+      }
+
+      const allowance = (await readContract(config, {
+        abi: COMMUNITY_TOKEN_ABI,
+        address: tokenAddress,
+        functionName: 'allowance',
+        args: [address, spender],
+      })) as bigint
+
+      if (allowance >= amount) {
+        return
+      }
+
+      const approvalHash = await writeContractAsync({
+        abi: COMMUNITY_TOKEN_ABI,
+        address: tokenAddress,
+        functionName: 'approve',
+        args: [spender, amount],
+      })
+
+      await waitForHash(approvalHash)
+    },
+    [address, waitForHash, writeContractAsync]
+  )
 
   const handleSwap = async (fromToken: TOKEN, toToken: TOKEN) => {
-    const allowance = (await readContract(config, {
-      abi: COMMUNITY_TOKEN_ABI,
-      address: fromToken.address as `0x${string}`,
-      functionName: 'allowance',
-      args: [address, toToken.address as `0x${string}`],
-    })) as bigint
+    let amount: bigint | null = null
 
     try {
-      if (allowance < parseEther(swapAmount)) {
-        const hash = await writeContractAsync({
-          abi: COMMUNITY_TOKEN_ABI,
-          address: fromToken.address as `0x${string}`,
-          functionName: 'approve',
-          args: [toToken.address as `0x${string}`, parseEther(swapAmount)],
-        })
-
-        await waitForTransactionReceipt(config, {
-          hash: hash,
-          confirmations: 1,
-        })
-      }
+      amount = parseEther(swapAmount)
+      await ensureTokenAllowance({
+        amount,
+        spender: toToken.address as `0x${string}`,
+        tokenAddress: fromToken.address as `0x${string}`,
+      })
     } catch (error) {
-      toast({ title: (error as BaseError).shortMessage })
+      console.error('Error approving token swap:', error)
+      return
+    }
+
+    if (amount === null) {
       return
     }
 
@@ -394,13 +486,10 @@ export default function ForTokenPage({
         abi: COMMUNITY_TOKEN_ABI,
         address: fromToken.address as `0x${string}`,
         functionName: 'swapTokens',
-        args: [toToken.address as `0x${string}`, parseEther(swapAmount)],
+        args: [toToken.address as `0x${string}`, amount],
       })
 
-      await waitForTransactionReceipt(config, {
-        hash: hash,
-        confirmations: 1,
-      })
+      await waitForHash(hash)
 
       await getCommunityTokenInfo(toToken.address as `0x${string}`)
       await getCommunityTokenInfo(fromToken.address as `0x${string}`)
@@ -411,33 +500,22 @@ export default function ForTokenPage({
 
   const handleSwapFromLocalToken = async (token: any) => {
     if (!token || !INITIAL_FACTOR || !lastModifiedFactor) return
-
-    const allowance = (await readContract(config, {
-      abi: COMMUNITY_TOKEN_ABI,
-      address: token,
-      functionName: 'allowance',
-      args: [address, pceAddress[chainId || defaultChainId] as `0x${string}`],
-    })) as bigint
+    let amount: bigint | null = null
 
     try {
-      if (allowance < parseEther(swapAmount)) {
-        const hash = await writeContractAsync({
-          abi: COMMUNITY_TOKEN_ABI,
-          address: token,
-          functionName: 'approve',
-          args: [
-            pceAddress[chainId || defaultChainId] as `0x${string}`,
-            parseEther(swapAmount),
-          ],
-        })
-
-        await waitForTransactionReceipt(config, {
-          hash: hash,
-          confirmations: 1,
-        })
-      }
+      amount = parseEther(swapAmount)
+      await ensureTokenAllowance({
+        amount,
+        spender: pceAddress[chainId || defaultChainId] as `0x${string}`,
+        tokenAddress: token as `0x${string}`,
+      })
     } catch (error) {
       console.error('Error swapping from local token:', error)
+      return
+    }
+
+    if (amount === null) {
+      return
     }
 
     try {
@@ -445,13 +523,10 @@ export default function ForTokenPage({
         abi: PCE_ABI,
         address: pceAddress[chainId || defaultChainId] as `0x${string}`,
         functionName: 'swapFromLocalToken',
-        args: [token, parseEther(swapAmount)],
+        args: [token, amount],
       })
 
-      await waitForTransactionReceipt(config, {
-        hash: hash,
-        confirmations: 1,
-      })
+      await waitForHash(hash)
 
       await getCommunityTokenInfo(token)
     } catch (error) {
@@ -469,10 +544,7 @@ export default function ForTokenPage({
         args: [transferAddress, parseEther(transferAmount)],
       })
 
-      await waitForTransactionReceipt(config, {
-        hash: hash,
-        confirmations: 1,
-      })
+      await waitForHash(hash)
 
       await getCommunityTokenInfo(token)
     } catch (error) {
@@ -481,28 +553,23 @@ export default function ForTokenPage({
   }
 
   const handleSwapToLocalToken = async (tokenAddress: string) => {
-    let hash
     try {
-      hash = await writeContractAsync({
+      const hash = await writeContractAsync({
         abi: PCE_ABI,
         address: pceAddress[chainId || defaultChainId] as `0x${string}`,
         functionName: 'swapToLocalToken',
         args: [tokenAddress, parseEther(swapAmount)],
       })
 
-      await waitForTransactionReceipt(config, {
-        hash: hash,
-        confirmations: 1,
-      })
+      await waitForHash(hash)
+      await getCommunityTokenInfo(tokenAddress)
     } catch (error) {
       console.error('Error swapping to local token:', error)
     }
-
-    await getCommunityTokenInfo(tokenAddress)
   }
 
   const handleCreateToken = async () => {
-    setDialogStatus(!isOpened)
+    setDialogStatus(false)
 
     try {
       const hash = await writeContractAsync({
@@ -527,26 +594,20 @@ export default function ForTokenPage({
         ],
       })
 
-      await waitForTransactionReceipt(config, {
-        hash: hash,
-        confirmations: 1,
-      })
+      await waitForHash(hash)
     } catch (error) {
       console.error('Error creating token:', error)
     }
   }
 
   const token = dict?.token ?? {}
-  const tokenTotalPages = Math.max(
-    1,
-    Math.ceil(filteredCommunityTokenInfo.length / tokenPageSize)
-  )
-  const tokenSafePage = Math.min(tokenPage, tokenTotalPages)
-  const tokenStartIndex = (tokenSafePage - 1) * tokenPageSize
-  const pagedCommunityTokenInfo = filteredCommunityTokenInfo.slice(
-    tokenStartIndex,
-    tokenStartIndex + tokenPageSize
-  )
+  const {
+    page: tokenSafePage,
+    totalPages: tokenTotalPages,
+    pageItems: pagedCommunityTokenInfo,
+    goToNextPage,
+    goToPrevPage,
+  } = usePagination(filteredCommunityTokenInfo, tokenPageSize)
 
   return (
     <div className="w-full gap-4 flex flex-col">
@@ -579,12 +640,7 @@ export default function ForTokenPage({
             onChange={(event) => setSearchQuery(event.target.value)}
           />
         </div>
-        <Dialog
-          open={isOpened}
-          onOpenChange={() => {
-            setDialogStatus(!isOpened)
-          }}
-        >
+        <Dialog open={isOpened} onOpenChange={setDialogStatus}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{dict?.token?.inputTokenInfo ?? ''}</DialogTitle>
@@ -592,90 +648,18 @@ export default function ForTokenPage({
                 {dict?.token?.createTokenInfo ?? ''}
               </DialogDescription>
               <div className="gap-4">
-                <Input
-                  name="name"
-                  placeholder="Name - PeaceCoin, Ethereum, Bitcoin, etc."
-                  className="my-2"
-                  onChange={handleChange}
-                ></Input>
-                <Input
-                  name="symbol"
-                  placeholder="Symbol - PCE, ETH, BTC, etc."
-                  className="my-2"
-                  onChange={handleChange}
-                ></Input>
-                <Input
-                  name="amountToExchange"
-                  placeholder="amountToExchange - 100"
-                  className="my-2"
-                  onChange={handleChange}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                ></Input>
-                <Input
-                  name="dilutionFactor"
-                  placeholder="dilutionFactor - 1"
-                  className="my-2"
-                  onChange={handleChange}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                ></Input>
-                <Input
-                  name="decreaseIntervalDays"
-                  placeholder="decreaseIntervalDays - 7"
-                  className="my-2"
-                  onChange={handleChange}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                ></Input>
-                <Input
-                  name="afterDecreaseBp"
-                  placeholder="afterDecreaseBp - 9980"
-                  className="my-2"
-                  onChange={handleChange}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                ></Input>
-                <Input
-                  name="maxIncreaseOfTotalSupplyBp"
-                  placeholder="maxIncreaseOfTotalSupplyBp - 20"
-                  className="my-2"
-                  onChange={handleChange}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                ></Input>
-                <Input
-                  name="maxIncreaseBp"
-                  placeholder="maxIncreaseBp - 2000"
-                  className="my-2"
-                  onChange={handleChange}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                ></Input>
-                <Input
-                  name="maxUsageBp"
-                  placeholder="maxUsageBp - 3000"
-                  className="my-2"
-                  onChange={handleChange}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                ></Input>
-                <Input
-                  name="changeBp"
-                  placeholder="changeBp - 3000"
-                  className="my-2"
-                  onChange={handleChange}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                ></Input>
+                {tokenCreationFields.map((field) => (
+                  <Input
+                    key={field.name}
+                    name={field.name}
+                    placeholder={field.placeholder}
+                    className="my-2"
+                    onChange={handleChange}
+                    type={field.type}
+                    min={field.type ? '0' : undefined}
+                    step={field.type ? '0.1' : undefined}
+                  />
+                ))}
               </div>
             </DialogHeader>
             <DialogFooter>
@@ -687,7 +671,7 @@ export default function ForTokenPage({
         </Dialog>
         <TokenTable
           communityTokenInfo={pagedCommunityTokenInfo}
-          tokens={tokens}
+          totalCount={filteredCommunityTokenInfo.length}
           dict={dict}
           colSpan={colSpan}
           balance={balance as bigint}
@@ -713,7 +697,7 @@ export default function ForTokenPage({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setTokenPage((prev) => Math.max(1, prev - 1))}
+                onClick={goToPrevPage}
                 disabled={tokenSafePage <= 1}
               >
                 Previous
@@ -722,9 +706,7 @@ export default function ForTokenPage({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  setTokenPage((prev) => Math.min(tokenTotalPages, prev + 1))
-                }
+                onClick={goToNextPage}
                 disabled={tokenSafePage >= tokenTotalPages}
               >
                 Next
@@ -733,11 +715,7 @@ export default function ForTokenPage({
           </div>
         )}
       </div>
-      {isTokenLoading && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
-          <Spinner show={true} size="large" />
-        </div>
-      )}
+      <LoadingOverlay isLoading={isTokenLoading} />
     </div>
   )
 }

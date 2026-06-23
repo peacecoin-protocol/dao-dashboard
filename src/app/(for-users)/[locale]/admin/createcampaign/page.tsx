@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ethers, parseEther, ZeroAddress } from 'ethers'
 import { useToast } from '~/hooks/use-toast'
 
@@ -8,63 +8,48 @@ import {
   useAccount,
   useWriteContract,
   useWaitForTransactionReceipt,
-  useSwitchChain,
-  type BaseError,
   useReadContract,
 } from 'wagmi'
-import {
-  readContract,
-  simulateContract,
-  waitForTransactionReceipt,
-} from '@wagmi/core'
+import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { CAMPAIGN } from '~/i18n/types'
 
 import { Button } from '~/components/ui/button'
 import {
   campaignAddress,
-  defaultChainId,
   campaignTableHeaders,
   GAS_LIMIT,
+  appDeploymentEnv,
 } from '~/app/constants/constants'
 
 import { CAMPAIGN_ABI } from '~/app/ABIs/Campaigns'
 
 import { config } from '~/lib/config'
-import { PagePropsWithLocale, Dictionary, SupabaseDao } from '~/i18n/types'
-import { getDict } from '~/i18n/get-dict'
-import { Spinner } from '~/components/ui/Spinner'
+import { PagePropsWithLocale, SupabaseDao } from '~/i18n/types'
 import { CreateCampaignModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/createCampaignModal'
 import { AddWhitelistModal } from '~/app/(for-users)/[locale]/admin/createcampaign/modal/addWhitelistModal'
 import { TableComponent } from '~/components/custom/tableComponent'
 import { erc20Abi } from 'viem'
 import { createClient } from '~/utils/supabase/client'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
-import { SBTInfo } from '~/components/custom/sbt-tableComponent'
-
-// Constants
-const DEFAULT_CAMPAIGN_ID = -1
-
-// Types
-interface DialogState {
-  isOpen: boolean
-  isCreateOpen: boolean
-  isAddWinnersOpen: boolean
-  campaignId: number
-}
+import { LoadingOverlay } from '~/components/ui/loading-overlay'
+import { useDictionary } from '~/hooks/use-dictionary'
+import { useEnsureSupportedChain } from '~/hooks/use-ensure-supported-chain'
+import { useTransactionToast } from '~/hooks/use-transaction-toast'
+import { fetchCampaignsWithMetadata } from '~/lib/campaigns'
+import { resolveAddress } from '~/lib/utils'
 
 // Main component
 export default function ForCampaignPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<Dictionary | null>(null)
+  const dict = useDictionary(locale)
   const campaign = dict?.campaign ?? {}
   const { address, chainId } = useAccount()
-  const { chains, switchChain } = useSwitchChain()
   const { toast } = useToast()
   const [allDAOs, setAllDAOs] = useState<SupabaseDao[]>([])
-  const [allTokens, setAllTokens] = useState<SBTInfo[]>([])
 
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
+  useEnsureSupportedChain()
 
   const [campaignData, setCampaignData] = useState<CAMPAIGN[]>([])
   const [refetchCampaignData, setRefetchCampaignData] = useState(false)
@@ -73,31 +58,16 @@ export default function ForCampaignPage({
     const fetchCampaignData = async () => {
       setIsFetchingCampaigns(true)
       try {
-        const { data: campaignData } = await supabase
-          .from('Campaign')
-          .select()
-          .eq('creator', address as `0x${string}`)
-          .order('campaignId', { ascending: true })
-
-        if (campaignData && campaignData.length > 0) {
-          await Promise.all(
-            campaignData.map(async (campaign, index) => {
-              const { data } = await supabase
-                .from('Token')
-                .select()
-                .eq('tokenId', campaign.sbtId.toString())
-                .eq('isSBT', campaign.tokenType == 1 ? true : false)
-                .eq('daoId', campaign.daoId)
-
-              campaignData[index].daoId = data?.[0]?.daoId
-              campaignData[index].image = data?.[0]?.image
-            })
-          )
-
-          setCampaignData(campaignData as CAMPAIGN[])
-        } else {
+        if (!address) {
           setCampaignData([])
+          return
         }
+
+        setCampaignData(
+          await fetchCampaignsWithMetadata(supabase, {
+            creator: address,
+          })
+        )
       } finally {
         setIsFetchingCampaigns(false)
       }
@@ -109,10 +79,16 @@ export default function ForCampaignPage({
     const fetchAllDAOs = async () => {
       setIsFetchingDaos(true)
       try {
+        if (!address) {
+          setAllDAOs([])
+          return
+        }
+
         const { data: daos } = await supabase
           .from('DAO')
           .select()
           .eq('creator', address as `0x${string}`)
+          .eq('environment', appDeploymentEnv)
         setAllDAOs(daos as SupabaseDao[])
       } finally {
         setIsFetchingDaos(false)
@@ -121,43 +97,19 @@ export default function ForCampaignPage({
     fetchAllDAOs()
   }, [supabase, address])
 
-  useEffect(() => {
-    const fetchAllTokens = async () => {
-      setIsFetchingTokens(true)
-      try {
-        const { data: tokens } = await supabase.from('Token').select()
-        setAllTokens(tokens as SBTInfo[])
-      } finally {
-        setIsFetchingTokens(false)
-      }
-    }
-    fetchAllTokens()
-  }, [supabase, address])
-
   // State
-  const [dialogState, setDialogState] = useState<DialogState>({
-    isOpen: false,
-    isCreateOpen: false,
-    isAddWinnersOpen: false,
-    campaignId: DEFAULT_CAMPAIGN_ID,
-  })
-
+  const [isCreateCampaignOpen, setIsCreateCampaignOpen] = useState(false)
+  const [isAddWhitelistOpen, setIsAddWhitelistOpen] = useState(false)
   const [loading, setLoading] = useState<boolean>(false)
   const [isFetchingCampaigns, setIsFetchingCampaigns] = useState(true)
   const [isFetchingDaos, setIsFetchingDaos] = useState(true)
-  const [isFetchingTokens, setIsFetchingTokens] = useState(true)
   const [isInvalidToken, setIsInvalidToken] = useState(false)
   const [selectedCampaignId, setSelectedCampaignId] = useState<
     number | undefined
   >(undefined)
 
   // Contract hooks
-  const {
-    data: hash,
-    error,
-    writeContract,
-    writeContractAsync,
-  } = useWriteContract()
+  const { data: hash, error, writeContractAsync } = useWriteContract()
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
@@ -165,41 +117,11 @@ export default function ForCampaignPage({
       confirmations: 1,
     })
 
-  // Effects
-  useEffect(() => {
-    const switchChainAndReload = async () => {
-      if (!chainId || !chains.some((chain) => chain.id === chainId)) {
-        switchChain({ chainId: defaultChainId })
-      }
-    }
-    switchChainAndReload()
-  }, [chainId, chains, switchChain])
-
-  useEffect(() => {
-    const fetchDict = async () => {
-      try {
-        const fetchedDict = await getDict(locale)
-        setDict(fetchedDict)
-      } catch (error) {}
-    }
-    fetchDict()
-  }, [locale])
-
-  useEffect(() => {
-    if (!dialogState.isOpen) {
-      setDialogState((prev) => ({ ...prev, campaignId: DEFAULT_CAMPAIGN_ID }))
-    }
-  }, [dialogState.isOpen])
-
-  useEffect(() => {
-    if (isConfirmed) {
-      toast({ title: 'Transaction Succeeded!' })
-    } else if (isConfirming) {
-      toast({ title: 'Transaction Pending, Please Wait...' })
-    } else if (error) {
-      toast({ title: (error as BaseError).shortMessage })
-    }
-  }, [isConfirmed, isConfirming, error, toast])
+  useTransactionToast({
+    error,
+    isConfirmed,
+    isConfirming,
+  })
 
   const handleAddWhitelist = async (formData: any) => {
     setLoading(true)
@@ -220,7 +142,6 @@ export default function ForCampaignPage({
         addresses = [ZeroAddress]
       }
 
-      // Make sure formData.id, addresses, and encodedGists are all defined before simulating
       if (
         typeof formData.id === 'undefined' ||
         !Array.isArray(addresses) ||
@@ -228,16 +149,10 @@ export default function ForCampaignPage({
       ) {
         throw new Error('Invalid arguments for addCampWinners')
       }
-      const simulateResult = await simulateContract(config, {
-        abi: CAMPAIGN_ABI,
-        address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
-        functionName: 'addCampWinners',
-        args: [formData.id, addresses, encodedGists],
-      })
 
       const tx = await writeContractAsync({
         abi: CAMPAIGN_ABI,
-        address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
+        address: resolveAddress(campaignAddress, chainId),
         functionName: 'addCampWinners',
         args: [formData.id, addresses, encodedGists],
       })
@@ -260,9 +175,9 @@ export default function ForCampaignPage({
     }
   }
 
-  const { data: campaignId, refetch: refetchCampaignId } = useReadContract({
+  const { data: campaignId } = useReadContract({
     abi: CAMPAIGN_ABI,
-    address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
+    address: resolveAddress(campaignAddress, chainId),
     functionName: 'campaignId',
   })
 
@@ -271,19 +186,13 @@ export default function ForCampaignPage({
       toast({
         title: 'Invalid token',
       })
-      setDialogState((prev) => ({
-        ...prev,
-        isCreateOpen: false,
-      }))
+      setIsCreateCampaignOpen(false)
       setIsInvalidToken(false)
       return
     }
 
-    setDialogState((prev) => ({
-      ...prev,
-      isCreateOpen: false,
-      isAddWinnersOpen: false,
-    }))
+    setIsCreateCampaignOpen(false)
+    setIsAddWhitelistOpen(false)
     setLoading(true)
 
     try {
@@ -294,7 +203,7 @@ export default function ForCampaignPage({
           functionName: 'allowance',
           args: [
             address as `0x${string}`,
-            campaignAddress[chainId || defaultChainId] as `0x${string}`,
+            resolveAddress(campaignAddress, chainId),
           ],
         })
         if (_allowance < parseEther(formData.totalAmount)) {
@@ -303,7 +212,7 @@ export default function ForCampaignPage({
             address: formData.tokenAddress as `0x${string}`,
             functionName: 'approve',
             args: [
-              campaignAddress[chainId || defaultChainId] as `0x${string}`,
+              resolveAddress(campaignAddress, chainId),
               parseEther(formData.totalAmount),
             ],
           })
@@ -344,16 +253,9 @@ export default function ForCampaignPage({
       }
 
       try {
-        const simulateResult = await simulateContract(config, {
-          abi: CAMPAIGN_ABI,
-          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
-          functionName: 'createCampaign',
-          args: [campaign],
-        })
-
         const tx = await writeContractAsync({
           abi: CAMPAIGN_ABI,
-          address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
+          address: resolveAddress(campaignAddress, chainId),
           functionName: 'createCampaign',
           args: [campaign],
           gas: BigInt(GAS_LIMIT),
@@ -369,6 +271,7 @@ export default function ForCampaignPage({
             ...campaign,
             created_at: new Date().toISOString(),
             campaignId: (Number(campaignId) || 0) + 1,
+            environment: appDeploymentEnv,
           })
         }
 
@@ -382,7 +285,7 @@ export default function ForCampaignPage({
         })
       }
 
-      setRefetchCampaignData(!refetchCampaignData)
+      setRefetchCampaignData((prev) => !prev)
     } catch (error) {
       console.error('Error creating campaign:', error)
       toast({
@@ -395,14 +298,9 @@ export default function ForCampaignPage({
 
   return (
     <div className="w-full">
-      {(loading ||
-        isFetchingCampaigns ||
-        isFetchingDaos ||
-        isFetchingTokens) && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
-          <Spinner show={true} size="large" />
-        </div>
-      )}
+      <LoadingOverlay
+        isLoading={loading || isFetchingCampaigns || isFetchingDaos}
+      />
 
       <div className="w-full mx-auto space-y-4">
         {/* Header Section */}
@@ -413,21 +311,18 @@ export default function ForCampaignPage({
 
         {/* Modals */}
         <CreateCampaignModal
-          isOpen={dialogState.isCreateOpen}
-          onClose={() =>
-            setDialogState((prev) => ({ ...prev, isCreateOpen: false }))
-          }
+          isOpen={isCreateCampaignOpen}
+          onClose={() => setIsCreateCampaignOpen(false)}
           onSubmit={handleCreateCampaign}
           setIsInvalidToken={setIsInvalidToken}
           campaign={campaign}
           allDAOs={allDAOs}
-          allTokens={allTokens}
         />
 
         <AddWhitelistModal
-          isOpen={dialogState.isAddWinnersOpen}
+          isOpen={isAddWhitelistOpen}
           onClose={() => {
-            setDialogState((prev) => ({ ...prev, isAddWinnersOpen: false }))
+            setIsAddWhitelistOpen(false)
             setSelectedCampaignId(undefined)
           }}
           campaignData={campaignData}
@@ -441,9 +336,7 @@ export default function ForCampaignPage({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-4">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4">
               <Button
-                onClick={() =>
-                  setDialogState((prev) => ({ ...prev, isCreateOpen: true }))
-                }
+                onClick={() => setIsCreateCampaignOpen(true)}
                 className="w-full sm:w-auto"
               >
                 {campaign.createCampaign ?? 'Create Campaign'}
@@ -458,7 +351,7 @@ export default function ForCampaignPage({
         campaignInfo={campaignData}
         onCellClick={(campaignId) => {
           setSelectedCampaignId(campaignId)
-          setDialogState((prev) => ({ ...prev, isAddWinnersOpen: true }))
+          setIsAddWhitelistOpen(true)
         }}
       />
     </div>

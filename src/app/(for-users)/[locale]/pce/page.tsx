@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 
 import * as CustomLink from '~/components/custom/Link'
@@ -173,32 +173,40 @@ export default function PCEPage({
   const { address, chainId } = useAccount()
   const { toast } = useToast()
 
-  const alchemyConfig = {
-    apiKey: Env.NEXT_PUBLIC_ALCHEMY_API_KEY,
-    network: Network.MATIC_MAINNET,
-  }
+  const alchemy = useMemo(
+    () =>
+      new Alchemy({
+        apiKey: Env.NEXT_PUBLIC_ALCHEMY_API_KEY,
+        network: Network.MATIC_MAINNET,
+      }),
+    []
+  )
 
-  const alchemy = new Alchemy(alchemyConfig)
+  const getTokenMetadata = useCallback(
+    async (tokenAddress: string) => {
+      const metadata = await alchemy.core.getTokenMetadata(tokenAddress)
+      return metadata
+    },
+    [alchemy]
+  )
 
-  const getTokenMetadata = async (address: string) => {
-    const metadata = await alchemy.core.getTokenMetadata(address)
-    return metadata
-  }
+  const getTreasuryBalances = useCallback(
+    async (treasuryAddress: `0x${string}`) => {
+      const balances = (await alchemy.core.getTokenBalances(treasuryAddress))
+        .tokenBalances
 
-  const getTreasuryBalances = async (address: `0x${string}`) => {
-    const balances = (await alchemy.core.getTokenBalances(address))
-      .tokenBalances
+      const formatedBalances = (await Promise.all(
+        balances.map(async (balance) => ({
+          tokenBalance: Number(balance.tokenBalance),
+          contractAddress: balance.contractAddress,
+          ...(await getTokenMetadata(balance.contractAddress)),
+        }))
+      )) as TokenBalance[]
 
-    const formatedBalances = (await Promise.all(
-      balances.map(async (balance) => ({
-        tokenBalance: Number(balance.tokenBalance),
-        contractAddress: balance.contractAddress,
-        ...(await getTokenMetadata(balance.contractAddress)),
-      }))
-    )) as TokenBalance[]
-
-    setTreasuryBalances(formatedBalances)
-  }
+      setTreasuryBalances(formatedBalances)
+    },
+    [alchemy, getTokenMetadata]
+  )
   const { data: daoConfigs, refetch: refetchDaoConfigs } = useReadContract({
     address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
     abi: DAO_STUDIO_ABI,
@@ -218,7 +226,7 @@ export default function PCEPage({
         timelockAddress[chainId || defaultChainId] as `0x${string}`
       )
     }
-  }, [timelockAddress])
+  }, [chainId, getTreasuryBalances])
 
   const {
     data: hash,
@@ -934,7 +942,7 @@ export default function PCEPage({
       setLoading(false)
     }
     fetchProposals()
-  }, [proposalCount, address, chainId, isRefetching])
+  }, [proposalCount, address, chainId, isRefetching, governorAddress])
 
   // Filter proposals based on status
   useEffect(() => {
@@ -1149,7 +1157,7 @@ export default function PCEPage({
     }
 
     notify()
-  }, [isConfirmed, isConfirming, error, hash])
+  }, [error, hash, isConfirmed, isConfirming, toast])
 
   useEffect(() => {
     const fetchDict = async () => {

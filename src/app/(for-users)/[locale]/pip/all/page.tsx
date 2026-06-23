@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Octokit } from 'octokit'
 
 import { Button } from '~/components/ui/button'
@@ -63,7 +63,7 @@ export default function ForPage({
     fetchDict()
   }, [locale])
 
-  const fetchOpendPip = async (): Promise<any[]> => {
+  const fetchOpendPip = useCallback(async (): Promise<any[]> => {
     try {
       if (!octokit) return []
       const { data: pullRequests } = await octokit.rest.pulls.list({
@@ -89,7 +89,35 @@ export default function ForPage({
       console.error('Error fetching all files in branch:', error)
       return []
     }
-  }
+  }, [octokit])
+
+  const fetchClosedPip = useCallback(async (): Promise<any[]> => {
+    // Get files from the repository
+    if (!octokit) return []
+    const { data: files } = await octokit.rest.repos.getContent({
+      owner: 'peacecoin-protocol',
+      repo: 'PIPs',
+      path: 'PIPs',
+      ref: 'main',
+    })
+
+    return files as any[]
+  }, [octokit])
+
+  const fetchFileContent = useCallback((fileContent: string, path: string) => {
+    const pipContent = {
+      number: parseContent(fileContent, 'pip'),
+      title: parseContent(fileContent, 'title'),
+      proposer: parseContent(fileContent, 'proposer'),
+      status: parseContent(fileContent, 'status'),
+      type: parseContent(fileContent, 'type'),
+      category: parseContent(fileContent, 'category'),
+      content: fileContent,
+      created: parseContent(fileContent, 'created'),
+      path: path,
+    }
+    return pipContent
+  }, [])
 
   useEffect(() => {
     const fetchAllPip = async () => {
@@ -139,35 +167,7 @@ export default function ForPage({
       }
     }
     fetchAllPip()
-  }, [octokit])
-
-  const fetchClosedPip = async (): Promise<any[]> => {
-    // Get files from the repository
-    if (!octokit) return []
-    const { data: files } = await octokit.rest.repos.getContent({
-      owner: 'peacecoin-protocol',
-      repo: 'PIPs',
-      path: 'PIPs',
-      ref: 'main',
-    })
-
-    return files as any[]
-  }
-
-  const fetchFileContent = (fileContent: string, path: string) => {
-    const pipContent = {
-      number: parseContent(fileContent, 'pip'),
-      title: parseContent(fileContent, 'title'),
-      proposer: parseContent(fileContent, 'proposer'),
-      status: parseContent(fileContent, 'status'),
-      type: parseContent(fileContent, 'type'),
-      category: parseContent(fileContent, 'category'),
-      content: fileContent,
-      created: parseContent(fileContent, 'created'),
-      path: path,
-    }
-    return pipContent
-  }
+  }, [fetchClosedPip, fetchFileContent, fetchOpendPip, octokit])
 
   function parseContent(content: string, start: string) {
     const match = content.match(new RegExp(`^${start}:\\s*(.*)$`, 'm'))

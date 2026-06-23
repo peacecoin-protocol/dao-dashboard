@@ -1,7 +1,7 @@
 'use client'
 
 import { CopyIcon, Plus, X, ChevronsUpDown } from 'lucide-react'
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
 import Image from 'next/image'
@@ -47,7 +47,6 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   type BaseError,
-  useSwitchChain,
 } from 'wagmi'
 
 import {
@@ -58,9 +57,8 @@ import {
   DialogTitle,
 } from '~/components/ui/dialog'
 import { createClient } from '~/utils/supabase/client'
-import { getDict } from '~/i18n/get-dict'
 
-import { Dictionary, Locale } from '~/i18n/types'
+import { Locale } from '~/i18n/types'
 
 import { formatNumber, formatString, shortenAddress } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
@@ -71,7 +69,11 @@ import { ProposalBadges } from '~/components/custom/proposal-badges'
 import { FormattedValue } from '~/components/custom/formatted-value'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
 import { MULTIPLE_VOTINGS_ABI } from '~/app/ABIs/MultipleVotings'
-import { defaultChainId, pceAddress } from '~/app/constants/constants'
+import {
+  appDeploymentEnv,
+  defaultChainId,
+  pceAddress,
+} from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { daoStudioAddress } from '~/app/constants/constants'
 import { pinata } from '~/lib/config'
@@ -100,7 +102,11 @@ import { SBTInfo } from '~/components/custom/sbt-tableComponent'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import { SBTTableComponent } from '~/components/custom/sbt-tableComponent'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
-import { Spinner } from '~/components/ui/Spinner'
+import { LoadingOverlay } from '~/components/ui/loading-overlay'
+import { useDictionary } from '~/hooks/use-dictionary'
+import { useEnsureSupportedChain } from '~/hooks/use-ensure-supported-chain'
+import { useTransactionToast } from '~/hooks/use-transaction-toast'
+import { fetchOwnedTokenBalances } from '~/lib/campaigns'
 
 type TokenBalance = {
   contractAddress: string
@@ -152,9 +158,8 @@ export default function ForDaoDetailPage({
 }) {
   const { locale } = params
   const { toast } = useToast()
-  const supabase = createClient()
-
-  const [dict, setDict] = useState<Dictionary | null>(null)
+  const supabase = useMemo(() => createClient(), [])
+  const dict = useDictionary(locale)
   const localDict = useMemo(() => dict?.daoInfo ?? {}, [dict])
   const votingPowerDict = dict?.votingPower ?? {}
 
@@ -250,33 +255,27 @@ export default function ForDaoDetailPage({
   })
 
   const { address, chainId } = useAccount()
+  useEnsureSupportedChain()
 
-  const provider = new ethers.JsonRpcProvider(
-    chainId === 137
-      ? Env.NEXT_PUBLIC_POLYGON_RPC_URL
-      : Env.NEXT_PUBLIC_SEPOLIA_RPC_URL
+  const provider = useMemo(
+    () =>
+      new ethers.JsonRpcProvider(
+        chainId === 137
+          ? Env.NEXT_PUBLIC_POLYGON_RPC_URL
+          : Env.NEXT_PUBLIC_SEPOLIA_RPC_URL
+      ),
+    [chainId]
   )
 
   const [blockNumber, setBlockNumber] = useState<number | undefined>(undefined)
-  const { chains, switchChain } = useSwitchChain()
-
-  useEffect(() => {
-    const switchChainAndReload = async () => {
-      if (!chainId || !chains.some((chain) => chain.id === chainId)) {
-        switchChain({ chainId: defaultChainId })
-      }
-    }
-    switchChainAndReload()
-  }, [chainId, chains, switchChain])
 
   useEffect(() => {
     const fetchBlockNumber = async () => {
       const blockNumber = await provider.getBlockNumber()
-      console.log('fetching block number', blockNumber)
       setBlockNumber(blockNumber)
     }
     fetchBlockNumber()
-  }, [])
+  }, [provider])
 
   const getTreasuryBalances = async (address: string) => {
     // Fetch ERC20 token balances for the given address using Moralis API
@@ -333,6 +332,7 @@ export default function ForDaoDetailPage({
         .from('DAO')
         .select()
         .eq('daoId', id)
+        .eq('environment', appDeploymentEnv)
         .single()
 
       if (dao) {
@@ -507,39 +507,17 @@ export default function ForDaoDetailPage({
       }
 
       setLoading(true)
-      const { data: tokens } = await supabase
-        .from('Token')
-        .select()
-        .eq('daoId', id)
-
-      const _tokenData = tokens as SBTInfo[]
-
-      const tokenBalances = await Promise.all(
-        _tokenData.map(async (token: SBTInfo) => {
-          let balance = 0
-
-          try {
-            balance = (await readContract(config, {
-              abi: SBT_ABI,
-              address: token.address as `0x${string}`,
-              functionName: 'balanceOf',
-              args: [address, token.tokenId],
-            })) as number
-
-            return balance
-          } catch (error) {
-            console.error('Error fetching token balance:', error)
-            return 0
-          }
-        })
-      )
-
-      _tokenData.forEach((token: SBTInfo, index: number) => {
-        token.balance = tokenBalances[index] ?? 0
-      })
-      setTokenData(_tokenData.filter((token: SBTInfo) => token.balance > 0))
-
-      setLoading(false)
+      try {
+        setTokenData(
+          await fetchOwnedTokenBalances({
+            account: address,
+            daoId: id,
+            supabase,
+          })
+        )
+      } finally {
+        setLoading(false)
+      }
     }
     fetchTokenData()
   }, [address, refetchTokenData, supabase, chainId, id])
@@ -1521,85 +1499,88 @@ export default function ForDaoDetailPage({
       functionName: 'proposalCount',
     }) as { data?: number; refetch: () => void }
 
-  const fetchData = async (count: number) => {
-    setLoading(true)
-    if (!count || !governorAddress || count === 0) {
-      setProposals([])
-      setStatus([])
+  const fetchData = useCallback(
+    async (count: number) => {
+      setLoading(true)
+      if (!count || !governorAddress || count === 0) {
+        setProposals([])
+        setStatus([])
+        setLoading(false)
+        return
+      }
+
+      let temp = []
+      let _status = []
+      for (let i = 1; i <= count; i++) {
+        let proposal = null
+        let status = null
+        try {
+          proposal = await readContract(config, {
+            address: governorAddress as `0x${string}`,
+            abi: GOVERNOR_ABI,
+            functionName: 'proposals',
+            args: [i],
+          })
+
+          status = await readContract(config, {
+            address: governorAddress as `0x${string}`,
+            abi: GOVERNOR_ABI,
+            functionName: 'state',
+            args: [i],
+          })
+        } catch (error) {
+          i--
+          continue
+        }
+
+        switch (status as number) {
+          case 0:
+            _status.push('Pending')
+            temp.push(proposal)
+            break
+          case 1:
+            _status.push('Active')
+            temp.push(proposal)
+            break
+          case 2:
+            _status.push('Canceled')
+            temp.push(proposal)
+            break
+          case 3:
+            _status.push('Defeated')
+            temp.push(proposal)
+            break
+          case 4:
+            _status.push('Succeeded')
+            temp.push(proposal)
+            break
+          case 5:
+            _status.push('Queued')
+            temp.push(proposal)
+            break
+          case 6:
+            _status.push('Expired')
+            temp.push(proposal)
+            break
+          case 7:
+            _status.push('Executed')
+            temp.push(proposal)
+            break
+          default:
+            break
+        }
+      }
+      setProposals(temp)
+      setStatus(_status)
       setLoading(false)
-      return
-    }
-
-    let temp = []
-    let _status = []
-    for (let i = 1; i <= count; i++) {
-      let proposal = null
-      let status = null
-      try {
-        proposal = await readContract(config, {
-          address: governorAddress as `0x${string}`,
-          abi: GOVERNOR_ABI,
-          functionName: 'proposals',
-          args: [i],
-        })
-
-        status = await readContract(config, {
-          address: governorAddress as `0x${string}`,
-          abi: GOVERNOR_ABI,
-          functionName: 'state',
-          args: [i],
-        })
-      } catch (error) {
-        i--
-        continue
-      }
-
-      switch (status as number) {
-        case 0:
-          _status.push('Pending')
-          temp.push(proposal)
-          break
-        case 1:
-          _status.push('Active')
-          temp.push(proposal)
-          break
-        case 2:
-          _status.push('Canceled')
-          temp.push(proposal)
-          break
-        case 3:
-          _status.push('Defeated')
-          temp.push(proposal)
-          break
-        case 4:
-          _status.push('Succeeded')
-          temp.push(proposal)
-          break
-        case 5:
-          _status.push('Queued')
-          temp.push(proposal)
-          break
-        case 6:
-          _status.push('Expired')
-          temp.push(proposal)
-          break
-        case 7:
-          _status.push('Executed')
-          temp.push(proposal)
-          break
-        default:
-          break
-      }
-    }
-    setProposals(temp)
-    setStatus(_status)
-    setLoading(false)
-  }
+    },
+    [governorAddress]
+  )
   useEffect(() => {
     if (governorAddress) {
       fetchData(Number(proposalCount))
     }
-  }, [proposalCount, isConfirmed, governorAddress])
+  }, [fetchData, proposalCount, isConfirmed, governorAddress])
 
   useEffect(() => {
     async function fetchMultipleProposals() {
@@ -1659,7 +1640,13 @@ export default function ForDaoDetailPage({
       setLoading(false)
     }
     fetchMultipleProposals()
-  }, [multipleProposalCount, address, chainId, isRefetching])
+  }, [
+    multipleProposalCount,
+    address,
+    chainId,
+    isRefetching,
+    multipleVotingAddress,
+  ])
 
   useEffect(() => {
     const fetchIdenticon = async () => {
@@ -2108,32 +2095,15 @@ export default function ForDaoDetailPage({
     }
   }
 
-  useEffect(() => {
-    if (isConfirmed) {
-      toast({
-        title: votingPowerDict.transactionSucceed ?? 'Transaction Succeeded!',
-      })
-    } else if (isConfirming) {
-      toast({
-        title:
-          votingPowerDict.txPending ?? 'Transaction Pending, Please Wait...',
-      })
-    } else if (error) {
-      toast({ title: (error as BaseError).shortMessage })
-    }
-  }, [isConfirmed, isConfirming, error, toast])
-
-  useEffect(() => {
-    const fetchDict = async () => {
-      try {
-        const fetchedDict = await getDict(locale)
-        setDict(fetchedDict)
-      } catch (error) {
-        console.error('Error fetching dictionary:', error)
-      }
-    }
-    fetchDict()
-  }, [locale])
+  useTransactionToast({
+    error,
+    isConfirmed,
+    isConfirming,
+    pendingMessage:
+      votingPowerDict.txPending ?? 'Transaction Pending, Please Wait...',
+    successMessage:
+      votingPowerDict.transactionSucceed ?? 'Transaction Succeeded!',
+  })
 
   useEffect(() => {
     const updateImage = async () => {
@@ -2176,6 +2146,7 @@ export default function ForDaoDetailPage({
           .from('DAO')
           .update({ image: upload.cid })
           .eq('daoId', id)
+          .eq('environment', appDeploymentEnv)
           .select('*')
           .single()
 
@@ -3886,11 +3857,7 @@ export default function ForDaoDetailPage({
         </DialogContent>
       </Dialog>
 
-      {loading && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
-          <Spinner show={true} size="large" />
-        </div>
-      )}
+      <LoadingOverlay isLoading={loading} />
     </div>
   )
 }

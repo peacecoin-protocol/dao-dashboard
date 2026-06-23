@@ -205,7 +205,7 @@ export default function ForDelegatePage({
     }
 
     notify()
-  }, [isConfirmed, isConfirming, error, hash])
+  }, [error, hash, isConfirmed, isConfirming, refetchVotes, toast])
 
   const localDict = dict?.delegate ?? {}
 

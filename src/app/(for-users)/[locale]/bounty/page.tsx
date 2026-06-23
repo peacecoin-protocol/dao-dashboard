@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useToast } from '~/hooks/use-toast'
 import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
@@ -75,10 +75,14 @@ export default function ForBountyPage({
   const { address, chainId } = useAccount()
   const { data: hash, error, writeContractAsync } = useWriteContract()
 
-  const client = new ApolloClient({
-    uri: SUBGRAPH_URL[chainId || defaultChainId] as string,
-    cache: new InMemoryCache(),
-  })
+  const client = useMemo(
+    () =>
+      new ApolloClient({
+        uri: SUBGRAPH_URL[chainId || defaultChainId] as string,
+        cache: new InMemoryCache(),
+      }),
+    [chainId]
+  )
 
   const [proposalData, setProposalData] = useState<Proposal[]>([])
   const [contributorData, setContributorData] = useState<BOUNTY_CONTRIBUTOR[]>(
@@ -157,7 +161,7 @@ export default function ForBountyPage({
     }
 
     fetchData()
-  }, [isConfirmed])
+  }, [client, isConfirmed])
 
   const [bountyAmount, setBountyAmount] = useState('')
   const [contributorAddr, setContributorAddr] = useState('')
@@ -196,7 +200,7 @@ export default function ForBountyPage({
       setProposalData(_proposalData)
     }
     readProposalData()
-  }, [proposalCount])
+  }, [chainId, proposalCount])
 
   const { data: contributorBounties, refetch: refetchContributorBounties } =
     useReadContract({
@@ -213,11 +217,11 @@ export default function ForBountyPage({
     args: [],
   })
 
-  const refetchData = async () => {
+  const refetchData = useCallback(async () => {
     refetchBalance()
     refetchBountyAmount()
     refetchContributorBounties()
-  }
+  }, [refetchBalance, refetchBountyAmount, refetchContributorBounties])
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const name = event.target.name
@@ -387,7 +391,7 @@ export default function ForBountyPage({
     }
 
     notify()
-  }, [isConfirmed, isConfirming, error, hash])
+  }, [error, hash, isConfirmed, isConfirming, refetchData, toast])
 
   const getWithdrawnAmount = (bountyInfo: unknown): string => {
     if (

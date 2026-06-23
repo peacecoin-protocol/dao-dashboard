@@ -22,7 +22,7 @@ import { SupabaseDao } from '~/i18n/types'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
-import { daoStudioAddress } from '~/app/constants/constants'
+import { appDeploymentEnv, daoStudioAddress } from '~/app/constants/constants'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { SBT_ABI } from '~/app/ABIs/SBT'
 
@@ -270,6 +270,7 @@ export default function ForDAOPage({
       const { data: dao } = await supabase
         .from('DAO')
         .select()
+        .eq('environment', appDeploymentEnv)
         .order('id', { ascending: false })
 
       let sortedDaos = (dao as SupabaseDao[]) || []
@@ -302,7 +303,7 @@ export default function ForDAOPage({
       setLoading(false)
     }
     fetchDAO()
-  }, [supabase, refetchDaos])
+  }, [refetchDaos])
 
   useEffect(() => {
     const fetchMemberDaos = async () => {
@@ -322,7 +323,7 @@ export default function ForDAOPage({
     }
 
     fetchMemberDaos()
-  }, [address, supabase])
+  }, [address])
 
   useEffect(() => {
     let isCancelled = false
@@ -464,11 +465,11 @@ export default function ForDAOPage({
       }
     }
     switchChainAndReload()
-  }, [chainId])
+  }, [chainId, chains, switchChain])
 
   useEffect(() => {
     switchChain({ chainId: defaultChainId })
-  }, [])
+  }, [switchChain])
 
   let [loading, setLoading] = useState(true)
 
@@ -559,6 +560,7 @@ export default function ForDAOPage({
           image: '',
           sbtAddress: sbtAddress,
           nftAddress: nftAddress,
+          environment: appDeploymentEnv,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })

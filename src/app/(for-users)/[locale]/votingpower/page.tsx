@@ -29,7 +29,12 @@ import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { config } from '~/lib/config'
 
 import { waitForTransactionReceipt } from '@wagmi/core'
-import { pceAddress, WPCE_ADDRESS, PCE_DAO_ID } from '~/app/constants/constants'
+import {
+  appDeploymentEnv,
+  pceAddress,
+  WPCE_ADDRESS,
+  PCE_DAO_ID,
+} from '~/app/constants/constants'
 
 import { SBT_ABI } from '~/app/ABIs/SBT'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
@@ -161,7 +166,13 @@ export default function StakingPage({
       const { data: tokens } = await supabase
         .from('Token')
         .select()
+        .eq('environment', appDeploymentEnv)
         .eq('daoId', PCE_DAO_ID)
+
+      if (!tokens || tokens.length == 0) {
+        setTokenData([])
+        return
+      }
 
       const _tokenData = tokens as SBTInfo[]
 

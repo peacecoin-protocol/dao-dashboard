@@ -11,8 +11,6 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   useSignMessage,
-  useSwitchChain,
-  type BaseError,
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 import { CAMPAIGN } from '~/i18n/types'
@@ -33,17 +31,14 @@ import { timestampToDate } from '~/components/utils'
 
 import {
   campaignAddress,
-  defaultChainId,
   GAS_LIMIT,
+  appDeploymentEnv,
+  defaultChainId,
 } from '~/app/constants/constants'
-import { SBT_ABI } from '~/app/ABIs/SBT'
-
 import { CAMPAIGN_ABI } from '~/app/ABIs/Campaigns'
 
 import { config } from '~/lib/config'
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
-import { getDict } from '~/i18n/get-dict'
-import { Spinner } from '~/components/ui/Spinner'
+import { PagePropsWithLocale } from '~/i18n/types'
 import { TableComponent } from '~/components/custom/tableComponent'
 import {
   SBTTableComponent,
@@ -53,6 +48,15 @@ import { campaignTableHeaders } from '~/app/constants/constants'
 import { createClient } from '~/utils/supabase/client'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 import { PageSubHeaderSection } from '~/components/custom/page-sub-header-section'
+import { LoadingOverlay } from '~/components/ui/loading-overlay'
+import { useDictionary } from '~/hooks/use-dictionary'
+import { useEnsureSupportedChain } from '~/hooks/use-ensure-supported-chain'
+import { useTransactionToast } from '~/hooks/use-transaction-toast'
+import {
+  fetchCampaignsWithMetadata,
+  fetchDaoNamesByIds,
+  fetchOwnedTokenBalances,
+} from '~/lib/campaigns'
 
 // Constants
 const CLAIM_MESSAGE = 'Claim Bounty for dApp.xyz'
@@ -61,8 +65,6 @@ const DEFAULT_CAMPAIGN_ID = -1
 // Types
 interface DialogState {
   isOpen: boolean
-  isCreateOpen: boolean
-  isAddWinnersOpen: boolean
   campaignId: number
 }
 
@@ -196,22 +198,20 @@ const CampaignDialog = ({
 export default function ForCampaignPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
-  const [dict, setDict] = useState<Dictionary | null>(null)
+  const dict = useDictionary(locale)
   const campaign = dict?.campaign ?? {}
   const { address, chainId } = useAccount()
   const { signMessageAsync } = useSignMessage()
-  const { chains, switchChain } = useSwitchChain()
   const { toast } = useToast()
   const [refetchCampaignData, setRefetchCampaignData] = useState(false)
   const [refetchTokenData, setRefetchTokenData] = useState(false)
 
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
+  useEnsureSupportedChain()
 
   // State
   const [dialogState, setDialogState] = useState<DialogState>({
     isOpen: false,
-    isCreateOpen: false,
-    isAddWinnersOpen: false,
     campaignId: DEFAULT_CAMPAIGN_ID,
   })
 
@@ -223,12 +223,7 @@ export default function ForCampaignPage({
   const [searchTerm, setSearchTerm] = useState<string>('')
 
   // Contract hooks
-  const {
-    data: hash,
-    error,
-    writeContract,
-    writeContractAsync,
-  } = useWriteContract()
+  const { data: hash, error, writeContractAsync } = useWriteContract()
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
@@ -237,78 +232,35 @@ export default function ForCampaignPage({
     })
 
   const [campaignData, setCampaignData] = useState<CAMPAIGN[]>([])
+  const filteredCampaignData = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase()
+    const sortedCampaigns = [...campaignData].sort(
+      (a, b) => Number(a.campaignId) - Number(b.campaignId)
+    )
 
-  const [filteredCampaignData, setFilteredCampaignData] = useState<CAMPAIGN[]>(
-    []
-  )
-
-  useEffect(() => {
-    if (searchTerm.length > 0) {
-      setFilteredCampaignData(
-        campaignData
-          .filter((campaign) => {
-            const daoName = daoNames[campaign.daoId] || ''
-            return daoName.toLowerCase().includes(searchTerm.toLowerCase())
-          })
-          .sort((a, b) => Number(a.campaignId) - Number(b.campaignId))
-      )
-    } else {
-      setFilteredCampaignData(
-        campaignData.sort((a, b) => Number(a.campaignId) - Number(b.campaignId))
-      )
+    if (!normalizedSearch) {
+      return sortedCampaigns
     }
-  }, [campaignData, searchTerm, daoNames])
+
+    return sortedCampaigns.filter((campaignItem) => {
+      const daoName = daoNames[campaignItem.daoId] || ''
+      return daoName.toLowerCase().includes(normalizedSearch)
+    })
+  }, [campaignData, daoNames, searchTerm])
 
   useEffect(() => {
     const fetchCampaignData = async () => {
-      const { data: campaignData } = await supabase
-        .from('Campaign')
-        .select()
-        .order('campaignId', { ascending: true })
-
-      if (campaignData && campaignData.length > 0) {
-        const _tokenData = await Promise.all(
-          campaignData.map(async (campaign, index) => {
-            const { data } = await supabase
-              .from('Token')
-              .select()
-              .eq('tokenId', campaign.sbtId.toString())
-              .eq('isSBT', campaign.tokenType == 1 ? true : false)
-              .eq('daoId', campaign.daoId)
-
-            campaignData[index].daoId = data?.[0]?.daoId
-            campaignData[index].image = data?.[0]?.image
-          })
+      const nextCampaignData = await fetchCampaignsWithMetadata(supabase)
+      setCampaignData(nextCampaignData)
+      setDaoNames(
+        await fetchDaoNamesByIds(
+          supabase,
+          nextCampaignData.map((item) => item.daoId)
         )
-
-        // Fetch DAO names for all unique DAO IDs
-        const uniqueDaoIds = [
-          ...new Set(campaignData.map((c) => c.daoId).filter(Boolean)),
-        ]
-        if (uniqueDaoIds.length > 0) {
-          try {
-            const { data: daoData, error } = await supabase
-              .from('DAO')
-              .select('daoId, daoName')
-              .in('daoId', uniqueDaoIds)
-
-            if (!error && daoData) {
-              const daoNameMap: Record<string, string> = {}
-              daoData.forEach((dao) => {
-                daoNameMap[dao.daoId] = dao.daoName
-              })
-              setDaoNames(daoNameMap)
-            }
-          } catch (error) {
-            console.error('Error fetching DAO names:', error)
-          }
-        }
-
-        setCampaignData(campaignData as CAMPAIGN[])
-      }
+      )
     }
     fetchCampaignData()
-  }, [address, supabase, refetchCampaignData])
+  }, [refetchCampaignData, supabase])
 
   // Campaign status
   const [campaignStatus, setCampaignStatus] = useState<CampaignStatus>({
@@ -319,56 +271,17 @@ export default function ForCampaignPage({
 
   // Effects
   useEffect(() => {
-    const switchChainAndReload = async () => {
-      if (!chainId || !chains.some((chain) => chain.id === chainId)) {
-        switchChain({ chainId: defaultChainId })
-      }
-    }
-    switchChainAndReload()
-  }, [chainId, chains, switchChain])
-
-  useEffect(() => {
-    const fetchDict = async () => {
-      try {
-        const fetchedDict = await getDict(locale)
-        setDict(fetchedDict)
-      } catch (error) {}
-    }
-    fetchDict()
-  }, [locale])
-
-  useEffect(() => {
     const fetchTokenData = async () => {
       setLoading(true)
-      const { data: tokens } = await supabase.from('Token').select()
-
-      const _tokenData = tokens as SBTInfo[]
-
-      const tokenBalances = await Promise.all(
-        _tokenData.map(async (token: SBTInfo) => {
-          let balance = 0
-          try {
-            balance = (await readContract(config, {
-              abi: SBT_ABI,
-              address: token.address as `0x${string}`,
-              functionName: 'balanceOf',
-              args: [address, token.tokenId],
-            })) as number
-            return balance ?? 0
-          } catch (error) {
-            console.error('Error fetching token balance:', error)
-          }
+      try {
+        const nextTokenData = await fetchOwnedTokenBalances({
+          account: address,
+          supabase,
         })
-      )
-
-      _tokenData.forEach((token: SBTInfo, index: number) => {
-        token.balance = tokenBalances[index] ?? 0
-      })
-      setTokenData(
-        _tokenData.filter((token: SBTInfo) => Number(token.balance) > 0)
-      )
-
-      setLoading(false)
+        setTokenData(nextTokenData)
+      } finally {
+        setLoading(false)
+      }
     }
     fetchTokenData()
   }, [address, refetchTokenData, supabase])
@@ -384,28 +297,25 @@ export default function ForCampaignPage({
       if (dialogState.campaignId <= 0 || !address || !chainId) return
 
       try {
+        const contractAddress = campaignAddress[
+          chainId || defaultChainId
+        ] as `0x${string}`
         const [status, isWinner, isClaimed] = await Promise.all([
-          await readContract(config, {
+          readContract(config, {
             abi: CAMPAIGN_ABI,
-            address: campaignAddress[
-              chainId || defaultChainId
-            ] as `0x${string}`,
+            address: contractAddress,
             functionName: 'getStatus',
             args: [dialogState.campaignId],
           }),
-          await readContract(config, {
+          readContract(config, {
             abi: CAMPAIGN_ABI,
-            address: campaignAddress[
-              chainId || defaultChainId
-            ] as `0x${string}`,
+            address: contractAddress,
             functionName: 'isWinner',
             args: [dialogState.campaignId, address],
           }),
-          await readContract(config, {
+          readContract(config, {
             abi: CAMPAIGN_ABI,
-            address: campaignAddress[
-              chainId || defaultChainId
-            ] as `0x${string}`,
+            address: contractAddress,
             functionName: 'campWinnersClaimed',
             args: [dialogState.campaignId, address],
           }),
@@ -426,17 +336,13 @@ export default function ForCampaignPage({
     }
 
     checkCampaignStatus()
-  }, [dialogState.campaignId, address, chainId])
+  }, [dialogState.campaignId, address, chainId, toast])
 
-  useEffect(() => {
-    if (isConfirmed) {
-      toast({ title: 'Transaction Succeeded!' })
-    } else if (isConfirming) {
-      toast({ title: 'Transaction Pending, Please Wait...' })
-    } else if (error) {
-      toast({ title: (error as BaseError).shortMessage })
-    }
-  }, [isConfirmed, isConfirming, error, toast])
+  useTransactionToast({
+    error,
+    isConfirmed,
+    isConfirming,
+  })
 
   // Handlers
   const signMessage = useCallback(async () => {
@@ -462,7 +368,7 @@ export default function ForCampaignPage({
     } finally {
       setLoading(false)
     }
-  }, [chainId, signMessageAsync])
+  }, [chainId, signMessageAsync, toast])
 
   const parseGithubUsername = useCallback(
     (gistUrl: string): string | undefined => {
@@ -482,15 +388,16 @@ export default function ForCampaignPage({
       setDialogState((prev) => ({ ...prev, isOpen: false }))
       setLoading(true)
 
-      let signature = '0x'
-      let message = '_'
-      let gistUsername
+      try {
+        let signature = '0x'
+        let message = '_'
+        let gistUsername: string | undefined
 
-      const campaign = filteredCampaignData.find(
-        (campaign) => campaign.campaignId === campaignId
-      )
-      if (campaign?.validateSignatures) {
-        try {
+        const campaign = filteredCampaignData.find(
+          (campaignItem) => campaignItem.campaignId === campaignId
+        )
+
+        if (campaign?.validateSignatures) {
           gistUsername = parseGithubUsername(gistUrl)
           if (!gistUsername) {
             toast({
@@ -499,25 +406,24 @@ export default function ForCampaignPage({
             return
           }
 
-          const result = await axios.get(gistUrl)
-
-          const gistData = result.data
-          signature = gistData.Signature
-          message = gistData.Message
-        } catch (error) {
-          console.error('Error fetching gist data:', error)
-          toast({
-            title: 'Failed to fetch gist data',
-          })
-          return
+          try {
+            const result = await axios.get(gistUrl)
+            const gistData = result.data
+            signature = gistData.Signature
+            message = gistData.Message
+          } catch (fetchError) {
+            console.error('Error fetching gist data:', fetchError)
+            toast({
+              title: 'Failed to fetch gist data',
+            })
+            return
+          }
         }
-      }
 
-      const gistUsernameHash = ethers.keccak256(
-        ethers.toUtf8Bytes(gistUsername || '0x')
-      )
+        const gistUsernameHash = ethers.keccak256(
+          ethers.toUtf8Bytes(gistUsername || '0x')
+        )
 
-      try {
         const tx = await writeContractAsync({
           abi: CAMPAIGN_ABI,
           address: campaignAddress[chainId || defaultChainId] as `0x${string}`,
@@ -535,6 +441,7 @@ export default function ForCampaignPage({
           .from('Campaign')
           .select()
           .eq('campaignId', campaignId)
+          .eq('environment', appDeploymentEnv)
           .order('campaignId', { ascending: true })
 
         if (_campaignData && _campaignData.length > 0) {
@@ -546,9 +453,10 @@ export default function ForCampaignPage({
                 Number(_campaignData[0].claimAmount),
             })
             .eq('campaignId', campaignId)
+            .eq('environment', appDeploymentEnv)
         }
-        setRefetchCampaignData(!refetchCampaignData)
-        setRefetchTokenData(!refetchTokenData)
+        setRefetchCampaignData((prev) => !prev)
+        setRefetchTokenData((prev) => !prev)
 
         toast({
           title: 'Campaign claimed successfully',
@@ -566,11 +474,9 @@ export default function ForCampaignPage({
       filteredCampaignData,
       parseGithubUsername,
       chainId,
-      writeContract,
-      config,
-      refetchCampaignData,
-      refetchTokenData,
       supabase,
+      toast,
+      writeContractAsync,
     ]
   )
 
@@ -592,7 +498,7 @@ export default function ForCampaignPage({
         title: 'Failed to copy signature',
       })
     }
-  }, [signature, address])
+  }, [signature, address, toast])
 
   const currentCampaign = useMemo(
     () =>
@@ -604,11 +510,7 @@ export default function ForCampaignPage({
 
   return (
     <>
-      {loading && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/80 backdrop-blur-sm">
-          <Spinner show={true} size="large" />
-        </div>
-      )}
+      <LoadingOverlay isLoading={loading} />
       <div className="w-full mx-auto space-y-6 sm:space-y-8">
         {/* Header Section */}
         <PageHeaderSection

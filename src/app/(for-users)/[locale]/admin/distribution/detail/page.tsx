@@ -39,6 +39,7 @@ import {
 import Modal from '~/components/custom/Modal'
 import { Env } from '~/env'
 import {
+  appDeploymentEnv,
   daoStudioAddress,
   defaultChainId,
   EMPTY_NFT_IMAGE,
@@ -225,8 +226,11 @@ export default function ManagementDetailPage({
     return ''
   }, [daoConfigs])
 
-  const managementDict = dict?.management ?? {}
-  const sbtDict = dict?.sbt ?? {}
+  const managementDict = useMemo(
+    () => dict?.management ?? {},
+    [dict?.management]
+  )
+  const sbtDict = useMemo(() => dict?.sbt ?? {}, [dict?.sbt])
   const loadingLabel = managementDict.loading ?? 'Loading...'
   const sbtLabel = sbtDict.sbt ?? 'SBT'
   const nftLabel = sbtDict.nft ?? 'NFT'
@@ -434,7 +438,13 @@ export default function ManagementDetailPage({
         .select()
         .eq('creator', address)
         .eq('daoId', daoId)
+        .eq('environment', appDeploymentEnv)
         .order('created_at', { ascending: false })
+
+      if (!data || data.length == 0) {
+        setDaoTokens([])
+        return
+      }
 
       setDaoTokens((data as SBTInfo[]) || [])
     }
@@ -454,6 +464,11 @@ export default function ManagementDetailPage({
         )
         .eq('daoId', daoId)
         .order('created_at', { ascending: false })
+
+      if (!data || data.length == 0) {
+        setHistoryRows([])
+        return
+      }
 
       setHistoryRows((data as DistributeHistoryRow[]) || [])
       setIsHistoryLoading(false)

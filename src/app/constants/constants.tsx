@@ -1,97 +1,130 @@
-import { polygon, sepolia, hoodi } from 'wagmi/chains'
-import { localhost } from '~/lib/config'
+import { polygon } from 'wagmi/chains'
 
-export const pceAddress = {
-  [sepolia.id]: '0x951E69b565924c0b846Ed0E779f190c53d29F62e',
-  [localhost.id]: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
-  [polygon.id]: '0x62Ef93EAa5bB3E47E0e855C323ef156c8E3D8913',
-  [hoodi.id]: '0x1F9FcC5f8DF936b8E3c9617565FfAd7fF6222b14',
-} as Record<number, `0x${string}`>
+type Address = `0x${string}`
+type DeploymentEnv = 'dev' | 'stg' | 'prod'
+type DeploymentConfig = {
+  pceAddress: Address
+  pceCommunity: Address
+  daoStudioAddress: Address
+  timelockAddress: Address
+  governorAddress: Address
+  campaignAddress: Address
+  WPCE_ADDRESS: Address
+  bountyAddress: Address
+  stakingAddress: Address
+  MultipleVotingAddress: Address
+  SUBGRAPH_URL: string
+  createdAt: string
+}
 
-export const pceCommunity = {
-  [sepolia.id]: '0xB39AE559A9D4D58a8FAaDf401c7F0398f879C6e7',
-  [localhost.id]: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
-  [hoodi.id]: '0xBa9E16D096262023c50A3cCCC4f08af4b321fB21',
-} as Record<number, `0x${string}`>
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as Address
 
-export const daoStudioAddress = {
-  [sepolia.id]: '0x997EF5B0D3916e6ecF1191570Bc8cC96546053e4',
-  [localhost.id]: '0x809d550fca64d94Bd9F66E60752A544199cfAC3D',
-  [polygon.id]: '0x1A94F2393590Ae64c3B5465bD18947A3aDFdacc4',
-  [hoodi.id]: '0x0000000000000000000000000000000000000000',
-} as Record<number, `0x${string}`>
+const resolveDeploymentEnv = (): DeploymentEnv => {
+  const value = process.env.NEXT_PUBLIC_APP_ENV ?? 'dev'
 
-export const timelockAddress = {
-  [sepolia.id]: '0x9C16Bd171780Feac7796cE6d82dAf4cec43D55B7',
-  [localhost.id]: '0x0E801D84Fa97b50751Dbf25036d067dCf18858bF',
-  [polygon.id]: '0x5F12E3CBF5124627317EC69f04aa89312C4EaE0B',
-  [hoodi.id]: '0x0F4E3eEEA64268926454aF8C38D62938637fd18e',
-} as Record<number, `0x${string}`>
+  switch (value.toLowerCase()) {
+    case 'dev':
+      return 'dev'
+    case 'stg':
+      return 'stg'
+    default:
+      return 'prod'
+  }
+}
 
-export const governorAddress = {
-  [sepolia.id]: '0xC0383Ae89d88a582a92574F05Ee056EFE12BE8A9',
-  [localhost.id]: '0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf',
-  [polygon.id]: '0x93bC97C053b1Dcb89b43dAC447c9dbd425feBc90',
-  [hoodi.id]: '0x4a1EBA4B4895b6562B8d67510FF07c95F90049d8',
-} as Record<number, `0x${string}`>
+export const defaultChainId = polygon.id
 
-export const campaignAddress = {
-  [sepolia.id]: '0x2f50E8D943E7C017daEEa05E78Df1038c9018f24',
-  [localhost.id]: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
-  [polygon.id]: '0xcf9e1b664781A078F7250A7303c830a329a809A6',
-  [hoodi.id]: '0x3DBbaA7F04ca653Db70E6627B724Fc34f735d580',
-} as Record<number, `0x${string}`>
+const stgDeployment = {
+  pceAddress: '0xA4807a8C34353A5EA51aF073175950Cb6248dA7E',
+  pceCommunity: ZERO_ADDRESS,
+  daoStudioAddress: '0x1A94F2393590Ae64c3B5465bD18947A3aDFdacc4',
+  timelockAddress: '0x5F12E3CBF5124627317EC69f04aa89312C4EaE0B',
+  governorAddress: '0x93bC97C053b1Dcb89b43dAC447c9dbd425feBc90',
+  campaignAddress: '0xcf9e1b664781A078F7250A7303c830a329a809A6',
+  WPCE_ADDRESS: ZERO_ADDRESS,
+  bountyAddress: ZERO_ADDRESS,
+  stakingAddress: ZERO_ADDRESS,
+  MultipleVotingAddress: ZERO_ADDRESS,
+  SUBGRAPH_URL:
+    'https://api.studio.thegraph.com/query/81073/dao_dashboard/version/latest',
+  createdAt: '1714857600',
+} satisfies DeploymentConfig
 
-export const WPCE_ADDRESS = {
-  [sepolia.id]: '0xcedd08caa35a826e55029db17050bc756f66d36b',
-  [localhost.id]: '0x4c5859f0F772848b2D91F1D83E2Fe57935348029',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
-  [hoodi.id]: '0xFf6eF3e8CA9dEfb0A6E42d10fBAA3261981B93D1',
-} as Record<number, `0x${string}`>
+const devDeployment = {
+  pceAddress: '0x62Ef93EAa5bB3E47E0e855C323ef156c8E3D8913',
+  pceCommunity: ZERO_ADDRESS,
+  daoStudioAddress: '0x1A94F2393590Ae64c3B5465bD18947A3aDFdacc4',
+  timelockAddress: '0x5F12E3CBF5124627317EC69f04aa89312C4EaE0B',
+  governorAddress: '0x93bC97C053b1Dcb89b43dAC447c9dbd425feBc90',
+  campaignAddress: '0xcf9e1b664781A078F7250A7303c830a329a809A6',
+  WPCE_ADDRESS: ZERO_ADDRESS,
+  bountyAddress: ZERO_ADDRESS,
+  stakingAddress: ZERO_ADDRESS,
+  MultipleVotingAddress: ZERO_ADDRESS,
+  SUBGRAPH_URL:
+    'https://api.studio.thegraph.com/query/81073/dao_dashboard/version/latest',
+  createdAt: '1714857600',
+} satisfies DeploymentConfig
 
-export const bountyAddress = {
-  [sepolia.id]: '0xcD76D8018DF78b5de9f9Be52a4FB2511B6dd37A3',
-  [localhost.id]: '0x9d4454B023096f34B160D6B654540c56A1F81688',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
-  [hoodi.id]: '0xEb0978C48aced59209242d677A404bBB2126413c',
-} as Record<number, `0x${string}`>
+export const polygonDeployments = {
+  dev: { ...devDeployment },
+  stg: { ...stgDeployment },
+  prod: { ...stgDeployment },
+} satisfies Record<DeploymentEnv, DeploymentConfig>
 
-export const stakingAddress = {
-  [sepolia.id]: '0x53E94ca5b9FAecEFE3D9aab15CC65ECa60893937',
-  [localhost.id]: '0x3Aa5ebB10DC797CAC828524e59A333d0A371443c',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
-  [hoodi.id]: '0xafe9F87C70cA6b033Dab2E5a17b7C90Cd2c55C45',
-} as Record<number, `0x${string}`>
+export const appDeploymentEnv = resolveDeploymentEnv()
+const deployment = polygonDeployments[appDeploymentEnv]
 
-export const MultipleVotingAddress = {
-  [sepolia.id]: '0xc0ce5f8b4B60964f055190C932beE43061938CdC',
-  [localhost.id]: '0x3c91bbb25c59544cac77e67f50ec3f2d5c30e733',
-  [polygon.id]: '0x0000000000000000000000000000000000000000',
-  [hoodi.id]: '0x3c91bbb25c59544cac77e67f50ec3f2d5c30e733',
-} as Record<number, `0x${string}`>
+export const pceAddress: Record<number, Address> = {
+  [defaultChainId]: deployment.pceAddress,
+}
+
+export const pceCommunity: Record<number, Address> = {
+  [defaultChainId]: deployment.pceCommunity,
+}
+
+export const daoStudioAddress: Record<number, Address> = {
+  [defaultChainId]: deployment.daoStudioAddress,
+}
+
+export const timelockAddress: Record<number, Address> = {
+  [defaultChainId]: deployment.timelockAddress,
+}
+
+export const governorAddress: Record<number, Address> = {
+  [defaultChainId]: deployment.governorAddress,
+}
+
+export const campaignAddress: Record<number, Address> = {
+  [defaultChainId]: deployment.campaignAddress,
+}
+
+export const WPCE_ADDRESS: Record<number, Address> = {
+  [defaultChainId]: deployment.WPCE_ADDRESS,
+}
+
+export const bountyAddress: Record<number, Address> = {
+  [defaultChainId]: deployment.bountyAddress,
+}
+
+export const stakingAddress: Record<number, Address> = {
+  [defaultChainId]: deployment.stakingAddress,
+}
+
+export const MultipleVotingAddress: Record<number, Address> = {
+  [defaultChainId]: deployment.MultipleVotingAddress,
+}
 
 export const PCE_DAO_ID =
   '0x6341c772c3e6500085764a9316cb328acd2f1aae43136cd521f00ac4d6872a90'
 
-export const SUBGRAPH_URL = {
-  [sepolia.id]:
-    'https://api.studio.thegraph.com/query/81073/dao-studio-peace-coin-org/version/latest',
-  [localhost.id]: 'http://localhost:8000/subgraphs/name/dao_dashboard',
-  [polygon.id]:
-    'https://api.studio.thegraph.com/query/81073/dao_dashboard/version/latest',
-  [hoodi.id]:
-    'https://api.studio.thegraph.com/query/81073/dao_dashboard/version/latest',
-} as Record<number, string>
+export const SUBGRAPH_URL: Record<number, string> = {
+  [defaultChainId]: deployment.SUBGRAPH_URL,
+}
 
-export const createdAt = {
-  [sepolia.id]: '1714857600',
-  [localhost.id]: '1714857600',
-  [polygon.id]: '1714857600',
-  [hoodi.id]: '1714857600',
-} as Record<number, string>
-
-export const defaultChainId = polygon.id
+export const createdAt: Record<number, string> = {
+  [defaultChainId]: deployment.createdAt,
+}
 
 export const STATUS = [
   'Draft',

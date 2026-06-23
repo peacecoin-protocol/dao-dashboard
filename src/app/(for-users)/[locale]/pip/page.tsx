@@ -6,21 +6,11 @@ import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
 import { useEffect, useState } from 'react'
-import { Octokit } from 'octokit'
 
 export default function ForPendingPage({
   params: { locale, ...params },
 }: PagePropsWithLocale<{}>) {
   const [dict, setDict] = useState<Dictionary | null>(null)
-
-  let octokit: Octokit | null = null
-  const githubAccessToken = process.env.NEXT_PUBLIC_GITHUB_ACCESS
-
-  useEffect(() => {
-    octokit = new Octokit({
-      auth: githubAccessToken,
-    })
-  }, [githubAccessToken])
 
   useEffect(() => {
     const fetchDict = async () => {

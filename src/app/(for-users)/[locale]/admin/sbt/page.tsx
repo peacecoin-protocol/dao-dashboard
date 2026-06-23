@@ -50,6 +50,7 @@ import { DaoSearchSelect } from '~/components/custom/dao-search-select'
 
 import { createClient } from '~/utils/supabase/client'
 import { Env } from '~/env'
+import { appDeploymentEnv } from '~/app/constants/constants'
 
 // Types
 interface CardFormState {
@@ -361,6 +362,7 @@ export default function SBTBuilderPage({
         .from('DAO')
         .select()
         .eq('creator', address as `0x${string}`)
+        .eq('environment', appDeploymentEnv)
       setAllDAOs(daos as SupabaseDao[])
     }
     fetchAllDAOs()
@@ -434,6 +436,13 @@ export default function SBTBuilderPage({
         .from('Token')
         .select()
         .eq('creator', address as string)
+        .eq('environment', appDeploymentEnv)
+
+      if (!tokens || tokens.length == 0) {
+        setTokenData([])
+        setLoading(false)
+        return
+      }
 
       const _tokenData = tokens as SBTInfo[]
 
@@ -520,7 +529,7 @@ export default function SBTBuilderPage({
         .from('DAO')
         .select()
         .eq('daoId', cardForm.daoId)
-
+        .eq('environment', appDeploymentEnv)
       const contractAddress = cardForm.isSBT
         ? _daoInfo?.[0]?.sbtAddress
         : _daoInfo?.[0]?.nftAddress
@@ -597,6 +606,7 @@ export default function SBTBuilderPage({
             daoId: cardForm.daoId,
             isSBT: cardForm.isSBT,
             address: contractAddress as `0x${string}`,
+            environment: appDeploymentEnv,
           })
 
           setRefetchTokenData(!refetchTokenData)
@@ -727,7 +737,7 @@ export default function SBTBuilderPage({
           })
           .eq('tokenId', token.tokenId)
           .eq('isSBT', token.isSBT)
-
+          .eq('environment', appDeploymentEnv)
         toast({
           title: token.isRevoked
             ? 'Token unrevoked successfully'
