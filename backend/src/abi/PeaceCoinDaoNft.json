@@ -1,0 +1,11 @@
+[
+  "function batchMint(address[] calldata to, uint256[] calldata ids, uint256[] calldata amounts) external",
+  "function createToken(string memory tokenUri, uint256 votingPower) external",
+  "function numberOfTokens() external view returns (uint256)",
+  "function setTokenURI(uint256 id, string memory tokenUri, uint256 votingPower) external",
+  "function balanceOf(address account, uint256 id) external view returns (uint256)",
+  "function DAO_MANAGER_ROLE() external view returns (bytes32)",
+  "function DEFAULT_ADMIN_ROLE() external view returns (bytes32)",
+  "function hasRole(bytes32 role, address account) external view returns (bool)",
+  "function minters(address account) external view returns (bool)"
+]

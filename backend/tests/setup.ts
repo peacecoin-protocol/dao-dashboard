@@ -1,0 +1,17 @@
+process.env.DAO_MANAGER_PRIVATE_KEY =
+  '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+process.env.POLYGON_RPC_URL_DEV = 'http://localhost:8545';
+process.env.POLYGON_RPC_URL_PRODUCTION = 'http://localhost:8545';
+process.env.SUPABASE_URL = 'https://test.supabase.co';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+process.env.PINATA_JWT = 'test-pinata-jwt';
+process.env.PINATA_GATEWAY_URL = 'https://ipfs-dao-studio.mypinata.cloud';
+
+process.env.PINATA_SBT_GROUP_ID_DEV = 'ec1ac640-dd34-4da3-b7f9-9ca9826dcb50';
+process.env.PINATA_SBT_GROUP_ID_PROD = '66913535-3415-4cad-ba28-37b3b782c12b';
+process.env.PINATA_NFT_GROUP_ID_DEV = '12757d64-9c40-48d1-b2b2-616d0fe9708f';
+process.env.PINATA_NFT_GROUP_ID_PROD = '6b5c304d-6bbb-4366-b5c4-27fe361a92d3';
+process.env.PINATA_DAO_GROUP_ID_DEV = '3f83ddff-6587-4430-b4d9-da5c8ef56985';
+process.env.PINATA_DAO_GROUP_ID_PROD = 'd168758a-e230-4338-b004-2904656e794f';
+process.env.PINATA_JSON_GROUP_ID_DEV = 'e9cea556-1e9d-4d16-a247-feb8d32e7de5';
+process.env.PINATA_JSON_GROUP_ID_PROD = '3ec0e5f1-709c-4329-b4a2-ba4485fc33b3';
