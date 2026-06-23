@@ -1,20 +1,33 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { batchMint, createSbt, getWalletBalances, listContracts, listTokens } from './sbtClient';
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import {
+  batchMint,
+  createSbt,
+  getWalletBalances,
+  listContracts,
+  scheduleIssuance,
+  listTokens,
+} from './sbtClient'
 
 describe('sbtClient', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
-  });
+    vi.restoreAllMocks()
+  })
 
   it('listContracts builds query string', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      json: async () => ({ success: true, status: 'SUCCESSFUL_LIST_CONTRACTS', data: { items: [] } }),
-    } as Response);
+      json: async () => ({
+        success: true,
+        status: 'SUCCESSFUL_LIST_CONTRACTS',
+        data: { items: [] },
+      }),
+    } as Response)
 
-    await listContracts({ environment: 'dev', assetType: 'sbt' });
+    await listContracts({ environment: 'dev', assetType: 'sbt' })
 
-    expect(fetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/sbt\/contracts\?.*assetType=sbt/));
-  });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/sbt\/contracts\?.*assetType=sbt/)
+    )
+  })
 
   it('createSbt sends multipart form data', async () => {
     const mockResponse = {
@@ -22,13 +35,15 @@ describe('sbtClient', () => {
       status: 'SUCCESSFUL_CREATE_TOKEN',
       message: 'ok',
       data: { tokenId: '5' },
-    };
+    }
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       json: async () => mockResponse,
-    } as Response);
+    } as Response)
 
-    const file = new File(['img'], 'test.png', { type: 'image/png' });
+    const file = new File(['img'], 'test.png', { type: 'image/png' })
     const result = await createSbt({
+      signerPrivateKey:
+        '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
       environment: 'dev',
       assetType: 'sbt',
       daoId: 'dao-1',
@@ -36,28 +51,38 @@ describe('sbtClient', () => {
       description: 'Desc',
       votingPower: '100',
       image: file,
-    });
+    })
 
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(true)
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/sbt/create-token'),
-      expect.objectContaining({ method: 'POST', body: expect.any(FormData) })
-    );
-  });
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.any(FormData),
+        headers: expect.any(Headers),
+      })
+    )
+  })
 
   it('listTokens builds query string', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      json: async () => ({ success: true, status: 'SUCCESSFUL_LIST_TOKENS', data: { items: [] } }),
-    } as Response);
+      json: async () => ({
+        success: true,
+        status: 'SUCCESSFUL_LIST_TOKENS',
+        data: { items: [] },
+      }),
+    } as Response)
 
     await listTokens({
       daoId: 'dao-1',
       environment: 'dev',
       assetType: 'sbt',
-    });
+    })
 
-    expect(fetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/sbt\/tokens\?.*daoId=dao-1/));
-  });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/sbt\/tokens\?.*daoId=dao-1/)
+    )
+  })
 
   it('batchMint sends JSON body', async () => {
     const mockResponse = {
@@ -65,42 +90,95 @@ describe('sbtClient', () => {
       status: 'SUCCESSFUL_MINT',
       message: 'ok',
       data: { mintTransactionHash: '0x1' },
-    };
+    }
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       json: async () => mockResponse,
-    } as Response);
+    } as Response)
 
     const result = await batchMint({
+      signerPrivateKey:
+        '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
       environment: 'dev',
       sbtAddress: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
       to: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
       tokens: [{ id: '1', amount: '1' }],
-    });
+    })
 
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(true)
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/sbt/batch-mint'),
       expect.objectContaining({
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: expect.any(Headers),
       })
-    );
-  });
+    )
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    expect(JSON.parse(String(options?.body))).toEqual({
+      environment: 'dev',
+      sbtAddress: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+      to: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+      tokens: [{ id: '1', amount: '1' }],
+    })
+  })
+
+  it('scheduleIssuance sends signer header and strips private key from body', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      json: async () => ({
+        success: true,
+        status: 'SUCCESSFUL_SCHEDULE_ISSUANCE',
+        message: 'ok',
+        data: { id: 1, status: 'pending' },
+      }),
+    } as Response)
+
+    const result = await scheduleIssuance({
+      signerPrivateKey:
+        '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+      environment: 'dev',
+      sbtAddress: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+      to: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+      tokens: [{ id: '1', amount: '1' }],
+      executeAt: '2030-01-01T00:00:00.000Z',
+    })
+
+    expect(result.success).toBe(true)
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/sbt/scheduled-issuances'),
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.any(Headers),
+      })
+    )
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    expect(JSON.parse(String(options?.body))).toEqual({
+      environment: 'dev',
+      sbtAddress: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+      to: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+      tokens: [{ id: '1', amount: '1' }],
+      executeAt: '2030-01-01T00:00:00.000Z',
+    })
+  })
 
   it('getWalletBalances builds query string', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      json: async () => ({ success: true, status: 'SUCCESS', data: { items: [] } }),
-    } as Response);
+      json: async () => ({
+        success: true,
+        status: 'SUCCESS',
+        data: { items: [] },
+      }),
+    } as Response)
 
     await getWalletBalances({
       walletAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
       environment: 'production',
       assetType: 'sbt',
       daoId: 'dao-1',
-    });
+    })
 
     expect(fetch).toHaveBeenCalledWith(
-      expect.stringMatching(/wallet-balances\?.*environment=production.*assetType=sbt.*daoId=dao-1/)
-    );
-  });
-});
+      expect.stringMatching(
+        /wallet-balances\?.*environment=production.*assetType=sbt.*daoId=dao-1/
+      )
+    )
+  })
+})

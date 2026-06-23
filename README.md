@@ -90,7 +90,11 @@ Create and update the root `.env` file with the values required by the dashboard
 cp backend/.env.example backend/.env
 ```
 
-Update `backend/.env` with RPC, Supabase, signer, and Pinata values.
+Update `backend/.env` with RPC, Supabase, encryption, and Pinata values.
+
+To enable scheduled mints, also set `SCHEDULED_SIGNER_ENCRYPTION_KEY`. The
+backend uses this server-side secret to encrypt signer keys before storing
+scheduled issuance jobs in Supabase.
 
 ### Sample demo
 

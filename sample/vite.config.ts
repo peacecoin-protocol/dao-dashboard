@@ -1,16 +1,16 @@
-import { defineConfig, createLogger, type LogLevel } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig, createLogger, type LogLevel } from 'vite'
+import react from '@vitejs/plugin-react'
 
-const logger = createLogger();
-const originalInfo = logger.info.bind(logger);
+const logger = createLogger()
+const originalInfo = logger.info.bind(logger)
 
 logger.info = (msg, options) => {
   // Hide noisy HMR lines when files change during dev (not errors).
   if (typeof msg === 'string' && msg.includes('hmr update')) {
-    return;
+    return
   }
-  originalInfo(msg, options);
-};
+  originalInfo(msg, options)
+}
 
 export default defineConfig({
   customLogger: logger,
@@ -25,4 +25,4 @@ export default defineConfig({
       },
     },
   },
-});
+})

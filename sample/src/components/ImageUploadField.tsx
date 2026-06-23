@@ -1,67 +1,73 @@
-import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+  type MouseEvent,
+} from 'react'
 
-const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
-const MAX_BYTES = 10 * 1024 * 1024;
+const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif'
+const MAX_BYTES = 10 * 1024 * 1024
 
 interface Props {
-  value: File | null;
-  onChange: (file: File | null) => void;
-  id?: string;
+  value: File | null
+  onChange: (file: File | null) => void
+  id?: string
 }
 
 function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export function ImageUploadField({ value, onChange, id }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [dragOver, setDragOver] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [localError, setLocalError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!value) {
-      setPreviewUrl(null);
-      return;
+      setPreviewUrl(null)
+      return
     }
-    const url = URL.createObjectURL(value);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [value]);
+    const url = URL.createObjectURL(value)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [value])
 
   function validateAndSet(file: File | undefined) {
-    if (!file) return;
-    setLocalError(null);
+    if (!file) return
+    setLocalError(null)
 
     if (!file.type.startsWith('image/')) {
-      setLocalError('Please choose an image file (PNG, JPG, WEBP, or GIF).');
-      return;
+      setLocalError('Please choose an image file (PNG, JPG, WEBP, or GIF).')
+      return
     }
     if (file.size > MAX_BYTES) {
-      setLocalError('Image must be 10 MB or smaller.');
-      return;
+      setLocalError('Image must be 10 MB or smaller.')
+      return
     }
-    onChange(file);
+    onChange(file)
   }
 
   function onDrop(e: DragEvent) {
-    e.preventDefault();
-    setDragOver(false);
-    validateAndSet(e.dataTransfer.files[0]);
+    e.preventDefault()
+    setDragOver(false)
+    validateAndSet(e.dataTransfer.files[0])
   }
 
   function openPicker() {
-    inputRef.current?.click();
+    inputRef.current?.click()
   }
 
   function clearImage(e: MouseEvent) {
-    e.stopPropagation();
-    setLocalError(null);
-    onChange(null);
+    e.stopPropagation()
+    setLocalError(null)
+    onChange(null)
     if (inputRef.current) {
-      inputRef.current.value = '';
+      inputRef.current.value = ''
     }
   }
 
@@ -87,10 +93,18 @@ export function ImageUploadField({ value, onChange, id }: Props) {
             <p className="image-upload-size">{formatFileSize(value.size)}</p>
           </div>
           <div className="image-upload-actions">
-            <button type="button" className="btn-secondary btn-sm" onClick={openPicker}>
+            <button
+              type="button"
+              className="btn-secondary btn-sm"
+              onClick={openPicker}
+            >
               Replace
             </button>
-            <button type="button" className="btn-link btn-sm" onClick={clearImage}>
+            <button
+              type="button"
+              className="btn-link btn-sm"
+              onClick={clearImage}
+            >
               Remove
             </button>
           </div>
@@ -101,8 +115,8 @@ export function ImageUploadField({ value, onChange, id }: Props) {
           className={`image-upload-dropzone${dragOver ? ' drag-over' : ''}`}
           onClick={openPicker}
           onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
+            e.preventDefault()
+            setDragOver(true)
           }}
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
@@ -120,11 +134,13 @@ export function ImageUploadField({ value, onChange, id }: Props) {
           </span>
           <span className="image-upload-title">Drop image here</span>
           <span className="image-upload-hint">or click to browse</span>
-          <span className="image-upload-formats">PNG, JPG, WEBP, GIF · max 10 MB</span>
+          <span className="image-upload-formats">
+            PNG, JPG, WEBP, GIF · max 10 MB
+          </span>
         </button>
       )}
 
       {localError && <p className="image-upload-error">{localError}</p>}
     </div>
-  );
+  )
 }

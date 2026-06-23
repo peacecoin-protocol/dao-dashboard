@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { defaultWalletAddress } from '../config/environment';
-import { WalletBalancesForm } from './WalletBalancesForm';
-import * as sbtClient from '../api/sbtClient';
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { defaultWalletAddress } from '../config/environment'
+import { WalletBalancesForm } from './WalletBalancesForm'
+import * as sbtClient from '../api/sbtClient'
 
-vi.mock('../api/sbtClient');
+vi.mock('../api/sbtClient')
 
 describe('WalletBalancesForm', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks()
     vi.mocked(sbtClient.listContracts).mockResolvedValue({
       success: true,
       status: 'SUCCESSFUL_LIST_CONTRACTS',
@@ -28,18 +28,18 @@ describe('WalletBalancesForm', () => {
           },
         ],
       },
-    });
-  });
+    })
+  })
 
   it('renders form fields', async () => {
-    render(<WalletBalancesForm />);
-    expect(screen.getByText('Get Balance')).toBeInTheDocument();
-    expect(screen.getByText('Wallet Address')).toBeInTheDocument();
-    expect(screen.getByText('Asset type')).toBeInTheDocument();
+    render(<WalletBalancesForm />)
+    expect(screen.getByText('Get Balance')).toBeInTheDocument()
+    expect(screen.getByText('Wallet Address')).toBeInTheDocument()
+    expect(screen.getByText('Asset type')).toBeInTheDocument()
     await waitFor(() => {
-      expect(screen.getByText('SBT contract')).toBeInTheDocument();
-    });
-  });
+      expect(screen.getByText('SBT contract')).toBeInTheDocument()
+    })
+  })
 
   it('displays owned balance cards sorted by token id with images', async () => {
     vi.mocked(sbtClient.getWalletBalances).mockResolvedValue({
@@ -74,33 +74,40 @@ describe('WalletBalancesForm', () => {
           },
         ],
       },
-    });
+    })
 
-    const user = userEvent.setup();
-    render(<WalletBalancesForm />);
-
-    await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: /SBT contract/i })).toBeEnabled();
-    });
-
-    await user.selectOptions(screen.getByRole('combobox', { name: /SBT contract/i }), 'dao-1');
-    await user.click(screen.getByRole('button', { name: /Get Balances/i }));
+    const user = userEvent.setup()
+    render(<WalletBalancesForm />)
 
     await waitFor(() => {
-      expect(screen.getByText('DAO Manager Badge')).toBeInTheDocument();
-      expect(screen.getByRole('img', { name: 'DAO Manager Badge' })).toHaveAttribute(
+      expect(
+        screen.getByRole('combobox', { name: /SBT contract/i })
+      ).toBeEnabled()
+    })
+
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: /SBT contract/i }),
+      'dao-1'
+    )
+    await user.click(screen.getByRole('button', { name: /Get Balances/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('DAO Manager Badge')).toBeInTheDocument()
+      expect(
+        screen.getByRole('img', { name: 'DAO Manager Badge' })
+      ).toHaveAttribute(
         'src',
         'https://ipfs-dao-studio.mypinata.cloud/ipfs/img1'
-      );
-      expect(screen.getByText('SBT')).toBeInTheDocument();
-      expect(screen.getByText('Voting Power: 100 ETH')).toBeInTheDocument();
-    });
+      )
+      expect(screen.getByText('SBT')).toBeInTheDocument()
+      expect(screen.getByText('Voting Power: 100 ETH')).toBeInTheDocument()
+    })
 
     expect(sbtClient.getWalletBalances).toHaveBeenCalledWith({
       walletAddress: defaultWalletAddress,
       environment: 'dev',
       assetType: 'sbt',
       daoId: 'dao-1',
-    });
-  });
-});
+    })
+  })
+})

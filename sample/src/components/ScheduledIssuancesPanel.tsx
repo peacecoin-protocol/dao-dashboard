@@ -1,50 +1,56 @@
-import { useCallback, useEffect, useState } from 'react';
-import { cancelScheduledIssuance, listScheduledIssuances } from '../api/sbtClient';
+import { useCallback, useEffect, useState } from 'react'
+import {
+  cancelScheduledIssuance,
+  listScheduledIssuances,
+} from '../api/sbtClient'
 import type {
   Environment,
   ScheduledIssuanceItem,
   ScheduledIssuanceStatus,
-} from '../types/api';
-import { EnvironmentSelect } from './EnvironmentSelect';
+} from '../types/api'
+import { EnvironmentSelect } from './EnvironmentSelect'
 
-const STATUS_FILTERS: Array<{ value: ScheduledIssuanceStatus | 'all'; label: string }> = [
+const STATUS_FILTERS: Array<{
+  value: ScheduledIssuanceStatus | 'all'
+  label: string
+}> = [
   { value: 'all', label: 'All' },
   { value: 'pending', label: 'Pending' },
   { value: 'processing', label: 'Processing' },
   { value: 'completed', label: 'Completed' },
   { value: 'failed', label: 'Failed' },
   { value: 'cancelled', label: 'Cancelled' },
-];
+]
 
 function formatDateTime(iso: string | null): string {
-  if (!iso) return '—';
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
+  if (!iso) return '—'
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime()) ? iso : date.toLocaleString()
 }
 
 function shortenAddress(address: string): string {
-  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+  return `${address.slice(0, 6)}…${address.slice(-4)}`
 }
 
 function CopyTxButton({ txHash }: { txHash: string }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(txHash);
+      await navigator.clipboard.writeText(txHash)
     } catch {
       // Clipboard API unavailable (non-HTTPS context) — fall back to a hidden textarea.
-      const textarea = document.createElement('textarea');
-      textarea.value = txHash;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
+      const textarea = document.createElement('textarea')
+      textarea.value = txHash
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
   }
 
   return (
@@ -57,54 +63,56 @@ function CopyTxButton({ txHash }: { txHash: string }) {
     >
       {copied ? 'Copied!' : 'Copy'}
     </button>
-  );
+  )
 }
 
 export function ScheduledIssuancesPanel() {
-  const [environment, setEnvironment] = useState<Environment>('dev');
-  const [statusFilter, setStatusFilter] = useState<ScheduledIssuanceStatus | 'all'>('all');
-  const [items, setItems] = useState<ScheduledIssuanceItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [cancellingId, setCancellingId] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [environment, setEnvironment] = useState<Environment>('dev')
+  const [statusFilter, setStatusFilter] = useState<
+    ScheduledIssuanceStatus | 'all'
+  >('all')
+  const [items, setItems] = useState<ScheduledIssuanceItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [cancellingId, setCancellingId] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
       const response = await listScheduledIssuances({
         environment,
         status: statusFilter === 'all' ? undefined : statusFilter,
-      });
+      })
       if (response.success && response.data) {
-        setItems(response.data.items);
+        setItems(response.data.items)
       } else {
-        setItems([]);
-        setError(response.message || 'Failed to load scheduled issuances.');
+        setItems([])
+        setError(response.message || 'Failed to load scheduled issuances.')
       }
     } catch {
-      setItems([]);
-      setError('Failed to reach the backend.');
+      setItems([])
+      setError('Failed to reach the backend.')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [environment, statusFilter]);
+  }, [environment, statusFilter])
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void load()
+  }, [load])
 
   async function handleCancel(id: number) {
-    setCancellingId(id);
-    setError(null);
+    setCancellingId(id)
+    setError(null)
     try {
-      const response = await cancelScheduledIssuance(id);
+      const response = await cancelScheduledIssuance(id)
       if (!response.success) {
-        setError(response.message || 'Failed to cancel issuance.');
+        setError(response.message || 'Failed to cancel issuance.')
       }
-      await load();
+      await load()
     } finally {
-      setCancellingId(null);
+      setCancellingId(null)
     }
   }
 
@@ -113,8 +121,9 @@ export function ScheduledIssuancesPanel() {
       <div className="card-intro">
         <h2>Scheduled Issuances</h2>
         <p className="muted">
-          Batch mints queued for a future time. The backend executes due issuances about once a
-          minute. Pending entries can be cancelled.
+          Batch mints queued for a future time. The backend executes due
+          issuances about once a minute using the signer key saved with each
+          schedule request. Pending entries can be cancelled.
         </p>
       </div>
 
@@ -125,7 +134,11 @@ export function ScheduledIssuancesPanel() {
             <span>Status</span>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as ScheduledIssuanceStatus | 'all')}
+              onChange={(e) =>
+                setStatusFilter(
+                  e.target.value as ScheduledIssuanceStatus | 'all'
+                )
+              }
             >
               {STATUS_FILTERS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -135,7 +148,12 @@ export function ScheduledIssuancesPanel() {
             </select>
           </label>
         </div>
-        <button type="button" className="btn-secondary" onClick={() => void load()} disabled={loading}>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => void load()}
+          disabled={loading}
+        >
           {loading ? 'Refreshing…' : 'Refresh'}
         </button>
       </div>
@@ -148,8 +166,7 @@ export function ScheduledIssuancesPanel() {
 
       {!loading && items.length === 0 && !error && (
         <p className="empty-list-message">
-          No scheduled issuances for this environment. Use the Batch Mint tab with the
-          “Schedule” option to create one.
+          No scheduled issuances for this environment yet.
         </p>
       )}
 
@@ -158,12 +175,15 @@ export function ScheduledIssuancesPanel() {
           {items.map((item) => (
             <article key={item.id} className="scheduled-row">
               <div className="scheduled-row-main">
-                <span className={`issuance-status issuance-status--${item.status}`}>
+                <span
+                  className={`issuance-status issuance-status--${item.status}`}
+                >
                   {item.status}
                 </span>
                 <div className="scheduled-row-meta">
                   <strong>
-                    {item.tokens.length} token{item.tokens.length === 1 ? '' : 's'} →{' '}
+                    {item.tokens.length} token
+                    {item.tokens.length === 1 ? '' : 's'} →{' '}
                     {shortenAddress(item.to)}
                   </strong>
                   <span className="muted">
@@ -171,7 +191,8 @@ export function ScheduledIssuancesPanel() {
                     {formatDateTime(item.executeAt)}
                   </span>
                   <span className="muted">
-                    IDs: {item.tokens.map((t) => `${t.id}×${t.amount}`).join(', ')}
+                    IDs:{' '}
+                    {item.tokens.map((t) => `${t.id}×${t.amount}`).join(', ')}
                   </span>
                   {item.status === 'completed' && item.mintTransactionHash && (
                     <span className="muted scheduled-row-tx">
@@ -180,7 +201,9 @@ export function ScheduledIssuancesPanel() {
                     </span>
                   )}
                   {item.status === 'failed' && item.lastError && (
-                    <span className="scheduled-row-error">{item.lastError}</span>
+                    <span className="scheduled-row-error">
+                      {item.lastError}
+                    </span>
                   )}
                 </div>
               </div>
@@ -199,5 +222,5 @@ export function ScheduledIssuancesPanel() {
         </div>
       )}
     </section>
-  );
+  )
 }

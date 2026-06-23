@@ -1,14 +1,14 @@
-import express from 'express';
-import cors from 'cors';
-import rateLimit from 'express-rate-limit';
-import sbtRoutes from './routes/sbt.routes.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import express from 'express'
+import cors from 'cors'
+import rateLimit from 'express-rate-limit'
+import sbtRoutes from './routes/sbt.routes.js'
+import { errorHandler } from './middleware/errorHandler.js'
 
 export function createApp() {
-  const app = express();
+  const app = express()
 
-  app.use(cors());
-  app.use(express.json({ limit: '1mb' }));
+  app.use(cors())
+  app.use(express.json({ limit: '1mb' }))
 
   const mutationLimiter = rateLimit({
     windowMs: 60 * 1000,
@@ -20,21 +20,25 @@ export function createApp() {
       status: 'VALIDATION_ERROR',
       message: 'Too many requests. Please try again later.',
     },
-  });
+  })
 
   app.get('/health', (_req, res) => {
-    res.json({ status: 'ok' });
-  });
+    res.json({ status: 'ok' })
+  })
 
-  app.use('/api/sbt', (req, res, next) => {
-    if (req.method === 'GET') {
-      next();
-      return;
-    }
-    mutationLimiter(req, res, next);
-  }, sbtRoutes);
+  app.use(
+    '/api/sbt',
+    (req, res, next) => {
+      if (req.method === 'GET') {
+        next()
+        return
+      }
+      mutationLimiter(req, res, next)
+    },
+    sbtRoutes
+  )
 
-  app.use(errorHandler);
+  app.use(errorHandler)
 
-  return app;
+  return app
 }

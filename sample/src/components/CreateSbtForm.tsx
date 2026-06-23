@@ -1,59 +1,67 @@
-import { useState, type FormEvent } from 'react';
-import { createSbt } from '../api/sbtClient';
-import type { ApiResponse, AssetType, ContractOption, CreateSbtData, Environment } from '../types/api';
-import { parseEtherToWei } from '../utils/tokenDisplay';
-import { AssetTypeSelect } from './AssetTypeSelect';
-import { ContractSelect } from './ContractSelect';
-import { EnvironmentSelect } from './EnvironmentSelect';
-import { ImageUploadField } from './ImageUploadField';
-import { ResultPanel } from './ResultPanel';
+import { useState, type FormEvent } from 'react'
+import { createSbt } from '../api/sbtClient'
+import type { ApiResponse, CreateSbtData } from '../types/api'
+import { useContractSelection } from '../hooks/useContractSelection'
+import { parseEtherToWei } from '../utils/tokenDisplay'
+import { AssetTypeSelect } from './AssetTypeSelect'
+import { ContractSelect } from './ContractSelect'
+import { EnvironmentSelect } from './EnvironmentSelect'
+import { ImageUploadField } from './ImageUploadField'
+import { ResultPanel } from './ResultPanel'
 
-export function CreateSbtForm() {
-  const [environment, setEnvironment] = useState<Environment>('dev');
-  const [assetType, setAssetType] = useState<AssetType>('sbt');
-  const [selectedContract, setSelectedContract] = useState<ContractOption | null>(null);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [votingPower, setVotingPower] = useState('10000');
-  const [image, setImage] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ApiResponse<CreateSbtData> | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  function handleEnvironmentChange(next: Environment) {
-    setEnvironment(next);
-    setSelectedContract(null);
-  }
-
-  function handleAssetTypeChange(next: AssetType) {
-    setAssetType(next);
-    setSelectedContract(null);
-  }
+export function CreateSbtForm({
+  signerPrivateKey,
+}: {
+  signerPrivateKey: string
+}) {
+  const {
+    environment,
+    assetType,
+    selectedContract,
+    handleEnvironmentChange,
+    handleAssetTypeChange,
+    handleContractChange,
+  } = useContractSelection()
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [votingPower, setVotingPower] = useState('10000')
+  const [image, setImage] = useState<File | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<ApiResponse<CreateSbtData> | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!selectedContract) {
-      setError('Select a contract first.');
-      return;
+      setError('Select a contract first.')
+      return
     }
 
     if (!image) {
-      setError('An image is required.');
-      return;
+      setError('An image is required.')
+      return
     }
 
-    const votingPowerWei = parseEtherToWei(votingPower);
+    if (!signerPrivateKey.trim()) {
+      setError('A signer private key is required for create token requests.')
+      return
+    }
+
+    const votingPowerWei = parseEtherToWei(votingPower)
     if (!votingPowerWei) {
-      setError('Voting power must be a non-negative number in ETH (up to 18 decimal places).');
-      return;
+      setError(
+        'Voting power must be a non-negative number in ETH (up to 18 decimal places).'
+      )
+      return
     }
 
-    setLoading(true);
-    setError(null);
-    setResult(null);
+    setLoading(true)
+    setError(null)
+    setResult(null)
 
     const response = await createSbt({
+      signerPrivateKey,
       environment,
       assetType,
       daoId: selectedContract.daoId,
@@ -61,10 +69,10 @@ export function CreateSbtForm() {
       description: description.trim(),
       votingPower: votingPowerWei,
       image,
-    });
+    })
 
-    setLoading(false);
-    setResult(response);
+    setLoading(false)
+    setResult(response)
   }
 
   return (
@@ -72,8 +80,12 @@ export function CreateSbtForm() {
       <div className="card-intro">
         <h2>Create SBT / NFT</h2>
         <p className="muted">
-          Upload image and metadata to IPFS, create the token on-chain, and save it to Supabase for
-          batch minting later.
+          Upload image and metadata to IPFS, create the token on-chain, and save
+          it to Supabase for batch minting later.
+        </p>
+        <p className="muted">
+          The signer private key is used only for this request and should never
+          be persisted by the backend.
         </p>
       </div>
 
@@ -81,13 +93,19 @@ export function CreateSbtForm() {
         <section className="form-section">
           <h3 className="form-section-title">DAO & contract</h3>
           <div className="form-section-grid">
-            <EnvironmentSelect value={environment} onChange={handleEnvironmentChange} />
-            <AssetTypeSelect value={assetType} onChange={handleAssetTypeChange} />
+            <EnvironmentSelect
+              value={environment}
+              onChange={handleEnvironmentChange}
+            />
+            <AssetTypeSelect
+              value={assetType}
+              onChange={handleAssetTypeChange}
+            />
             <ContractSelect
               environment={environment}
               assetType={assetType}
               value={selectedContract?.daoId ?? ''}
-              onChange={setSelectedContract}
+              onChange={handleContractChange}
             />
           </div>
         </section>
@@ -95,7 +113,11 @@ export function CreateSbtForm() {
         <section className="form-section">
           <h3 className="form-section-title">Token metadata</h3>
           <div className="token-row-body create-sbt-body">
-            <ImageUploadField id="create-sbt-image" value={image} onChange={setImage} />
+            <ImageUploadField
+              id="create-sbt-image"
+              value={image}
+              onChange={setImage}
+            />
             <div className="token-fields">
               <label className="field">
                 <span>Name</span>
@@ -125,18 +147,29 @@ export function CreateSbtForm() {
                   inputMode="decimal"
                   required
                 />
-                <span className="field-hint">Converted to wei in IPFS metadata and on-chain storage.</span>
+                <span className="field-hint">
+                  Converted to wei in IPFS metadata and on-chain storage.
+                </span>
               </label>
             </div>
           </div>
         </section>
 
-        <button type="submit" className="btn-primary" disabled={loading || !selectedContract}>
+        <button
+          type="submit"
+          className="btn-primary"
+          disabled={loading || !selectedContract}
+        >
           {loading ? 'Uploading and creating token…' : 'Create token'}
         </button>
       </form>
 
-      <ResultPanel title="Result" data={result} error={error} loading={loading} />
+      <ResultPanel
+        title="Result"
+        data={result}
+        error={error}
+        loading={loading}
+      />
     </section>
-  );
+  )
 }

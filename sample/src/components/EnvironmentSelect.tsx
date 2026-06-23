@@ -1,12 +1,16 @@
-import type { Environment } from '../types/api';
+import type { Environment } from '../types/api'
 
 interface Props {
-  value: Environment;
-  onChange: (env: Environment) => void;
-  id?: string;
+  value: Environment
+  onChange: (env: Environment) => void
+  id?: string
 }
 
-export function EnvironmentSelect({ value, onChange, id = 'environment' }: Props) {
+export function EnvironmentSelect({
+  value,
+  onChange,
+  id = 'environment',
+}: Props) {
   return (
     <label className="field">
       <span>Environment</span>
@@ -20,5 +24,5 @@ export function EnvironmentSelect({ value, onChange, id = 'environment' }: Props
         <option value="production">production</option>
       </select>
     </label>
-  );
+  )
 }

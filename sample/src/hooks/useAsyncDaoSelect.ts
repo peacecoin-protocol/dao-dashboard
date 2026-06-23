@@ -1,48 +1,55 @@
-import { useEffect, useState } from 'react';
-import type { ApiResponse } from '../types/api';
+import { useEffect, useState } from 'react'
+import type { ApiResponse } from '../types/api'
 
 export function useAsyncDaoSelect<T>(
   fetchItems: () => Promise<ApiResponse<{ items: T[] }>>,
   deps: unknown[],
   fallbackError: string
 ) {
-  const [items, setItems] = useState<T[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [items, setItems] = useState<T[]>([])
+  const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
 
     async function load() {
-      setLoading(true);
-      setLoadError(null);
+      setLoading(true)
+      setItems([])
+      setLoadError(null)
 
       try {
-        const response = await fetchItems();
+        const response = await fetchItems()
         if (cancelled) {
-          return;
+          return
         }
 
         if (response.success && response.data) {
-          setItems(response.data.items);
-          return;
+          setItems(response.data.items)
+          return
         }
 
-        setItems([]);
-        setLoadError(response.message || fallbackError);
+        setItems([])
+        setLoadError(response.message || fallbackError)
+      } catch {
+        if (cancelled) {
+          return
+        }
+        setItems([])
+        setLoadError(fallbackError)
       } finally {
         if (!cancelled) {
-          setLoading(false);
+          setLoading(false)
         }
       }
     }
 
-    void load();
+    void load()
 
     return () => {
-      cancelled = true;
-    };
-  }, deps);
+      cancelled = true
+    }
+  }, deps)
 
-  return { items, loading, loadError };
+  return { items, loading, loadError }
 }

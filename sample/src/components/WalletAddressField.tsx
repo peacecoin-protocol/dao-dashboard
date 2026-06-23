@@ -1,8 +1,8 @@
 interface WalletAddressFieldProps {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  className?: string;
+  label: string
+  value: string
+  onChange: (value: string) => void
+  className?: string
 }
 
 export function WalletAddressField({
@@ -14,7 +14,11 @@ export function WalletAddressField({
   return (
     <label className={className}>
       <span>{label}</span>
-      <input value={value} onChange={(e) => onChange(e.target.value)} required />
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+      />
     </label>
-  );
+  )
 }

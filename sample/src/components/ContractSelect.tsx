@@ -1,26 +1,35 @@
-import { listContracts } from '../api/sbtClient';
-import { useAsyncDaoSelect } from '../hooks/useAsyncDaoSelect';
-import type { AssetType, ContractOption, Environment } from '../types/api';
+import { listContracts } from '../api/sbtClient'
+import { useAsyncDaoSelect } from '../hooks/useAsyncDaoSelect'
+import type { AssetType, ContractOption, Environment } from '../types/api'
 
 interface ContractSelectProps {
-  environment: Environment;
-  assetType: AssetType;
-  value: string;
-  onChange: (option: ContractOption | null) => void;
+  environment: Environment
+  assetType: AssetType
+  value: string
+  onChange: (option: ContractOption | null) => void
 }
 
-export function ContractSelect({ environment, assetType, value, onChange }: ContractSelectProps) {
-  const { items: contracts, loading, loadError } = useAsyncDaoSelect(
+export function ContractSelect({
+  environment,
+  assetType,
+  value,
+  onChange,
+}: ContractSelectProps) {
+  const {
+    items: contracts,
+    loading,
+    loadError,
+  } = useAsyncDaoSelect(
     () => listContracts({ environment, assetType }),
     [environment, assetType],
     'Failed to load contracts.'
-  );
+  )
 
   function handleSelect(nextDaoId: string) {
-    onChange(contracts.find((item) => item.daoId === nextDaoId) ?? null);
+    onChange(contracts.find((item) => item.daoId === nextDaoId) ?? null)
   }
 
-  const label = assetType === 'nft' ? 'NFT contract' : 'SBT contract';
+  const label = assetType === 'nft' ? 'NFT contract' : 'SBT contract'
 
   return (
     <label className="field field-span-2">
@@ -47,12 +56,16 @@ export function ContractSelect({ environment, assetType, value, onChange }: Cont
       {loadError && <span className="field-hint error">{loadError}</span>}
       {!loading && !loadError && contracts.length === 0 && (
         <span className="field-hint empty">
-          No {assetType === 'nft' ? 'NFT' : 'SBT'} contracts available for this environment.
+          No {assetType === 'nft' ? 'NFT' : 'SBT'} contracts available for this
+          environment.
         </span>
       )}
       {!loading && contracts.length > 0 && (
-        <span className="field-hint">{contracts.length} contract{contracts.length === 1 ? '' : 's'} available</span>
+        <span className="field-hint">
+          {contracts.length} contract{contracts.length === 1 ? '' : 's'}{' '}
+          available
+        </span>
       )}
     </label>
-  );
+  )
 }
