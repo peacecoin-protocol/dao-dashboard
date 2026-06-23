@@ -106,9 +106,16 @@ export const CreateCampaignModal = ({
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
 
-    if (name === 'sbtId' && value == '0' && (form.tokenType == 1 || form.tokenType == 2)) {
+    if (
+      name === 'sbtId' &&
+      value == '0' &&
+      (form.tokenType == 1 || form.tokenType == 2)
+    ) {
       toast({
-        title: form.tokenType == 1 ? 'SBT ID must be greater than 0' : 'NFT ID must be greater than 0',
+        title:
+          form.tokenType == 1
+            ? 'SBT ID must be greater than 0'
+            : 'NFT ID must be greater than 0',
       })
       return
     }

@@ -9,7 +9,7 @@ import { TOKEN } from '~/i18n/types'
 
 interface TokenTableProps {
   communityTokenInfo: TOKEN[]
-  tokens: any[]
+  totalCount: number
   dict: any
   colSpan: boolean
   balance: bigint
@@ -28,7 +28,7 @@ interface TokenTableProps {
 
 export function TokenTable({
   communityTokenInfo,
-  tokens,
+  totalCount,
   dict,
   colSpan,
   balance,
@@ -130,7 +130,7 @@ export function TokenTable({
         <div className="rounded-lg border p-4 text-sm font-bold">
           <div className="flex items-center justify-between">
             <span>{tokenLabels.totalToken ?? ''}</span>
-            <span>{tokens ? tokens.length : 0}</span>
+            <span>{totalCount}</span>
           </div>
         </div>
       </div>

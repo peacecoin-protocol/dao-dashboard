@@ -36,7 +36,7 @@ async function addFilesToGroupPublic(file: File, groupId: string) {
   try {
     const upload = await pinata.upload.public.file(file).group(groupId)
     return upload
-  } catch (error) { }
+  } catch (error) {}
 }
 
 async function getFilesFromGroup(groupId: string) {

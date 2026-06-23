@@ -113,50 +113,53 @@ export default function ForPendingPage({
     functionName: 'votingDelay',
   })
 
-  const fetchData = useCallback(async (count: number) => {
-    if (count == 0) return
-    let temp = []
-    let _status = []
-    for (let i = 1; i <= count; i++) {
-      const proposal = await readContract(config, {
-        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
-        abi: GOVERNOR_ABI,
-        functionName: 'proposals',
-        args: [i],
-      })
+  const fetchData = useCallback(
+    async (count: number) => {
+      if (count == 0) return
+      let temp = []
+      let _status = []
+      for (let i = 1; i <= count; i++) {
+        const proposal = await readContract(config, {
+          address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+          abi: GOVERNOR_ABI,
+          functionName: 'proposals',
+          args: [i],
+        })
 
-      const status = await readContract(config, {
-        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
-        abi: GOVERNOR_ABI,
-        functionName: 'state',
-        args: [i],
-      })
+        const status = await readContract(config, {
+          address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+          abi: GOVERNOR_ABI,
+          functionName: 'state',
+          args: [i],
+        })
 
-      switch (status as number) {
-        case 0:
-          _status.push('Pending')
-          temp.push(proposal)
-          break
-        case 1:
-          _status.push('Active')
-          temp.push(proposal)
-          break
-        case 4:
-          _status.push('Succeeded')
-          temp.push(proposal)
-          break
-        case 5:
-          _status.push('Queued')
-          temp.push(proposal)
-          break
-        default:
-          break
+        switch (status as number) {
+          case 0:
+            _status.push('Pending')
+            temp.push(proposal)
+            break
+          case 1:
+            _status.push('Active')
+            temp.push(proposal)
+            break
+          case 4:
+            _status.push('Succeeded')
+            temp.push(proposal)
+            break
+          case 5:
+            _status.push('Queued')
+            temp.push(proposal)
+            break
+          default:
+            break
+        }
       }
-    }
-    setProposals(temp)
-    setStatus(_status)
-    setLoading(false)
-  }, [chainId])
+      setProposals(temp)
+      setStatus(_status)
+      setLoading(false)
+    },
+    [chainId]
+  )
 
   useEffect(() => {
     fetchData(Number(proposalCount))

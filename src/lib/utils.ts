@@ -14,7 +14,9 @@ export function resolveAddress(
     addressMap[chainId ?? defaultChainId] ?? addressMap[defaultChainId]
 
   if (!resolvedAddress) {
-    throw new Error(`Missing contract address for chain ${chainId ?? defaultChainId}`)
+    throw new Error(
+      `Missing contract address for chain ${chainId ?? defaultChainId}`
+    )
   }
 
   return resolvedAddress

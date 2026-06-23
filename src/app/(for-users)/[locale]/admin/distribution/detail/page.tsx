@@ -226,7 +226,10 @@ export default function ManagementDetailPage({
     return ''
   }, [daoConfigs])
 
-  const managementDict = useMemo(() => dict?.management ?? {}, [dict?.management])
+  const managementDict = useMemo(
+    () => dict?.management ?? {},
+    [dict?.management]
+  )
   const sbtDict = useMemo(() => dict?.sbt ?? {}, [dict?.sbt])
   const loadingLabel = managementDict.loading ?? 'Loading...'
   const sbtLabel = sbtDict.sbt ?? 'SBT'
@@ -966,10 +969,10 @@ export default function ManagementDetailPage({
                     onValueChange={(value) =>
                       setSelectedMetric(
                         value as
-                        | 'send_count'
-                        | 'receive_count'
-                        | 'send_volume'
-                        | 'receive_volume'
+                          | 'send_count'
+                          | 'receive_count'
+                          | 'send_volume'
+                          | 'receive_volume'
                       )
                     }
                   >

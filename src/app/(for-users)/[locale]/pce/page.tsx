@@ -182,25 +182,31 @@ export default function PCEPage({
     []
   )
 
-  const getTokenMetadata = useCallback(async (tokenAddress: string) => {
-    const metadata = await alchemy.core.getTokenMetadata(tokenAddress)
-    return metadata
-  }, [alchemy])
+  const getTokenMetadata = useCallback(
+    async (tokenAddress: string) => {
+      const metadata = await alchemy.core.getTokenMetadata(tokenAddress)
+      return metadata
+    },
+    [alchemy]
+  )
 
-  const getTreasuryBalances = useCallback(async (treasuryAddress: `0x${string}`) => {
-    const balances = (await alchemy.core.getTokenBalances(treasuryAddress))
-      .tokenBalances
+  const getTreasuryBalances = useCallback(
+    async (treasuryAddress: `0x${string}`) => {
+      const balances = (await alchemy.core.getTokenBalances(treasuryAddress))
+        .tokenBalances
 
-    const formatedBalances = (await Promise.all(
-      balances.map(async (balance) => ({
-        tokenBalance: Number(balance.tokenBalance),
-        contractAddress: balance.contractAddress,
-        ...(await getTokenMetadata(balance.contractAddress)),
-      }))
-    )) as TokenBalance[]
+      const formatedBalances = (await Promise.all(
+        balances.map(async (balance) => ({
+          tokenBalance: Number(balance.tokenBalance),
+          contractAddress: balance.contractAddress,
+          ...(await getTokenMetadata(balance.contractAddress)),
+        }))
+      )) as TokenBalance[]
 
-    setTreasuryBalances(formatedBalances)
-  }, [alchemy, getTokenMetadata])
+      setTreasuryBalances(formatedBalances)
+    },
+    [alchemy, getTokenMetadata]
+  )
   const { data: daoConfigs, refetch: refetchDaoConfigs } = useReadContract({
     address: daoStudioAddress[chainId || defaultChainId] as `0x${string}`,
     abi: DAO_STUDIO_ABI,

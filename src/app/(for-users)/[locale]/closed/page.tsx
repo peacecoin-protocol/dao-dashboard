@@ -85,52 +85,55 @@ export default function ForClosedPage({
     }
   }, [isConfirmed, isConfirming, error, toast])
 
-  const fetchData = useCallback(async (count: number) => {
-    if (count == 0) return
+  const fetchData = useCallback(
+    async (count: number) => {
+      if (count == 0) return
 
-    let temp = []
-    let _status = []
+      let temp = []
+      let _status = []
 
-    for (let i = 1; i <= count; i++) {
-      const proposal = await readContract(config, {
-        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
-        abi: GOVERNOR_ABI,
-        functionName: 'proposals',
-        args: [i],
-      })
-      const status = await readContract(config, {
-        address: governorAddress[chainId || defaultChainId] as `0x${string}`,
-        abi: GOVERNOR_ABI,
-        functionName: 'state',
-        args: [i],
-      })
+      for (let i = 1; i <= count; i++) {
+        const proposal = await readContract(config, {
+          address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+          abi: GOVERNOR_ABI,
+          functionName: 'proposals',
+          args: [i],
+        })
+        const status = await readContract(config, {
+          address: governorAddress[chainId || defaultChainId] as `0x${string}`,
+          abi: GOVERNOR_ABI,
+          functionName: 'state',
+          args: [i],
+        })
 
-      switch (status as number) {
-        case 2:
-          _status.push('Canceled')
-          temp.push(proposal)
-          break
-        case 3:
-          _status.push('Defeated')
-          temp.push(proposal)
-          break
-        case 6:
-          _status.push('Expired')
-          temp.push(proposal)
-          break
-        case 7:
-          _status.push('Executed')
-          temp.push(proposal)
-          break
-        default:
-          break
+        switch (status as number) {
+          case 2:
+            _status.push('Canceled')
+            temp.push(proposal)
+            break
+          case 3:
+            _status.push('Defeated')
+            temp.push(proposal)
+            break
+          case 6:
+            _status.push('Expired')
+            temp.push(proposal)
+            break
+          case 7:
+            _status.push('Executed')
+            temp.push(proposal)
+            break
+          default:
+            break
+        }
       }
-    }
 
-    setProposals(temp)
-    setStatus(_status)
-    setLoading(false)
-  }, [chainId])
+      setProposals(temp)
+      setStatus(_status)
+      setLoading(false)
+    },
+    [chainId]
+  )
 
   useEffect(() => {
     fetchData(Number(proposalCount))

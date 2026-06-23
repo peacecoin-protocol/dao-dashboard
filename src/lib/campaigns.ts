@@ -72,7 +72,9 @@ export async function fetchCampaignsWithMetadata(
     return [] as CAMPAIGN[]
   }
 
-  const uniqueDaoIds = Array.from(new Set(campaigns.map((c) => c.daoId).filter(Boolean)))
+  const uniqueDaoIds = Array.from(
+    new Set(campaigns.map((c) => c.daoId).filter(Boolean))
+  )
 
   const { data: tokens } = await supabase
     .from('Token')

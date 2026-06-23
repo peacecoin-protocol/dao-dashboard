@@ -20,8 +20,7 @@ type DeploymentConfig = {
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as Address
 
 const resolveDeploymentEnv = (): DeploymentEnv => {
-  const value =
-    process.env.NEXT_PUBLIC_APP_ENV ?? 'dev'
+  const value = process.env.NEXT_PUBLIC_APP_ENV ?? 'dev'
 
   switch (value.toLowerCase()) {
     case 'dev':

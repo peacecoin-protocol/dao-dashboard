@@ -1499,80 +1499,83 @@ export default function ForDaoDetailPage({
       functionName: 'proposalCount',
     }) as { data?: number; refetch: () => void }
 
-  const fetchData = useCallback(async (count: number) => {
-    setLoading(true)
-    if (!count || !governorAddress || count === 0) {
-      setProposals([])
-      setStatus([])
+  const fetchData = useCallback(
+    async (count: number) => {
+      setLoading(true)
+      if (!count || !governorAddress || count === 0) {
+        setProposals([])
+        setStatus([])
+        setLoading(false)
+        return
+      }
+
+      let temp = []
+      let _status = []
+      for (let i = 1; i <= count; i++) {
+        let proposal = null
+        let status = null
+        try {
+          proposal = await readContract(config, {
+            address: governorAddress as `0x${string}`,
+            abi: GOVERNOR_ABI,
+            functionName: 'proposals',
+            args: [i],
+          })
+
+          status = await readContract(config, {
+            address: governorAddress as `0x${string}`,
+            abi: GOVERNOR_ABI,
+            functionName: 'state',
+            args: [i],
+          })
+        } catch (error) {
+          i--
+          continue
+        }
+
+        switch (status as number) {
+          case 0:
+            _status.push('Pending')
+            temp.push(proposal)
+            break
+          case 1:
+            _status.push('Active')
+            temp.push(proposal)
+            break
+          case 2:
+            _status.push('Canceled')
+            temp.push(proposal)
+            break
+          case 3:
+            _status.push('Defeated')
+            temp.push(proposal)
+            break
+          case 4:
+            _status.push('Succeeded')
+            temp.push(proposal)
+            break
+          case 5:
+            _status.push('Queued')
+            temp.push(proposal)
+            break
+          case 6:
+            _status.push('Expired')
+            temp.push(proposal)
+            break
+          case 7:
+            _status.push('Executed')
+            temp.push(proposal)
+            break
+          default:
+            break
+        }
+      }
+      setProposals(temp)
+      setStatus(_status)
       setLoading(false)
-      return
-    }
-
-    let temp = []
-    let _status = []
-    for (let i = 1; i <= count; i++) {
-      let proposal = null
-      let status = null
-      try {
-        proposal = await readContract(config, {
-          address: governorAddress as `0x${string}`,
-          abi: GOVERNOR_ABI,
-          functionName: 'proposals',
-          args: [i],
-        })
-
-        status = await readContract(config, {
-          address: governorAddress as `0x${string}`,
-          abi: GOVERNOR_ABI,
-          functionName: 'state',
-          args: [i],
-        })
-      } catch (error) {
-        i--
-        continue
-      }
-
-      switch (status as number) {
-        case 0:
-          _status.push('Pending')
-          temp.push(proposal)
-          break
-        case 1:
-          _status.push('Active')
-          temp.push(proposal)
-          break
-        case 2:
-          _status.push('Canceled')
-          temp.push(proposal)
-          break
-        case 3:
-          _status.push('Defeated')
-          temp.push(proposal)
-          break
-        case 4:
-          _status.push('Succeeded')
-          temp.push(proposal)
-          break
-        case 5:
-          _status.push('Queued')
-          temp.push(proposal)
-          break
-        case 6:
-          _status.push('Expired')
-          temp.push(proposal)
-          break
-        case 7:
-          _status.push('Executed')
-          temp.push(proposal)
-          break
-        default:
-          break
-      }
-    }
-    setProposals(temp)
-    setStatus(_status)
-    setLoading(false)
-  }, [governorAddress])
+    },
+    [governorAddress]
+  )
   useEffect(() => {
     if (governorAddress) {
       fetchData(Number(proposalCount))
@@ -1637,7 +1640,13 @@ export default function ForDaoDetailPage({
       setLoading(false)
     }
     fetchMultipleProposals()
-  }, [multipleProposalCount, address, chainId, isRefetching, multipleVotingAddress])
+  }, [
+    multipleProposalCount,
+    address,
+    chainId,
+    isRefetching,
+    multipleVotingAddress,
+  ])
 
   useEffect(() => {
     const fetchIdenticon = async () => {

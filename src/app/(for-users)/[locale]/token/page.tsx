@@ -257,7 +257,9 @@ export default function ForTokenPage({
     const value = event.target.value
     const isAmountField = tokenAmountFields.has(name)
     const nextValue = isAmountField
-      ? value !== '' && value !== '0' ? parseEther(value).toString() : '0'
+      ? value !== '' && value !== '0'
+        ? parseEther(value).toString()
+        : '0'
       : value
 
     setTokenInfo((prev) => ({
@@ -274,14 +276,44 @@ export default function ForTokenPage({
 
       try {
         const addr = tokenAddress as `0x${string}`
-        const [name, symbol, balance, swappableBalanceToday, swappableBalanceForIndividual] =
-          await Promise.all([
-            readContract(config, { address: addr, abi: PCE_ABI, functionName: 'name', args: [] }) as Promise<string>,
-            readContract(config, { address: addr, abi: PCE_ABI, functionName: 'symbol', args: [] }) as Promise<string>,
-            readContract(config, { address: addr, abi: PCE_ABI, functionName: 'balanceOf', args: [address] }) as Promise<bigint>,
-            readContract(config, { address: addr, abi: COMMUNITY_TOKEN_ABI, functionName: 'getTodaySwapableToPCEBalance', args: [] }) as Promise<string>,
-            readContract(config, { address: addr, abi: COMMUNITY_TOKEN_ABI, functionName: 'getTodaySwapableToPCEBalanceForIndividual', args: [address] }) as Promise<string>,
-          ])
+        const [
+          name,
+          symbol,
+          balance,
+          swappableBalanceToday,
+          swappableBalanceForIndividual,
+        ] = await Promise.all([
+          readContract(config, {
+            address: addr,
+            abi: PCE_ABI,
+            functionName: 'name',
+            args: [],
+          }) as Promise<string>,
+          readContract(config, {
+            address: addr,
+            abi: PCE_ABI,
+            functionName: 'symbol',
+            args: [],
+          }) as Promise<string>,
+          readContract(config, {
+            address: addr,
+            abi: PCE_ABI,
+            functionName: 'balanceOf',
+            args: [address],
+          }) as Promise<bigint>,
+          readContract(config, {
+            address: addr,
+            abi: COMMUNITY_TOKEN_ABI,
+            functionName: 'getTodaySwapableToPCEBalance',
+            args: [],
+          }) as Promise<string>,
+          readContract(config, {
+            address: addr,
+            abi: COMMUNITY_TOKEN_ABI,
+            functionName: 'getTodaySwapableToPCEBalanceForIndividual',
+            args: [address],
+          }) as Promise<string>,
+        ])
 
         setCommunityTokenInfo((prev) => {
           const existingTokenIndex = prev.findIndex(
@@ -639,7 +671,7 @@ export default function ForTokenPage({
         </Dialog>
         <TokenTable
           communityTokenInfo={pagedCommunityTokenInfo}
-          tokens={tokens}
+          totalCount={filteredCommunityTokenInfo.length}
           dict={dict}
           colSpan={colSpan}
           balance={balance as bigint}

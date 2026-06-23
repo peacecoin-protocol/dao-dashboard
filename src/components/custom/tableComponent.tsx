@@ -161,8 +161,9 @@ export function TableComponent({
                               {rewardType}
                             </Badge>
                             <span
-                              className={`rounded-full px-3 py-1 text-xs font-semibold text-white ${isEnded ? 'bg-red-500' : 'bg-green-500'
-                                }`}
+                              className={`rounded-full px-3 py-1 text-xs font-semibold text-white ${
+                                isEnded ? 'bg-red-500' : 'bg-green-500'
+                              }`}
                             >
                               {isEnded
                                 ? dict?.campaign?.ended || 'Ended'
