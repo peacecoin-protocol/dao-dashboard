@@ -54,6 +54,7 @@ import { useToast } from '~/hooks/use-toast'
 import { shortenAddress } from '~/components/utils'
 import CopyIcon from '../../../../../../../public/svg/copy'
 import { EmptyState } from '~/components/custom/empty-state'
+import { fetchTokenOwnersPage } from '~/lib/moralis'
 
 type MemberRow = {
   id: string
@@ -325,31 +326,17 @@ export default function ManagementDetailPage({
       }
 
       try {
-        const apiKey = Env.MORALIS_API_KEY
-        if (!apiKey) {
-          throw new Error('Missing Moralis API key')
-        }
-
         const chain =
           (chainId || defaultChainId) === sepolia.id ? 'sepolia' : 'eth'
-        const baseUrl = `https://deep-index.moralis.io/api/v2.2/erc20/${communityTokenAddress}/owners`
 
         const owners: string[] = []
         let cursor: string | null = null
         do {
-          const url = new URL(baseUrl)
-          url.searchParams.set('chain', chain)
-          url.searchParams.set('order', 'DESC')
-          if (cursor) url.searchParams.set('cursor', cursor)
-
-          const res = await fetch(url.toString(), {
-            headers: {
-              accept: 'application/json',
-              'X-API-Key': apiKey,
-            },
+          const data = await fetchTokenOwnersPage({
+            chain,
+            cursor,
+            tokenAddress: communityTokenAddress,
           })
-          if (!res.ok) throw new Error('Failed to fetch token holders')
-          const data = await res.json()
 
           if (Array.isArray(data.result)) {
             data.result.forEach((row: MoralisOwner) => {

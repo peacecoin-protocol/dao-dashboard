@@ -47,35 +47,22 @@ import { Env } from '~/env'
 import { PCE_DAO_ID } from '~/app/constants/constants'
 // Fetch token holders from Moralis API, paginating until cursor is null
 async function getHolders(chainId: number, tokenAddress: string) {
-  // Moralis API endpoint and key
-  const apiKey = Env.MORALIS_API_KEY // Replace with your Moralis API key if not using PINATA_JWT
   const chain = chainId === sepolia.id ? 'sepolia' : 'eth' // fallback to eth if not sepolia
-  const baseUrl = `https://deep-index.moralis.io/api/v2.2/erc20/${tokenAddress}/owners`
   let countHolders = 0
   let cursor: string | null = null
-  let page = 1
 
   do {
-    const url = new URL(baseUrl)
-    url.searchParams.set('chain', chain)
-    url.searchParams.set('order', 'DESC')
-    if (cursor) url.searchParams.set('cursor', cursor)
-
-    const res = await fetch(url.toString(), {
-      headers: {
-        accept: 'application/json',
-        'X-API-Key': apiKey,
-      },
+    const data = await fetchTokenOwnersPage({
+      chain,
+      cursor,
+      tokenAddress,
     })
-    if (!res.ok) throw new Error('Failed to fetch token holders')
-    const data = await res.json()
 
     if (Array.isArray(data.result)) {
       countHolders += data.result.length
     }
 
-    cursor = data.cursor
-    page += 1
+    cursor = data.cursor ?? null
   } while (cursor)
 
   // Filter out holders with zero balance and return as [address, balance] tuples
@@ -112,6 +99,7 @@ import { PageHeaderSection } from '~/components/custom/page-header-section'
 import { EmptyState } from '~/components/custom/empty-state'
 import { createClient } from '~/utils/supabase/client'
 import { Spinner } from '~/components/ui/Spinner'
+import { fetchTokenOwnersPage } from '~/lib/moralis'
 
 const supabase = createClient()
 
