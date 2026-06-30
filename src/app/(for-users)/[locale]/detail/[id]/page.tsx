@@ -76,7 +76,6 @@ import {
 } from '~/app/constants/constants'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { daoStudioAddress } from '~/app/constants/constants'
-import { pinata } from '~/lib/config'
 import ImageCropModal from '~/components/ui/ImageCropModal'
 import {
   DropdownMenu,
@@ -93,8 +92,11 @@ import { DialogTrigger } from '~/components/ui/dialog'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 import {
   addFilesToGroupPublic,
+  createFile,
   DAO_GROUP_ID,
   getFilesFromGroup,
+  type PinataFile,
+  revokeFile,
 } from '~/app/pinata/pinataAPI'
 import { PageSubHeaderSection } from '~/components/custom/page-sub-header-section'
 import { StatsSection } from '~/components/custom/stats-section'
@@ -107,6 +109,7 @@ import { useDictionary } from '~/hooks/use-dictionary'
 import { useEnsureSupportedChain } from '~/hooks/use-ensure-supported-chain'
 import { useTransactionToast } from '~/hooks/use-transaction-toast'
 import { fetchOwnedTokenBalances } from '~/lib/campaigns'
+import { fetchErc20Balances, type MoralisErc20Balance } from '~/lib/moralis'
 
 type TokenBalance = {
   contractAddress: string
@@ -278,25 +281,13 @@ export default function ForDaoDetailPage({
   }, [provider])
 
   const getTreasuryBalances = async (address: string) => {
-    // Fetch ERC20 token balances for the given address using Moralis API
-    const url = `https://deep-index.moralis.io/api/v2.2/${address}/erc20?chain=eth`
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        accept: 'application/json',
-        'X-API-Key': Env.MORALIS_API_KEY,
-      },
+    const balances = await fetchErc20Balances({
+      address,
+      chain: 'eth',
     })
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ERC20 balances: ${response.statusText}`)
-    }
-
-    const balances = await response.json()
-
     const formatedBalances = (await Promise.all(
-      balances.map(async (balance: any) => ({
+      balances.map(async (balance: MoralisErc20Balance) => ({
         tokenBalance: Number(balance.balance) / 10 ** balance.decimals,
         contractAddress: balance.token_address,
         name: balance.name,
@@ -312,12 +303,7 @@ export default function ForDaoDetailPage({
   const fetchImage = async (name: string) => {
     try {
       const files = await getFilesFromGroup(DAO_GROUP_ID)
-      const pceFiles = files.filter((file: any) => file.name == name)
-
-      if (pceFiles.length > 0) {
-        return pceFiles[0]
-      }
-      return ''
+      return files.find((file: PinataFile) => file.name === name) ?? ''
     } catch (error) {
       console.error('Error fetching image from Pinata:', error)
       return ''
@@ -2117,19 +2103,7 @@ export default function ForDaoDetailPage({
           title: localDict.updatingImage ?? 'Updating image...',
         })
 
-        // Use fetch+blob only if croppedImage is a remote URL, skip otherwise
-        let fileData: Blob | string
-        if (croppedImage.startsWith('data:')) {
-          // base64-encoded image string
-          fileData = await (await fetch(croppedImage)).blob()
-        } else {
-          // Could be a url or already a blob, handle gracefully
-          fileData = await (await fetch(croppedImage)).blob()
-        }
-
-        const file = new File([fileData], id || 'dao-image', {
-          type: 'image/png',
-        })
+        const file = await createFile(croppedImage, id || 'dao-image')
         const upload = await addFilesToGroupPublic(file, DAO_GROUP_ID)
 
         if (!upload?.cid) {
@@ -2191,7 +2165,7 @@ export default function ForDaoDetailPage({
       const prevImages = await fetchImage(id)
       if (prevImages) {
         try {
-          const deleted = await pinata.files.public.delete([prevImages.id])
+          await revokeFile([prevImages.id])
         } catch (deleteError) {
           console.error('Error deleting from Pinata:', deleteError)
           // Continue with setting imageHash to empty even if delete fails

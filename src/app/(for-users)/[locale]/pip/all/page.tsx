@@ -1,7 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Octokit } from 'octokit'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '~/components/ui/button'
 import { Check, ChevronsUpDown } from 'lucide-react'
@@ -27,7 +26,7 @@ import { PIP } from '~/i18n/types'
 import { Spinner } from '~/components/ui/Spinner'
 
 export default function ForPage({
-  params: { locale, ...params },
+  params: { locale },
 }: PagePropsWithLocale<{}>) {
   const [dict, setDict] = useState<Dictionary | null>(null)
   const [open, setOpen] = useState(false)
@@ -43,14 +42,6 @@ export default function ForPage({
   const [pipContents, setPipContents] = useState<PIP[]>([])
   const [pip, setPip] = useState<PIP | null>(null)
 
-  const githubAccessToken = process.env.NEXT_PUBLIC_GITHUB_ACCESS
-  const octokit = useMemo(() => {
-    if (!githubAccessToken) return null
-    return new Octokit({
-      auth: githubAccessToken,
-    })
-  }, [githubAccessToken])
-
   useEffect(() => {
     const fetchDict = async () => {
       try {
@@ -63,103 +54,17 @@ export default function ForPage({
     fetchDict()
   }, [locale])
 
-  const fetchOpendPip = useCallback(async (): Promise<any[]> => {
-    try {
-      if (!octokit) return []
-      const { data: pullRequests } = await octokit.rest.pulls.list({
-        owner: 'peacecoin-protocol',
-        repo: 'PIPs',
-        state: 'open', // or 'open', 'closed'
-        per_page: 100, // adjust as needed
-      })
-
-      let pullRequestFiles: any[] = []
-      for (const pullRequest of pullRequests) {
-        // Get files changed in the pull request
-        const { data: _files } = await octokit.rest.pulls.listFiles({
-          owner: 'peacecoin-protocol',
-          repo: 'PIPs',
-          pull_number: pullRequest.number,
-        })
-        pullRequestFiles = [...pullRequestFiles, ..._files]
-      }
-
-      return pullRequestFiles
-    } catch (error) {
-      console.error('Error fetching all files in branch:', error)
-      return []
-    }
-  }, [octokit])
-
-  const fetchClosedPip = useCallback(async (): Promise<any[]> => {
-    // Get files from the repository
-    if (!octokit) return []
-    const { data: files } = await octokit.rest.repos.getContent({
-      owner: 'peacecoin-protocol',
-      repo: 'PIPs',
-      path: 'PIPs',
-      ref: 'main',
-    })
-
-    return files as any[]
-  }, [octokit])
-
-  const fetchFileContent = useCallback((fileContent: string, path: string) => {
-    const pipContent = {
-      number: parseContent(fileContent, 'pip'),
-      title: parseContent(fileContent, 'title'),
-      proposer: parseContent(fileContent, 'proposer'),
-      status: parseContent(fileContent, 'status'),
-      type: parseContent(fileContent, 'type'),
-      category: parseContent(fileContent, 'category'),
-      content: fileContent,
-      created: parseContent(fileContent, 'created'),
-      path: path,
-    }
-    return pipContent
-  }, [])
-
   useEffect(() => {
     const fetchAllPip = async () => {
       try {
-        if (!octokit) {
-          setIsLoading(false)
-          return
-        }
         setIsLoading(true)
-        let pullRequestFiles: any[] = []
-        let pipContents: PIP[] = []
-
-        const openedFiles = await fetchOpendPip()
-        pullRequestFiles = [...pullRequestFiles, ...openedFiles]
-
-        const closedFiles = await fetchClosedPip()
-        pullRequestFiles = [...pullRequestFiles, ...closedFiles]
-
-        for (let i = 0; i < pullRequestFiles.length; i++) {
-          const file = pullRequestFiles[i]
-          const fileSha = file?.sha || ''
-          const { data: blobData } = await octokit.rest.git.getBlob({
-            owner: 'peacecoin-protocol',
-            repo: 'PIPs',
-            file_sha: fileSha,
-          })
-
-          // The content is base64 encoded
-          const fileContent = atob(blobData.content.replace(/\n/g, ''))
-
-          let _path = ''
-          if (i < openedFiles.length) {
-            _path = pullRequestFiles[i].blob_url
-          } else {
-            _path = pullRequestFiles[i].html_url
-          }
-
-          const pipContent = fetchFileContent(fileContent, _path)
-          pipContents.push(pipContent)
+        const response = await fetch('/api/github/pips')
+        if (!response.ok) {
+          throw new Error('Failed to fetch PIPs from GitHub')
         }
-        pipContents.sort((a, b) => Number(a.number) - Number(b.number))
-        setPipContents(pipContents)
+
+        const contents = (await response.json()) as PIP[]
+        setPipContents(contents)
       } catch (error) {
         console.error('Error fetching all files in branch:', error)
       } finally {
@@ -167,12 +72,7 @@ export default function ForPage({
       }
     }
     fetchAllPip()
-  }, [fetchClosedPip, fetchFileContent, fetchOpendPip, octokit])
-
-  function parseContent(content: string, start: string) {
-    const match = content.match(new RegExp(`^${start}:\\s*(.*)$`, 'm'))
-    return match?.[1]?.trim() ?? ''
-  }
+  }, [])
 
   function handleOpen() {
     setOpen(!open)

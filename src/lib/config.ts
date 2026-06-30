@@ -1,7 +1,8 @@
+import './suppress-lit-dev-mode'
+
 import { http, createConfig } from '@wagmi/core'
 import { polygon } from 'wagmi/chains'
 import { Env } from '~/env'
-import { PinataSDK } from 'pinata'
 import { defineChain } from 'viem'
 import { injected, walletConnect } from 'wagmi/connectors'
 
@@ -29,9 +30,4 @@ export const config = createConfig({
   },
   multiInjectedProviderDiscovery: true,
   syncConnectedChain: true,
-})
-
-export const pinata = new PinataSDK({
-  pinataJwt: Env.PINATA_JWT,
-  pinataGateway: Env.PINATA_GATEWAY_URL,
 })
