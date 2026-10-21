@@ -6,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  use,
 } from 'react'
 import { formatEther, parseEther } from 'ethers'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
@@ -32,7 +33,7 @@ import useWindowWidth from '~/components/useWindWidth'
 
 import { defaultChainId, pceAddress } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
-import { PagePropsWithLocale, TOKEN } from '~/i18n/types'
+import { PagePropsWithLocale, TOKEN, Locale } from '~/i18n/types'
 import { COMMUNITY_TOKEN_ABI } from '~/app/ABIs/CommunityToken'
 
 import { config } from '~/lib/config'
@@ -145,9 +146,8 @@ const tokenCreationFields: Array<{
 
 const tokenPageSize = 5
 
-export default function ForTokenPage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForTokenPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const dict = useDictionary(locale)
   const width = useWindowWidth()
   const colSpan = width < 1280

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, use } from 'react'
 import { Octokit } from 'octokit'
 
 import { Button } from '~/components/ui/button'
@@ -20,15 +20,14 @@ import {
 } from '~/components/ui/popover'
 import { DialogGithub } from '~/components/custom/dialog-github'
 import { cn } from '~/lib/utils'
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary, Locale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { STATUS } from '~/app/constants/constants'
 import { PIP } from '~/i18n/types'
 import { Spinner } from '~/components/ui/Spinner'
 
-export default function ForPage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const [dict, setDict] = useState<Dictionary | null>(null)
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)

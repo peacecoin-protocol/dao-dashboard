@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, use } from 'react'
 
 import { useToast } from '~/hooks/use-toast'
 import { ApolloClient, gql, InMemoryCache } from '@apollo/client'
@@ -48,6 +48,7 @@ import {
   BOUNTY_PROPOSAL,
   Proposal,
   Dictionary,
+  Locale,
 } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 
@@ -55,9 +56,8 @@ import { localhost } from '~/lib/config'
 import { polygon, sepolia } from 'wagmi/chains'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 
-export default function ForBountyPage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForBountyPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const [dict, setDict] = useState<Dictionary | null>(null)
   const { toast } = useToast()
 

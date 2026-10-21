@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, use } from 'react'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { useAccount, useReadContract, useWriteContract } from 'wagmi'
@@ -14,7 +14,7 @@ import {
 import { formatUnits, parseUnits } from 'viem'
 import { formatEther } from 'ethers'
 import { createClient } from '~/utils/supabase/client'
-import { Dictionary, PagePropsWithLocale } from '~/i18n/types'
+import { Dictionary, PagePropsWithLocale, Locale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 import {
@@ -162,8 +162,9 @@ const formatTemplate = (
 ) => template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ''))
 
 export default function ManagementDetailPage({
-  params: { locale },
+  params,
 }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const supabase = createClient()
   const searchParams = useSearchParams()
   const daoId = searchParams.get('daoId') ?? ''

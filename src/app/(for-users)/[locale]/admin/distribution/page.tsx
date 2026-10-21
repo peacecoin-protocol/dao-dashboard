@@ -1,7 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { PagePropsWithLocale, Dictionary, SupabaseDao } from '~/i18n/types'
+import { useEffect, useState, use } from 'react'
+import {
+  PagePropsWithLocale,
+  Dictionary,
+  SupabaseDao,
+  Locale,
+} from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 import { createClient } from '~/utils/supabase/client'
@@ -18,9 +23,8 @@ import {
   TableRow,
 } from '~/components/ui/table'
 
-export default function ForManagementPage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForManagementPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const supabase = createClient()
   const { address } = useAccount()
   const router = useRouter()

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState, use } from 'react'
 import Link from 'next/link'
 
 import * as CustomLink from '~/components/custom/Link'
@@ -69,7 +69,7 @@ import {
 
 import { getDict } from '~/i18n/get-dict'
 
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary, Locale } from '~/i18n/types'
 
 import { formatString, shortenAddress } from '~/components/utils'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
@@ -109,9 +109,8 @@ type TokenBalance = {
   logo: string
 }
 
-export default function PCEPage({
-  params: { locale },
-}: PagePropsWithLocale<{}>) {
+export default function PCEPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const router = useRouter()
   const [dict, setDict] = useState<Dictionary | null>(null)
 

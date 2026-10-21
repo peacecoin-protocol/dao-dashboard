@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 
 import { formatEther, parseEther } from 'ethers'
 
@@ -23,7 +23,7 @@ import { pceAddress, WPCE_ADDRESS } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { PCE_GOV_TOKEN_ABI } from '~/app/ABIs/PCEGovToken'
 
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary, Locale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { defaultChainId } from '~/app/constants/constants'
 import { CommunityGov_ABI } from '~/app/ABIs/CommunityGov'
@@ -31,9 +31,8 @@ import { DelegateInput } from '~/components/custom/delegate-input'
 import { PCE_C_GOV_TOKEN_ABI } from '~/app/ABIs/PCECGovToken'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 
-export default function ForDelegatePage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForDelegatePage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const { toast } = useToast()
 
   const [dict, setDict] = useState<Dictionary | null>(null)

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { useEffect, useState, use } from 'react'
+import { PagePropsWithLocale, Dictionary, Locale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import Image from 'next/image'
 import {
@@ -12,9 +12,8 @@ import {
 } from '~/components/ui/accordion'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 
-export default function ForFAQPage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForFAQPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const [dict, setDict] = useState<Dictionary | null>(null)
 
   useEffect(() => {

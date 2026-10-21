@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, use } from 'react'
 import { formatEther } from 'ethers'
 import { useAccount, useReadContract } from 'wagmi'
 
@@ -11,12 +11,11 @@ import { getDict } from '~/i18n/get-dict'
 import { pceAddress } from '~/app/constants/constants'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary, Locale } from '~/i18n/types'
 import { defaultChainId } from '~/app/constants/constants'
 
-export default function ForProposalPage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForProposalPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const [dict, setDict] = useState<Dictionary | null>(null)
   const { address, chainId } = useAccount()
 

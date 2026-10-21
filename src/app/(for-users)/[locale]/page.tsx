@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 import Image from 'next/image'
 import { useToast } from '~/hooks/use-toast'
 
@@ -18,7 +18,7 @@ import {
   simulateContract,
   waitForTransactionReceipt,
 } from '@wagmi/core'
-import { SupabaseDao } from '~/i18n/types'
+import { SupabaseDao, Locale } from '~/i18n/types'
 import { generateIdenteapot } from '@teapotlabs/identeapots'
 
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
@@ -240,9 +240,8 @@ const StatItem = ({
   </div>
 )
 
-export default function ForDAOPage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForDAOPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const router = useRouter()
   const { toast } = useToast()
   const { data: hash, error, writeContractAsync } = useWriteContract()

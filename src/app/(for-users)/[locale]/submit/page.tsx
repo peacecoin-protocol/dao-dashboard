@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 
 import { useToast } from '~/hooks/use-toast'
 import { ethers, parseEther } from 'ethers'
@@ -32,13 +32,12 @@ import {
 } from '~/app/constants/constants'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary, Locale } from '~/i18n/types'
 import { defaultChainId } from '~/app/constants/constants'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 
-export default function ForSubmitPage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForSubmitPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const { toast } = useToast()
 
   const [dict, setDict] = useState<Dictionary | null>(null)

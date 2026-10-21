@@ -17,10 +17,13 @@ const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
     const count = validChildren.length
 
     const clones = validChildren.map((child, index) =>
-      React.cloneElement(child, {
-        separator,
-        isLastChild: count === index + 1,
-      })
+      React.cloneElement(
+        child as React.ReactElement<InternalBreadcrumbItemProps>,
+        {
+          separator,
+          isLastChild: count === index + 1,
+        }
+      )
     )
 
     return (

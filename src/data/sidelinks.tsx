@@ -13,7 +13,7 @@ import {
 
 import { Locale, Dictionary } from '~/i18n/types'
 
-import { useEffect, useState } from 'react'
+import { type JSX, useEffect, useState } from 'react'
 import { getDict } from '~/i18n/get-dict'
 
 export interface NavLink {
