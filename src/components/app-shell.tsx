@@ -1,18 +1,17 @@
 'use client'
 
+import { use } from 'react'
 import Sidebar from './sidebar'
 import useIsCollapsed from '~/hooks/use-is-collapsed'
-import { PagePropsWithLocale } from '~/i18n/types'
+import { PagePropsWithLocale, Locale } from '~/i18n/types'
 import AppBar from './common/app-bar'
 
 interface AppShellProps extends PagePropsWithLocale<{}> {
   children: React.ReactNode
 }
 
-export default function AppShell({
-  params: { locale, ...params },
-  children,
-}: AppShellProps) {
+export default function AppShell({ params, children }: AppShellProps) {
+  const locale = use(params).locale as Locale
   const [isCollapsed, setIsCollapsed] = useIsCollapsed()
   return (
     <div className="relative h-full overflow-hidden bg-background">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 
 import { Button } from '~/components/ui/button'
 
@@ -20,7 +20,7 @@ import {
 
 import { getDict } from '~/i18n/get-dict'
 
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary, Locale } from '~/i18n/types'
 import { daoStudioAddress, defaultChainId } from '~/app/constants/constants'
 
 import { formatNumber } from '~/components/utils'
@@ -46,9 +46,8 @@ import { PageHeaderSection } from '~/components/custom/page-header-section'
 import { createClient } from '~/utils/supabase/client'
 import { DAO_STUDIO_ABI } from '~/app/ABIs/DAOStudio'
 
-export default function StakingPage({
-  params: { locale },
-}: PagePropsWithLocale<{}>) {
+export default function StakingPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const [dict, setDict] = useState<Dictionary | null>(null)
   const { toast } = useToast()
   const votingPowerDict = dict?.votingPower ?? {}

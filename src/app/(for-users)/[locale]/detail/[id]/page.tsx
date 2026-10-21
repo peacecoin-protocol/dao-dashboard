@@ -1,7 +1,7 @@
 'use client'
 
 import { CopyIcon, Plus, X, ChevronsUpDown } from 'lucide-react'
-import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
+import { use, useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import * as CustomLink from '~/components/custom/Link'
 import Image from 'next/image'
@@ -154,9 +154,9 @@ const toBigInt = (value?: string | bigint) => {
 export default function ForDaoDetailPage({
   params,
 }: {
-  params: { locale: Locale }
+  params: Promise<{ locale: string }>
 }) {
-  const { locale } = params
+  const locale = use(params).locale as Locale
   const { toast } = useToast()
   const supabase = useMemo(() => createClient(), [])
   const dict = useDictionary(locale)

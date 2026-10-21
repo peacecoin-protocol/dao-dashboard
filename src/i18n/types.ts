@@ -3,7 +3,7 @@ import { BigNumberish } from 'ethers'
 export type Locale = 'en' | 'ja' | 'cn' | 'es' | 'fr' | 'pt'
 
 export type PagePropsWithLocale<T> = T & {
-  params: { locale: Locale }
+  params: Promise<{ locale: string }>
 }
 
 export interface SVGProps {

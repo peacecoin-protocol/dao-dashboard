@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary, Locale } from '~/i18n/types'
 
 import { getDict } from '~/i18n/get-dict'
 import { formatEther } from 'viem'
@@ -36,9 +36,8 @@ type TokenBalance = {
   logo: string
 }
 
-export default function ForPCEDetailPage({
-  params: { locale },
-}: PagePropsWithLocale<{}>) {
+export default function ForPCEDetailPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const router = useRouter()
   const { proposal } = { proposal: undefined } // TODO: Handle state properly with Next.js
   const [dict, setDict] = useState<Dictionary | null>(null)

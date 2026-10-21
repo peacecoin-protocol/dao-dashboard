@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, use } from 'react'
 import { ethers, parseEther, ZeroAddress } from 'ethers'
 import { useToast } from '~/hooks/use-toast'
 
@@ -11,7 +11,7 @@ import {
   useReadContract,
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
-import { CAMPAIGN } from '~/i18n/types'
+import { CAMPAIGN, Locale } from '~/i18n/types'
 
 import { Button } from '~/components/ui/button'
 import {
@@ -39,9 +39,8 @@ import { fetchCampaignsWithMetadata } from '~/lib/campaigns'
 import { resolveAddress } from '~/lib/utils'
 
 // Main component
-export default function ForCampaignPage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForCampaignPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const dict = useDictionary(locale)
   const campaign = dict?.campaign ?? {}
   const { address, chainId } = useAccount()

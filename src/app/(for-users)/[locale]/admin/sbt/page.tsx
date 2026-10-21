@@ -1,11 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, use } from 'react'
 import Image from 'next/image'
 import { config } from '~/lib/config'
 
 import { SBT_ABI } from '~/app/ABIs/SBT'
-import { SupabaseDao } from '~/i18n/types'
+import { SupabaseDao, Locale } from '~/i18n/types'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
 
 import { Button } from '~/components/ui/button'
@@ -306,9 +306,8 @@ const CreateTokenModal = ({
 )
 
 // Main Component
-export default function SBTBuilderPage({
-  params: { locale },
-}: PagePropsWithLocale<{}>) {
+export default function SBTBuilderPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const [dict, setDict] = useState<Dictionary | null>(null)
   const { toast } = useToast()
   const { address, chainId } = useAccount()

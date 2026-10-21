@@ -30,18 +30,17 @@ import { formatString } from '~/components/utils'
 import { BOUNTY_ABI } from '~/app/ABIs/Bounty'
 import { PCE_ABI } from '~/app/ABIs/PCEToken'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary, Locale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 import { formatEther } from 'ethers'
 import { useAccount, useReadContract } from 'wagmi'
 import { createClient } from '~/utils/supabase/client'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 import { Spinner } from '~/components/ui/Spinner'
 
-export default function ForUsersIndexPage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForUsersIndexPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const [dict, setDict] = useState<Dictionary | null>(null)
   const { address, chainId } = useAccount()
   const [proposalStatus, setStatus] = useState<any[]>([])

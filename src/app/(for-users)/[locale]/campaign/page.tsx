@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, use } from 'react'
 import { ethers, formatEther } from 'ethers'
 import axios from 'axios'
 import { useToast } from '~/hooks/use-toast'
@@ -13,7 +13,7 @@ import {
   useSignMessage,
 } from 'wagmi'
 import { readContract, waitForTransactionReceipt } from '@wagmi/core'
-import { CAMPAIGN } from '~/i18n/types'
+import { CAMPAIGN, Locale } from '~/i18n/types'
 
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
@@ -195,9 +195,8 @@ const CampaignDialog = ({
 }
 
 // Main component
-export default function ForCampaignPage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForCampaignPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const dict = useDictionary(locale)
   const campaign = dict?.campaign ?? {}
   const { address, chainId } = useAccount()

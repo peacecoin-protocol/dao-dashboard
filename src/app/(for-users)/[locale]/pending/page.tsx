@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, use } from 'react'
 
 import { formatEther } from 'ethers'
 import {
@@ -33,15 +33,14 @@ import { shortenAddress, formatString } from '~/components/utils'
 import { GOVERNOR_ABI } from '~/app/ABIs/Governor'
 
 import { config } from '~/lib/config'
-import { PagePropsWithLocale, Dictionary } from '~/i18n/types'
+import { PagePropsWithLocale, Dictionary, Locale } from '~/i18n/types'
 import { getDict } from '~/i18n/get-dict'
 import { defaultChainId } from '~/app/constants/constants'
 import { PageHeaderSection } from '~/components/custom/page-header-section'
 import { Spinner } from '~/components/ui/Spinner'
 
-export default function ForPendingPage({
-  params: { locale, ...params },
-}: PagePropsWithLocale<{}>) {
+export default function ForPendingPage({ params }: PagePropsWithLocale<{}>) {
+  const locale = use(params).locale as Locale
   const [dict, setDict] = useState<Dictionary | null>(null)
   const width = useWindowWidth()
   const colSpan = width < 1280
