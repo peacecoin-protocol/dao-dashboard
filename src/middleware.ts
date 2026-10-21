@@ -10,10 +10,18 @@ const defaultLocale: Locale = 'en'
 const locales: Locale[] = ['en', 'ja', 'cn', 'es', 'fr', 'pt']
 
 export const getLocale = (request: NextRequest) => {
+  // Accept-Language が無い・`*` だけの場合 Negotiator は ['*'] を返し、
+  // match は不正なロケールで RangeError を投げるため除外する
   const languages = new Negotiator({
     headers: Object.fromEntries(request.headers),
-  }).languages()
-  return match(languages, locales, defaultLocale)
+  })
+    .languages()
+    .filter((language) => language !== '*')
+  try {
+    return match(languages, locales, defaultLocale)
+  } catch {
+    return defaultLocale
+  }
 }
 
 const hasPrefix = (pathname: string, prefix: string) =>
